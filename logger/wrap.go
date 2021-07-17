@@ -16,7 +16,7 @@ func (l *zeroLogger) Error(content ...interface{})                 {}
 func (l *zeroLogger) Errorf(format string, content ...interface{}) {}
 func (l *zeroLogger) Fatal(content ...interface{})                 {}
 func (l *zeroLogger) Fatalf(format string, content ...interface{}) {}
-func (l *zeroLogger) Close()
+func (l *zeroLogger) Close()                                       {}
 func (l *zeroLogger) SetSessionID(sid string) {
 
 }
@@ -29,4 +29,5 @@ func newZeroLogger() *zeroLogger {
 	logger := zerolog.New(multi).With().Timestamp().Logger()
 
 	logger.Info().Msg("Hello World!")
+	return nil
 }

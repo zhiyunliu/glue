@@ -1,16 +1,16 @@
 package start
 
 import (
-	"github.com/lib4dev/cli/cmds"
-	"github.com/zhiyunliu/velocity/cmds/service"
+	"github.com/zhiyunliu/velocity/cli/cmds"
+	"github.com/zhiyunliu/velocity/cli/cmds/service"
+	"github.com/zhiyunliu/velocity/configs"
 
 	"github.com/urfave/cli"
 )
 
-var isFixed bool
-
+ 
 func init() {
-	cmds.RegisterFunc(func() cli.Command {
+	cmds.RegisterFunc(func(cfg *configs.AppSetting) cli.Command {
 
 		return cli.Command{
 			Name:   "start",

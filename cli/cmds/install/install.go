@@ -3,20 +3,19 @@ package install
 import (
 	"os"
 
-	"github.com/lib4dev/cli/cmds"
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/cmds/service"
+	"github.com/zhiyunliu/velocity/cli/cmds"
+	"github.com/zhiyunliu/velocity/cli/cmds/service"
 	"github.com/zhiyunliu/velocity/compatible"
+	"github.com/zhiyunliu/velocity/configs"
 )
 
-var isFixed bool
-
 func init() {
-	cmds.RegisterFunc(func() cli.Command {
+	cmds.RegisterFunc(func(cfg *configs.AppSetting) cli.Command {
 		return cli.Command{
 			Name:   "install",
 			Usage:  "安装服务，以服务方式安装到本地系统",
-			Flags:  getFlags(),
+			Flags:  getFlags(cfg),
 			Action: doInstall,
 		}
 	})

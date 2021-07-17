@@ -12,7 +12,6 @@ func CheckPrivileges() error {
 	return nil
 }
 
-//CmdsRunNotifySignals  hydra/cmds/run/notify.Signal
 var CmdsRunNotifySignals = []os.Signal{os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGINT}
 
 //CmdsUpdateProcessSignal CmdsUpdateProcessSignal

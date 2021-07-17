@@ -7,9 +7,9 @@ import (
 
 	"github.com/kardianos/service"
 	"github.com/urfave/cli"
+	"github.com/zhiyunliu/velocity/cli/server"
 	"github.com/zhiyunliu/velocity/configs"
 	"github.com/zhiyunliu/velocity/libs"
-	"github.com/zhiyunliu/velocity/server"
 )
 
 type AppService struct {
@@ -22,11 +22,11 @@ type AppService struct {
 
 //GetService GetService
 func GetService(c *cli.Context, args ...string) (velocitySrv *AppService, err error) {
+	srvApp := GetSrvApp(c)
 	//1. 构建服务配置
-	cfg := GetSrvConfig(args...)
-
+	cfg := GetSrvConfig(srvApp.config, args...)
 	//2.创建本地服务
-	appSrv, err := service.New(GetSrvApp(c), cfg)
+	appSrv, err := service.New(srvApp, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -40,15 +40,15 @@ func GetService(c *cli.Context, args ...string) (velocitySrv *AppService, err er
 }
 
 //GetSrvConfig SrvCfg
-func GetSrvConfig(args ...string) *service.Config {
+func GetSrvConfig(appCfg *configs.AppSetting, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 
-	svcName := fmt.Sprintf("%s_%s", configs.SysName, libs.Md5(path)[:8])
+	svcName := fmt.Sprintf("%s_%s", appCfg.SysName, libs.Md5(path)[:8])
 
 	cfg := &service.Config{
 		Name:         svcName,
 		DisplayName:  svcName,
-		Description:  configs.Usage,
+		Description:  appCfg.Usage,
 		Arguments:    args,
 		Dependencies: []string{"After=network.target syslog.target"},
 	}
@@ -60,14 +60,19 @@ func GetSrvConfig(args ...string) *service.Config {
 
 //GetSrvApp SrvCfg
 func GetSrvApp(c *cli.Context) *ServiceApp {
+	server := c.App.Metadata["server"].(server.Server)
+	appCfg := c.App.Metadata["config"].(*configs.AppSetting)
 	return &ServiceApp{
-		c: c,
+		c:      c,
+		server: server,
+		config: appCfg,
 	}
 }
 
 //ServiceApp ServiceApp
 type ServiceApp struct {
 	c      *cli.Context
-	server server.ResponsiveServer
+	server server.Server
+	config *configs.AppSetting
 	trace  itrace
 }

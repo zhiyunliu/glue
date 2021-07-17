@@ -1,13 +1,15 @@
 package stop
 
 import (
-	"github.com/lib4dev/cli/cmds"
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/cmds/service"
+	"github.com/zhiyunliu/velocity/cli/cmds"
+	"github.com/zhiyunliu/velocity/cli/cmds/service"
+	"github.com/zhiyunliu/velocity/configs"
+
 )
 
 func init() {
-	cmds.RegisterFunc(func() cli.Command {
+	cmds.RegisterFunc(func(cfg *configs.AppSetting) cli.Command {
 		return cli.Command{
 			Name:   "stop",
 			Usage:  "停止服务，停止服务器运行",

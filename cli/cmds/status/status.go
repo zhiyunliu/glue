@@ -1,13 +1,16 @@
 package status
 
 import (
-	"github.com/lib4dev/cli/cmds"
+	svc "github.com/kardianos/service"
+	"github.com/zhiyunliu/velocity/cli/cmds"
+	"github.com/zhiyunliu/velocity/cli/cmds/service"
+	"github.com/zhiyunliu/velocity/configs"
 
 	"github.com/urfave/cli"
 )
 
 func init() {
-	cmds.RegisterFunc(func() cli.Command {
+	cmds.RegisterFunc(func(cfg *configs.AppSetting) cli.Command {
 		return cli.Command{
 			Name:   "status",
 			Usage:  "查询状态，查询服务器运行、停止状态",
@@ -27,8 +30,8 @@ func doStatus(c *cli.Context) (err error) {
 	return service.GetCmdsResult(velocitySrv.DisplayName, "Status", err, statusMap[status])
 }
 
-var statusMap = map[service.Status]string{
-	service.StatusRunning: "Running",
-	service.StatusStopped: "Stopped",
-	service.StatusUnknown: "Unknown",
+var statusMap = map[svc.Status]string{
+	svc.StatusRunning: "Running",
+	svc.StatusStopped: "Stopped",
+	svc.StatusUnknown: "Unknown",
 }

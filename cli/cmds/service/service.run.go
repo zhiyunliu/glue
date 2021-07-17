@@ -2,14 +2,12 @@ package service
 
 import (
 	"time"
-
-	"github.com/zhiyunliu/velocity/configs"
 )
 
 func (p *ServiceApp) run() (err error) {
 
 	//3.创建trace性能跟踪
-	p.trace, err = startTrace(configs.TraceType, configs.TracePort)
+	p.trace, err = startTrace(p.config.TraceType, p.config.TracePort)
 	if err != nil {
 		return err
 	}
@@ -26,5 +24,4 @@ func (p *ServiceApp) run() (err error) {
 	case <-time.After(time.Second):
 		return nil
 	}
-	return nil
 }

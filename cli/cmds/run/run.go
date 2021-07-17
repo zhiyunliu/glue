@@ -3,14 +3,15 @@ package run
 import (
 	"os"
 
-	"github.com/lib4dev/cli/cmds"
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/cmds/service"
+	"github.com/zhiyunliu/velocity/cli/cmds"
+	"github.com/zhiyunliu/velocity/cli/cmds/service"
+	"github.com/zhiyunliu/velocity/configs"
 )
 
 func init() {
-	cmds.RegisterFunc(func() cli.Command {
-		flags := getFlags()
+	cmds.RegisterFunc(func(cfg *configs.AppSetting) cli.Command {
+		flags := getFlags(cfg)
 		return cli.Command{
 			Name:   "run",
 			Usage:  "运行服务,以前台方式运行服务。通过终端输出日志，终端关闭后服务自动退出。",

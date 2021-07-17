@@ -26,7 +26,6 @@ func CheckPrivileges() error {
 	return errUnsupportedSystem
 }
 
-//CmdsRunNotifySignals  hydra/cmds/run/notify.Signal
 var CmdsRunNotifySignals = []os.Signal{os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGUSR2}
 
 //CmdsUpdateProcessSignal CmdsUpdateProcessSignal

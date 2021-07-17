@@ -1,16 +1,16 @@
 package restart
 
 import (
-	"github.com/lib4dev/cli/cmds"
-	"github.com/micro-plat/hydra/global"
-	"github.com/micro-plat/hydra/hydra/cmds/pkgs"
 	"github.com/urfave/cli"
+	"github.com/zhiyunliu/velocity/cli/cmds"
+	"github.com/zhiyunliu/velocity/cli/cmds/service"
+	"github.com/zhiyunliu/velocity/configs"
 )
 
 var isFixed bool
 
 func init() {
-	cmds.RegisterFunc(func() cli.Command {
+	cmds.RegisterFunc(func(cfg *configs.AppSetting) cli.Command {
 		return cli.Command{
 			Name:   "restart",
 			Usage:  "重启服务",
@@ -21,10 +21,8 @@ func init() {
 
 func doRestart(c *cli.Context) (err error) {
 
-	//关闭日志显示
-	global.Current().Log().Pause()
 	//3.创建本地服务
-	velocitySrv, err := pkgs.GetService(c, isFixed)
+	velocitySrv, err := service.GetService(c)
 	if err != nil {
 		return err
 	}
