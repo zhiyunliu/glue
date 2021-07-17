@@ -14,7 +14,7 @@ func (p *ServiceApp) run() (err error) {
 	//5. 创建服务器
 	errChan := make(chan error)
 	go func() {
-		err := p.server.Start()
+		err := p.server.Start(p.config)
 		errChan <- err
 	}()
 

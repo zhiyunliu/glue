@@ -40,6 +40,12 @@ func WithTracePort(tracePort string) Option {
 		cfg.TracePort = tracePort
 	}
 }
+func WithAddr(addr  string) Option {
+	return func(cfg *configs.AppSetting) {
+		cfg.Addr = addr
+	}
+}
+
 
 func WithUsage(usage string) Option {
 	return func(cfg *configs.AppSetting) {

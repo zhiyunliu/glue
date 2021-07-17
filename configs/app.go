@@ -1,6 +1,7 @@
 package configs
 
 type AppSetting struct {
+	Addr        string
 	PlatName    string
 	SysName     string
 	ClusterName string
