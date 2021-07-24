@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/profile"
-	"github.com/zhiyunliu/velocity/globals"
+	"github.com/zhiyunliu/velocity/logger"
 )
 
 type itrace interface {
@@ -67,8 +67,8 @@ func startServer(tracePort string, errChan chan error) {
 		return
 	}
 
-	addr := fmt.Sprintf("0.0.0.0:%s", tracePort)
-	globals.Logger().Infof("启动成功:pprof.web(addr:http://0.0.0.0:%s/debug/pprof/)", tracePort)
+	addr := fmt.Sprintf(":%s", tracePort)
+	logger.Infof("启动成功:pprof.web(addr:http://0.0.0.0:%s/debug/pprof/)", tracePort)
 	err = http.ListenAndServe(addr, nil)
 	if err != nil {
 		errChan <- fmt.Errorf("启动pprof监控服务错误：%w", err)

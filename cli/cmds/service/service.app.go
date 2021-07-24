@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -30,6 +31,9 @@ func GetService(c *cli.Context, args ...string) (velocitySrv *AppService, err er
 	if err != nil {
 		return nil, err
 	}
+	bytes, _ := json.Marshal(cfg)
+
+	fmt.Println("sss:", string(bytes))
 	return &AppService{
 		Service:     appSrv,
 		ServiceName: cfg.Name,
@@ -44,6 +48,9 @@ func GetSrvConfig(appCfg *configs.AppSetting, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 
 	svcName := fmt.Sprintf("%s_%s", appCfg.SysName, libs.Md5(path)[:8])
+
+	bytes, _ := json.Marshal(appCfg)
+	fmt.Println("appCfg:", path, string(bytes))
 
 	cfg := &service.Config{
 		Name:         svcName,
@@ -62,6 +69,7 @@ func GetSrvConfig(appCfg *configs.AppSetting, args ...string) *service.Config {
 func GetSrvApp(c *cli.Context) *ServiceApp {
 	server := c.App.Metadata["server"].(server.Server)
 	appCfg := c.App.Metadata["config"].(*configs.AppSetting)
+	initAppConfig(appCfg)
 	return &ServiceApp{
 		c:      c,
 		server: server,
@@ -75,4 +83,23 @@ type ServiceApp struct {
 	server server.Server
 	config *configs.AppSetting
 	trace  itrace
+}
+
+func initAppConfig(config *configs.AppSetting) {
+	if config.Addr == "" {
+		config.Addr = ":8081"
+	}
+
+	if config.PlatName == "" {
+		config.PlatName = "default"
+	}
+	if config.SysName == "" {
+		config.SysName = filepath.Base(os.Args[0])
+	}
+	if config.ClusterName == "" {
+		config.ClusterName = "prod"
+	}
+	if config.Version == "" {
+		config.Version = "1.0.0"
+	}
 }

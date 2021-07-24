@@ -1,10 +1,10 @@
 package libs
 
-import "crypto/md5"
+import (
+	"crypto/md5"
+	"fmt"
+)
 
 func Md5(val string) (r string) {
-	hash := md5.New()
-	hash.Reset()
-	bytes := hash.Sum([]byte(val))
-	return string(bytes)
+	return fmt.Sprintf("%x", md5.Sum([]byte(val)))
 }

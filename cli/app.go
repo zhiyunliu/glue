@@ -47,6 +47,7 @@ func New(server server.Server, config *configs.AppSetting, opts ...Option) *App 
 	app.App.Metadata = map[string]interface{}{}
 	app.App.Metadata["server"] = server
 	app.App.Metadata["config"] = config
+
 	app.App.Commands = cmds.GetCmds(config)
 	return app
 }
