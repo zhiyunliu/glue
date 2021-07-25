@@ -10,12 +10,6 @@ func isNil(input interface{}) bool {
 	return input == nil || fmt.Sprintf("%v", input) == ""
 }
 
-type tplCache struct {
-	sql    string
-	params []interface{}
-	names  []string
-}
-
 //AnalyzeTPLFromCache 从缓存中获取已解析的SQL语句
 func AnalyzeTPLFromCache(name string, tpl string, input map[string]interface{}, prefix func() string) (sql string, params []interface{}) {
 	sql, params, _ = AnalyzeTPL(tpl, input, prefix)
@@ -31,9 +25,6 @@ func AnalyzeTPLFromCache(name string, tpl string, input map[string]interface{}, 
 func AnalyzeTPL(tpl string, input map[string]interface{}, prefix func() string) (sql string, params []interface{}, names []string) {
 	params = make([]interface{}, 0)
 	names = make([]string, 0)
-	defer func() {
-		sql = replaceSpecialCharacter(sql)
-	}()
 	word, _ := regexp.Compile(`[\\]?[@|#|&|~|\||!|\$|\?]\w?[\.]?\w+`)
 	//@变量, 将数据放入params中
 	sql = word.ReplaceAllStringFunc(tpl, func(s string) string {
@@ -53,32 +44,6 @@ func AnalyzeTPL(tpl string, input map[string]interface{}, prefix func() string) 
 				params = append(params, "")
 			}
 			return prefix()
-		case "#":
-			if !isNil(value) {
-				return fmt.Sprintf("%v", value)
-			}
-			return "NULL"
-		case "?":
-			if !isNil(value) {
-				names = append(names, key)
-				params = append(params, value)
-				return fmt.Sprintf("and %s like '%%'||%s||'%%'", key, prefix())
-			}
-			return ""
-		// case ",":
-		// 	if !isNil(value) {
-		// 		names = append(names, key)
-		// 		params = append(params, value)
-		// 		return fmt.Sprintf("and %s > %s", key, prefix())
-		// 	}
-		// 	return ""
-		// case ".":
-		// 	if !isNil(value) {
-		// 		names = append(names, key)
-		// 		params = append(params, value)
-		// 		return fmt.Sprintf("and %s < %s", key, prefix())
-		// 	}
-		// 	return ""
 		case "$":
 			if !isNil(value) {
 				return fmt.Sprintf("%v", value)
@@ -96,13 +61,6 @@ func AnalyzeTPL(tpl string, input map[string]interface{}, prefix func() string) 
 				names = append(names, key)
 				params = append(params, value)
 				return fmt.Sprintf("or %s=%s", key, prefix())
-			}
-			return ""
-		case "~":
-			if !isNil(value) {
-				names = append(names, key)
-				params = append(params, value)
-				return fmt.Sprintf(",%s=%s", key, prefix())
 			}
 			return ""
 		default:

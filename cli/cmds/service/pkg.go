@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/configs"
+	"github.com/zhiyunliu/velocity/globals"
 
 	"fmt"
 	"strings"
@@ -11,7 +11,7 @@ import (
 )
 
 //GetBaseFlags 获取运行时的参数
-func GetBaseFlags(cfg *configs.AppSetting) []cli.Flag {
+func GetBaseFlags(cfg *globals.AppSetting) []cli.Flag {
 	flags := make([]cli.Flag, 0, 4)
 	flags = append(flags, cli.StringFlag{
 		Name:        "plat,p",

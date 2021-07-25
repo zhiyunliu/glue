@@ -6,11 +6,11 @@ import (
 	"github.com/urfave/cli"
 	"github.com/zhiyunliu/velocity/cli/cmds"
 	"github.com/zhiyunliu/velocity/cli/cmds/service"
-	"github.com/zhiyunliu/velocity/configs"
+	"github.com/zhiyunliu/velocity/globals"
 )
 
 func init() {
-	cmds.RegisterFunc(func(cfg *configs.AppSetting) cli.Command {
+	cmds.RegisterFunc(func(cfg *globals.AppSetting) cli.Command {
 		flags := getFlags(cfg)
 		return cli.Command{
 			Name:   "run",

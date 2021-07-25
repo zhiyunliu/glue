@@ -3,11 +3,11 @@ package run
 import (
 	"github.com/urfave/cli"
 	"github.com/zhiyunliu/velocity/cli/cmds/service"
-	"github.com/zhiyunliu/velocity/configs"
+	"github.com/zhiyunliu/velocity/globals"
 )
 
 //getFlags 获取运行时的参数
-func getFlags(cfg *configs.AppSetting) []cli.Flag {
+func getFlags(cfg *globals.AppSetting) []cli.Flag {
 	flags := service.GetBaseFlags(cfg)
 	flags = append(flags, cli.BoolFlag{
 		Name:        "debug,d",

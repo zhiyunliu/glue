@@ -1,4 +1,4 @@
-package configs
+package globals
 
 type AppSetting struct {
 	Addr        string

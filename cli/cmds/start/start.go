@@ -3,14 +3,14 @@ package start
 import (
 	"github.com/zhiyunliu/velocity/cli/cmds"
 	"github.com/zhiyunliu/velocity/cli/cmds/service"
-	"github.com/zhiyunliu/velocity/configs"
+	"github.com/zhiyunliu/velocity/globals"
 
 	"github.com/urfave/cli"
 )
 
  
 func init() {
-	cmds.RegisterFunc(func(cfg *configs.AppSetting) cli.Command {
+	cmds.RegisterFunc(func(cfg *globals.AppSetting) cli.Command {
 
 		return cli.Command{
 			Name:   "start",

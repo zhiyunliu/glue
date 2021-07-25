@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/zhiyunliu/velocity/cli"
-	"github.com/zhiyunliu/velocity/cli/server"
+	"github.com/zhiyunliu/velocity/server"
 	"github.com/zhiyunliu/velocity/compatible"
-	"github.com/zhiyunliu/velocity/configs"
+ 	"github.com/zhiyunliu/velocity/globals"
 
 	_ "github.com/zhiyunliu/velocity/cli/cmds/install"
 	_ "github.com/zhiyunliu/velocity/cli/cmds/remove"
@@ -21,13 +21,13 @@ import (
 //MicroApp  微服务应用
 type MicroApp struct {
 	app    *cli.App
-	config *configs.AppSetting
+	config *globals.AppSetting
 	server server.Server
 }
 
 //NewApp 创建微服务应用
 func NewApp(server server.Server, opts ...Option) (m *MicroApp) {
-	m = &MicroApp{config: &configs.AppSetting{
+	m = &MicroApp{config: &globals.AppSetting{
 		SysName: filepath.Base(os.Args[0]),
 	}, server: server}
 	for _, opt := range opts {

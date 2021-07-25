@@ -6,8 +6,8 @@ import (
 
 	"github.com/urfave/cli"
 	"github.com/zhiyunliu/velocity/cli/cmds"
-	"github.com/zhiyunliu/velocity/cli/server"
-	"github.com/zhiyunliu/velocity/configs"
+	"github.com/zhiyunliu/velocity/globals"
+	"github.com/zhiyunliu/velocity/server"
 )
 
 //VERSION 版本号
@@ -25,7 +25,7 @@ func (a *App) Start() error {
 }
 
 //New 创建app
-func New(server server.Server, config *configs.AppSetting, opts ...Option) *App {
+func New(server server.Server, config *globals.AppSetting, opts ...Option) *App {
 
 	app := &App{option: &option{version: VERSION, usage: "A new cli application"}}
 	for _, opt := range opts {

@@ -7,8 +7,8 @@ import (
 
 	"github.com/kardianos/service"
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/cli/server"
-	"github.com/zhiyunliu/velocity/configs"
+	"github.com/zhiyunliu/velocity/server"
+	"github.com/zhiyunliu/velocity/globals"
 	"github.com/zhiyunliu/velocity/libs"
 )
 
@@ -40,7 +40,7 @@ func GetService(c *cli.Context, args ...string) (velocitySrv *AppService, err er
 }
 
 //GetSrvConfig SrvCfg
-func GetSrvConfig(appCfg *configs.AppSetting, args ...string) *service.Config {
+func GetSrvConfig(appCfg *globals.AppSetting, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 
 	svcName := fmt.Sprintf("%s_%s", appCfg.SysName, libs.Md5(path)[:8])
@@ -61,7 +61,7 @@ func GetSrvConfig(appCfg *configs.AppSetting, args ...string) *service.Config {
 //GetSrvApp SrvCfg
 func GetSrvApp(c *cli.Context) *ServiceApp {
 	server := c.App.Metadata["server"].(server.Server)
-	appCfg := c.App.Metadata["config"].(*configs.AppSetting)
+	appCfg := c.App.Metadata["config"].(*globals.AppSetting)
 	initAppConfig(appCfg)
 	return &ServiceApp{
 		c:      c,
@@ -74,11 +74,11 @@ func GetSrvApp(c *cli.Context) *ServiceApp {
 type ServiceApp struct {
 	c      *cli.Context
 	server server.Server
-	config *configs.AppSetting
+	config *globals.AppSetting
 	trace  itrace
 }
 
-func initAppConfig(config *configs.AppSetting) {
+func initAppConfig(config *globals.AppSetting) {
 	if config.Addr == "" {
 		config.Addr = ":8081"
 	}
