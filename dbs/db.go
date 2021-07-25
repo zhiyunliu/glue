@@ -68,7 +68,7 @@ func (db *DB) Scalar(sql string, input map[string]interface{}) (data interface{}
 	if err != nil {
 		return nil, getDBError(err, query, args)
 	}
-	if result.Len() == 0 || result[0].Len() == 0 || len(result[0].Keys()) == 0 {
+	if result.Len() == 0 || len(result[0]) == 0 {
 		return nil, nil
 	}
 	data, _ = result[0].Get(result[0].Keys()[0])

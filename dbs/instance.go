@@ -11,7 +11,7 @@ func init() {
 	cache = sync.Map{}
 }
 
-func SetDbConfig(name string, cfg *DB) {
+func SetDbConfig(name string, cfg *Config) {
 	cache.Store(fmt.Sprintf("db_config_%s", name), cfg)
 }
 
