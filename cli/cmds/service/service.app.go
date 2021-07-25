@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,9 +30,6 @@ func GetService(c *cli.Context, args ...string) (velocitySrv *AppService, err er
 	if err != nil {
 		return nil, err
 	}
-	bytes, _ := json.Marshal(cfg)
-
-	fmt.Println("sss:", string(bytes))
 	return &AppService{
 		Service:     appSrv,
 		ServiceName: cfg.Name,
@@ -48,9 +44,6 @@ func GetSrvConfig(appCfg *configs.AppSetting, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 
 	svcName := fmt.Sprintf("%s_%s", appCfg.SysName, libs.Md5(path)[:8])
-
-	bytes, _ := json.Marshal(appCfg)
-	fmt.Println("appCfg:", path, string(bytes))
 
 	cfg := &service.Config{
 		Name:         svcName,
