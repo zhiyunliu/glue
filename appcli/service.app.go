@@ -1,15 +1,16 @@
-package service
+package appcli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/kardianos/service"
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/server"
-	"github.com/zhiyunliu/velocity/globals"
+	"github.com/zhiyunliu/velocity/appcli/keys"
 	"github.com/zhiyunliu/velocity/libs"
+	"github.com/zhiyunliu/velocity/server"
 )
 
 type AppService struct {
@@ -20,11 +21,11 @@ type AppService struct {
 	Arguments   []string
 }
 
-//GetService GetService
-func GetService(c *cli.Context, args ...string) (velocitySrv *AppService, err error) {
+//GetService GetServices
+func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 	srvApp := GetSrvApp(c)
 	//1. 构建服务配置
-	cfg := GetSrvConfig(srvApp.config, args...)
+	cfg := GetSrvConfig(srvApp.options, args...)
 	//2.创建本地服务
 	appSrv, err := service.New(srvApp, cfg)
 	if err != nil {
@@ -40,45 +41,45 @@ func GetService(c *cli.Context, args ...string) (velocitySrv *AppService, err er
 }
 
 //GetSrvConfig SrvCfg
-func GetSrvConfig(appCfg *globals.AppSetting, args ...string) *service.Config {
+func GetSrvConfig(opts *Options, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 
-	svcName := fmt.Sprintf("%s_%s", appCfg.SysName, libs.Md5(path)[:8])
+	svcName := fmt.Sprintf("%s_%s", opts.SysName, libs.Md5(path)[:8])
 
 	cfg := &service.Config{
 		Name:         svcName,
 		DisplayName:  svcName,
-		Description:  appCfg.Usage,
+		Description:  opts.Usage,
 		Arguments:    args,
 		Dependencies: []string{"After=network.target syslog.target"},
 	}
 	cfg.WorkingDirectory = filepath.Dir(path)
-	// cfg.Option = make(map[string]interface{})
-	// cfg.Option["LimitNOFILE"] = 10240
+	cfg.Option = make(map[string]interface{})
+	cfg.Option["LimitNOFILE"] = 10240
 	return cfg
 }
 
 //GetSrvApp SrvCfg
 func GetSrvApp(c *cli.Context) *ServiceApp {
-	server := c.App.Metadata["server"].(server.Server)
-	appCfg := c.App.Metadata["config"].(*globals.AppSetting)
-	initAppConfig(appCfg)
+	server := c.App.Metadata[keys.ManagerKey].(server.Manager)
+	opts := c.App.Metadata[keys.OptionsKey].(*Options)
+	initAppConfig(opts)
 	return &ServiceApp{
-		c:      c,
-		server: server,
-		config: appCfg,
+		cliCtx:  c,
+		manager: server,
+		options: opts,
 	}
 }
 
 //ServiceApp ServiceApp
 type ServiceApp struct {
-	c      *cli.Context
-	server server.Server
-	config *globals.AppSetting
-	trace  itrace
+	cliCtx     *cli.Context
+	manager    server.Manager
+	options    *Options
+	CancelFunc context.CancelFunc
 }
 
-func initAppConfig(config *globals.AppSetting) {
+func initAppConfig(config *Options) {
 	if config.Addr == "" {
 		config.Addr = ":8081"
 	}
@@ -89,9 +90,7 @@ func initAppConfig(config *globals.AppSetting) {
 	if config.SysName == "" {
 		config.SysName = filepath.Base(os.Args[0])
 	}
-	if config.ClusterName == "" {
-		config.ClusterName = "prod"
-	}
+
 	if config.Version == "" {
 		config.Version = "1.0.0"
 	}

@@ -1,4 +1,4 @@
-package service
+package appcli
 
 import (
 	"github.com/kardianos/service"
@@ -7,14 +7,9 @@ import (
 
 //Stop Stop
 func (p *ServiceApp) Stop(s service.Service) (err error) {
-	if p.server != nil {
-		p.server.Shutdown()
+	if p.CancelFunc != nil {
+		p.CancelFunc()
 	}
-
-	if p.trace != nil {
-		p.trace.Stop()
-	}
-
-	logger.Infof("服务关闭:%s", p.config.Addr)
+	logger.Infof("服务关闭:%s", p.manager.Name())
 	return nil
 }

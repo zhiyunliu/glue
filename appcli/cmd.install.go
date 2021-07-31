@@ -1,17 +1,14 @@
-package install
+package appcli
 
 import (
 	"os"
 
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/cli/cmds"
-	"github.com/zhiyunliu/velocity/cli/cmds/service"
 	"github.com/zhiyunliu/velocity/compatible"
-	"github.com/zhiyunliu/velocity/globals"
 )
 
 func init() {
-	cmds.RegisterFunc(func(cfg *globals.AppSetting) cli.Command {
+	RegisterFunc(func(cfg *Options) cli.Command {
 		return cli.Command{
 			Name:   "install",
 			Usage:  "安装服务，以服务方式安装到本地系统",
@@ -31,11 +28,11 @@ func doInstall(c *cli.Context) (err error) {
 	args := []string{"run"}
 	args = append(args, os.Args[2:]...)
 	//3.创建本地服务
-	velocitySrv, err := service.GetService(c, args...)
+	srv, err := getService(c, args...)
 	if err != nil {
 		return err
 	}
 
-	err = velocitySrv.Install()
-	return service.GetCmdsResult(velocitySrv.DisplayName, "Install", err)
+	err = srv.Install()
+	return buildCmdResult(srv.DisplayName, "Install", err)
 }

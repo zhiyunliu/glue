@@ -1,14 +1,16 @@
-package run
+package appcli
 
 import (
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/cli/cmds/service"
-	"github.com/zhiyunliu/velocity/globals"
 )
 
 //getFlags 获取运行时的参数
-func getFlags(cfg *globals.AppSetting) []cli.Flag {
-	flags := service.GetBaseFlags(cfg)
+func getFlags(cfg *Options) (flags []cli.Flag) {
+	flags = append(flags, cli.StringFlag{
+		Name:        "plat,p",
+		Destination: &cfg.PlatName,
+		Usage:       "-平台名称",
+	})
 	flags = append(flags, cli.BoolFlag{
 		Name:        "debug,d",
 		Destination: &cfg.IsDebug,
@@ -24,10 +26,6 @@ func getFlags(cfg *globals.AppSetting) []cli.Flag {
 		Destination: &cfg.TracePort,
 		Usage:       `-性能分析服务端口号。用于trace为web模式时的端口号。默认：19999`,
 	})
-	flags = append(flags, cli.StringFlag{
-		Name:        "mask,msk",
-		Destination: &cfg.IPMask,
-		Usage:       `-子网掩码。多个网卡情况下根据mask获取本机IP`,
-	})
+
 	return flags
 }

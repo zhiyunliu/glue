@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/ghodss/yaml v1.0.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/kardianos/service v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0

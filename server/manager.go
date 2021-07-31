@@ -12,14 +12,19 @@ import (
 )
 
 type Manager interface {
+	Name() string
 	Add(...Runnable)
 	Start(context.Context) error
 }
 
 type Runnable interface {
-	String() string
+
 	// Start 启动
 	Start(ctx context.Context) error
+
 	// Attempt 是否允许启动
 	Attempt() bool
+
+	//String 格式化
+	String() string
 }

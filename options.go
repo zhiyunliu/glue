@@ -1,59 +1,45 @@
 package velocity
 
-import "github.com/zhiyunliu/velocity/globals"
+type Options struct {
+	PlatName  string
+	IsDebug   bool
+	TraceType string
+	TracePort string
+	Usage     string
+	Version   string
+}
 
-type Option func(cfg *globals.AppSetting)
+type Option func(cfg *Options)
 
 func WithPlatName(platName string) Option {
-	return func(cfg *globals.AppSetting) {
+	return func(cfg *Options) {
 		cfg.PlatName = platName
 	}
 }
 
-func WithSysName(sysName string) Option {
-	return func(cfg *globals.AppSetting) {
-		cfg.SysName = sysName
-	}
-}
-func WithClusterName(name string) Option {
-	return func(cfg *globals.AppSetting) {
-		cfg.ClusterName = name
-	}
-}
 func WithIsDebug(debug bool) Option {
-	return func(cfg *globals.AppSetting) {
+	return func(cfg *Options) {
 		cfg.IsDebug = debug
 	}
 }
-func WithIPMask(mask string) Option {
-	return func(cfg *globals.AppSetting) {
-		cfg.IPMask = mask
-	}
-}
-func WithTraceType(traceType string) Option {
-	return func(cfg *globals.AppSetting) {
-		cfg.TraceType = traceType
-	}
-}
-func WithTracePort(tracePort string) Option {
-	return func(cfg *globals.AppSetting) {
-		cfg.TracePort = tracePort
-	}
-}
-func WithAddr(addr  string) Option {
-	return func(cfg *globals.AppSetting) {
-		cfg.Addr = addr
-	}
-}
-
 
 func WithUsage(usage string) Option {
-	return func(cfg *globals.AppSetting) {
+	return func(cfg *Options) {
 		cfg.Usage = usage
 	}
 }
 func WithVersion(version string) Option {
-	return func(cfg *globals.AppSetting) {
+	return func(cfg *Options) {
 		cfg.Version = version
+	}
+}
+func WithTraceType(traceType string) Option {
+	return func(cfg *Options) {
+		cfg.TraceType = traceType
+	}
+}
+func WithTracePort(tracePort string) Option {
+	return func(cfg *Options) {
+		cfg.TracePort = tracePort
 	}
 }

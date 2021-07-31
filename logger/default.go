@@ -13,12 +13,7 @@ import (
 )
 
 func init() {
-	lvl, err := GetLevel(InfoLevel.String())
-	if err != nil {
-		lvl = InfoLevel
-	}
-
-	DefaultLogger = NewHelper(NewLogger(WithLevel(lvl)))
+	DefaultLogger = NewWrapper(NewLogger(WithLevel(InfoLevel)))
 }
 
 type defaultLogger struct {

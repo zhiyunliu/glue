@@ -9,6 +9,9 @@ import (
 	"github.com/zhiyunliu/velocity/logger"
 )
 
+const SUCCESS = "Success"
+const FAILURE = "Failure"
+
 type Server struct {
 	services               map[string]Runnable
 	mutex                  sync.Mutex
@@ -18,8 +21,7 @@ type Server struct {
 	internalCancel         context.CancelFunc
 	internalProceduresStop chan struct{}
 	shutdownCtx            context.Context
-	shutdownCancel         context.CancelFunc
-	logger                 *logger.Helper
+	logger                 *logger.Wrapper
 	opts                   options
 }
 
@@ -35,6 +37,9 @@ func New(opts ...Option) Manager {
 		opts[i](&s.opts)
 	}
 	return s
+}
+func (e *Server) Name() string {
+	return "e.String"
 }
 
 // Add add runnable
@@ -89,9 +94,14 @@ func (e *Server) startRunnable(r Runnable) {
 	e.waitForRunnable.Add(1)
 	go func() {
 		defer e.waitForRunnable.Done()
-		if err := r.Start(e.internalCtx); err != nil {
+		e.logger.Infof("Start [%s]", r.String())
+		err := r.Start(e.internalCtx)
+		msg := SUCCESS
+		if err != nil {
+			msg = fmt.Sprintf("%s,err:%v", FAILURE, err)
 			e.errChan <- err
 		}
+		e.logger.Infof("Start [%s] %s", r.String(), msg)
 	}()
 }
 
