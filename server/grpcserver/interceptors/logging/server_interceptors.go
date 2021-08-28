@@ -13,9 +13,9 @@ import (
 	"time"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/zhiyunliu/velocity/server/grpc/interceptors/logging/ctxlog"
-	"github.com/zhiyunliu/velocity/tools/utils"
+	"github.com/zhiyunliu/velocity/server/grpcserver/interceptors/logging/ctxlog"
 	"google.golang.org/grpc"
+	"github.com/zhiyunliu/velocity/pkgs"
 )
 
 var (
@@ -85,9 +85,9 @@ func newLoggerForCall(ctx context.Context, fullMethodString string, start time.T
 	if d, ok := ctx.Deadline(); ok {
 		f.Set("grpc.request.deadline", d.Format(timestampFormat))
 	}
-	requestID := utils.GetRequestID(ctx)
-	f.Set(utils.RequestIDKey, requestID)
+	requestID := pkgs.GetRequestID(ctx)
+	f.Set(pkgs.RequestIDKey, requestID)
 	callLog := ctxlog.Extract(ctx).WithFields(f.Values())
-	ctx = context.WithValue(ctx, utils.RequestIDKey, requestID)
+	ctx = context.WithValue(ctx, pkgs.RequestIDKey, requestID)
 	return ctxlog.ToContext(ctx, callLog)
 }

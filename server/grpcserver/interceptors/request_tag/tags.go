@@ -11,7 +11,7 @@ import (
 	"context"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/zhiyunliu/velocity/tools/utils"
+	"github.com/zhiyunliu/velocity/pkgs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -45,7 +45,7 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 func AppendTagsForContext(ctx context.Context) context.Context {
 	return metadata.AppendToOutgoingContext(
 		ctx,
-		utils.RequestIDKey, utils.GetRequestID(ctx),
+		pkgs.RequestIDKey, pkgs.GetRequestID(ctx),
 	)
 }
 
