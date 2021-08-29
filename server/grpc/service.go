@@ -5,18 +5,18 @@
  * @Last Modified time: 2021/6/8 5:29 下午
  */
 
-package grpcserver
+package grpc
 
 import (
 	"context"
 	"fmt"
 	"time"
 
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	log "github.com/zhiyunliu/velocity/logger"
 	"github.com/zhiyunliu/velocity/server/grpc/interceptors/logging"
 	reqtags "github.com/zhiyunliu/velocity/server/grpc/interceptors/request_tag"
-	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	"google.golang.org/grpc"
 )
 

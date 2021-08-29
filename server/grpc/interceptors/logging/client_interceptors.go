@@ -56,7 +56,7 @@ func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
 	}
 }
 
-func logFinalClientLine(o *options, l *logger.Helper, start time.Time, err error, msg string) {
+func logFinalClientLine(o *options, l *logger.Wrapper, start time.Time, err error, msg string) {
 	code := o.codeFunc(err)
 	level := o.levelFunc(code)
 

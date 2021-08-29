@@ -5,7 +5,7 @@
  * @Last Modified time: 2021/6/2 4:26 下午
  */
 
-package grpcserver
+package grpc
 
 import (
 	"context"

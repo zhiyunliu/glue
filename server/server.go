@@ -31,6 +31,7 @@ func New(opts ...Option) Manager {
 		services:               make(map[string]Runnable),
 		errChan:                make(chan error),
 		internalProceduresStop: make(chan struct{}),
+		logger:                 logger.NewWrapper(logger.NewLogger()),
 	}
 	s.opts = setDefaultOptions()
 	for i := range opts {
@@ -39,7 +40,7 @@ func New(opts ...Option) Manager {
 	return s
 }
 func (e *Server) Name() string {
-	return "e.String"
+	return e.opts.Name
 }
 
 // Add add runnable

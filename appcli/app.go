@@ -46,5 +46,7 @@ func New(manager server.Manager, opts ...Option) *App {
 	}
 	app.App.Metadata = map[string]interface{}{}
 	app.App.Metadata[keys.ManagerKey] = manager
+	app.App.Metadata[keys.OptionsKey] = app.options
+
 	return app
 }

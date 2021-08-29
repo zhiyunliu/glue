@@ -1,4 +1,4 @@
-package apiserver
+package api
 
 import (
 	"context"

@@ -1,18 +1,21 @@
 package appcli
 
+import "github.com/zhiyunliu/velocity/config"
+
 type Options struct {
 	version string
 	usage   string
 
-	Addr        string
-	PlatName    string
-	SysName     string
-	IsDebug     bool
-	IPMask      string
-	TraceType   string
-	TracePort   string
-	Usage       string
-	Version     string
+	Config    config.Config
+	Addr      string
+	PlatName  string
+	SysName   string
+	IsDebug   bool
+	IPMask    string
+	TraceType string
+	TracePort string
+	Usage     string
+	Version   string
 }
 
 //Option 配置选项
@@ -29,5 +32,11 @@ func WithVersion(version string) Option {
 func WithUsage(usage string) Option {
 	return func(o *Options) {
 		o.usage = usage
+	}
+}
+
+func WithConfig(cfgVal config.Config) Option {
+	return func(o *Options) {
+		o.Config = cfgVal
 	}
 }

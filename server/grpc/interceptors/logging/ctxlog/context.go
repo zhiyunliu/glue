@@ -3,19 +3,20 @@ package ctxlog
 import (
 	"context"
 
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/zhiyunliu/velocity/logger"
 )
 
 type ctxMarker struct{}
 
 type ctxLogger struct {
-	logger *logger.Helper
+	logger *logger.Wrapper
 	fields map[string]interface{}
 }
 
 var (
 	ctxMarkerKey = &ctxMarker{}
-	nullLogger   = logger.NewHelper(logger.DefaultLogger)
+	nullLogger   = logger.NewWrapper(logger.DefaultLogger)
 )
 
 // AddFields adds logger fields to the logger.
@@ -32,7 +33,7 @@ func AddFields(ctx context.Context, fields map[string]interface{}) {
 // Extract takes the call-scoped Logger from grpc_logger middleware.
 //
 // It always returns a Logger that has all the grpc_ctxtags updated.
-func Extract(ctx context.Context) *logger.Helper {
+func Extract(ctx context.Context) *logger.Wrapper {
 	l, ok := ctx.Value(ctxMarkerKey).(*ctxLogger)
 	if !ok || l == nil {
 		return nullLogger
@@ -53,7 +54,7 @@ func TagsToFields(ctx context.Context) map[string]interface{} {
 
 // ToContext adds the logger.Logger to the context for extraction later.
 // Returning the new context that has been created.
-func ToContext(ctx context.Context, logger *logger.Helper) context.Context {
+func ToContext(ctx context.Context, logger *logger.Wrapper) context.Context {
 	l := &ctxLogger{
 		logger: logger,
 	}

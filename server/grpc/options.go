@@ -5,7 +5,7 @@
  * @Last Modified time: 2021/6/2 4:30 下午
  */
 
-package grpcserver
+package grpc
 
 import (
 	"context"
@@ -19,8 +19,8 @@ import (
 	opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	log "github.com/zhiyunliu/velocity/logger"
-	"github.com/zhiyunliu/velocity/server/grpcserver/interceptors/logging"
-	requesttag "github.com/zhiyunliu/velocity/server/grpcserver/interceptors/request_tag"
+	"github.com/zhiyunliu/velocity/server/grpc/interceptors/logging"
+	requesttag "github.com/zhiyunliu/velocity/server/grpc/interceptors/request_tag"
 	"google.golang.org/grpc"
 )
 

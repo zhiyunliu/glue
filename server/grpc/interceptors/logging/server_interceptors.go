@@ -13,9 +13,9 @@ import (
 	"time"
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/zhiyunliu/velocity/server/grpcserver/interceptors/logging/ctxlog"
-	"google.golang.org/grpc"
 	"github.com/zhiyunliu/velocity/pkgs"
+	"github.com/zhiyunliu/velocity/server/grpc/interceptors/logging/ctxlog"
+	"google.golang.org/grpc"
 )
 
 var (
