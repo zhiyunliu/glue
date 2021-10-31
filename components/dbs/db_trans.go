@@ -1,13 +1,13 @@
 package dbs
 
 import (
-	"github.com/zhiyunliu/velocity/dbs/tpl"
+	"github.com/zhiyunliu/velocity/components/dbs/tpl"
 )
 
 //DBTrans 数据库事务操作类
 type DBTrans struct {
 	tpl tpl.ITPLContext
-	tx  ISysDBTrans
+	tx  ISysTrans
 }
 
 //Query 查询数据
@@ -34,32 +34,22 @@ func (t *DBTrans) Scalar(sql string, input map[string]interface{}) (data interfa
 	return
 }
 
-//Executes 执行SQL操作语句
-func (t *DBTrans) Executes(sql string, input map[string]interface{}) (lastInsertID, affectedRow int64, err error) {
-	query, args := t.tpl.GetSQLContext(sql, input)
-	lastInsertID, affectedRow, err = t.tx.Executes(query, args...)
-	if err != nil {
-		return 0, 0, getDBError(err, query, args)
-	}
-	return
-}
-
 //Execute 根据包含@名称占位符的语句执行查询语句
-func (t *DBTrans) Execute(sql string, input map[string]interface{}) (row int64, err error) {
+func (t *DBTrans) Execute(sql string, input map[string]interface{}) (r Result, err error) {
 	query, args := t.tpl.GetSQLContext(sql, input)
-	row, err = t.tx.Execute(query, args...)
+	r, err = t.tx.Execute(query, args...)
 	if err != nil {
-		return 0, getDBError(err, query, args)
+		return nil, getDBError(err, query, args)
 	}
 	return
 }
 
 //ExecuteSP 根据包含@名称占位符的语句执行查询语句
-func (t *DBTrans) ExecuteSP(sql string, input map[string]interface{}) (row int64, err error) {
+func (t *DBTrans) ExecuteSP(sql string, input map[string]interface{}) (r Result, err error) {
 	query, args := t.tpl.GetSPContext(sql, input)
-	row, err = t.tx.Execute(query, args...)
+	r, err = t.tx.Execute(query, args...)
 	if err != nil {
-		return 0, getDBError(err, query, args)
+		return nil, getDBError(err, query, args)
 	}
 	return
 }

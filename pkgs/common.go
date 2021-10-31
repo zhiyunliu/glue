@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const (
+var (
 	RequestIDKey  = "x-request-id"
 	LoggerKey     = "velocity-logger-request"
 	JwtPayloadKey = "jwt_payload"
@@ -24,6 +24,7 @@ func GetRequestID(ctx context.Context) string {
 	id := GetHeaderFirst(ctx, RequestIDKey)
 	if id == "" {
 		id = NewRequestID()
+		SetHeader(ctx, RequestIDKey, id)
 	}
 	return id
 }
@@ -41,6 +42,12 @@ func GetHeaderFirst(ctx context.Context, key string) string {
 		}
 	}
 	return ""
+}
+
+func SetHeader(ctx context.Context, key string, val ...string) {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		md.Set(key, val...)
+	}
 }
 
 // NewRequestID generate a RequestId

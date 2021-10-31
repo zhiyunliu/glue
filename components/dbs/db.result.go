@@ -1,10 +1,13 @@
 package dbs
 
 import (
+	"database/sql"
 	"encoding/json"
 
-	"github.com/zhiyunliu/velocity/types"
+	"github.com/zhiyunliu/velocity/libs/types"
 )
+
+type Result = sql.Result
 
 //QueryRow 单行数据
 type Row = types.XMap

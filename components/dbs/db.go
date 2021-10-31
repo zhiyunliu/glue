@@ -3,13 +3,13 @@ package dbs
 import (
 	"time"
 
-	"github.com/zhiyunliu/velocity/dbs/tpl"
+	"github.com/zhiyunliu/velocity/components/dbs/tpl"
 )
 
 //IDB 数据库操作接口,安装可需能需要执行export LD_LIBRARY_PATH=/usr/local/lib
 type IDB interface {
 	IDBExecuter
-	ExecuteSP(procName string, input map[string]interface{}, output ...interface{}) (row int64, err error)
+	StoredProcedure(procName string, input map[string]interface{}, output ...interface{}) (r Result, err error)
 	Begin() (IDBTrans, error)
 	Close()
 }
@@ -25,8 +25,7 @@ type IDBTrans interface {
 type IDBExecuter interface {
 	Query(sql string, input map[string]interface{}) (data Rows, err error)
 	Scalar(sql string, input map[string]interface{}) (data interface{}, err error)
-	Execute(sql string, input map[string]interface{}) (row int64, err error)
-	Executes(sql string, input map[string]interface{}) (lastInsertID int64, affectedRow int64, err error)
+	Execute(sql string, input map[string]interface{}) (r Result, err error)
 }
 
 //DB 数据库操作类
@@ -36,13 +35,14 @@ type DB struct {
 }
 
 //NewDB 创建DB实例
-func NewDB(provider string, connString string, maxOpen int, maxIdle int, maxLifeTime int) (obj *DB, err error) {
-	obj = &DB{}
-	obj.tpl, err = tpl.GetDBContext(provider)
+func NewDB(provider string, connString string, maxOpen int, maxIdle int, maxLifeTime int) (obj IDB, err error) {
+	dbobj := &DB{}
+	dbobj.tpl, err = tpl.GetDBContext(provider)
 	if err != nil {
 		return
 	}
-	obj.db, err = NewSysDB(provider, connString, maxOpen, maxIdle, time.Duration(maxLifeTime)*time.Second)
+	dbobj.db, err = NewSysDB(provider, connString, maxOpen, maxIdle, time.Duration(maxLifeTime)*time.Second)
+	obj = dbobj
 	return
 }
 
@@ -75,33 +75,23 @@ func (db *DB) Scalar(sql string, input map[string]interface{}) (data interface{}
 	return
 }
 
-//Executes 根据包含@名称占位符的语句执行查询语句
-func (db *DB) Executes(sql string, input map[string]interface{}) (insertID int64, row int64, err error) {
-	query, args := db.tpl.GetSQLContext(sql, input)
-	insertID, row, err = db.db.Executes(query, args...)
-	if err != nil {
-		return 0, 0, getDBError(err, query, args)
-	}
-	return
-}
-
 //Execute 根据包含@名称占位符的语句执行查询语句
-func (db *DB) Execute(sql string, input map[string]interface{}) (row int64, err error) {
+func (db *DB) Execute(sql string, input map[string]interface{}) (r Result, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
-	row, err = db.db.Execute(query, args...)
+	r, err = db.db.Execute(query, args...)
 	if err != nil {
-		return 0, getDBError(err, query, args)
+		return nil, getDBError(err, query, args)
 	}
 	return
 }
 
 //ExecuteSP 根据包含@名称占位符的语句执行查询语句
-func (db *DB) ExecuteSP(procName string, input map[string]interface{}, output ...interface{}) (row int64, err error) {
+func (db *DB) StoredProcedure(procName string, input map[string]interface{}, output ...interface{}) (r Result, err error) {
 	query, args := db.tpl.GetSPContext(procName, input)
 	ni := append(args, output...)
-	row, err = db.db.Execute(query, ni...)
+	r, err = db.db.Execute(query, ni...)
 	if err != nil {
-		return 0, getDBError(err, query, args)
+		return nil, getDBError(err, query, ni)
 	}
 	return
 }

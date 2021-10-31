@@ -43,28 +43,19 @@ const (
 
 type ISysDB interface {
 	Query(string, ...interface{}) (Rows, error)
-	Execute(string, ...interface{}) (int64, error)
-	Executes(string, ...interface{}) (int64, int64, error)
-	Begin() (ISysDBTrans, error)
+	Execute(string, ...interface{}) (Result, error)
+	Begin() (ISysTrans, error)
 	Close()
-}
-
-//ISysDBTrans 数据库事务接口
-type ISysDBTrans interface {
-	Query(string, ...interface{}) (Rows, error)
-	Execute(string, ...interface{}) (int64, error)
-	Executes(query string, args ...interface{}) (lastInsertID, affectedRow int64, err error)
-	Rollback() error
-	Commit() error
 }
 
 //SysDB 数据库实体
 type SysDB struct {
-	provider   string
-	connString string
-	db         *sql.DB
-	maxIdle    int
-	maxOpen    int
+	provider    string
+	connString  string
+	db          *sql.DB
+	maxIdle     int
+	maxOpen     int
+	maxLifeTime time.Duration
 }
 
 //NewSysDB 创建DB实例
@@ -73,7 +64,7 @@ func NewSysDB(provider string, connString string, maxOpen int, maxIdle int, maxL
 		err = errors.New("provider or connString not allow nil")
 		return
 	}
-	obj = &SysDB{provider: provider, connString: connString}
+	obj = &SysDB{provider: provider, connString: connString, maxIdle: maxIdle, maxOpen: maxOpen, maxLifeTime: maxLifeTime}
 	switch strings.ToLower(provider) {
 	case "ora", "oracle":
 		obj.db, err = sql.Open(OCI8, connString)
@@ -105,6 +96,30 @@ func (db *SysDB) Query(query string, args ...interface{}) (dataRows Rows, err er
 	dataRows, _, err = resolveRows(rows, 0)
 	return
 
+}
+
+//Executes 执行SQL操作语句
+func (db *SysDB) Execute(query string, args ...interface{}) (r Result, err error) {
+	result, err := db.db.Exec(query, args...)
+	if err != nil {
+		return
+	}
+	return result, err
+}
+
+//Begin 创建一个事务请求
+func (db *SysDB) Begin() (r ISysTrans, err error) {
+	t := &SysTrans{}
+	t.tx, err = db.db.Begin()
+	return t, err
+}
+
+//Close 关闭数据库
+func (db *SysDB) Close() {
+	db.db.Close()
+}
+func getDBError(err error, query string, args []interface{}) error {
+	return fmt.Errorf("%w(sql:%s,args:%+v)", err, query, args)
 }
 
 func resolveRows(rows *sql.Rows, col int) (dataRows Rows, columns []string, err error) {
@@ -143,39 +158,4 @@ func resolveRows(rows *sql.Rows, col int) (dataRows Rows, columns []string, err 
 		}
 	}
 	return
-}
-
-//Executes 执行SQL操作语句
-func (db *SysDB) Executes(query string, args ...interface{}) (lastInsertID, affectedRow int64, err error) {
-	result, err := db.db.Exec(query, args...)
-	if err != nil {
-		return
-	}
-	lastInsertID, err = result.LastInsertId()
-	affectedRow, err = result.RowsAffected()
-	return
-}
-
-//Execute 执行SQL操作语句
-func (db *SysDB) Execute(query string, args ...interface{}) (affectedRow int64, err error) {
-	result, err := db.db.Exec(query, args...)
-	if err != nil {
-		return
-	}
-	return result.RowsAffected()
-}
-
-//Begin 创建一个事务请求
-func (db *SysDB) Begin() (r ISysDBTrans, err error) {
-	t := &SysDBTransaction{}
-	t.tx, err = db.db.Begin()
-	return t, err
-}
-
-//Close 关闭数据库
-func (db *SysDB) Close() {
-	db.db.Close()
-}
-func getDBError(err error, query string, args []interface{}) error {
-	return fmt.Errorf("%w(sql:%s,args:%+v)", err, query, args)
 }

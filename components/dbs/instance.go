@@ -11,12 +11,16 @@ func init() {
 	cache = sync.Map{}
 }
 
+func getDbCacheKey(name string) string {
+	return fmt.Sprintf("db_config_%s", name)
+}
+
 func SetDbConfig(name string, cfg *Config) {
-	cache.Store(fmt.Sprintf("db_config_%s", name), cfg)
+	cache.Store(getDbCacheKey(name), cfg)
 }
 
 func GetDbConfig(name string) *Config {
-	val, ok := cache.Load(fmt.Sprintf("db_config_%s", name))
+	val, ok := cache.Load(getDbCacheKey(name))
 	if !ok {
 		panic(fmt.Errorf("不存在DB=%s的配置", name))
 	}

@@ -5,15 +5,6 @@ import (
 	"testing"
 )
 
-func TestReplace(t *testing.T) {
-	format := `where 
-	
-	
-      	or t.name=2`
-
-	fmt.Println(replaceSpecialCharacter(format))
-	t.Error("abc")
-}
 func TestTplxx(t *testing.T) {
 	sql, _, _ := AnalyzeTPL("where &id", map[string]interface{}{
 		"id": 1,
