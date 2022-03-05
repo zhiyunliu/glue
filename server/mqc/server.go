@@ -12,7 +12,6 @@ import (
 type Server struct {
 	name    string
 	ctx     context.Context
-	srv     *http.Server
 	opts    options
 	started bool
 }

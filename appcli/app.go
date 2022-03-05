@@ -6,11 +6,9 @@ import (
 
 	"github.com/urfave/cli"
 	"github.com/zhiyunliu/velocity/appcli/keys"
+	"github.com/zhiyunliu/velocity/global"
 	"github.com/zhiyunliu/velocity/server"
 )
-
-//VERSION 版本号
-var VERSION = "1.0.1"
 
 //App  cli app
 type App struct {
@@ -27,15 +25,15 @@ func (a *App) Start() error {
 //New 创建app
 func New(manager server.Manager, opts ...Option) *App {
 
-	app := &App{options: &Options{version: VERSION, usage: "A new cli application"}}
+	app := &App{options: &Options{}}
 	for _, opt := range opts {
 		opt(app.options)
 	}
 
 	app.App = cli.NewApp()
 	app.App.Name = filepath.Base(os.Args[0])
-	app.App.Version = app.options.version
-	app.App.Usage = app.options.usage
+	app.App.Version = global.Version
+	app.App.Usage = global.Usage
 	cli.HelpFlag = cli.BoolFlag{
 		Name:  "help,h",
 		Usage: "查看帮助信息",

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/zhiyunliu/velocity/libs/types"
 	log "github.com/zhiyunliu/velocity/logger"
 	"github.com/zhiyunliu/velocity/server"
 )
@@ -70,7 +71,8 @@ func (e *Server) String() string {
 }
 
 // Start 开始
-func (e *Server) Start(ctx context.Context) error {
+func (e *Server) Start() error {
+	ctx := context.Background()
 	l, err := net.Listen("tcp", e.opts.addr)
 	if err != nil {
 		return err
@@ -109,4 +111,25 @@ func (e *Server) Attempt() bool {
 // Shutdown 停止
 func (e *Server) Shutdown(ctx context.Context) error {
 	return e.srv.Shutdown(ctx)
+}
+
+// Shutdown 停止
+func (e *Server) Stop() error {
+	return nil
+}
+
+// Shutdown 停止
+func (e *Server) Status() string {
+	return ""
+}
+
+func (e *Server) Port() uint64 {
+	return 0
+}
+
+func (e *Server) Metadata() types.XMap {
+	return types.XMap{}
+}
+func (e *Server) Name() string {
+	return e.name
 }

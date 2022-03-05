@@ -12,7 +12,7 @@ import (
 const SUCCESS = "Success"
 const FAILURE = "Failure"
 
-type Server struct {
+type DefaultManager struct {
 	services               map[string]Runnable
 	mutex                  sync.Mutex
 	errChan                chan error
@@ -27,7 +27,7 @@ type Server struct {
 
 // New 实例化
 func New(opts ...Option) Manager {
-	s := &Server{
+	s := &DefaultManager{
 		services:               make(map[string]Runnable),
 		errChan:                make(chan error),
 		internalProceduresStop: make(chan struct{}),
@@ -39,12 +39,12 @@ func New(opts ...Option) Manager {
 	}
 	return s
 }
-func (e *Server) Name() string {
+func (e *DefaultManager) Name() string {
 	return e.opts.Name
 }
 
 // Add add runnable
-func (e *Server) Add(r ...Runnable) {
+func (e *DefaultManager) Add(r ...Runnable) {
 	if e.services == nil {
 		e.services = make(map[string]Runnable)
 	}
@@ -54,9 +54,10 @@ func (e *Server) Add(r ...Runnable) {
 }
 
 // Start start runnable
-func (e *Server) Start(ctx context.Context) (err error) {
+func (e *DefaultManager) Start() (err error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
+	ctx := context.Background()
 	e.internalCtx, e.internalCancel = context.WithCancel(ctx)
 	stopComplete := make(chan struct{})
 	defer close(stopComplete)
@@ -91,12 +92,12 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	}
 }
 
-func (e *Server) startRunnable(r Runnable) {
+func (e *DefaultManager) startRunnable(r Runnable) {
 	e.waitForRunnable.Add(1)
 	go func() {
 		defer e.waitForRunnable.Done()
 		e.logger.Infof("Start [%s]", r.String())
-		err := r.Start(e.internalCtx)
+		err := r.Start()
 		msg := SUCCESS
 		if err != nil {
 			msg = fmt.Sprintf("%s,err:%v", FAILURE, err)
@@ -106,7 +107,7 @@ func (e *Server) startRunnable(r Runnable) {
 	}()
 }
 
-func (e *Server) engageStopProcedure(stopComplete <-chan struct{}) error {
+func (e *DefaultManager) engageStopProcedure(stopComplete <-chan struct{}) error {
 	var shutdownCancel context.CancelFunc
 	if e.opts.gracefulShutdownTimeout > 0 {
 		e.shutdownCtx, shutdownCancel = context.WithTimeout(
@@ -138,7 +139,7 @@ func (e *Server) engageStopProcedure(stopComplete <-chan struct{}) error {
 	return e.waitForRunnableToEnd(shutdownCancel)
 }
 
-func (e *Server) waitForRunnableToEnd(shutdownCancel context.CancelFunc) error {
+func (e *DefaultManager) waitForRunnableToEnd(shutdownCancel context.CancelFunc) error {
 	go func() {
 		e.waitForRunnable.Wait()
 		shutdownCancel()

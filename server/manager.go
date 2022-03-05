@@ -8,22 +8,31 @@
 package server
 
 import (
-	"context"
+	"github.com/zhiyunliu/velocity/libs/types"
 )
 
 type Manager interface {
 	Name() string
 	Add(...Runnable)
-	Start(context.Context) error
+	Start() error
 }
 
 type Runnable interface {
-
+	Name() string
 	// Start 启动
-	Start(ctx context.Context) error
+	Start() error
+
+	// Stop 关闭
+	Stop() error
+
+	Status() string
 
 	// Attempt 是否允许启动
 	Attempt() bool
+
+	Port() uint64
+
+	Metadata() types.XMap
 
 	//String 格式化
 	String() string
