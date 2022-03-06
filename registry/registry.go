@@ -2,12 +2,14 @@ package registry
 
 import (
 	"fmt"
+
+	"github.com/zhiyunliu/velocity/server"
 )
 
 //IRegistry 注册中心接口
 type IRegistry interface {
-	Register()
-	Deregister()
+	Register(server.Runnable)
+	Deregister(server.Runnable)
 	GetImpl() interface{}
 }
 

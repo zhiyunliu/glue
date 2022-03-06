@@ -9,5 +9,5 @@ var (
 var (
 	ClusterName string = "prod"
 	GroupName   string = "default_group"
-	NameSpace   string = "default_ns"
+	Namespace   string = "default_ns"
 )

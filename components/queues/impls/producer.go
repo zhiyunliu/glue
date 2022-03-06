@@ -1,11 +1,10 @@
-package mq
+package impls
 
 import (
-	"errors"
 	"fmt"
-)
 
-var Nil = errors.New("nil")
+	"github.com/zhiyunliu/velocity/config"
+)
 
 //IMQP 消息生产
 type IMQP interface {
@@ -17,24 +16,27 @@ type IMQP interface {
 
 //imqpResover 定义配置文件转换方法
 type imqpResover interface {
-	Resolve(confRaw string) (IMQP, error)
+	Name() string
+	Resolve(setting *config.Setting) (IMQP, error)
 }
 
 var mqpResolvers = make(map[string]imqpResover)
 
 //RegisterProducer 注册配置文件适配器
-func RegisterProducer(proto string, resolver imqpResover) {
+func RegisterProducer(resolver imqpResover) {
+	proto := resolver.Name()
 	if _, ok := mqpResolvers[proto]; ok {
-		panic("mqp: 不能重复注册producer " + proto)
+		panic(fmt.Errorf("mqp: 不能重复注册:%s", proto))
 	}
 	mqpResolvers[proto] = resolver
 }
 
 //NewMQP 根据适配器名称及参数返回配置处理器
-func NewMQP(proto string, confRaw string) (IMQP, error) {
+func NewMQP(setting *config.Setting) (IMQP, error) {
+	proto := setting.GetProperty("proto")
 	resolver, ok := mqpResolvers[proto]
 	if !ok {
-		return nil, fmt.Errorf("mqp: 不支持的消息协议 %s", proto)
+		return nil, fmt.Errorf("mqp: 未知的协议类型:%s", proto)
 	}
-	return resolver.Resolve(confRaw)
+	return resolver.Resolve(setting)
 }

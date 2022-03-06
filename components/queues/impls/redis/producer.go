@@ -2,28 +2,23 @@ package redis
 
 import (
 	rds "github.com/go-redis/redis"
-	"github.com/micro-plat/hydra/components/pkgs/redis"
 	"github.com/micro-plat/hydra/components/queues/mq"
-	"github.com/micro-plat/hydra/conf/vars/queue/queueredis"
-	varredis "github.com/micro-plat/hydra/conf/vars/redis"
+	"github.com/zhiyunliu/velocity/components/queues/impls"
+	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/velocity/plugins/redis"
 )
 
 // Producer memcache配置文件
 type Producer struct {
-	servers  []string
-	client   *redis.Client
-	confOpts *varredis.Redis
-}
-
-// NewProducerByRaw 根据配置文件创建一个redis连接
-func NewProducerByRaw(cfg string) (m *Producer, err error) {
-	return NewProducerByConfig(varredis.NewByRaw(cfg))
+	servers []string
+	client  *redis.Client
+	setting *config.Setting
 }
 
 // NewProducerByConfig 根据配置文件创建一个redis连接
-func NewProducerByConfig(confOpts *varredis.Redis) (m *Producer, err error) {
-	m = &Producer{confOpts: confOpts}
-	m.client, err = redis.NewByConfig(m.confOpts)
+func NewProducer(setting *config.Setting) (m *Producer, err error) {
+	m = &Producer{setting: setting}
+	m.client, err = redis.NewByConfig(m.setting)
 	if err != nil {
 		return
 	}
@@ -58,9 +53,12 @@ func (c *Producer) Close() error {
 type producerResolver struct {
 }
 
-func (s *producerResolver) Resolve(confRaw string) (mq.IMQP, error) {
-	return NewProducerByRaw(queueredis.NewByRaw(confRaw).GetRaw())
+func (s *producerResolver) Name() string {
+	return Proto
+}
+func (s *producerResolver) Resolve(setting *config.Setting) (impls.IMQP, error) {
+	return NewProducer(setting)
 }
 func init() {
-	mq.RegisterProducer("redis", &producerResolver{})
+	impls.RegisterProducer(&producerResolver{})
 }

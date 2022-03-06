@@ -34,14 +34,15 @@ func (c *nacosClient) Register(server server.Runnable) error {
 	})
 	return err
 }
-func (c *nacosClient) Deregister() error {
+func (c *nacosClient) Deregister(server server.Runnable) error {
 	_, err := c.namingClient.DeregisterInstance(vo.DeregisterInstanceParam{
-		Ip:          "10.0.0.11",
-		Port:        8848,
-		ServiceName: "demo.go",
+		Ip:          global.LocalIp,
+		Port:        server.Port(),
+		ServiceName: server.Name(),
 		Ephemeral:   true,
-		Cluster:     "cluster-a", // default value is DEFAULT
-		GroupName:   "group-a",   // default value is DEFAULT_GROUP
+		Cluster:     global.ClusterName, //       // default value is DEFAULT
+		GroupName:   global.GroupName,   // default value is DEFAULT_GROUP
+
 	})
 	return err
 }

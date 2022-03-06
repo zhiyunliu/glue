@@ -1,19 +1,17 @@
 package redis
 
 import (
+	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
 
-	"errors"
+	"github.com/zhiyunliu/velocity/components/queues/impls"
+	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/velocity/plugins/redis"
 
-	"github.com/micro-plat/hydra/components/pkgs/redis"
-	"github.com/micro-plat/hydra/components/queues/mq"
-	"github.com/micro-plat/hydra/conf/vars/queue/queueredis"
-	varredis "github.com/micro-plat/hydra/conf/vars/redis"
-
-	"github.com/micro-plat/lib4go/concurrent/cmap"
-	"github.com/micro-plat/lib4go/logger"
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zkfy/stompngo"
 )
 
@@ -24,116 +22,112 @@ type consumerChan struct {
 
 //Consumer Consumer
 type Consumer struct {
-	address    string
-	client     *redis.Client
-	queues     cmap.ConcurrentMap
-	connecting bool
-	closeCh    chan struct{}
-	done       bool
-	lk         sync.Mutex
-	header     []string
-	once       sync.Once
-	log        logger.ILogger
-	ConfOpts   *varredis.Redis
+	client  *redis.Client
+	queues  cmap.ConcurrentMap
+	closeCh chan struct{}
+	once    sync.Once
+	setting *config.Setting
 }
 
-//NewConsumerByRaw 创建新的Consumer
-func NewConsumerByRaw(cfg string) (consumer *Consumer, err error) {
-	return NewConsumerByConfig(varredis.NewByRaw(cfg))
+type QueueItem struct {
+	QueueName    string
+	Concurrency  int //等于0 ，代表不限制
+	BlockTimeout int
+
+	onceLock      sync.Once
+	unconsumeChan chan struct{}
+	consumer      *Consumer
+	callback      impls.ConsumeCallback
+}
+
+func (item *QueueItem) ReceiveStart() {
+	go doReceiveMsg(item)
+}
+
+func (item *QueueItem) ReceiveStop() {
+	item.onceLock.Do(func() {
+		close(item.unconsumeChan)
+	})
 }
 
 //NewConsumerByConfig 创建新的Consumer
-func NewConsumerByConfig(cfg *varredis.Redis) (consumer *Consumer, err error) {
-	consumer = &Consumer{log: logger.GetSession("mq.redis", logger.CreateSession())}
-	consumer.ConfOpts = cfg
+func NewConsumer(setting *config.Setting) (consumer *Consumer, err error) {
+	consumer = &Consumer{}
+	consumer.setting = setting
 
 	consumer.closeCh = make(chan struct{})
-	consumer.queues = cmap.New(2)
+	consumer.queues = cmap.New()
 	return
 }
 
 //Connect  连接服务器
 func (consumer *Consumer) Connect() (err error) {
-	consumer.client, err = redis.NewByConfig(consumer.ConfOpts)
+	consumer.client, err = redis.NewByConfig(consumer.setting)
 	return
 }
 
 //Consume 注册消费信息
-func (consumer *Consumer) Consume(queue string, concurrency int, callback func(mq.IMQCMessage)) (err error) {
+func (consumer *Consumer) Consume(queue string, callback impls.ConsumeCallback) (err error) {
 	if strings.EqualFold(queue, "") {
-		return errors.New("队列名字不能为空")
+		return fmt.Errorf("队列名字不能为空")
 	}
 	if callback == nil {
-		return errors.New("回调函数不能为nil")
+		return fmt.Errorf("queue:%s,回调函数不能为nil", queue)
+	}
+	item := &QueueItem{
+		QueueName:    queue,
+		BlockTimeout: 2,
+
+		unconsumeChan: make(chan struct{}),
+		consumer:      consumer,
+		callback:      callback,
 	}
 
-	_, _, err = consumer.queues.SetIfAbsentCb(queue, func(input ...interface{}) (c interface{}, err error) {
-		queue := input[0].(string)
-		unconsumeCh := make(chan struct{}, 1)
-		nconcurrency := concurrency
-		if concurrency <= 0 {
-			nconcurrency = 10
-		}
-		msgChan := make(chan *RedisMessage, nconcurrency)
-		for i := 0; i < nconcurrency; i++ {
-			go func() {
-			START:
-				for {
-					select {
-					case message, ok := <-msgChan:
-						if !ok {
-							break START
-						}
-						if concurrency == 0 {
-							//默认10个线程获取任务，开启新协程处理任务
-							go callback(message)
-						} else {
-							callback(message)
-						}
-					}
-				}
-			}()
-		}
-
-		go func() {
-		START:
-			for {
-				select {
-				case <-consumer.closeCh:
-					break START
-				case <-unconsumeCh:
-					break START
-				case <-time.After(time.Millisecond * (time.Duration((1000 / nconcurrency / 2)) + 1)):
-					if consumer.client != nil && !consumer.done {
-						cmd := consumer.client.BLPop(time.Second, queue)
-						if err := cmd.Err(); err != nil {
-							if !consumer.done && err.Error() != "redis: nil" {
-								consumer.log.Error("从redis中获取消息失败:%w", err)
-							}
-							continue
-						}
-						message := NewRedisMessage(cmd)
-						if message.Has() {
-							msgChan <- message
-						}
-					}
-
-				}
-			}
-			close(msgChan)
-		}()
-		return unconsumeCh, nil
-	}, queue)
+	success := consumer.queues.SetIfAbsent(queue, item)
+	if success {
+		item.ReceiveStart()
+	}
 	return
 }
 
+func doReceiveMsg(item *QueueItem) {
+	consumer := item.Consumer
+	unconsumeChan := item.UnconsumeChan
+	client := consumer.client
+	queue := item.QueueName
+	callback := item.callback
+
+	for {
+		select {
+		case <-consumer.closeCh:
+			return
+		case <-unconsumeChan:
+			return
+		default:
+			cmd := client.BLPop(time.Duration(item.BlockTimeout)*time.Second, queue)
+			msgs, err := cmd.Result()
+			if err != nil {
+				log.Printf("BLPop.%s,Error:%+v", queue, err)
+				time.Sleep(time.Second)
+				continue
+			}
+			hasData := len(msgs) > 0
+			if !hasData {
+				continue
+			}
+			ndata := msgs[len(msgs)-1]
+			go callback(&RedisMessage{Message: ndata, HasData: hasData})
+		}
+	}
+}
+
 //UnConsume 取消注册消费
-func (consumer *Consumer) UnConsume(queue string) {
+func (consumer *Consumer) Unconsume(queue string) {
 	if consumer.client == nil {
 		return
 	}
-	if c, ok := consumer.queues.Get(queue); ok {
-		close(c.(chan struct{}))
+	if item, ok := consumer.queues.Get(queue); ok {
+		item.(*QueueItem).ReceiveStop()
 	}
 	consumer.queues.Remove(queue)
 }
@@ -141,15 +135,13 @@ func (consumer *Consumer) UnConsume(queue string) {
 //Close 关闭当前连接
 func (consumer *Consumer) Close() {
 	consumer.once.Do(func() {
-		consumer.done = true
 		close(consumer.closeCh)
 	})
 
-	consumer.queues.RemoveIterCb(func(key string, value interface{}) bool {
-		ch := value.(chan struct{})
-		close(ch)
-		return true
-	})
+	for item := range consumer.queues.IterBuffered() {
+		item.Val.(*QueueItem).ReceiveStop()
+	}
+
 	if consumer.client == nil {
 		return
 	}
@@ -157,15 +149,16 @@ func (consumer *Consumer) Close() {
 
 }
 
-type cresolver struct {
+type consumeResolver struct {
 }
 
-func (s *cresolver) Resolve(confRaw string) (mq.IMQC, error) {
-	return NewConsumerByRaw(queueredis.NewByRaw(confRaw).GetRaw())
+func (s *consumeResolver) Name() string {
+	return Proto
+}
+
+func (s *consumeResolver) Resolve(setting *config.Setting) (impls.IMQC, error) {
+	return NewConsumer(setting)
 }
 func init() {
-	mq.RegisterConsumer(Proto, &cresolver{})
+	impls.RegisterConsumer(&consumeResolver{})
 }
-
-//Proto redis
-const Proto = "redis"

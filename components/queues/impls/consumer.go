@@ -1,7 +1,9 @@
-package mq
+package impls
 
 import (
 	"fmt"
+
+	"github.com/zhiyunliu/velocity/config"
 )
 
 //IMQCMessage  队列消息
@@ -11,35 +13,39 @@ type IMQCMessage interface {
 	GetMessage() string
 }
 
+type ConsumeCallback func(IMQCMessage)
+
 //IMQC consumer接口
 type IMQC interface {
 	Connect() error
-	Consume(queue string, concurrency int, callback func(IMQCMessage)) (err error)
-	UnConsume(queue string)
+	Consume(queue string, callback ConsumeCallback) (err error)
+	Unconsume(queue string)
 	Close()
 }
 
 //mqcResover 定义消息消费解析器
 type mqcResover interface {
-	Resolve(confRaw string) (IMQC, error)
+	Name() string
+	Resolve(setting *config.Setting) (IMQC, error)
 }
 
 var mqcResolvers = make(map[string]mqcResover)
 
 //RegisterConsumer 注册消息消费
-func RegisterConsumer(adapter string, resolver mqcResover) {
-	if _, ok := mqcResolvers[adapter]; ok {
-		panic("mqc: 不能重复注册mqc " + adapter)
+func RegisterConsumer(resolver mqcResover) {
+	name := resolver.Name()
+	if _, ok := mqcResolvers[name]; ok {
+		panic(fmt.Errorf("mqc: 不能重复注册:%s", name))
 	}
-	mqcResolvers[adapter] = resolver
+	mqcResolvers[name] = resolver
 }
 
 //NewMQC 根据适配器名称及参数返回配置处理器
-func NewMQC(proto string, confRaw string) (IMQC, error) {
-
+func NewMQC(setting *config.Setting) (IMQC, error) {
+	proto := setting.GetProperty("proto")
 	resolver, ok := mqcResolvers[proto]
 	if !ok {
-		return nil, fmt.Errorf("mqc: 未知的协议类型 %s", proto)
+		return nil, fmt.Errorf("mqc: 未知的协议类型:%s", proto)
 	}
-	return resolver.Resolve(confRaw)
+	return resolver.Resolve(setting)
 }

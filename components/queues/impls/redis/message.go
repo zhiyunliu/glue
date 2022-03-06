@@ -1,9 +1,5 @@
 package redis
 
-import (
-	"github.com/go-redis/redis"
-)
-
 //RedisMessage reids消息
 type RedisMessage struct {
 	Message string
@@ -28,15 +24,4 @@ func (m *RedisMessage) GetMessage() string {
 //Has 是否有数据
 func (m *RedisMessage) Has() bool {
 	return m.HasData
-}
-
-//NewRedisMessage 创建消息
-func NewRedisMessage(cmd *redis.StringSliceCmd) *RedisMessage {
-	msg, err := cmd.Result()
-	hasData := err == nil && len(msg) > 0
-	ndata := ""
-	if hasData {
-		ndata = msg[len(msg)-1]
-	}
-	return &RedisMessage{Message: ndata, HasData: hasData}
 }

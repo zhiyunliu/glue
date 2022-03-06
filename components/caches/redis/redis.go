@@ -1,30 +1,16 @@
-package cache
+package redis
 
 import (
 	"time"
 
-	redis "github.com/go-redis/redis/v7"
+	"github.com/zhiyunliu/velocity/components/caches"
+	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/velocity/plugins/redis"
 )
-
-// NewRedis redis模式
-func NewRedis(client *redis.Client) (*Redis, error) {
-	r := &Redis{
-		client: client,
-	}
-	err := r.connect()
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
-}
 
 // Redis cache implement
 type Redis struct {
 	client *redis.Client
-}
-
-func (*Redis) String() string {
-	return "redis"
 }
 
 // connect connect test
@@ -32,6 +18,9 @@ func (r *Redis) connect() error {
 	var err error
 	_, err = r.client.Ping().Result()
 	return err
+}
+func (r *Redis) Name() string {
+	return Proto
 }
 
 // Get from key
@@ -69,11 +58,27 @@ func (r *Redis) Decrease(key string) error {
 }
 
 // Set ttl
-func (r *Redis) Expire(key string, dur time.Duration) error {
-	return r.client.Expire(key, dur).Err()
+func (r *Redis) Expire(key string, expire int) error {
+	return r.client.Expire(key, time.Duration(expire)*time.Second).Err()
 }
 
 // GetImpl 暴露原生client
 func (r *Redis) GetImpl() interface{} {
 	return r.client
+}
+
+type redisResolver struct {
+}
+
+func (s *redisResolver) Name() string {
+	return Proto
+}
+func (s *redisResolver) Resolve(setting *config.Setting) (caches.ICache, error) {
+	client, err := redis.NewByConfig(setting)
+	return &Redis{
+		client: client,
+	}, err
+}
+func init() {
+	caches.RegisterCache(&redisResolver{})
 }
