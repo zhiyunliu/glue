@@ -3,10 +3,15 @@ package mqc
 import (
 	"fmt"
 	"sync"
-	"time"
 
+	"github.com/micro-plat/hydra/components/queues/mq"
 	"github.com/micro-plat/hydra/conf/server/queue"
+	"github.com/micro-plat/hydra/conf/server/router"
+	"github.com/micro-plat/hydra/hydra/servers/pkg/adapter"
+	"github.com/micro-plat/hydra/hydra/servers/pkg/middleware"
 	cmap "github.com/orcaman/concurrent-map"
+	"github.com/zhiyunliu/velocity/components/queues/impls"
+	"github.com/zhiyunliu/velocity/server/pkgs/dispatcher"
 	"github.com/zhiyunliu/velocity/server/pkgs/status"
 )
 
@@ -15,10 +20,9 @@ type Processor struct {
 	lock      sync.Mutex
 	closeChan chan struct{}
 	queues    cmap.ConcurrentMap
-	startTime time.Time
 	consumer  mq.IMQC
 	status    int
-	engine    *pkgs.DispatcherEngine
+	engine    *dispatcher.Engine
 }
 
 //NewProcessor 创建processor
@@ -26,7 +30,6 @@ func NewProcessor(proto string, confRaw string, routers ...*router.Router) (p *P
 	p = &Processor{
 		status:    status.Unstarted,
 		closeChan: make(chan struct{}),
-		startTime: time.Now(),
 		queues:    cmap.New(),
 	}
 
@@ -124,7 +127,7 @@ func (s *Processor) Resume() (bool, error) {
 	return false, nil
 }
 func (s *Processor) consume(queue *queue.Queue) error {
-	if err := s.customer.Consume(queue.Queue, queue.Concurrency, s.handle(queue)); err != nil {
+	if err := s.customer.Consume(queue.Queue, queue.Concurrency, s.handleCallback(queue)); err != nil {
 		return err
 	}
 	return nil
@@ -135,8 +138,8 @@ func (s *Processor) Close() {
 
 }
 
-func (s *Processor) handle(queue *queue.Queue) func(mq.IMQCMessage) {
-	return func(m mq.IMQCMessage) {
+func (s *Processor) handleCallback(queue *queue.Queue) func(impls.IMQCMessage) {
+	return func(m impls.IMQCMessage) {
 		req, err := NewRequest(queue, m)
 		if err != nil {
 			panic(err)
