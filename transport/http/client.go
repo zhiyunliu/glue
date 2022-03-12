@@ -9,15 +9,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/encoding"
-	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/internal/host"
-	"github.com/go-kratos/kratos/v2/internal/httputil"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/registry"
-	"github.com/go-kratos/kratos/v2/selector"
-	"github.com/go-kratos/kratos/v2/selector/wrr"
-	"github.com/go-kratos/kratos/v2/transport"
+	"github.com/zhiyunliu/velocity/encoding"
+	"github.com/zhiyunliu/velocity/errors"
+	"github.com/zhiyunliu/velocity/internal/host"
+	"github.com/zhiyunliu/velocity/internal/httputil"
+	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/velocity/selector"
+	"github.com/zhiyunliu/velocity/selector/wrr"
+	"github.com/zhiyunliu/velocity/transport"
 )
 
 // DecodeErrorFunc is decode error func.

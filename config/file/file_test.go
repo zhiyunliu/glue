@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/config"
+	"github.com/zhiyunliu/velocity/config"
 )
 
 const (

@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/metrics"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/transport"
+	"github.com/zhiyunliu/velocity/errors"
+	"github.com/zhiyunliu/velocity/metrics"
+	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/velocity/transport"
 )
 
 // Option is metrics option.

@@ -5,9 +5,9 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/micro-plat/lib4go/types"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/zhiyunliu/velocity/libs/types"
-	log "github.com/zhiyunliu/velocity/logger"
+	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/server"
 )
 

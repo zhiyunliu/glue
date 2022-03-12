@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/registry"
-	"github.com/go-kratos/kratos/v2/selector"
-	"github.com/go-kratos/kratos/v2/selector/wrr"
-	"github.com/go-kratos/kratos/v2/transport"
-	"github.com/go-kratos/kratos/v2/transport/grpc/resolver/discovery"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/velocity/selector"
+	"github.com/zhiyunliu/velocity/selector/wrr"
+	"github.com/zhiyunliu/velocity/transport"
+	"github.com/zhiyunliu/velocity/transport/grpc/resolver/discovery"
 
 	// init resolver
-	_ "github.com/go-kratos/kratos/v2/transport/grpc/resolver/direct"
+	_ "github.com/zhiyunliu/velocity/transport/grpc/resolver/direct"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

@@ -9,12 +9,12 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/internal/endpoint"
+	"github.com/zhiyunliu/velocity/internal/endpoint"
 
-	"github.com/go-kratos/kratos/v2/internal/host"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/transport"
+	"github.com/zhiyunliu/velocity/internal/host"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/velocity/transport"
 
 	"github.com/gorilla/mux"
 )
@@ -51,7 +51,7 @@ func Timeout(timeout time.Duration) ServerOption {
 // Logger with server logger.
 func Logger(logger log.Logger) ServerOption {
 	return func(s *Server) {
-		s.log = log.NewHelper(logger)
+		s.log = log.NewWrapper(logger)
 	}
 }
 
@@ -130,7 +130,7 @@ type Server struct {
 	ene         EncodeErrorFunc
 	strictSlash bool
 	router      *mux.Router
-	log         *log.Helper
+	log         *log.Wrapper
 }
 
 // NewServer creates an HTTP server by options.
@@ -143,7 +143,7 @@ func NewServer(opts ...ServerOption) *Server {
 		enc:         DefaultResponseEncoder,
 		ene:         DefaultErrorEncoder,
 		strictSlash: true,
-		log:         log.NewHelper(log.GetLogger()),
+		log:         log.NewWrapper(log.GetLogger()),
 	}
 	for _, o := range opts {
 		o(srv)

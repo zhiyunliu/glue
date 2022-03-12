@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/transport/http/binding"
 	"github.com/gorilla/mux"
+	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/velocity/transport/http/binding"
 )
 
 var _ Context = (*wrapper)(nil)

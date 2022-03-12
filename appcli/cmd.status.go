@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
+	RegisterFunc(func(cfg *cliOptions) cli.Command {
 		return cli.Command{
 			Name:   "status",
 			Usage:  "查询状态，查询服务器运行、停止状态",
@@ -18,7 +18,7 @@ func init() {
 
 func doStatus(c *cli.Context) (err error) {
 
-	//3.创建本地服务
+	//创建本地服务
 	velocitySrv, err := getService(c)
 	if err != nil {
 		return err

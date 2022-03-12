@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/registry"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/registry"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/serviceconfig"
 )

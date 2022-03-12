@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/internal/endpoint"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/registry"
-	"github.com/go-kratos/kratos/v2/selector"
+	"github.com/zhiyunliu/velocity/internal/endpoint"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/velocity/selector"
 )
 
 // Target is resolver target
@@ -44,7 +44,7 @@ type resolver struct {
 
 	target  *Target
 	watcher registry.Watcher
-	logger  *log.Helper
+	logger  *log.Wrapper
 
 	insecure bool
 }
@@ -57,7 +57,7 @@ func newResolver(ctx context.Context, discovery registry.Discovery, target *Targ
 	r := &resolver{
 		target:     target,
 		watcher:    watcher,
-		logger:     log.NewHelper(log.GetLogger()),
+		logger:     log.NewWrapper(log.GetLogger()),
 		rebalancer: rebalancer,
 		insecure:   insecure,
 	}

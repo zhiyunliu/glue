@@ -4,9 +4,9 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware"
+	"github.com/zhiyunliu/velocity/errors"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/middleware"
 )
 
 // ErrUnknownRequest is unknown request error.
@@ -48,7 +48,7 @@ func Recovery(opts ...Option) middleware.Middleware {
 	for _, o := range opts {
 		o(&op)
 	}
-	logger := log.NewHelper(op.logger)
+	logger := log.NewWrapper(op.logger)
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
 			defer func() {

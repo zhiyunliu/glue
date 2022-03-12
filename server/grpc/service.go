@@ -14,7 +14,7 @@ import (
 
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
-	log "github.com/zhiyunliu/velocity/logger"
+	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/server/grpc/interceptors/logging"
 	reqtags "github.com/zhiyunliu/velocity/server/grpc/interceptors/request_tag"
 	"google.golang.org/grpc"

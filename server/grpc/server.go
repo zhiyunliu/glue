@@ -14,9 +14,9 @@ import (
 	"net"
 	"sync"
 
-	logger "github.com/zhiyunliu/velocity/logger"
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/zhiyunliu/velocity/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 )
@@ -98,11 +98,11 @@ func (e *Server) Start(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("gRPC Server listening on %s failed: %w", e.options.addr, err)
 	}
-	logger.Infof("gRPC Server listening on %s", ts.Addr().String())
+	log.Infof("gRPC Server listening on %s", ts.Addr().String())
 
 	go func() {
 		if err = e.srv.Serve(ts); err != nil {
-			logger.Errorf("gRPC Server start error: %s", err.Error())
+			log.Errorf("gRPC Server start error: %s", err.Error())
 		}
 	}()
 	e.started = true
@@ -116,7 +116,7 @@ func (e *Server) Attempt() bool {
 
 func (e *Server) Shutdown(ctx context.Context) error {
 	<-ctx.Done()
-	logger.Info("gRPC Server will be shutdown gracefully")
+	log.Info("gRPC Server will be shutdown gracefully")
 	e.srv.GracefulStop()
 	return nil
 }

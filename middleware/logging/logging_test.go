@@ -6,9 +6,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/transport"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/velocity/transport"
 )
 
 var _ transport.Transporter = &Transport{}

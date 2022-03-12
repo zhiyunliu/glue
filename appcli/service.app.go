@@ -9,8 +9,8 @@ import (
 	"github.com/kardianos/service"
 	"github.com/urfave/cli"
 	"github.com/zhiyunliu/velocity/appcli/keys"
+	"github.com/zhiyunliu/velocity/extlib/xsecurity"
 	"github.com/zhiyunliu/velocity/global"
-	"github.com/zhiyunliu/velocity/libs/security"
 	"github.com/zhiyunliu/velocity/server"
 )
 
@@ -42,10 +42,10 @@ func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 }
 
 //GetSrvConfig SrvCfg
-func GetSrvConfig(opts *Options, args ...string) *service.Config {
+func GetSrvConfig(opts *options, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 	fileName := filepath.Base(path)
-	svcName := fmt.Sprintf("%s_%s", fileName, security.Md5(path)[:8])
+	svcName := fmt.Sprintf("%s_%s", fileName, xsecurity.Md5(path)[:8])
 
 	cfg := &service.Config{
 		Name:         svcName,

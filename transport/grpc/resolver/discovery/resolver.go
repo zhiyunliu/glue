@@ -6,9 +6,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/internal/endpoint"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/registry"
+	"github.com/zhiyunliu/velocity/internal/endpoint"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/registry"
 	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/resolver"
 )
@@ -16,7 +16,7 @@ import (
 type discoveryResolver struct {
 	w   registry.Watcher
 	cc  resolver.ClientConn
-	log *log.Helper
+	log *log.Wrapper
 
 	ctx    context.Context
 	cancel context.CancelFunc

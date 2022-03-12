@@ -7,6 +7,7 @@ import (
 
 // Server is transport server.
 type Server interface {
+	Name() string
 	Start(context.Context) error
 	Stop(context.Context) error
 }

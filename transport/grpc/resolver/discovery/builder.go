@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/registry"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/registry"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -83,7 +83,7 @@ func (b *builder) Build(target resolver.Target, cc resolver.ClientConn, opts res
 		cc:       cc,
 		ctx:      ctx,
 		cancel:   cancel,
-		log:      log.NewHelper(b.logger),
+		log:      log.NewWrapper(b.logger),
 		insecure: b.insecure,
 	}
 	go r.watch()

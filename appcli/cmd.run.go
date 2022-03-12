@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
+	RegisterFunc(func(cfg *cliOptions) cli.Command {
 		flags := getFlags(cfg)
 		return cli.Command{
 			Name:   "run",
@@ -20,6 +20,7 @@ func init() {
 
 //doRun 服务启动
 func doRun(c *cli.Context) (err error) {
+
 	srv, err := getService(c, os.Args[2:]...)
 	if err != nil {
 		return err

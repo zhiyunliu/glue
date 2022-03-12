@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
+	RegisterFunc(func(cfg *cliOptions) cli.Command {
 		return cli.Command{
 			Name:   "remove",
 			Usage:  "删除服务，从本地服务器移除服务",

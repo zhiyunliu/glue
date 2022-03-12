@@ -3,12 +3,12 @@ package grpc
 import (
 	"sync"
 
-	"github.com/go-kratos/kratos/v2/registry"
-	"github.com/go-kratos/kratos/v2/selector"
-	"github.com/go-kratos/kratos/v2/selector/p2c"
-	"github.com/go-kratos/kratos/v2/selector/random"
-	"github.com/go-kratos/kratos/v2/selector/wrr"
-	"github.com/go-kratos/kratos/v2/transport"
+	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/velocity/selector"
+	"github.com/zhiyunliu/velocity/selector/p2c"
+	"github.com/zhiyunliu/velocity/selector/random"
+	"github.com/zhiyunliu/velocity/selector/wrr"
+	"github.com/zhiyunliu/velocity/transport"
 
 	gBalancer "google.golang.org/grpc/balancer"
 	"google.golang.org/grpc/balancer/base"

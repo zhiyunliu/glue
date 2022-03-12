@@ -12,7 +12,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/zhiyunliu/velocity/logger"
+	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/server/grpc/interceptors/logging/ctxlog"
 	"google.golang.org/grpc"
 )
@@ -56,7 +56,7 @@ func StreamClientInterceptor(opts ...Option) grpc.StreamClientInterceptor {
 	}
 }
 
-func logFinalClientLine(o *options, l *logger.Wrapper, start time.Time, err error, msg string) {
+func logFinalClientLine(o *options, l *log.Wrapper, start time.Time, err error, msg string) {
 	code := o.codeFunc(err)
 	level := o.levelFunc(code)
 

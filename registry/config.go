@@ -1,8 +1,8 @@
 package registry
 
-import "github.com/zhiyunliu/velocity/libs/types"
+import "github.com/zhiyunliu/velocity/extlib/xtypes"
 
 type Config struct {
-	Proto string     `json:"proto"`
-	Data  types.XMap `json:"-"`
+	Proto string      `json:"proto"`
+	Data  xtypes.XMap `json:"-"`
 }

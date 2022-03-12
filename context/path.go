@@ -3,11 +3,11 @@ package context
 import (
 	"net/url"
 
-	"github.com/zhiyunliu/velocity/libs/types"
+	"github.com/zhiyunliu/velocity/extlib/xtypes"
 )
 
 type Path interface {
 	GetURL() *url.URL
 	FullPath() string
-	Params() types.SMap
+	Params() xtypes.SMap
 }

@@ -1,10 +1,12 @@
 package context
 
+import "github.com/zhiyunliu/velocity/extlib/xtypes"
+
 type Request interface {
 	GetMethod() string
 	Headers() Header
 	Header(key string) string
-	UserInfo() UserInfo
+	UserInfo() xtypes.XMap
 	Path() Path
 	Query() Query
 	Body() Body

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/registry"
-	"github.com/go-kratos/kratos/v2/selector"
+	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/velocity/selector"
 )
 
 func TestParseTarget(t *testing.T) {

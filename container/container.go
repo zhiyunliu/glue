@@ -15,7 +15,7 @@ type ICloser interface {
 	Close() error
 }
 
-type CreateFunc func(setting *config.Setting) (interface{}, error)
+type CreateFunc func(setting config.Config) (interface{}, error)
 
 //IContainer 组件容器
 type IContainer interface {

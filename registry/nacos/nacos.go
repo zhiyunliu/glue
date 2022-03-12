@@ -1,12 +1,12 @@
 package nacos
 
 import (
+	"github.com/micro-plat/lib4go/types"
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/zhiyunliu/velocity/global"
-	"github.com/zhiyunliu/velocity/libs/types"
 	"github.com/zhiyunliu/velocity/registry"
 	"github.com/zhiyunliu/velocity/server"
 )

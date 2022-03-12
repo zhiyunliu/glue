@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/registry"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/registry"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -56,7 +56,7 @@ func TestWatch(t *testing.T) {
 	r := &discoveryResolver{
 		w:        &testWatch{},
 		cc:       &testClientConn{te: t},
-		log:      log.NewHelper(log.GetLogger()),
+		log:      log.NewWrapper(log.GetLogger()),
 		ctx:      ctx,
 		cancel:   cancel,
 		insecure: false,
@@ -75,7 +75,7 @@ func TestWatchError(t *testing.T) {
 	r := &discoveryResolver{
 		w:      &testWatch{err: errors.New("bad")},
 		cc:     &testClientConn{te: t},
-		log:    log.NewHelper(log.GetLogger()),
+		log:    log.NewWrapper(log.GetLogger()),
 		ctx:    ctx,
 		cancel: cancel,
 	}
@@ -93,7 +93,7 @@ func TestWatchContextCancel(t *testing.T) {
 	r := &discoveryResolver{
 		w:      &testWatch{err: context.Canceled},
 		cc:     &testClientConn{te: t},
-		log:    log.NewHelper(log.GetLogger()),
+		log:    log.NewWrapper(log.GetLogger()),
 		ctx:    ctx,
 		cancel: cancel,
 	}

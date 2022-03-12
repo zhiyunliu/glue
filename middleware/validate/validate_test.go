@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/middleware"
+	"github.com/zhiyunliu/velocity/errors"
+	"github.com/zhiyunliu/velocity/middleware"
 )
 
 // protoVali implement validate.validator

@@ -1,9 +1,9 @@
 package context
 
-import "github.com/zhiyunliu/velocity/libs/types"
+import "github.com/zhiyunliu/velocity/extlib/xtypes"
 
 type Query interface {
 	Get(name string) string
-	XMap() types.SMap
+	XMap() xtypes.SMap
 	Scan(obj interface{}) error
 }

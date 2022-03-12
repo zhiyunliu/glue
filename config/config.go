@@ -8,10 +8,6 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/velocity/log"
-
-	// init encoding
-	_ "github.com/go-kratos/kratos/v2/encoding/json"
-	_ "github.com/go-kratos/kratos/v2/encoding/yaml"
 )
 
 var (
@@ -41,13 +37,13 @@ type config struct {
 	cached    sync.Map
 	observers sync.Map
 	watchers  []Watcher
-	log       *log.Helper
+	log       *log.Wrapper
 }
 
 // New new a config with options.
 func New(opts ...Option) Config {
 	o := options{
-		logger:   log.GetLogger(),
+		logger:   log.DefaultLogger,
 		decoder:  defaultDecoder,
 		resolver: defaultResolver,
 	}
@@ -57,7 +53,7 @@ func New(opts ...Option) Config {
 	return &config{
 		opts:   o,
 		reader: newReader(o),
-		log:    log.NewHelper(o.logger),
+		log:    log.NewWrapper(o.logger),
 	}
 }
 

@@ -1,18 +1,34 @@
 package appcli
 
-import "github.com/zhiyunliu/velocity/config"
+import (
+	"net/url"
+	"time"
+
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/velocity/transport"
+)
+
+type cliOptions struct {
+	IsDebug  bool
+	IPMask   string
+	File     string
+	Registry string
+}
 
 type Options struct {
-	Config  config.Config
-	IsDebug bool
-	IPMask  string
+	Id        string
+	Name      string
+	Version   string
+	Metadata  map[string]string
+	Endpoints []*url.URL
+
+	Logger           *log.Wrapper
+	Registrar        registry.Registrar
+	RegistrarTimeout time.Duration
+	StopTimeout      time.Duration
+	Servers          []transport.Server
 }
 
 //Option 配置选项
 type Option func(*Options)
-
-func WithConfig(cfgVal config.Config) Option {
-	return func(o *Options) {
-		o.Config = cfgVal
-	}
-}

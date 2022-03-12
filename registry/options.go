@@ -1,10 +1,12 @@
 package registry
 
-import "github.com/zhiyunliu/velocity/libs/types"
+import (
+	"github.com/zhiyunliu/velocity/metadata"
+)
 
 type Options struct {
 	cfg      *Config
-	Metadata types.XMap
+	Metadata metadata.Metadata
 }
 
 type Option func(*Options)

@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
+	RegisterFunc(func(cfg *cliOptions) cli.Command {
 		return cli.Command{
 			Name:   "stop",
 			Usage:  "停止服务，停止服务器运行",

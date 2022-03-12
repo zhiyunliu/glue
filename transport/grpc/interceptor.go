@@ -3,9 +3,9 @@ package grpc
 import (
 	"context"
 
-	ic "github.com/go-kratos/kratos/v2/internal/context"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/transport"
+	ic "github.com/zhiyunliu/velocity/internal/context"
+	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/velocity/transport"
 	"google.golang.org/grpc"
 	grpcmd "google.golang.org/grpc/metadata"
 )

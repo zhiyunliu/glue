@@ -1,8 +1,8 @@
 package grpc
 
 import (
-	"github.com/go-kratos/kratos/v2/selector"
-	"github.com/go-kratos/kratos/v2/transport"
+	"github.com/zhiyunliu/velocity/selector"
+	"github.com/zhiyunliu/velocity/transport"
 	"google.golang.org/grpc/metadata"
 )
 

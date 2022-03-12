@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
+	RegisterFunc(func(cfg *cliOptions) cli.Command {
 		return cli.Command{
 			Name:   "install",
 			Usage:  "安装服务，以服务方式安装到本地系统",

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	grpc_logging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
-	"github.com/zhiyunliu/velocity/logger"
+	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/server/grpc/interceptors/logging/ctxlog"
 	"google.golang.org/grpc/codes"
 )
@@ -40,7 +40,7 @@ type options struct {
 type Option func(*options)
 
 // CodeToLevel function defines the mapping between gRPC return codes and interceptor log level.
-type CodeToLevel func(code codes.Code) logger.Level
+type CodeToLevel func(code codes.Code) log.Level
 
 // DurationToField function defines how to produce duration fields for logging
 type DurationToField func(duration time.Duration) ctxlog.Fields
@@ -88,7 +88,7 @@ func WithTimestampFormat(format string) Option {
 }
 
 // MessageProducer produces a user defined log message
-type MessageProducer func(ctx context.Context, msg string, level logger.Level, code codes.Code, err error, duration ctxlog.Fields)
+type MessageProducer func(ctx context.Context, msg string, level log.Level, code codes.Code, err error, duration ctxlog.Fields)
 
 func evaluateServerOpt(opts []Option) *options {
 	optCopy := &options{}
@@ -111,86 +111,86 @@ func evaluateClientOpt(opts []Option) *options {
 }
 
 // DefaultCodeToLevel is the default implementation of gRPC return codes and interceptor log level for server side.
-func DefaultCodeToLevel(code codes.Code) logger.Level {
+func DefaultCodeToLevel(code codes.Code) log.Level {
 	switch code {
 	case codes.OK:
-		return logger.InfoLevel
+		return log.InfoLevel
 	case codes.Canceled:
-		return logger.InfoLevel
+		return log.InfoLevel
 	case codes.Unknown:
-		return logger.ErrorLevel
+		return log.ErrorLevel
 	case codes.InvalidArgument:
-		return logger.InfoLevel
+		return log.InfoLevel
 	case codes.DeadlineExceeded:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.NotFound:
-		return logger.InfoLevel
+		return log.InfoLevel
 	case codes.AlreadyExists:
-		return logger.InfoLevel
+		return log.InfoLevel
 	case codes.PermissionDenied:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.Unauthenticated:
-		return logger.InfoLevel // unauthenticated requests can happen
+		return log.InfoLevel // unauthenticated requests can happen
 	case codes.ResourceExhausted:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.FailedPrecondition:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.Aborted:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.OutOfRange:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.Unimplemented:
-		return logger.ErrorLevel
+		return log.ErrorLevel
 	case codes.Internal:
-		return logger.ErrorLevel
+		return log.ErrorLevel
 	case codes.Unavailable:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.DataLoss:
-		return logger.ErrorLevel
+		return log.ErrorLevel
 	default:
-		return logger.ErrorLevel
+		return log.ErrorLevel
 	}
 }
 
 // DefaultClientCodeToLevel is the default implementation of gRPC return codes to log levels for client side.
-func DefaultClientCodeToLevel(code codes.Code) logger.Level {
+func DefaultClientCodeToLevel(code codes.Code) log.Level {
 	switch code {
 	case codes.OK:
-		return logger.DebugLevel
+		return log.DebugLevel
 	case codes.Canceled:
-		return logger.DebugLevel
+		return log.DebugLevel
 	case codes.Unknown:
-		return logger.InfoLevel
+		return log.InfoLevel
 	case codes.InvalidArgument:
-		return logger.DebugLevel
+		return log.DebugLevel
 	case codes.DeadlineExceeded:
-		return logger.InfoLevel
+		return log.InfoLevel
 	case codes.NotFound:
-		return logger.DebugLevel
+		return log.DebugLevel
 	case codes.AlreadyExists:
-		return logger.DebugLevel
+		return log.DebugLevel
 	case codes.PermissionDenied:
-		return logger.InfoLevel
+		return log.InfoLevel
 	case codes.Unauthenticated:
-		return logger.InfoLevel // unauthenticated requests can happen
+		return log.InfoLevel // unauthenticated requests can happen
 	case codes.ResourceExhausted:
-		return logger.DebugLevel
+		return log.DebugLevel
 	case codes.FailedPrecondition:
-		return logger.DebugLevel
+		return log.DebugLevel
 	case codes.Aborted:
-		return logger.DebugLevel
+		return log.DebugLevel
 	case codes.OutOfRange:
-		return logger.DebugLevel
+		return log.DebugLevel
 	case codes.Unimplemented:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.Internal:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.Unavailable:
-		return logger.WarnLevel
+		return log.WarnLevel
 	case codes.DataLoss:
-		return logger.WarnLevel
+		return log.WarnLevel
 	default:
-		return logger.InfoLevel
+		return log.InfoLevel
 	}
 }
 
@@ -213,7 +213,7 @@ func durationToMilliseconds(duration time.Duration) float32 {
 }
 
 // DefaultMessageProducer writes the default message
-func DefaultMessageProducer(ctx context.Context, msg string, level logger.Level, code codes.Code, err error, duration ctxlog.Fields) {
+func DefaultMessageProducer(ctx context.Context, msg string, level log.Level, code codes.Code, err error, duration ctxlog.Fields) {
 	// re-extract logger from newCtx, as it may have extra fields that changed in the holder.
 	fields := duration
 	fields.Set("grpc.code", code.String())

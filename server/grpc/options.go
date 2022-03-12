@@ -18,7 +18,7 @@ import (
 	ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	log "github.com/zhiyunliu/velocity/logger"
+	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/server/grpc/interceptors/logging"
 	requesttag "github.com/zhiyunliu/velocity/server/grpc/interceptors/request_tag"
 	"google.golang.org/grpc"
@@ -167,6 +167,6 @@ func defaultOptions() *Options {
 func customRecovery(id, domain string) recovery.RecoveryHandlerFunc {
 	return func(p interface{}) (err error) {
 		log.Errorf("panic triggered: %v", p)
-		return fmt.Errorf("id:%s,domain:%s,error:%s", id, domain,"InternalServerError")
+		return fmt.Errorf("id:%s,domain:%s,error:%s", id, domain, "InternalServerError")
 	}
 }

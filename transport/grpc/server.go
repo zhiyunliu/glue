@@ -7,14 +7,14 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/internal/endpoint"
+	"github.com/zhiyunliu/velocity/internal/endpoint"
 
-	apimd "github.com/go-kratos/kratos/v2/api/metadata"
+	apimd "github.com/zhiyunliu/velocity/api/metadata"
 
-	"github.com/go-kratos/kratos/v2/internal/host"
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/transport"
+	"github.com/zhiyunliu/velocity/internal/host"
+	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/velocity/transport"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -56,7 +56,7 @@ func Timeout(timeout time.Duration) ServerOption {
 // Logger with server logger.
 func Logger(logger log.Logger) ServerOption {
 	return func(s *Server) {
-		s.log = log.NewHelper(logger)
+		s.log = log.NewWrapper(logger)
 	}
 }
 
@@ -113,7 +113,7 @@ type Server struct {
 	address    string
 	endpoint   *url.URL
 	timeout    time.Duration
-	log        *log.Helper
+	log        *log.Wrapper
 	middleware []middleware.Middleware
 	unaryInts  []grpc.UnaryServerInterceptor
 	streamInts []grpc.StreamServerInterceptor
@@ -130,7 +130,7 @@ func NewServer(opts ...ServerOption) *Server {
 		address: ":0",
 		timeout: 1 * time.Second,
 		health:  health.NewServer(),
-		log:     log.NewHelper(log.GetLogger()),
+		log:     log.NewWrapper(log.GetLogger()),
 	}
 	for _, o := range opts {
 		o(srv)
