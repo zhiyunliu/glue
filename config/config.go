@@ -1,107 +1,160 @@
-// Package config is an interface for dynamic configuration.
 package config
 
 import (
 	"context"
+	"errors"
+	"reflect"
+	"sync"
+	"time"
 
-	"github.com/zhiyunliu/velocity/config/loader"
-	"github.com/zhiyunliu/velocity/config/reader"
-	"github.com/zhiyunliu/velocity/config/source"
-	"github.com/zhiyunliu/velocity/config/source/file"
+	"github.com/zhiyunliu/velocity/log"
+
+	// init encoding
+	_ "github.com/go-kratos/kratos/v2/encoding/json"
+	_ "github.com/go-kratos/kratos/v2/encoding/yaml"
 )
-
-// Config is an interface abstraction for dynamic configuration
-type Config interface {
-	// Values provide the reader.Values interface
-	reader.Values
-	// Init the config
-	Init(opts ...Option) error
-	// Options in the config
-	Options() Options
-	// Close Stop the config loader/watcher
-	Close() error
-	// Load config sources
-	Load(source ...source.Source) error
-	// Sync Force a source changeset sync
-	Sync() error
-	// Watch a value for changes
-	Watch(path ...string) (Watcher, error)
-}
-
-// Watcher is the config watcher
-type Watcher interface {
-	Next() (reader.Value, error)
-	Stop() error
-}
-
-// Entity 配置实体
-type Entity interface {
-	OnChange()
-}
-
-// Options 配置的参数
-type Options struct {
-	Loader loader.Loader
-	Reader reader.Reader
-	Source []source.Source
-
-	// for alternative data
-	Context context.Context
-
-	Entity Entity
-}
-
-// Option 调用类型
-type Option func(o *Options)
 
 var (
-	// DefaultConfig Default Config Manager
-	DefaultConfig Config
+	// ErrNotFound is key not found.
+	ErrNotFound = errors.New("key not found")
+	// ErrTypeAssert is type assert error.
+	ErrTypeAssert = errors.New("type assert error")
+
+	_ Config = (*config)(nil)
 )
 
-// NewConfig returns new config
-func NewConfig(opts ...Option) (Config, error) {
-	return newConfig(opts...)
+// Observer is config observer.
+type Observer func(string, Value)
+
+// Config is a config interface.
+type Config interface {
+	Load() error
+	Scan(v interface{}) error
+	Value(key string) Value
+	Watch(key string, o Observer) error
+	Close() error
 }
 
-// Bytes Return config as raw json
-func Bytes() []byte {
-	return DefaultConfig.Bytes()
+type config struct {
+	opts      options
+	reader    Reader
+	cached    sync.Map
+	observers sync.Map
+	watchers  []Watcher
+	log       *log.Helper
 }
 
-// Map Return config as a map
-func Map() map[string]interface{} {
-	return DefaultConfig.Map()
+// New new a config with options.
+func New(opts ...Option) Config {
+	o := options{
+		logger:   log.GetLogger(),
+		decoder:  defaultDecoder,
+		resolver: defaultResolver,
+	}
+	for _, opt := range opts {
+		opt(&o)
+	}
+	return &config{
+		opts:   o,
+		reader: newReader(o),
+		log:    log.NewHelper(o.logger),
+	}
 }
 
-// Scan values to a go type
-func Scan(v interface{}) error {
-	return DefaultConfig.Scan(v)
+func (c *config) watch(w Watcher) {
+	for {
+		kvs, err := w.Next()
+		if errors.Is(err, context.Canceled) {
+			c.log.Infof("watcher's ctx cancel : %v", err)
+			return
+		}
+		if err != nil {
+			time.Sleep(time.Second)
+			c.log.Errorf("failed to watch next config: %v", err)
+			continue
+		}
+		if err := c.reader.Merge(kvs...); err != nil {
+			c.log.Errorf("failed to merge next config: %v", err)
+			continue
+		}
+		if err := c.reader.Resolve(); err != nil {
+			c.log.Errorf("failed to resolve next config: %v", err)
+			continue
+		}
+		c.cached.Range(func(key, value interface{}) bool {
+			k := key.(string)
+			v := value.(Value)
+			if n, ok := c.reader.Value(k); ok && reflect.TypeOf(n.Load()) == reflect.TypeOf(v.Load()) && !reflect.DeepEqual(n.Load(), v.Load()) {
+				v.Store(n.Load())
+				if o, ok := c.observers.Load(k); ok {
+					o.(Observer)(k, v)
+				}
+			}
+			return true
+		})
+	}
 }
 
-// Sync Force a source changeset sync
-func Sync() error {
-	return DefaultConfig.Sync()
+func (c *config) Load() error {
+	for _, src := range c.opts.sources {
+		kvs, err := src.Load()
+		if err != nil {
+			return err
+		}
+		for _, v := range kvs {
+			c.log.Infof("config loaded: %s format: %s", v.Key, v.Format)
+		}
+		if err = c.reader.Merge(kvs...); err != nil {
+			c.log.Errorf("failed to merge config source: %v", err)
+			return err
+		}
+		w, err := src.Watch()
+		if err != nil {
+			c.log.Errorf("failed to watch config source: %v", err)
+			return err
+		}
+		c.watchers = append(c.watchers, w)
+		go c.watch(w)
+	}
+	if err := c.reader.Resolve(); err != nil {
+		c.log.Errorf("failed to resolve config source: %v", err)
+		return err
+	}
+	return nil
 }
 
-// Get a value from the config
-func Get(path ...string) reader.Value {
-	return DefaultConfig.Get(path...)
+func (c *config) Value(key string) Value {
+	if v, ok := c.cached.Load(key); ok {
+		return v.(Value)
+	}
+	if v, ok := c.reader.Value(key); ok {
+		c.cached.Store(key, v)
+		return v
+	}
+	return &errValue{err: ErrNotFound}
 }
 
-// Load config sources
-func Load(source ...source.Source) error {
-	return DefaultConfig.Load(source...)
+func (c *config) Scan(v interface{}) error {
+	data, err := c.reader.Source()
+	if err != nil {
+		return err
+	}
+	return unmarshalJSON(data, v)
 }
 
-// Watch a value for changes
-func Watch(path ...string) (Watcher, error) {
-	return DefaultConfig.Watch(path...)
+func (c *config) Watch(key string, o Observer) error {
+	if v := c.Value(key); v.Load() == nil {
+		return ErrNotFound
+	}
+	c.observers.Store(key, o)
+	return nil
 }
 
-// LoadFile is short hand for creating a file source and loading it
-func LoadFile(path string) error {
-	return Load(file.NewSource(
-		file.WithPath(path),
-	))
+func (c *config) Close() error {
+	for _, w := range c.watchers {
+		if err := w.Stop(); err != nil {
+			return err
+		}
+	}
+	return nil
 }

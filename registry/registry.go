@@ -1,50 +1,47 @@
 package registry
 
-import (
-	"fmt"
+import "context"
 
-	"github.com/zhiyunliu/velocity/server"
-)
-
-//IRegistry 注册中心接口
-type IRegistry interface {
-	Register(server.Runnable)
-	Deregister(server.Runnable)
-	GetImpl() interface{}
+// Registrar is service registrar.
+type Registrar interface {
+	// Register the registration.
+	Register(ctx context.Context, service *ServiceInstance) error
+	// Deregister the registration.
+	Deregister(ctx context.Context, service *ServiceInstance) error
 }
 
-//IFactory 注册中心构建器
-type IFactory interface {
-	Name() string
-	Create(*Options) (IRegistry, error)
+// Discovery is service discovery.
+type Discovery interface {
+	// GetService return the service instances in memory according to the service name.
+	GetService(ctx context.Context, serviceName string) ([]*ServiceInstance, error)
+	// Watch creates a watcher according to the service name.
+	Watch(ctx context.Context, serviceName string) (Watcher, error)
 }
 
-var factoryMap = map[string]IFactory{}
-
-//Register 添加注册中心工厂对象
-func Register(factory IFactory) {
-	if factory == nil {
-		panic(fmt.Errorf("registry: factory is nil"))
-	}
-	name := factory.Name()
-	if _, ok := factoryMap[name]; ok {
-		panic(fmt.Errorf("registry: factory called twice:" + name))
-	}
-	factoryMap[name] = factory
+// Watcher is service watcher.
+type Watcher interface {
+	// Next returns services in the following two cases:
+	// 1.the first time to watch and the service instance list is not empty.
+	// 2.any service instance changes found.
+	// if the above two conditions are not met, it will block until context deadline exceeded or canceled
+	Next() ([]*ServiceInstance, error)
+	// Stop close the watcher.
+	Stop() error
 }
 
-func GetRegistry(cfg *Config, opts ...Option) (IRegistry, error) {
-	factory, ok := factoryMap[cfg.Proto]
-	if !ok {
-		return nil, fmt.Errorf("不支持的Proto类型[%s]", cfg.Proto)
-	}
-
-	opt := &Options{
-		cfg: cfg,
-	}
-	for i := range opts {
-		opts[i](opt)
-	}
-
-	return factory.Create(opt)
+// ServiceInstance is an instance of a service in a discovery system.
+type ServiceInstance struct {
+	// ID is the unique instance ID as registered.
+	ID string `json:"id"`
+	// Name is the service name as registered.
+	Name string `json:"name"`
+	// Version is the version of the compiled.
+	Version string `json:"version"`
+	// Metadata is the kv pair metadata associated with the service instance.
+	Metadata map[string]string `json:"metadata"`
+	// Endpoints is endpoint addresses of the service instance.
+	// schema:
+	//   http://127.0.0.1:8000?isSecure=false
+	//   grpc://127.0.0.1:9000?isSecure=false
+	Endpoints []string `json:"endpoints"`
 }
