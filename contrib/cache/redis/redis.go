@@ -3,7 +3,7 @@ package redis
 import (
 	"time"
 
-	"github.com/zhiyunliu/velocity/components/caches"
+	"github.com/zhiyunliu/velocity/cache"
 	"github.com/zhiyunliu/velocity/config"
 	"github.com/zhiyunliu/velocity/contrib/redis"
 )
@@ -73,12 +73,12 @@ type redisResolver struct {
 func (s *redisResolver) Name() string {
 	return Proto
 }
-func (s *redisResolver) Resolve(setting config.Config) (caches.ICache, error) {
+func (s *redisResolver) Resolve(setting config.Config) (cache.ICache, error) {
 	client, err := redis.NewByConfig(setting)
 	return &Redis{
 		client: client,
 	}, err
 }
 func init() {
-	caches.RegisterCache(&redisResolver{})
+	cache.RegisterCache(&redisResolver{})
 }

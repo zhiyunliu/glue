@@ -9,6 +9,6 @@ func FromContext(ctx context.Context) (Logger, bool) {
 	return l, ok
 }
 
-func NewContext(ctx context.Context, l Logger) context.Context {
+func WithContext(ctx context.Context, l Logger) context.Context {
 	return context.WithValue(ctx, &loggerKey{}, l)
 }

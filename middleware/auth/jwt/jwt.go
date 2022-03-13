@@ -1,9 +1,12 @@
 package jwt
 
 import (
-	"context"
 	"fmt"
 	"strings"
+
+	sysctx "context"
+
+	"github.com/zhiyunliu/velocity/context"
 
 	"github.com/golang-jwt/jwt/v4"
 
@@ -30,16 +33,16 @@ const (
 )
 
 var (
-	ErrMissingJwtToken        = errors.Unauthorized(reason, "JWT token is missing")
-	ErrMissingKeyFunc         = errors.Unauthorized(reason, "keyFunc is missing")
-	ErrTokenInvalid           = errors.Unauthorized(reason, "Token is invalid")
-	ErrTokenExpired           = errors.Unauthorized(reason, "JWT token has expired")
-	ErrTokenParseFail         = errors.Unauthorized(reason, "Fail to parse JWT token ")
-	ErrUnSupportSigningMethod = errors.Unauthorized(reason, "Wrong signing method")
-	ErrWrongContext           = errors.Unauthorized(reason, "Wrong context for middleware")
-	ErrNeedTokenProvider      = errors.Unauthorized(reason, "Token provider is missing")
-	ErrSignToken              = errors.Unauthorized(reason, "Can not sign token.Is the key correct?")
-	ErrGetKey                 = errors.Unauthorized(reason, "Can not get key while signing token")
+	ErrMissingJwtToken        = errors.Unauthorized("JWT token is missing")
+	ErrMissingKeyFunc         = errors.Unauthorized("keyFunc is missing")
+	ErrTokenInvalid           = errors.Unauthorized("Token is invalid")
+	ErrTokenExpired           = errors.Unauthorized("JWT token has expired")
+	ErrTokenParseFail         = errors.Unauthorized("Fail to parse JWT token ")
+	ErrUnSupportSigningMethod = errors.Unauthorized("Wrong signing method")
+	ErrWrongContext           = errors.Unauthorized("Wrong context for middleware")
+	ErrNeedTokenProvider      = errors.Unauthorized("Token provider is missing")
+	ErrSignToken              = errors.Unauthorized("Can not sign token.Is the key correct?")
+	ErrGetKey                 = errors.Unauthorized("Can not get key while signing token")
 )
 
 // Option is jwt option.
@@ -84,14 +87,15 @@ func Server(keyFunc jwt.Keyfunc, opts ...Option) middleware.Middleware {
 		opt(o)
 	}
 	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (interface{}, error) {
-			if header, ok := transport.FromServerContext(ctx); ok {
+		return func(ctx context.Context) (reply interface{}) {
+
+			if header, ok := transport.FromServerContext(ctx.Context()); ok {
 				if keyFunc == nil {
-					return nil, ErrMissingKeyFunc
+					return ErrMissingKeyFunc
 				}
 				auths := strings.SplitN(header.RequestHeader().Get(authorizationKey), " ", 2)
 				if len(auths) != 2 || !strings.EqualFold(auths[0], bearerWord) {
-					return nil, ErrMissingJwtToken
+					return ErrMissingJwtToken
 				}
 				jwtToken := auths[1]
 				var (
@@ -106,23 +110,23 @@ func Server(keyFunc jwt.Keyfunc, opts ...Option) middleware.Middleware {
 				if err != nil {
 					if ve, ok := err.(*jwt.ValidationError); ok {
 						if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-							return nil, ErrTokenInvalid
+							return ErrTokenInvalid
 						} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-							return nil, ErrTokenExpired
+							return ErrTokenExpired
 						} else {
-							return nil, ErrTokenParseFail
+							return ErrTokenParseFail
 						}
 					}
-					return nil, errors.Unauthorized(reason, err.Error())
+					return errors.Unauthorized(err.Error())
 				} else if !tokenInfo.Valid {
-					return nil, ErrTokenInvalid
+					return ErrTokenInvalid
 				} else if tokenInfo.Method != o.signingMethod {
-					return nil, ErrUnSupportSigningMethod
+					return ErrUnSupportSigningMethod
 				}
 				ctx = NewContext(ctx, tokenInfo.Claims)
-				return handler(ctx, req)
+				return handler(ctx)
 			}
-			return nil, ErrWrongContext
+			return ErrWrongContext
 		}
 	}
 }
@@ -138,9 +142,9 @@ func Client(keyProvider jwt.Keyfunc, opts ...Option) middleware.Middleware {
 		opt(o)
 	}
 	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (interface{}, error) {
+		return func(ctx context.Context) (reply interface{}) {
 			if keyProvider == nil {
-				return nil, ErrNeedTokenProvider
+				return ErrNeedTokenProvider
 			}
 			token := jwt.NewWithClaims(o.signingMethod, o.claims())
 			if o.tokenHeader != nil {
@@ -150,28 +154,30 @@ func Client(keyProvider jwt.Keyfunc, opts ...Option) middleware.Middleware {
 			}
 			key, err := keyProvider(token)
 			if err != nil {
-				return nil, ErrGetKey
+				return ErrGetKey
 			}
 			tokenStr, err := token.SignedString(key)
 			if err != nil {
-				return nil, ErrSignToken
+				return ErrSignToken
 			}
-			if clientContext, ok := transport.FromClientContext(ctx); ok {
+			if clientContext, ok := transport.FromClientContext(ctx.Context()); ok {
 				clientContext.RequestHeader().Set(authorizationKey, fmt.Sprintf(bearerFormat, tokenStr))
-				return handler(ctx, req)
+				return handler(ctx)
 			}
-			return nil, ErrWrongContext
+			return ErrWrongContext
 		}
 	}
 }
 
 // NewContext put auth info into context
 func NewContext(ctx context.Context, info jwt.Claims) context.Context {
-	return context.WithValue(ctx, authKey{}, info)
+	nctx := sysctx.WithValue(ctx.Context(), authKey{}, info)
+	ctx.ResetContext(nctx)
+	return ctx
 }
 
 // FromContext extract auth info from context
 func FromContext(ctx context.Context) (token jwt.Claims, ok bool) {
-	token, ok = ctx.Value(authKey{}).(jwt.Claims)
+	token, ok = ctx.Context().Value(authKey{}).(jwt.Claims)
 	return
 }

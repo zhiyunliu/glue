@@ -29,6 +29,7 @@ type Config interface {
 	Value(key string) Value
 	Watch(key string, o Observer) error
 	Close() error
+	String() string
 }
 
 type config struct {
@@ -55,6 +56,9 @@ func New(opts ...Option) Config {
 		reader: newReader(o),
 		log:    log.NewWrapper(o.logger),
 	}
+}
+func (c *config) String() string {
+	return ""
 }
 
 func (c *config) watch(w Watcher) {

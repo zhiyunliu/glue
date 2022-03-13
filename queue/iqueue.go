@@ -1,8 +1,10 @@
 package queue
 
+import "github.com/zhiyunliu/velocity/context"
+
 //IQueue 消息队列
 type IQueue interface {
-	Send(key string, value interface{}) error
+	Send(key string, value Message) error
 	Pop(key string) (string, error)
 	Count(key string) (int64, error)
 }
@@ -11,7 +13,13 @@ type IQueue interface {
 type IMQCMessage interface {
 	Ack() error
 	Nack() error
-	GetMessage() string
+	GetMessage() Message
+}
+
+type Message interface {
+	Header() context.Header
+	Body() context.Body
+	Marshal() ([]byte, error)
 }
 
 type ConsumeCallback func(IMQCMessage)
@@ -26,7 +34,7 @@ type IMQC interface {
 
 //IMQP 消息生产
 type IMQP interface {
-	Push(key string, value string) error
+	Push(key string, value Message) error
 	Pop(key string) (string, error)
 	Count(key string) (int64, error)
 	Close() error

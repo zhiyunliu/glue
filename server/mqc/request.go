@@ -1,73 +1,47 @@
 package mqc
 
 import (
-	"encoding/json"
-	"fmt"
+	"net/url"
 
-	"github.com/micro-plat/lib4go/encoding/base64"
-
-	"github.com/micro-plat/hydra/components/queues/mq"
-	"github.com/micro-plat/hydra/conf/server/queue"
-	"github.com/micro-plat/lib4go/types"
+	"github.com/zhiyunliu/velocity/context"
+	"github.com/zhiyunliu/velocity/queue"
 )
-
-//DefMethod DefMethod
-var DefMethod = "GET"
 
 //Request 处理任务请求
 type Request struct {
-	queue *queue.Queue
-	mq.IMQCMessage
+	task *Task
+	queue.IMQCMessage
 	method string
-	form   map[string]interface{}
-	header map[string]string
+	form   context.Body
+	header context.Header
 }
 
 //NewRequest 构建任务请求
-func NewRequest(queue *queue.Queue, m mq.IMQCMessage) (r *Request, err error) {
+func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 
 	r = &Request{
 		IMQCMessage: m,
-		queue:       queue,
-		method:      DefMethod,
-		form:        make(map[string]interface{}),
-		header:      make(map[string]string),
+		task:        task,
+		method:      "GET",
 	}
 
 	//将消息原串转换为map
-	input := make(map[string]interface{})
 	message := m.GetMessage()
-	json.Unmarshal(types.StringToBytes(message), &input)
 
-	//检查是否包含头信息
-	r.form["__body__"] = message
-	if v, ok := input["__header__"].(map[string]interface{}); ok {
-		for n, m := range v {
-			r.header[n] = fmt.Sprint(m)
-		}
-	}
+	r.header = message.Header()
+	r.form = message.Body()
 
-	//处理头信息
-	r.header["__all__"] = message
-	if _, ok := r.header["Content-Type"]; !ok {
-		r.header["Content-Type"] = "application/json"
-	}
-
-	if v, ok := input["__data__"].(string); ok {
-		buff, _ := base64.DecodeBytes(v)
-		r.form["__body__"] = string(buff)
-	}
 	return r, nil
 }
 
 //GetName 获取任务名称
 func (m *Request) GetName() string {
-	return m.queue.Queue
+	return m.task.Queue
 }
 
 //GetService 服务名
 func (m *Request) GetService() string {
-	return m.queue.Service
+	return m.task.GetService()
 }
 
 //GetMethod 方法名
@@ -76,11 +50,16 @@ func (m *Request) GetMethod() string {
 }
 
 //GetForm 输入参数
-func (m *Request) GetForm() map[string]interface{} {
+func (m *Request) GetBody() context.Body {
 	return m.form
 }
 
-//GetHeader 头信息
+func (m *Request) GetForm() url.Values {
+	return url.Values{}
+}
 func (m *Request) GetHeader() map[string]string {
-	return m.header
+	return nil
+}
+func (m *Request) GetRemoteAddr() string {
+	return ""
 }

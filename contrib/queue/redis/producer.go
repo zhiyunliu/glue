@@ -3,7 +3,7 @@ package redis
 import (
 	rds "github.com/go-redis/redis"
 	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/plugins/redis"
+	"github.com/zhiyunliu/velocity/contrib/redis"
 	"github.com/zhiyunliu/velocity/queue"
 )
 
@@ -59,5 +59,5 @@ func (s *producerResolver) Resolve(setting config.Config) (queue.IMQP, error) {
 	return NewProducer(setting)
 }
 func init() {
-	impls.RegisterProducer(&producerResolver{})
+	queue.RegisterProducer(&producerResolver{})
 }

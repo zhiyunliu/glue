@@ -1,4 +1,4 @@
-package caches
+package cache
 
 import (
 	"github.com/zhiyunliu/velocity/config"
@@ -18,8 +18,8 @@ func NewStandardCaches(c container.IContainer) *StandardCaches {
 }
 
 //GetCaches GetCaches
-func (s *StandardCaches) GetCaches(name string) (q ICache, err error) {
-	obj, err := s.c.GetOrCreate(cacheTypeNode, name, func(setting *config.Setting) (interface{}, error) {
+func (s *StandardCaches) GetCache(name string) (q ICache, err error) {
+	obj, err := s.c.GetOrCreate(cacheTypeNode, name, func(setting config.Config) (interface{}, error) {
 		return NewCache(setting)
 	})
 	if err != nil {

@@ -6,7 +6,6 @@ import (
 )
 
 func main() {
-	app := velocity.NewApp()
-	app.AddServer(api.New(""))
+	app := velocity.NewApp(velocity.Server(api.New("")))
 	app.Start()
 }

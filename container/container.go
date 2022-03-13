@@ -42,15 +42,7 @@ func NewContainer() *Container {
 //GetOrCreate 获取指定名称的组件，不存在时自动创建
 func (c *Container) GetOrCreate(typeName string, name string, creator CreateFunc, keys ...string) (interface{}, error) {
 
-	typeSetting := global.Setting.Get(typeName)
-	if typeSetting == nil {
-		return nil, fmt.Errorf("类型:%s 未进行配置", typeName)
-	}
-
-	nameSetting := typeSetting.Get(name)
-	if typeSetting == nil {
-		return nil, fmt.Errorf("类型:%s name=%s.未进行配置", typeName, name)
-	}
+	nameSetting := global.Setting
 
 	//2. 根据配置创建组件
 	key := fmt.Sprintf("%s_%s_%s", typeName, name, strings.Join(keys, "_"))

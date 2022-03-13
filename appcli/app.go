@@ -5,19 +5,19 @@ import (
 	"path/filepath"
 
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/appcli/keys"
 	"github.com/zhiyunliu/velocity/global"
 )
 
 //App  cli app
 type App struct {
-	cliApp  *cli.App
-	options *Options
+	cliApp     *cli.App
+	options    *Options
+	cliOptions *cliOptions
 }
 
 //Start 启动应用程序
 func (a *App) Start() error {
-	a.cliApp.Commands = GetCmds(a.options)
+	a.cliApp.Commands = GetCmds(a.cliOptions)
 	return a.cliApp.Run(os.Args)
 }
 
@@ -41,9 +41,7 @@ func New(opts ...Option) *App {
 		Name:  "version,v",
 		Usage: "查看版本信息",
 	}
-	app.App.Metadata = map[string]interface{}{}
-	app.App.Metadata[keys.ManagerKey] = manager
-	app.App.Metadata[keys.OptionsKey] = app.options
+	app.cliApp.Metadata = map[string]interface{}{}
 
 	return app
 }

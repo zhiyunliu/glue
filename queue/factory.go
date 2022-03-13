@@ -1,9 +1,7 @@
 package queue
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/zhiyunliu/velocity/config"
 )
@@ -23,14 +21,9 @@ func newQueue(setting config.Config) (IQueue, error) {
 }
 
 //Send 发送消息
-func (q *queue) Send(key string, value interface{}) error {
-	bytes, err := json.Marshal(value)
-	if err != nil {
-		err = fmt.Errorf("发送消息队列:%s失败:%+v", key, err)
-		return err
-	}
+func (q *queue) Send(key string, value Message) error {
 
-	return q.q.Push(key, string(bytes))
+	return q.q.Push(key, value)
 }
 
 //Pop 从队列中获取一个消息

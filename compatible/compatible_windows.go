@@ -2,9 +2,10 @@
 package compatible
 
 import (
-	"fmt"
 	"os"
 	"syscall"
+
+	"github.com/zhiyunliu/velocity/log"
 )
 
 //CheckPrivileges 检查是否有管理员权限
@@ -23,24 +24,24 @@ func AppClose() {
 
 	dll, err := syscall.LoadDLL("kernel32.dll")
 	if err != nil {
-		fmt.Println("LoadDLL:kernel32.dll", err)
+		log.Errorf("syscall.LoadDLL(kernel32.dll),Error:%+v", err)
 		return
 	}
 
 	p, err := dll.FindProc("GenerateConsoleCtrlEvent")
 	if err != nil {
-		fmt.Println("FindProc:", err)
+		log.Errorf("dll.FindProc(GenerateConsoleCtrlEvent),Error:%+v", err)
 		return
 	}
 
 	r, _, err := p.Call(syscall.CTRL_BREAK_EVENT, uintptr(pid))
 	if r == 0 {
-		fmt.Println("GenerateConsoleCtrlEvent:", err)
+		log.Errorf("prod.Call(CTRL_BREAK_EVENT,pid=%d),Error:%+v", pid, err)
 		return
 	}
 }
 
-const (
-	SUCCESS = "\t\t\t\t\t[OK]"     // Show colored "OK"
-	FAILED  = "\t\t\t\t\t[FAILED]" // Show colored "FAILED"
-)
+func init() {
+	SUCCESS = "\t\t\t\t\t[OK]"    // Show colored "OK"
+	FAILED = "\t\t\t\t\t[FAILED]" // Show colored "FAILED"
+}

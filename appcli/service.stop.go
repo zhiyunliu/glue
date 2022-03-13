@@ -10,6 +10,6 @@ func (p *ServiceApp) Stop(s service.Service) (err error) {
 	if p.CancelFunc != nil {
 		p.CancelFunc()
 	}
-	log.Infof("服务关闭:%s", p.manager.Name())
+	log.Infof("服务关闭:%s", p.options.File)
 	return nil
 }

@@ -2,11 +2,8 @@ package mqc
 
 import (
 	"context"
-	"net"
-	"net/http"
 
-	"github.com/prometheus/common/log"
-	"github.com/zhiyunliu/velocity/server"
+	"github.com/zhiyunliu/velocity/transport"
 )
 
 type Server struct {
@@ -16,8 +13,10 @@ type Server struct {
 	started bool
 }
 
+var _ transport.Server = (*Server)(nil)
+
 // New 实例化
-func New(name string, opts ...Option) server.Runnable {
+func New(name string, opts ...Option) *Server {
 	s := &Server{
 		name: name,
 		opts: setDefaultOption(),
@@ -33,39 +32,12 @@ func (e *Server) Options(opts ...Option) {
 	}
 }
 
-func (e *Server) String() string {
+func (e *Server) Name() string {
 	return e.name
 }
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) error {
-	l, err := net.Listen("tcp", e.opts.addr)
-	if err != nil {
-		return err
-	}
-	e.ctx = ctx
-	e.started = true
-	e.srv = &http.Server{Handler: e.opts.handler}
-	if e.opts.endHook != nil {
-		e.srv.RegisterOnShutdown(e.opts.endHook)
-	}
-	e.srv.BaseContext = func(_ net.Listener) context.Context {
-		return ctx
-	}
-	log.Infof("%s Server listening on %s", e.name, l.Addr().String())
-	go func() {
-		if err = e.srv.Serve(l); err != nil {
-			log.Errorf("%s Server start error: %s", e.name, err.Error())
-		}
-		<-ctx.Done()
-		err = e.Shutdown(ctx)
-		if err != nil {
-			log.Errorf("%S Server shutdown error: %s", e.name, err.Error())
-		}
-	}()
-	if e.opts.startedHook != nil {
-		e.opts.startedHook()
-	}
 	return nil
 }
 
@@ -75,6 +47,6 @@ func (e *Server) Attempt() bool {
 }
 
 // Shutdown 停止
-func (e *Server) Shutdown(ctx context.Context) error {
-	return e.srv.Shutdown(ctx)
+func (e *Server) Stop(ctx context.Context) error {
+	return nil
 }

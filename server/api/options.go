@@ -2,50 +2,58 @@ package api
 
 import (
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/velocity/server"
 )
 
 // Option 参数设置类型
 type Option func(*options)
 
 type options struct {
-	addr, certFile, keyFile string
-	handler                 http.Handler
-	startedHook             func()
-	endHook                 func()
+	setting *Setting
+	handler http.Handler
+	router  *server.RouterGroup
+	dec     DecodeRequestFunc
+	enc     EncodeResponseFunc
+	ene     EncodeErrorFunc
+
+	startedHooks []server.Hook
+	endHooks     []server.Hook
 }
 
 func setDefaultOption() options {
 	return options{
-		addr: ":8080",
-		handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		}),
+		handler:      gin.New(),
+		startedHooks: make([]server.Hook, 0),
+		endHooks:     make([]server.Hook, 0),
+		dec:          DefaultRequestDecoder,
+		enc:          DefaultResponseEncoder,
+		ene:          DefaultErrorEncoder,
+
+		router: &server.RouterGroup{},
 	}
 }
 
-func WithEndHook(f func()) Option {
+func WithEndHook(f server.Hook) Option {
 	return func(o *options) {
-		o.endHook = f
+		o.endHooks = append(o.endHooks, f)
 	}
 }
 
 // WithStartedHook 设置启动回调函数
-func WithStartedHook(f func()) Option {
+func WithStartedHook(f server.Hook) Option {
 	return func(o *options) {
-		o.startedHook = f
+		o.startedHooks = append(o.startedHooks, f)
 	}
 }
 
-// WithAddr 设置addr
-func WithAddr(s string) Option {
+// WithStartedHook 设置启动回调函数
+func WithConfig(config config.Config) Option {
 	return func(o *options) {
-		o.addr = s
-	}
-}
-
-// WithHandler 设置handler
-func WithHandler(handler http.Handler) Option {
-	return func(o *options) {
-		o.handler = handler
+		setting := &Setting{}
+		config.Scan(setting)
+		o.setting = setting
 	}
 }

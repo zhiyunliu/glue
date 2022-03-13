@@ -32,3 +32,40 @@ type Options struct {
 
 //Option 配置选项
 type Option func(*Options)
+
+// ID with service id.
+func ID(id string) Option {
+	return func(o *Options) { o.Id = id }
+}
+
+// Name with service name.
+func Name(name string) Option {
+	return func(o *Options) { o.Name = name }
+}
+
+// Version with service version.
+func Version(version string) Option {
+	return func(o *Options) { o.Version = version }
+}
+
+// Metadata with service metadata.
+func Metadata(md map[string]string) Option {
+	return func(o *Options) { o.Metadata = md }
+}
+
+// Endpoint with service endpoint.
+func Endpoint(endpoints ...*url.URL) Option {
+	return func(o *Options) { o.Endpoints = endpoints }
+}
+
+// Logger with service logger.
+func Logger(logger log.Logger) Option {
+	return func(o *Options) {
+		o.Logger = log.NewWrapper(logger)
+	}
+}
+
+// Server with transport servers.
+func Server(srv ...transport.Server) Option {
+	return func(o *Options) { o.Servers = srv }
+}

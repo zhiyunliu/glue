@@ -1,8 +1,9 @@
 package metadata
 
 import (
-	"context"
 	"strings"
+
+	"github.com/zhiyunliu/velocity/context"
 
 	"github.com/zhiyunliu/velocity/metadata"
 	"github.com/zhiyunliu/velocity/middleware"
@@ -50,8 +51,8 @@ func Server(opts ...Option) middleware.Middleware {
 		o(options)
 	}
 	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
-			if tr, ok := transport.FromServerContext(ctx); ok {
+		return func(ctx context.Context) (reply interface{}) {
+			if tr, ok := transport.FromServerContext(ctx.Context()); ok {
 				md := options.md.Clone()
 				header := tr.RequestHeader()
 				for _, k := range header.Keys() {
@@ -59,44 +60,10 @@ func Server(opts ...Option) middleware.Middleware {
 						md.Set(k, header.Get(k))
 					}
 				}
-				ctx = metadata.NewServerContext(ctx, md)
+				nctx := metadata.NewServerContext(ctx.Context(), md)
+				ctx.ResetContext(nctx)
 			}
-			return handler(ctx, req)
-		}
-	}
-}
-
-// Client is middleware client-side metadata.
-func Client(opts ...Option) middleware.Middleware {
-	options := &options{
-		prefix: []string{"x-md-global-"},
-	}
-	for _, o := range opts {
-		o(options)
-	}
-	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
-			if tr, ok := transport.FromClientContext(ctx); ok {
-				header := tr.RequestHeader()
-				// x-md-local-
-				for k, v := range options.md {
-					header.Set(k, v)
-				}
-				if md, ok := metadata.FromClientContext(ctx); ok {
-					for k, v := range md {
-						header.Set(k, v)
-					}
-				}
-				// x-md-global-
-				if md, ok := metadata.FromServerContext(ctx); ok {
-					for k, v := range md {
-						if options.hasPrefix(k) {
-							header.Set(k, v)
-						}
-					}
-				}
-			}
-			return handler(ctx, req)
+			return handler(ctx)
 		}
 	}
 }

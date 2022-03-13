@@ -7,18 +7,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zhiyunliu/velocity/components/queues/impls"
 	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/plugins/redis"
+	"github.com/zhiyunliu/velocity/contrib/redis"
+	"github.com/zhiyunliu/velocity/queue"
 
 	cmap "github.com/orcaman/concurrent-map"
-	"github.com/zkfy/stompngo"
 )
-
-type consumerChan struct {
-	msgChan     <-chan stompngo.MessageData
-	unconsumeCh chan struct{}
-}
 
 //Consumer Consumer
 type Consumer struct {
@@ -26,7 +20,7 @@ type Consumer struct {
 	queues  cmap.ConcurrentMap
 	closeCh chan struct{}
 	once    sync.Once
-	setting *config.Setting
+	setting config.Config
 }
 
 type QueueItem struct {
@@ -37,7 +31,7 @@ type QueueItem struct {
 	onceLock      sync.Once
 	unconsumeChan chan struct{}
 	consumer      *Consumer
-	callback      impls.ConsumeCallback
+	callback      queue.ConsumeCallback
 }
 
 func (item *QueueItem) ReceiveStart() {
@@ -51,7 +45,7 @@ func (item *QueueItem) ReceiveStop() {
 }
 
 //NewConsumerByConfig 创建新的Consumer
-func NewConsumer(setting *config.Setting) (consumer *Consumer, err error) {
+func NewConsumer(setting config.Config) (consumer *Consumer, err error) {
 	consumer = &Consumer{}
 	consumer.setting = setting
 
@@ -67,7 +61,7 @@ func (consumer *Consumer) Connect() (err error) {
 }
 
 //Consume 注册消费信息
-func (consumer *Consumer) Consume(queue string, callback impls.ConsumeCallback) (err error) {
+func (consumer *Consumer) Consume(queue string, callback queue.ConsumeCallback) (err error) {
 	if strings.EqualFold(queue, "") {
 		return fmt.Errorf("队列名字不能为空")
 	}
@@ -91,8 +85,8 @@ func (consumer *Consumer) Consume(queue string, callback impls.ConsumeCallback) 
 }
 
 func doReceiveMsg(item *QueueItem) {
-	consumer := item.Consumer
-	unconsumeChan := item.UnconsumeChan
+	consumer := item.consumer
+	unconsumeChan := item.unconsumeChan
 	client := consumer.client
 	queue := item.QueueName
 	callback := item.callback
@@ -116,7 +110,7 @@ func doReceiveMsg(item *QueueItem) {
 				continue
 			}
 			ndata := msgs[len(msgs)-1]
-			go callback(&RedisMessage{Message: ndata, HasData: hasData})
+			go callback(&redisMessage{message: ndata})
 		}
 	}
 }
@@ -156,9 +150,9 @@ func (s *consumeResolver) Name() string {
 	return Proto
 }
 
-func (s *consumeResolver) Resolve(setting *config.Setting) (impls.IMQC, error) {
+func (s *consumeResolver) Resolve(setting config.Config) (queue.IMQC, error) {
 	return NewConsumer(setting)
 }
 func init() {
-	impls.RegisterConsumer(&consumeResolver{})
+	queue.RegisterConsumer(&consumeResolver{})
 }

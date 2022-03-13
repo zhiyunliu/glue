@@ -8,10 +8,8 @@ import (
 
 	"github.com/kardianos/service"
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/appcli/keys"
 	"github.com/zhiyunliu/velocity/extlib/xsecurity"
 	"github.com/zhiyunliu/velocity/global"
-	"github.com/zhiyunliu/velocity/server"
 )
 
 type AppService struct {
@@ -42,7 +40,7 @@ func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 }
 
 //GetSrvConfig SrvCfg
-func GetSrvConfig(opts *options, args ...string) *service.Config {
+func GetSrvConfig(opts *cliOptions, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 	fileName := filepath.Base(path)
 	svcName := fmt.Sprintf("%s_%s", fileName, xsecurity.Md5(path)[:8])
@@ -62,19 +60,15 @@ func GetSrvConfig(opts *options, args ...string) *service.Config {
 
 //GetSrvApp SrvCfg
 func GetSrvApp(c *cli.Context) *ServiceApp {
-	server := c.App.Metadata[keys.ManagerKey].(server.Manager)
-	opts := c.App.Metadata[keys.OptionsKey].(*Options)
+
 	return &ServiceApp{
-		cliCtx:  c,
-		manager: server,
-		options: opts,
+		cliCtx: c,
 	}
 }
 
 //ServiceApp ServiceApp
 type ServiceApp struct {
 	cliCtx     *cli.Context
-	manager    server.Manager
-	options    *Options
+	options    *cliOptions
 	CancelFunc context.CancelFunc
 }

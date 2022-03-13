@@ -4,57 +4,32 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"net/url"
 
-	"github.com/micro-plat/lib4go/types"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/zhiyunliu/velocity/internal/host"
 	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/middleware"
 	"github.com/zhiyunliu/velocity/server"
+	"github.com/zhiyunliu/velocity/transport"
 )
 
 type Server struct {
-	name    string
-	ctx     context.Context
-	srv     *http.Server
-	opts    options
-	started bool
+	name     string
+	ctx      context.Context
+	srv      *http.Server
+	endpoint *url.URL
+	opts     options
+	started  bool
 }
 
+var _ transport.Server = (*Server)(nil)
+
 // New 实例化
-func New(name string, opts ...Option) server.Runnable {
+func New(name string, opts ...Option) *Server {
 	s := &Server{
 		name: name,
 		opts: setDefaultOption(),
 	}
-	s.Options(opts...)
-	return s
-}
-
-// NewMetrics 新建默认监控服务
-func NewMetrics(opts ...Option) server.Runnable {
-	s := &Server{
-		name: "metrics",
-		opts: setDefaultOption(),
-	}
-	s.opts.addr = ":3000"
-	h := http.NewServeMux()
-	h.Handle("/metrics", promhttp.Handler())
-	s.opts.handler = h
-	s.Options(opts...)
-	return s
-}
-
-// NewHealthz 默认健康检查服务
-func NewHealthz(opts ...Option) server.Runnable {
-	s := &Server{
-		name: "health",
-		opts: setDefaultOption(),
-	}
-	s.opts.addr = ":4000"
-	h := http.NewServeMux()
-	h.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-	s.opts.handler = h
 	s.Options(opts...)
 	return s
 }
@@ -66,41 +41,73 @@ func (e *Server) Options(opts ...Option) {
 	}
 }
 
-func (e *Server) String() string {
+func (e *Server) Name() string {
 	return e.name
 }
 
 // Start 开始
-func (e *Server) Start() error {
-	ctx := context.Background()
-	l, err := net.Listen("tcp", e.opts.addr)
+func (e *Server) Start(ctx context.Context) error {
+	e.ctx = ctx
+	e.started = true
+	e.registryEngineRoute()
+
+	lsr, err := net.Listen("tcp", e.opts.setting.Config.Addr)
 	if err != nil {
 		return err
 	}
-	e.ctx = ctx
-	e.started = true
+	err = e.setEndpoint(lsr)
+	if err != nil {
+		return err
+	}
+
 	e.srv = &http.Server{Handler: e.opts.handler}
-	if e.opts.endHook != nil {
-		e.srv.RegisterOnShutdown(e.opts.endHook)
+	if len(e.opts.endHooks) > 0 {
+		endHook := func() {
+			for _, fn := range e.opts.endHooks {
+				err := fn(ctx)
+				if err != nil {
+					log.Error("EndHook:", err)
+					return
+				}
+			}
+		}
+		e.srv.RegisterOnShutdown(endHook)
 	}
 	e.srv.BaseContext = func(_ net.Listener) context.Context {
 		return ctx
 	}
-	log.Infof("%s Server listening on %s", e.name, l.Addr().String())
+
+	log.Infof("API Server [%s] listening on %s", e.name, lsr.Addr().String())
 	go func() {
-		if err = e.srv.Serve(l); err != nil {
-			log.Errorf("%s Server start error: %s", e.name, err.Error())
+		if err = e.srv.Serve(lsr); err != nil {
+			log.Errorf("[%s] Server start error: %s", e.name, err.Error())
 		}
 		<-ctx.Done()
-		err = e.Shutdown(ctx)
+		err = e.Stop(ctx)
 		if err != nil {
-			log.Errorf("%S Server shutdown error: %s", e.name, err.Error())
+			log.Errorf("[%s] Server shutdown error: %s", e.name, err.Error())
 		}
 	}()
-	if e.opts.startedHook != nil {
-		e.opts.startedHook()
+	if len(e.opts.startedHooks) > 0 {
+		for _, fn := range e.opts.startedHooks {
+			err := fn(ctx)
+			if err != nil {
+				log.Error("StartedHooks:", err)
+				return err
+			}
+		}
 	}
 	return nil
+}
+
+// Shutdown 停止
+func (e *Server) Stop(ctx context.Context) error {
+	return e.srv.Shutdown(ctx)
+}
+
+//   http://127.0.0.1:8000
+func (s *Server) Endpoint() *url.URL {
+	return s.endpoint
 }
 
 // Attempt 判断是否可以启动
@@ -108,28 +115,25 @@ func (e *Server) Attempt() bool {
 	return !e.started
 }
 
-// Shutdown 停止
-func (e *Server) Shutdown(ctx context.Context) error {
-	return e.srv.Shutdown(ctx)
-}
+func (e *Server) setEndpoint(l net.Listener) error {
 
-// Shutdown 停止
-func (e *Server) Stop() error {
+	addr, err := host.Extract(e.opts.setting.Config.Addr, l)
+	if err != nil {
+		l.Close()
+		return err
+	}
+	e.endpoint = transport.NewEndpoint("http", addr)
 	return nil
 }
 
-// Shutdown 停止
-func (e *Server) Status() string {
-	return ""
+func (e *Server) Use(middlewares ...middleware.Middleware) {
+	e.opts.router.Use(middlewares...)
 }
 
-func (e *Server) Port() uint64 {
-	return 0
+func (e *Server) Group(group string, middlewares ...middleware.Middleware) *server.RouterGroup {
+	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Metadata() types.XMap {
-	return types.XMap{}
-}
-func (e *Server) Name() string {
-	return e.name
+func (e *Server) Handle(path string, obj interface{}, methods ...server.Method) {
+	e.opts.router.Handle(path, obj, methods...)
 }

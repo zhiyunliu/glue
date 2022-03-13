@@ -1,9 +1,10 @@
 package logging
 
 import (
-	"context"
 	"fmt"
 	"time"
+
+	"github.com/zhiyunliu/velocity/context"
 
 	"github.com/zhiyunliu/velocity/errors"
 	"github.com/zhiyunliu/velocity/log"
@@ -14,29 +15,32 @@ import (
 // Server is an server logging middleware.
 func Server(logger log.Logger) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
+		return func(ctx context.Context) (reply interface{}) {
 			var (
-				code      int32
+				code      int
 				reason    string
 				kind      string
-				operation string
+				operation string = ctx.Request().Path().FullPath()
 			)
 			startTime := time.Now()
-			if info, ok := transport.FromServerContext(ctx); ok {
+			if info, ok := transport.FromServerContext(ctx.Context()); ok {
 				kind = info.Kind().String()
-				operation = info.Operation()
 			}
-			reply, err = handler(ctx, req)
+			reply = handler(ctx)
+			var err error
+			if rerr, ok := reply.(error); ok {
+				err = rerr
+			}
+
 			if se := errors.FromError(err); se != nil {
 				code = se.Code
-				reason = se.Reason
 			}
 			level, stack := extractError(err)
-			_ = log.WithContext(ctx, logger).Log(level,
+			ctx.Log().Log(level,
 				"kind", "server",
 				"component", kind,
 				"operation", operation,
-				"args", extractArgs(req),
+				"args", extractArgs(ctx.Request().Query()),
 				"code", code,
 				"reason", reason,
 				"stack", stack,
@@ -50,29 +54,31 @@ func Server(logger log.Logger) middleware.Middleware {
 // Client is an client logging middleware.
 func Client(logger log.Logger) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
+		return func(ctx context.Context) (reply interface{}) {
 			var (
-				code      int32
+				code      int
 				reason    string
 				kind      string
-				operation string
+				operation string = ctx.Request().Path().FullPath()
 			)
 			startTime := time.Now()
-			if info, ok := transport.FromClientContext(ctx); ok {
+			if info, ok := transport.FromClientContext(ctx.Context()); ok {
 				kind = info.Kind().String()
-				operation = info.Operation()
 			}
-			reply, err = handler(ctx, req)
+			reply = handler(ctx)
+			var err error
+			if rerr, ok := reply.(error); ok {
+				err = rerr
+			}
 			if se := errors.FromError(err); se != nil {
 				code = se.Code
-				reason = se.Reason
 			}
 			level, stack := extractError(err)
-			_ = log.WithContext(ctx, logger).Log(level,
+			ctx.Log().Log(level,
 				"kind", "client",
 				"component", kind,
 				"operation", operation,
-				"args", extractArgs(req),
+				"args", extractArgs(ctx.Request().Query()),
 				"code", code,
 				"reason", reason,
 				"stack", stack,

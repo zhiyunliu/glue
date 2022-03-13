@@ -1,9 +1,10 @@
 package selector
 
 import (
-	"context"
 	"regexp"
 	"strings"
+
+	"github.com/zhiyunliu/velocity/context"
 
 	"github.com/zhiyunliu/velocity/middleware"
 	"github.com/zhiyunliu/velocity/transport"
@@ -17,11 +18,11 @@ type (
 var (
 	// serverTransporter is get server transport.Transporter from ctx
 	serverTransporter transporter = func(ctx context.Context) (transport.Transporter, bool) {
-		return transport.FromServerContext(ctx)
+		return transport.FromServerContext(ctx.Context())
 	}
 	// clientTransporter is get client transport.Transporter from ctx
 	clientTransporter transporter = func(ctx context.Context) (transport.Transporter, bool) {
-		return transport.FromClientContext(ctx)
+		return transport.FromClientContext(ctx.Context())
 	}
 )
 
@@ -118,11 +119,11 @@ func (b *Builder) matches(ctx context.Context, transporter transporter) bool {
 // selector middleware
 func selector(transporter transporter, match func(context.Context, transporter) bool, ms ...middleware.Middleware) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (reply interface{}, err error) {
+		return func(ctx context.Context) (reply interface{}) {
 			if !match(ctx, transporter) {
-				return handler(ctx, req)
+				return handler(ctx)
 			}
-			return middleware.Chain(ms...)(handler)(ctx, req)
+			return middleware.Chain(ms...)(handler)(ctx)
 		}
 	}
 }

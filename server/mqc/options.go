@@ -1,21 +1,22 @@
 package mqc
 
-import "net/http"
+import "github.com/zhiyunliu/velocity/server"
 
 // Option 参数设置类型
 type Option func(*options)
 
 type options struct {
-	addr, certFile, keyFile string
-	startedHook             func()
-	endHook                 func()
+	setting *Setting
+
+	router *server.RouterGroup
+
+	startedHooks []server.Hook
+	endHooks     []server.Hook
 }
 
 func setDefaultOption() options {
 	return options{
-		addr: ":8080",
-		handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			w.WriteHeader(http.StatusOK)
-		}),
+		router: &server.RouterGroup{},
 	}
+
 }

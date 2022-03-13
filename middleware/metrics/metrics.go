@@ -1,9 +1,10 @@
 package metrics
 
 import (
-	"context"
 	"strconv"
 	"time"
+
+	"github.com/zhiyunliu/velocity/context"
 
 	"github.com/zhiyunliu/velocity/errors"
 	"github.com/zhiyunliu/velocity/metrics"
@@ -42,57 +43,26 @@ func Server(opts ...Option) middleware.Middleware {
 		o(&op)
 	}
 	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (interface{}, error) {
+		return func(ctx context.Context) (reply interface{}) {
 			var (
 				code      int
 				reason    string
 				kind      string
-				operation string
+				operation string = ctx.Request().Path().FullPath()
 			)
 			startTime := time.Now()
-			if info, ok := transport.FromServerContext(ctx); ok {
+			if info, ok := transport.FromServerContext(ctx.Context()); ok {
 				kind = info.Kind().String()
 				operation = info.Operation()
 			}
-			reply, err := handler(ctx, req)
-			if se := errors.FromError(err); se != nil {
-				code = int(se.Code)
-				reason = se.Reason
+			reply = handler(ctx)
+			var err error
+			if rerr, ok := reply.(error); ok {
+				err = rerr
 			}
-			if op.requests != nil {
-				op.requests.With(kind, operation, strconv.Itoa(code), reason).Inc()
-			}
-			if op.seconds != nil {
-				op.seconds.With(kind, operation).Observe(time.Since(startTime).Seconds())
-			}
-			return reply, err
-		}
-	}
-}
 
-// Client is middleware client-side metrics.
-func Client(opts ...Option) middleware.Middleware {
-	op := options{}
-	for _, o := range opts {
-		o(&op)
-	}
-	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req interface{}) (interface{}, error) {
-			var (
-				code      int
-				reason    string
-				kind      string
-				operation string
-			)
-			startTime := time.Now()
-			if info, ok := transport.FromClientContext(ctx); ok {
-				kind = info.Kind().String()
-				operation = info.Operation()
-			}
-			reply, err := handler(ctx, req)
 			if se := errors.FromError(err); se != nil {
 				code = int(se.Code)
-				reason = se.Reason
 			}
 			if op.requests != nil {
 				op.requests.With(kind, operation, strconv.Itoa(code), reason).Inc()
@@ -100,7 +70,7 @@ func Client(opts ...Option) middleware.Middleware {
 			if op.seconds != nil {
 				op.seconds.With(kind, operation).Observe(time.Since(startTime).Seconds())
 			}
-			return reply, err
+			return reply
 		}
 	}
 }
