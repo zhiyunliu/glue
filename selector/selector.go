@@ -7,7 +7,7 @@ import (
 )
 
 // ErrNoAvailable is no available node.
-var ErrNoAvailable = errors.ServiceUnavailable("no_available_node", "")
+var ErrNoAvailable = errors.InternalServer("no_available_node")
 
 // Selector is node pick balancer.
 type Selector interface {

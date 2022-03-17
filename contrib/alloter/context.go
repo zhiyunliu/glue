@@ -35,15 +35,6 @@ const (
 	MIMEYAML              = binding.MIMEYAML
 )
 
-type IRequest interface {
-	GetName() string
-	GetService() string
-	GetMethod() string
-	GetForm() url.Values
-	GetHeader() map[string]string
-	GetRemoteAddr() string
-}
-
 // BodyBytesKey indicates a default body bytes key.
 const BodyBytesKey = "_gin-gonic/gin/bodybyteskey"
 
@@ -402,74 +393,6 @@ func (c *Context) AddParam(key, value string) {
 	c.Params = append(c.Params, Param{Key: key, Value: value})
 }
 
-// PostForm returns the specified key from a POST urlencoded form or multipart form
-// when it exists, otherwise it returns an empty string `("")`.
-func (c *Context) PostForm(key string) (value string) {
-	value, _ = c.GetPostForm(key)
-	return
-}
-
-// DefaultPostForm returns the specified key from a POST urlencoded form or multipart form
-// when it exists, otherwise it returns the specified defaultValue string.
-// See: PostForm() and GetPostForm() for further information.
-func (c *Context) DefaultPostForm(key, defaultValue string) string {
-	if value, ok := c.GetPostForm(key); ok {
-		return value
-	}
-	return defaultValue
-}
-
-// GetPostForm is like PostForm(key). It returns the specified key from a POST urlencoded
-// form or multipart form when it exists `(value, true)` (even when the value is an empty string),
-// otherwise it returns ("", false).
-// For example, during a PATCH request to update the user's email:
-//     email=mail@example.com  -->  ("mail@example.com", true) := GetPostForm("email") // set email to "mail@example.com"
-// 	   email=                  -->  ("", true) := GetPostForm("email") // set email to ""
-//                             -->  ("", false) := GetPostForm("email") // do nothing with email
-func (c *Context) GetPostForm(key string) (string, bool) {
-	if values, ok := c.GetPostFormArray(key); ok {
-		return values[0], ok
-	}
-	return "", false
-}
-
-// PostFormArray returns a slice of strings for a given form key.
-// The length of the slice depends on the number of params with the given key.
-func (c *Context) PostFormArray(key string) (values []string) {
-	values, _ = c.GetPostFormArray(key)
-	return
-}
-
-func (c *Context) initFormCache() {
-	if c.formCache == nil {
-		c.formCache = make(url.Values)
-		req := c.Request
-
-		c.formCache = req.GetForm()
-	}
-}
-
-// GetPostFormArray returns a slice of strings for a given form key, plus
-// a boolean value whether at least one value exists for the given key.
-func (c *Context) GetPostFormArray(key string) (values []string, ok bool) {
-	c.initFormCache()
-	values, ok = c.formCache[key]
-	return
-}
-
-// PostFormMap returns a map for a given form key.
-func (c *Context) PostFormMap(key string) (dicts map[string]string) {
-	dicts, _ = c.GetPostFormMap(key)
-	return
-}
-
-// GetPostFormMap returns a map for a given form key, plus a boolean value
-// whether at least one value exists for the given key.
-func (c *Context) GetPostFormMap(key string) (map[string]string, bool) {
-	c.initFormCache()
-	return c.get(c.formCache, key)
-}
-
 // get is an internal method and returns a map which satisfy conditions.
 func (c *Context) get(m map[string][]string, key string) (map[string]string, bool) {
 	dicts := make(map[string]string)
@@ -576,16 +499,6 @@ func (c *Context) RemoteIP() string {
 // ContentType returns the Content-Type header of the request.
 func (c *Context) ContentType() string {
 	return filterFlags(c.requestHeader("Content-Type"))
-}
-
-// IsWebsocket returns true if the request headers indicate that a websocket
-// handshake is being initiated by the client.
-func (c *Context) IsWebsocket() bool {
-	if strings.Contains(strings.ToLower(c.requestHeader("Connection")), "upgrade") &&
-		strings.EqualFold(c.requestHeader("Upgrade"), "websocket") {
-		return true
-	}
-	return false
 }
 
 func (c *Context) requestHeader(key string) string {

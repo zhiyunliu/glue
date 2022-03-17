@@ -74,7 +74,7 @@ func (group *RouterGroup) BasePath() string {
 // The last handler should be the real handler, the other ones should be middleware that can and should be shared among different routes.
 // See the example code in GitHub.
 //
-// For GET, POST, PUT, PATCH and DELETE requests the respective shortcut
+// For GET, POST requests the respective shortcut
 // functions can be used.
 //
 // This function is intended for bulk loading and to allow the usage of less

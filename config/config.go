@@ -30,6 +30,7 @@ type Config interface {
 	Watch(key string, o Observer) error
 	Close() error
 	String() string
+	Get(key string) Config
 }
 
 type config struct {
@@ -59,6 +60,10 @@ func New(opts ...Option) Config {
 }
 func (c *config) String() string {
 	return ""
+}
+
+func (c *config) Get(key string) Config {
+	return nil
 }
 
 func (c *config) watch(w Watcher) {

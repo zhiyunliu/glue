@@ -1,8 +1,7 @@
-package api
+package server
 
 import (
 	"io"
-	"net/http"
 
 	"github.com/zhiyunliu/velocity/context"
 
@@ -57,7 +56,7 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 	codec, _ := CodecForRequest(ctx, "Accept")
 	body, err := codec.Marshal(se)
 	if err != nil {
-		ctx.Response().Status(http.StatusInternalServerError)
+		ctx.Response().Status(500)
 		return
 	}
 	ctx.Response().Header("Content-Type", httputil.ContentType(codec.Name()))

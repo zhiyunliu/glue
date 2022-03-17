@@ -15,9 +15,9 @@ type options struct {
 	setting *Setting
 	handler http.Handler
 	router  *server.RouterGroup
-	dec     DecodeRequestFunc
-	enc     EncodeResponseFunc
-	ene     EncodeErrorFunc
+	dec     server.DecodeRequestFunc
+	enc     server.EncodeResponseFunc
+	ene     server.EncodeErrorFunc
 
 	startedHooks []server.Hook
 	endHooks     []server.Hook
@@ -28,9 +28,9 @@ func setDefaultOption() options {
 		handler:      gin.New(),
 		startedHooks: make([]server.Hook, 0),
 		endHooks:     make([]server.Hook, 0),
-		dec:          DefaultRequestDecoder,
-		enc:          DefaultResponseEncoder,
-		ene:          DefaultErrorEncoder,
+		dec:          server.DefaultRequestDecoder,
+		enc:          server.DefaultResponseEncoder,
+		ene:          server.DefaultErrorEncoder,
 
 		router: &server.RouterGroup{},
 	}

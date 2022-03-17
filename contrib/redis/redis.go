@@ -41,11 +41,11 @@ func New(opts *Options) (r *Client, err error) {
 	ropts := &redis.UniversalOptions{
 		Addrs:        r.opts.Addrs,
 		Password:     r.opts.Password,
-		DB:           r.opts.DbIndex,
+		DB:           int(r.opts.DbIndex),
 		DialTimeout:  time.Duration(r.opts.DialTimeout) * time.Second,
 		ReadTimeout:  time.Duration(r.opts.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(r.opts.WriteTimeout) * time.Second,
-		PoolSize:     r.opts.PoolSize,
+		PoolSize:     int(r.opts.PoolSize),
 	}
 	r.UniversalClient = redis.NewUniversalClient(ropts)
 	_, err = r.UniversalClient.Ping().Result()

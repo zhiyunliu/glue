@@ -1,14 +1,15 @@
-package api
+package mqc
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/zhiyunliu/velocity/server"
 )
 
 func (e *Server) registryEngineRoute() {
-	engine := e.opts.handler.(*gin.Engine)
-	server.RegistryEngineRoute(&server.GinEngine{
+	engine := e.processor.engine
+
+	server.RegistryEngineRoute(&server.AlloterEngine{
 		Engine: engine,
 		ERF:    e.opts.enc,
 	}, e.opts.router)
+
 }

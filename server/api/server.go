@@ -92,7 +92,7 @@ func (e *Server) Start(ctx context.Context) error {
 		for _, fn := range e.opts.startedHooks {
 			err := fn(ctx)
 			if err != nil {
-				log.Error("StartedHooks:", err)
+				log.Error("api.StartedHooks:", err)
 				return err
 			}
 		}

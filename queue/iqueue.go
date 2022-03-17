@@ -1,7 +1,5 @@
 package queue
 
-import "github.com/zhiyunliu/velocity/context"
-
 //IQueue 消息队列
 type IQueue interface {
 	Send(key string, value Message) error
@@ -17,8 +15,8 @@ type IMQCMessage interface {
 }
 
 type Message interface {
-	Header() context.Header
-	Body() context.Body
+	Header() map[string]string
+	Body() map[string]string
 	Marshal() ([]byte, error)
 }
 

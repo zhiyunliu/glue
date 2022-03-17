@@ -1,6 +1,8 @@
 package global
 
-import "github.com/zhiyunliu/velocity/config"
+import (
+	"github.com/zhiyunliu/velocity/config"
+)
 
 var (
 	ClusterName string = "prod"

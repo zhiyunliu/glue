@@ -46,7 +46,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/hashicorp/consul/api v1.12.0
 	github.com/json-iterator/go v1.1.11
-	github.com/micro-plat/lib4go v1.1.10
 	github.com/nacos-group/nacos-sdk-go v1.1.0
 	github.com/orcaman/concurrent-map v1.0.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
@@ -57,7 +56,6 @@ require (
 	github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
-	github.com/clbanning/mxj v1.8.4 // indirect
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect
@@ -78,8 +76,9 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/onsi/ginkgo v1.14.2 // indirect
+	github.com/onsi/gomega v1.10.4 // indirect
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
-	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/toolkits/concurrent v0.0.0-20150624120057-a4371d70e3e3 // indirect
 	github.com/ugorji/go/codec v1.2.2 // indirect
 	gopkg.in/ini.v1 v1.42.0 // indirect
