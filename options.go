@@ -1,11 +1,9 @@
 package velocity
 
-import (
-	"github.com/zhiyunliu/velocity/appcli"
-)
+import "github.com/zhiyunliu/velocity/cli"
 
 // Option is an application option.
-type Option = appcli.Option
+type Option = cli.Option
 
 // // options is an application options.
 // type options struct {
@@ -22,10 +20,10 @@ type Option = appcli.Option
 // 	servers          []transport.Server
 // }
 
-var ID = appcli.ID
-var Name = appcli.Name
-var Version = appcli.Version
-var Metadata = appcli.Metadata
-var Endpoint = appcli.Endpoint
-var Logger = appcli.Logger
-var Server = appcli.Server
+var ID = cli.ID
+var Name = cli.Name
+var Version = cli.Version
+var Metadata = cli.Metadata
+var Endpoint = cli.Endpoint
+var Logger = cli.Logger
+var Server = cli.Server

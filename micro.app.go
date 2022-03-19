@@ -3,7 +3,7 @@ package velocity
 import (
 	"context"
 
-	"github.com/zhiyunliu/velocity/appcli"
+	"github.com/zhiyunliu/velocity/cli"
 	"github.com/zhiyunliu/velocity/compatible"
 )
 
@@ -18,13 +18,13 @@ type AppInfo interface {
 //MicroApp  微服务应用
 type MicroApp struct {
 	opts   []Option
-	cliApp *appcli.App
+	cliApp *cli.App
 }
 
 //NewApp 创建微服务应用
 func NewApp(opts ...Option) (m *MicroApp) {
 	m = &MicroApp{opts: opts}
-	m.cliApp = appcli.New(opts...)
+	m.cliApp = cli.New(opts...)
 	return m
 }
 

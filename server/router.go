@@ -90,13 +90,13 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, metho
 
 	svcGroup, err := reflect.ReflectHandle(relativePath, handler, mths...)
 	if err != nil {
-		log.Fatal(log.LevelError, err)
+		log.Error(err)
 		return
 	}
 
 	if _, ok := group.ServiceGroups[relativePath]; ok {
 		absolutePath := group.calculateAbsolutePath(relativePath)
-		log.Fatal(log.LevelError, fmt.Errorf("存在相同路径注册:%s", absolutePath))
+		log.Error(fmt.Errorf("存在相同路径注册:%s", absolutePath))
 		return
 	}
 	group.ServiceGroups[relativePath] = svcGroup

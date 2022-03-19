@@ -1,4 +1,4 @@
-package appcli
+package cli
 
 import (
 	"net/url"
@@ -23,7 +23,7 @@ type Options struct {
 	Metadata  map[string]string
 	Endpoints []*url.URL
 
-	Logger           *log.Wrapper
+	Logger           log.Logger
 	Registrar        registry.Registrar
 	RegistrarTimeout time.Duration
 	StopTimeout      time.Duration
@@ -61,7 +61,7 @@ func Endpoint(endpoints ...*url.URL) Option {
 // Logger with service logger.
 func Logger(logger log.Logger) Option {
 	return func(o *Options) {
-		o.Logger = log.NewWrapper(logger)
+		o.Logger = logger
 	}
 }
 

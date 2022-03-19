@@ -91,7 +91,6 @@ func (e *Server) Stop(ctx context.Context) error {
 
 func (e *Server) newProcessor() {
 	var err error
-
 	config := e.opts.setting.Config
 	protoType, configName, err := proto.Parse(config.Addr)
 	if err != nil {

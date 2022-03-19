@@ -1,11 +1,13 @@
 package log
 
-import "context"
+import (
+	"context"
+)
 
 type loggerKey struct{}
 
 func FromContext(ctx context.Context) (Logger, bool) {
-	l, ok := ctx.Value(&loggerKey{}).(*Wrapper)
+	l, ok := ctx.Value(&loggerKey{}).(Logger)
 	return l, ok
 }
 

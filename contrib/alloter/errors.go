@@ -5,11 +5,12 @@
 package alloter
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/zhiyunliu/velocity/internal/json"
+	"github.com/zhiyunliu/golibs/xjson"
 )
 
 // ErrorType is an unsigned 64-bit error code as defined in the gin spec.
@@ -77,7 +78,7 @@ func (msg *Error) JSON() interface{} {
 
 // MarshalJSON implements the json.Marshaller interface.
 func (msg *Error) MarshalJSON() ([]byte, error) {
-	return json.Marshal(msg.JSON())
+	return xjson.Marshal(msg.JSON())
 }
 
 // Error implements the error interface.

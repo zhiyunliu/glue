@@ -3,7 +3,6 @@ package redis
 import (
 	"encoding/json"
 
-	"github.com/zhiyunliu/velocity/context"
 	"github.com/zhiyunliu/velocity/extlib/xtypes"
 	"github.com/zhiyunliu/velocity/queue"
 )
@@ -39,12 +38,9 @@ func newMsgBody(msg string) *MsgBody {
 	return body
 }
 
-func (m *MsgBody) Header() context.Header {
+func (m *MsgBody) Header() map[string]string {
 	return m.HeaderMap
 }
-func (m *MsgBody) Body() context.Body {
+func (m *MsgBody) Body() map[string]string {
 	return m.BodyMap
-}
-func (m *MsgBody) Marshal() ([]byte, error) {
-	return json.Marshal(m)
 }

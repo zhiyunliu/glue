@@ -5,9 +5,9 @@ import (
 
 	"github.com/zhiyunliu/velocity/context"
 
+	"github.com/zhiyunliu/golibs/httputil"
 	"github.com/zhiyunliu/velocity/encoding"
 	"github.com/zhiyunliu/velocity/errors"
-	"github.com/zhiyunliu/velocity/internal/httputil"
 )
 
 // SupportPackageIsVersion1 These constants should not be referenced from any other code.

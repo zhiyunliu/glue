@@ -11,7 +11,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/zhiyunliu/velocity/internal/bytesconv"
+	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
 var (

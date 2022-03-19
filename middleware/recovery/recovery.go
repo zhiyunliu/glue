@@ -6,7 +6,6 @@ import (
 	"github.com/zhiyunliu/velocity/context"
 	"github.com/zhiyunliu/velocity/errors"
 
-	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/middleware"
 )
 
@@ -47,7 +46,7 @@ func Recovery(opts ...Option) middleware.Middleware {
 					buf := make([]byte, 64<<10) //nolint:gomnd
 					n := runtime.Stack(buf, false)
 					buf = buf[:n]
-					ctx.Log().Logf(log.LevelError, "%v: \n%s\n", rerr, buf)
+					ctx.Log().Errorf("%v: \n%s\n", rerr, buf)
 
 					reply = op.handler(ctx, rerr)
 				}

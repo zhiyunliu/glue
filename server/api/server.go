@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/zhiyunliu/velocity/internal/host"
+	"github.com/zhiyunliu/golibs/host"
 	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/middleware"
 	"github.com/zhiyunliu/velocity/server"
@@ -55,7 +55,7 @@ func (e *Server) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = e.setEndpoint(lsr)
+	err = e.setEndpoint()
 	if err != nil {
 		return err
 	}
@@ -115,11 +115,10 @@ func (e *Server) Attempt() bool {
 	return !e.started
 }
 
-func (e *Server) setEndpoint(l net.Listener) error {
+func (e *Server) setEndpoint() error {
 
-	addr, err := host.Extract(e.opts.setting.Config.Addr, l)
+	addr, err := host.Extract(e.opts.setting.Config.Addr)
 	if err != nil {
-		l.Close()
 		return err
 	}
 	e.endpoint = transport.NewEndpoint("http", addr)

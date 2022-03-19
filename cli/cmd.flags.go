@@ -1,4 +1,4 @@
-package appcli
+package cli
 
 import (
 	"github.com/urfave/cli"

@@ -1,7 +1,10 @@
 package redis
 
 import (
+	"encoding/json"
+
 	rds "github.com/go-redis/redis"
+	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/velocity/config"
 	"github.com/zhiyunliu/velocity/contrib/redis"
 	"github.com/zhiyunliu/velocity/queue"
@@ -25,8 +28,9 @@ func NewProducer(setting config.Config) (m *Producer, err error) {
 }
 
 // Push 向存于 key 的列表的尾部插入所有指定的值
-func (c *Producer) Push(key string, value string) error {
-	_, err := c.client.RPush(key, value).Result()
+func (c *Producer) Push(key string, msg queue.Message) error {
+	bytes, _ := json.Marshal(msg)
+	_, err := c.client.RPush(key, bytesconv.BytesToString(bytes)).Result()
 	return err
 }
 

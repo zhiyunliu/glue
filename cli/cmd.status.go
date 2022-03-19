@@ -1,4 +1,4 @@
-package appcli
+package cli
 
 import (
 	svc "github.com/kardianos/service"

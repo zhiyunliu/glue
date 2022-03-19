@@ -1,4 +1,4 @@
-package appcli
+package cli
 
 import (
 	"context"

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/velocity/context"
+	"github.com/zhiyunliu/velocity/log"
 
 	"github.com/zhiyunliu/velocity/errors"
-	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/middleware"
 	"github.com/zhiyunliu/velocity/transport"
 )
@@ -36,7 +36,7 @@ func Server(logger log.Logger) middleware.Middleware {
 				code = se.Code
 			}
 			level, stack := extractError(err)
-			ctx.Log().Log(level,
+			ctx.Log().Info(level,
 				"kind", "server",
 				"component", kind,
 				"operation", operation,
