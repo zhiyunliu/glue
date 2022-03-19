@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/zhiyunliu/golibs/host"
+	"github.com/zhiyunliu/velocity/config"
 	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/middleware"
 	"github.com/zhiyunliu/velocity/server"
@@ -18,7 +19,7 @@ type Server struct {
 	ctx      context.Context
 	srv      *http.Server
 	endpoint *url.URL
-	opts     options
+	opts     *options
 	started  bool
 }
 
@@ -37,12 +38,20 @@ func New(name string, opts ...Option) *Server {
 // Options 设置参数
 func (e *Server) Options(opts ...Option) {
 	for _, o := range opts {
-		o(&e.opts)
+		o(e.opts)
 	}
+}
+
+func (e *Server) Type() string {
+	return "api"
 }
 
 func (e *Server) Name() string {
 	return e.name
+}
+
+func (e *Server) Config(cfg config.Config) {
+	e.Options(WithConfig(cfg))
 }
 
 // Start 开始

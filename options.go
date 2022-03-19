@@ -25,5 +25,4 @@ var Name = cli.Name
 var Version = cli.Version
 var Metadata = cli.Metadata
 var Endpoint = cli.Endpoint
-var Logger = cli.Logger
 var Server = cli.Server

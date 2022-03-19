@@ -3,13 +3,17 @@ package transport
 import (
 	"context"
 	"net/url"
+
+	"github.com/zhiyunliu/velocity/config"
 )
 
 // Server is transport server.
 type Server interface {
 	Name() string
+	Type() string
 	Start(context.Context) error
 	Stop(context.Context) error
+	Config(cfg config.Config)
 }
 
 // Endpointer is registry endpoint.
@@ -52,12 +56,6 @@ type Transporter interface {
 type Kind string
 
 func (k Kind) String() string { return string(k) }
-
-// Defines a set of transport kind
-const (
-	KindGRPC Kind = "grpc"
-	KindHTTP Kind = "http"
-)
 
 type (
 	serverTransportKey struct{}

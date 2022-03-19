@@ -8,6 +8,9 @@ import (
 	"github.com/zhiyunliu/velocity/global"
 )
 
+const cli_options_key string = "cli_options_key"
+const options_key string = "options_key"
+
 //App  cli app
 type App struct {
 	cliApp     *cli.App
@@ -18,13 +21,16 @@ type App struct {
 //Start 启动应用程序
 func (a *App) Start() error {
 	a.cliApp.Commands = GetCmds(a.cliOptions)
+	a.cliApp.Metadata = make(map[string]interface{})
+	a.cliApp.Metadata[cli_options_key] = a.cliOptions
+	a.cliApp.Metadata[options_key] = a.options
 	return a.cliApp.Run(os.Args)
 }
 
 //New 创建app
 func New(opts ...Option) *App {
 
-	app := &App{options: &Options{}}
+	app := &App{options: &Options{}, cliOptions: &cliOptions{}}
 	for _, opt := range opts {
 		opt(app.options)
 	}

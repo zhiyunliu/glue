@@ -1,19 +1,13 @@
 package velocity
 
 import (
-	"context"
-
 	"github.com/zhiyunliu/velocity/cli"
 	"github.com/zhiyunliu/velocity/compatible"
-)
+	_ "github.com/zhiyunliu/velocity/encoding/json"
+	_ "github.com/zhiyunliu/velocity/encoding/yaml"
 
-type AppInfo interface {
-	ID() string
-	Name() string
-	Version() string
-	Metadata() map[string]string
-	Endpoint() []string
-}
+	_ "github.com/zhiyunliu/velocity/contrib/registry/nacos"
+)
 
 //MicroApp  微服务应用
 type MicroApp struct {
@@ -38,17 +32,4 @@ func (m *MicroApp) Start() error {
 func (m *MicroApp) Stop() error {
 	compatible.AppClose()
 	return nil
-}
-
-type appKey struct{}
-
-// NewContext returns a new Context that carries value.
-func NewContext(ctx context.Context, s AppInfo) context.Context {
-	return context.WithValue(ctx, appKey{}, s)
-}
-
-// FromContext returns the Transport value stored in ctx, if any.
-func FromContext(ctx context.Context) (s AppInfo, ok bool) {
-	s, ok = ctx.Value(appKey{}).(AppInfo)
-	return
 }

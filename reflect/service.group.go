@@ -2,6 +2,7 @@ package reflect
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/zhiyunliu/velocity/middleware"
@@ -67,6 +68,9 @@ type ServiceUnit struct {
 }
 
 func newServiceGroup(path string, methods ...string) *ServiceGroup {
+	if len(methods) == 0 {
+		methods = []string{http.MethodGet, http.MethodPost}
+	}
 	return &ServiceGroup{
 		Path:     path,
 		methods:  methods,

@@ -29,7 +29,6 @@ type Config interface {
 	Value(key string) Value
 	Watch(key string, o Observer) error
 	Close() error
-	String() string
 	Get(key string) Config
 }
 
@@ -58,12 +57,12 @@ func New(opts ...Option) Config {
 		log:    log.New("config"),
 	}
 }
-func (c *config) String() string {
-	return ""
-}
 
 func (c *config) Get(key string) Config {
-	return nil
+	return &wrap{
+		rootConfig: c,
+		curkey:     key,
+	}
 }
 
 func (c *config) watch(w Watcher) {
@@ -89,8 +88,11 @@ func (c *config) watch(w Watcher) {
 		c.cached.Range(func(key, value interface{}) bool {
 			k := key.(string)
 			v := value.(Value)
-			if n, ok := c.reader.Value(k); ok && reflect.TypeOf(n.Load()) == reflect.TypeOf(v.Load()) && !reflect.DeepEqual(n.Load(), v.Load()) {
+			if n, ok := c.reader.Value(k); ok &&
+				reflect.TypeOf(n.Load()) == reflect.TypeOf(v.Load()) &&
+				!reflect.DeepEqual(n.Load(), v.Load()) {
 				v.Store(n.Load())
+
 				if o, ok := c.observers.Load(k); ok {
 					o.(Observer)(k, v)
 				}
@@ -110,19 +112,19 @@ func (c *config) Load() error {
 			c.log.Infof("config loaded: %s format: %s", v.Key, v.Format)
 		}
 		if err = c.reader.Merge(kvs...); err != nil {
-			c.log.Error("failed to merge config source: %v", err)
+			c.log.Errorf("failed to merge config source: %v", err)
 			return err
 		}
 		w, err := src.Watch()
 		if err != nil {
-			c.log.Error("failed to watch config source: %v", err)
+			c.log.Errorf("failed to watch config source: %v", err)
 			return err
 		}
 		c.watchers = append(c.watchers, w)
 		go c.watch(w)
 	}
 	if err := c.reader.Resolve(); err != nil {
-		c.log.Error("failed to resolve config source: %v", err)
+		c.log.Errorf("failed to resolve config source: %v", err)
 		return err
 	}
 	return nil

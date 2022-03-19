@@ -1,12 +1,20 @@
 package cli
 
 import (
+	"context"
+	"fmt"
+	"sync"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func (p *ServiceApp) run() (err error) {
 	errChan := make(chan error)
-
+	err = p.apprun(context.Background())
+	if err != nil {
+		errChan <- err
+	}
 	select {
 	case err = <-errChan:
 		return err
@@ -15,52 +23,50 @@ func (p *ServiceApp) run() (err error) {
 	}
 }
 
-// func (p *ServiceApp) apprun(ctx context.Context) {
+func (p *ServiceApp) apprun(ctx context.Context) error {
+	instance, err := p.buildInstance()
+	if err != nil {
+		return err
+	}
+	eg, ctx := errgroup.WithContext(ctx)
+	wg := sync.WaitGroup{}
+	for _, srv := range p.options.Servers {
+		srv := srv
+		srv.Config(p.Config.Get(fmt.Sprintf("servers.%s", srv.Type())))
+		eg.Go(func() error {
+			<-ctx.Done() // wait for stop signal
+			sctx, cancel := context.WithTimeout(NewContext(context.Background(), p), p.options.StopTimeout)
+			defer cancel()
+			return srv.Stop(sctx)
+		})
+		wg.Add(1)
+		eg.Go(func() error {
+			wg.Done()
+			return srv.Start(ctx)
+		})
+	}
+	wg.Wait()
+	if p.options.Registrar != nil {
+		rctx, rcancel := context.WithTimeout(ctx, p.options.RegistrarTimeout)
+		defer rcancel()
+		if err := p.options.Registrar.Register(rctx, instance); err != nil {
+			return err
+		}
+		p.instance = instance
+	}
+	return nil
 
-// 	eg, ctx := errgroup.WithContext(ctx)
-// 	wg := sync.WaitGroup{}
-// 	for _, srv := range p.opts.servers {
-// 		srv := srv
-// 		eg.Go(func() error {
-// 			<-ctx.Done() // wait for stop signal
-// 			sctx, cancel := context.WithTimeout(NewContext(context.Background(), p), p.opts.stopTimeout)
-// 			defer cancel()
-// 			return srv.Stop(sctx)
-// 		})
-// 		wg.Add(1)
-// 		eg.Go(func() error {
-// 			wg.Done()
-// 			return srv.Start(ctx)
-// 		})
-// 	}
-// 	wg.Wait()
-// 	if p.opts.registrar != nil {
-// 		rctx, rcancel := context.WithTimeout(p.opts.ctx, p.opts.registrarTimeout)
-// 		defer rcancel()
-// 		if err := p.opts.registrar.Register(rctx, instance); err != nil {
-// 			return err
-// 		}
-// 		a.lk.Lock()
-// 		a.instance = instance
-// 		a.lk.Unlock()
-// 	}
-// 	c := make(chan os.Signal, 1)
-// 	signal.Notify(c, a.opts.sigs...)
-// 	eg.Go(func() error {
-// 		for {
-// 			select {
-// 			case <-ctx.Done():
-// 				return ctx.Err()
-// 			case <-c:
-// 				err := a.Stop()
-// 				if err != nil {
-// 					a.opts.logger.Errorf("failed to stop app: %v", err)
-// 					return err
-// 				}
-// 			}
-// 		}
-// 	})
-// 	if err := eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
-// 		return err
-// 	}
-// }
+}
+
+type appKey struct{}
+
+// NewContext returns a new Context that carries value.
+func NewContext(ctx context.Context, s AppInfo) context.Context {
+	return context.WithValue(ctx, appKey{}, s)
+}
+
+// FromContext returns the Transport value stored in ctx, if any.
+func FromContext(ctx context.Context) (s AppInfo, ok bool) {
+	s, ok = ctx.Value(appKey{}).(AppInfo)
+	return
+}

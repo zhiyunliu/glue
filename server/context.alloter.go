@@ -37,3 +37,6 @@ func (ctx *AlloterContext) Log() log.Logger {
 func (ctx *AlloterContext) Close() {
 
 }
+func (ctx *AlloterContext) GetImpl() interface{} {
+	return ctx.AloterCtx
+}

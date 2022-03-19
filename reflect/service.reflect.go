@@ -36,7 +36,7 @@ func ReflectHandle(path string, obj interface{}, method ...string) (*ServiceGrou
 	}
 
 	//输入参数为函数
-	group := newServiceGroup(path)
+	group := newServiceGroup(path, method...)
 	if sfunc, ok := getIsValidFunc(obj); ok {
 		group.AddHandle("", sfunc)
 		return group, nil

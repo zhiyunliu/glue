@@ -7,6 +7,7 @@ import (
 )
 
 type Context interface {
+	GetImpl() interface{}
 	ResetContext(ctx context.Context)
 	Context() context.Context
 	Header(key string) string

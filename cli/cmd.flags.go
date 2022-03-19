@@ -9,7 +9,7 @@ func getFlags(cfg *cliOptions) (flags []cli.Flag) {
 	flags = append(flags,
 		cli.BoolFlag{
 			Name:        "debug,d",
-			Destination: &cfg.IsDebug,
+			Destination: &cfg.isDebug,
 			Usage:       `-调试模式，打印更详细的系统运行日志，避免将详细的错误信息返回给调用方`,
 		},
 		cli.StringFlag{
@@ -23,7 +23,7 @@ func getFlags(cfg *cliOptions) (flags []cli.Flag) {
 			Usage:       `-注册中心地址。格式：proto://host。如：zk://ip1,ip2`,
 		},
 		cli.StringFlag{
-			Name:        "mask,mask",
+			Name:        "mask,m",
 			Destination: &cfg.IPMask,
 			Usage:       `-子网掩码。多个网卡情况下根据mask筛选本机IP`,
 		})

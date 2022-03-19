@@ -28,9 +28,13 @@ func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup) {
 func execRegistry(engine AdapterEngine, group *RouterGroup, defaultMiddlewares []middleware.Middleware) {
 
 	groups := group.ServiceGroups
-	mls := make([]middleware.Middleware, len(defaultMiddlewares)+len(groups))
+	mls := make([]middleware.Middleware, len(defaultMiddlewares)+len(group.middlewares))
 	copy(mls, defaultMiddlewares)
-	copy(mls[len(defaultMiddlewares):], defaultMiddlewares)
+	gmlen := len(group.middlewares)
+	if gmlen > 0 {
+		copy(mls[len(defaultMiddlewares):], group.middlewares)
+	}
+
 	for _, v := range groups {
 		procHandler(engine, v, mls...)
 	}

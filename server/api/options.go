@@ -23,8 +23,8 @@ type options struct {
 	endHooks     []server.Hook
 }
 
-func setDefaultOption() options {
-	return options{
+func setDefaultOption() *options {
+	return &options{
 		handler:      gin.New(),
 		startedHooks: make([]server.Hook, 0),
 		endHooks:     make([]server.Hook, 0),
@@ -32,7 +32,7 @@ func setDefaultOption() options {
 		enc:          server.DefaultResponseEncoder,
 		ene:          server.DefaultErrorEncoder,
 
-		router: &server.RouterGroup{},
+		router: server.NewRouterGroup(),
 	}
 }
 

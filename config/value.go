@@ -22,7 +22,7 @@ type Value interface {
 	Bool() (bool, error)
 	Int() (int64, error)
 	Float() (float64, error)
-	String() (string, error)
+	String() string
 	Duration() (time.Duration, error)
 	Slice() ([]Value, error)
 	Map() (map[string]Value, error)
@@ -103,20 +103,20 @@ func (v *atomicValue) Float() (float64, error) {
 	return 0.0, fmt.Errorf("type assert to %v failed", reflect.TypeOf(v.Load()))
 }
 
-func (v *atomicValue) String() (string, error) {
+func (v *atomicValue) String() string {
 	switch val := v.Load().(type) {
 	case string:
-		return val, nil
+		return val
 	case bool, int, int32, int64, float64:
-		return fmt.Sprint(val), nil
+		return fmt.Sprint(val)
 	case []byte:
-		return string(val), nil
+		return string(val)
 	default:
 		if s, ok := val.(fmt.Stringer); ok {
-			return s.String(), nil
+			return s.String()
 		}
+		return fmt.Sprintf("%+v", val)
 	}
-	return "", fmt.Errorf("type assert to %v failed", reflect.TypeOf(v.Load()))
 }
 
 func (v *atomicValue) Duration() (time.Duration, error) {
@@ -146,7 +146,7 @@ func (v errValue) Bool() (bool, error)              { return false, v.err }
 func (v errValue) Int() (int64, error)              { return 0, v.err }
 func (v errValue) Float() (float64, error)          { return 0.0, v.err }
 func (v errValue) Duration() (time.Duration, error) { return 0, v.err }
-func (v errValue) String() (string, error)          { return "", v.err }
+func (v errValue) String() string                   { return v.err.Error() }
 func (v errValue) Scan(interface{}) error           { return v.err }
 func (v errValue) Load() interface{}                { return nil }
 func (v errValue) Store(interface{})                {}

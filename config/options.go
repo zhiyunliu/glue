@@ -86,7 +86,7 @@ func defaultResolver(input map[string]interface{}) error {
 	mapper := func(name string) string {
 		args := strings.SplitN(strings.TrimSpace(name), ":", 2) //nolint:gomnd
 		if v, has := readValue(input, args[0]); has {
-			s, _ := v.String()
+			s := v.String()
 			return s
 		} else if len(args) > 1 { // default value
 			return args[1]

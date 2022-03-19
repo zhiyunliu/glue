@@ -2,12 +2,14 @@ package registry
 
 import (
 	"fmt"
+
+	"github.com/zhiyunliu/velocity/config"
 )
 
 //IFactory 注册中心构建器
 type Factory interface {
 	Name() string
-	Create(*Options) (Registrar, error)
+	Create(config.Config) (Registrar, error)
 }
 
 var factoryMap = map[string]Factory{}
@@ -24,18 +26,11 @@ func Register(factory Factory) {
 	factoryMap[name] = factory
 }
 
-func GetRegistrar(cfg *Config, opts ...Option) (Registrar, error) {
-	factory, ok := factoryMap[cfg.Proto]
+func GetRegistrar(cfg config.Config) (Registrar, error) {
+	proto := cfg.Value("proto").String()
+	factory, ok := factoryMap[proto]
 	if !ok {
-		return nil, fmt.Errorf("不支持的Proto类型[%s]", cfg.Proto)
+		return nil, fmt.Errorf("不支持的Proto类型[%s]", proto)
 	}
-
-	opt := &Options{
-		cfg: cfg,
-	}
-	for i := range opts {
-		opts[i](opt)
-	}
-
-	return factory.Create(opt)
+	return factory.Create(cfg)
 }

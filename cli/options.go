@@ -4,16 +4,17 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/registry"
 	"github.com/zhiyunliu/velocity/transport"
 )
 
 type cliOptions struct {
-	IsDebug  bool
-	IPMask   string
-	File     string
-	Registry string
+	isDebug                 bool
+	Mode                    string
+	IPMask                  string
+	File                    string
+	GracefulShutdownTimeout int
+	Registry                string
 }
 
 type Options struct {
@@ -23,7 +24,6 @@ type Options struct {
 	Metadata  map[string]string
 	Endpoints []*url.URL
 
-	Logger           log.Logger
 	Registrar        registry.Registrar
 	RegistrarTimeout time.Duration
 	StopTimeout      time.Duration
@@ -58,14 +58,15 @@ func Endpoint(endpoints ...*url.URL) Option {
 	return func(o *Options) { o.Endpoints = endpoints }
 }
 
-// Logger with service logger.
-func Logger(logger log.Logger) Option {
-	return func(o *Options) {
-		o.Logger = logger
-	}
-}
-
 // Server with transport servers.
 func Server(srv ...transport.Server) Option {
 	return func(o *Options) { o.Servers = srv }
+}
+
+type appSetting struct {
+	Mode                    string                 `json:"mode"`
+	IpMask                  string                 `json:"ip_mask"`
+	GracefulShutdownTimeout int                    `json:"graceful_shutdown_timeout"`
+	Dependencies            []string               `json:"dependencies"`
+	Options                 map[string]interface{} `json:"options"`
 }

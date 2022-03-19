@@ -13,8 +13,8 @@ import (
 type Method string
 
 const (
-	MethodPost = "post"
-	MethodGet  = "get"
+	MethodPost = "POST"
+	MethodGet  = "GET"
 )
 
 var methodMap = map[string]bool{
@@ -46,6 +46,13 @@ type RouterGroup struct {
 	middlewares   []middleware.Middleware
 	ServiceGroups map[string]*reflect.ServiceGroup
 	Children      map[string]*RouterGroup
+}
+
+func NewRouterGroup() *RouterGroup {
+	return &RouterGroup{
+		ServiceGroups: make(map[string]*reflect.ServiceGroup),
+		Children:      make(map[string]*RouterGroup),
+	}
 }
 
 // Use adds middleware to the group, see example code in GitHub.
