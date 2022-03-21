@@ -6,7 +6,7 @@ import (
 
 func init() {
 	DefaultLogger = &wraper{
-		xloger: xlog.New(""),
+		xloger: xlog.New(xlog.WithName("default")),
 	}
 }
 
@@ -18,6 +18,10 @@ type wraper struct {
 
 func (l *wraper) Name() string {
 	return l.xloger.Name()
+}
+
+func (l *wraper) Close() {
+	l.xloger.Close()
 }
 
 func (l *wraper) Log(level Level, args ...interface{}) {
@@ -106,8 +110,8 @@ func Errorf(template string, args ...interface{}) {
 	DefaultLogger.Errorf(template, args...)
 }
 
-func New(name string) Logger {
+func New(opts ...Option) Logger {
 	return &wraper{
-		xloger: xlog.New(name),
+		xloger: xlog.GetLogger(opts...),
 	}
 }

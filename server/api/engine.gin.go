@@ -7,8 +7,7 @@ import (
 
 func (e *Server) registryEngineRoute() {
 	engine := e.opts.handler.(*gin.Engine)
-	server.RegistryEngineRoute(&server.GinEngine{
-		Engine: engine,
-		ERF:    e.opts.enc,
-	}, e.opts.router)
+	adapterEngine := server.NewGinEngine(engine, e.opts.enc)
+
+	server.RegistryEngineRoute(adapterEngine, e.opts.router)
 }

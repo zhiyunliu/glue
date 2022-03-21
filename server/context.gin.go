@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/url"
 
+	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/velocity/extlib/xtypes"
 	"github.com/zhiyunliu/velocity/log"
 
@@ -13,9 +14,19 @@ import (
 	vctx "github.com/zhiyunliu/velocity/context"
 )
 
+const XRequestId = "x-request-id"
+
 type GinContext struct {
-	Gctx *gin.Context
-	greq *ginRequest
+	erf    EncodeResponseFunc
+	Gctx   *gin.Context
+	greq   *ginRequest
+	gresp  *gresponse
+	logger log.Logger
+}
+
+func (ctx *GinContext) reset(gctx *gin.Context) {
+	ctx.Gctx = gctx
+	ctx.greq = nil
 }
 
 func (ctx *GinContext) Context() context.Context {
@@ -38,13 +49,58 @@ func (ctx *GinContext) Request() vctx.Request {
 	return ctx.greq
 }
 func (ctx *GinContext) Response() vctx.Response {
-	return nil
+	if ctx.gresp == nil {
+		ctx.gresp = &gresponse{gctx: ctx.Gctx}
+	}
+	return ctx.gresp
 }
 func (ctx *GinContext) Log() log.Logger {
-	return log.New("")
+	if ctx.logger == nil {
+		logger, ok := log.FromContext(ctx.Context())
+		if !ok {
+			xreqId := ctx.Gctx.GetHeader(XRequestId)
+			if xreqId == "" {
+				xreqId = session.Create()
+				ctx.Gctx.Header(XRequestId, xreqId)
+			}
+			logger = log.New(log.WithName("gin"), log.WithSid(xreqId))
+			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
+		}
+		ctx.logger = logger
+	}
+	return ctx.logger
 }
 func (ctx *GinContext) Close() {
 
+	if ctx.greq.gpath != nil {
+		ctx.greq.gpath.params = nil
+		ctx.greq.gpath.gctx = nil
+		ctx.greq.gpath = nil
+	}
+
+	if ctx.greq.gquery != nil {
+		ctx.greq.gquery.params = nil
+		ctx.greq.gquery.gctx = nil
+		ctx.greq.gquery = nil
+	}
+
+	if ctx.greq.gbody != nil {
+		ctx.greq.gbody.bodyBytes = nil
+		ctx.greq.gbody.gctx = nil
+		ctx.greq.gbody = nil
+	}
+
+	if ctx.greq.gpath != nil {
+		ctx.greq.gpath.params = nil
+		ctx.greq.gpath.gctx = nil
+		ctx.greq.gpath = nil
+	}
+
+	ctx.greq.gctx = nil
+	ctx.Gctx = nil
+
+	ctx.logger.Close()
+	ctx.logger = nil
 }
 
 func (ctx *GinContext) GetImpl() interface{} {
@@ -141,6 +197,10 @@ func (q *gquery) Scan(obj interface{}) error {
 	return q.gctx.BindQuery(obj)
 }
 
+func (q *gquery) String() string {
+	return q.gctx.Request.URL.RawQuery
+}
+
 //-gbody---------------------------------
 type gbody struct {
 	gctx      *gin.Context
@@ -156,7 +216,39 @@ func (q *gbody) Read(p []byte) (n int, err error) {
 	if len(q.bodyBytes) == 0 && !q.hasRead {
 		q.hasRead = true
 		q.bodyBytes, err = ioutil.ReadAll(q.gctx.Request.Body)
+		if err != nil {
+			return 0, err
+		}
 		q.gctx.Request.Body.Close()
 	}
 	return bytes.NewReader(q.bodyBytes).Read(p)
+}
+
+//gresponse --------------------------------
+type gresponse struct {
+	vctx      *GinContext
+	gctx      *gin.Context
+	hasRead   bool
+	bodyBytes []byte
+}
+
+func (q *gresponse) Status(statusCode int) {
+	q.gctx.Writer.WriteHeader(statusCode)
+}
+
+func (q *gresponse) Header(key, val string) {
+	q.gctx.Writer.Header().Set(key, val)
+}
+
+func (q *gresponse) ContextType(val string) {
+	q.gctx.Writer.Header().Set("content-type", val)
+}
+
+func (q *gresponse) Write(obj interface{}) error {
+	return q.vctx.erf(q.vctx, obj)
+}
+
+func (q *gresponse) WriteBytes(bytes []byte) error {
+	_, err := q.gctx.Writer.Write(bytes)
+	return err
 }

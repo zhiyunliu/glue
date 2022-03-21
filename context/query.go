@@ -6,4 +6,5 @@ type Query interface {
 	Get(name string) string
 	XMap() xtypes.SMap
 	Scan(obj interface{}) error
+	String() string
 }

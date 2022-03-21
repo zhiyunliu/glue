@@ -20,4 +20,6 @@ type Logger interface {
 
 	Warn(v ...interface{})
 	Warnf(format string, v ...interface{})
+
+	Close()
 }

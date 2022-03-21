@@ -2,6 +2,7 @@ package logging
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/zhiyunliu/velocity/context"
@@ -17,15 +18,17 @@ func Server(logger log.Logger) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			var (
-				code      int
-				reason    string
-				kind      string
-				operation string = ctx.Request().Path().FullPath()
+				code     int = http.StatusOK
+				kind     string
+				fullPath string = ctx.Request().Path().FullPath()
 			)
 			startTime := time.Now()
+
 			if info, ok := transport.FromServerContext(ctx.Context()); ok {
 				kind = info.Kind().String()
 			}
+			ctx.Log().Infof("%s.req %s %s from:%s", kind, ctx.Request().GetMethod(), fullPath, ctx.Request().GetClientIP())
+
 			reply = handler(ctx)
 			var err error
 			if rerr, ok := reply.(error); ok {
@@ -35,17 +38,9 @@ func Server(logger log.Logger) middleware.Middleware {
 			if se := errors.FromError(err); se != nil {
 				code = se.Code
 			}
+
 			level, stack := extractError(err)
-			ctx.Log().Info(level,
-				"kind", "server",
-				"component", kind,
-				"operation", operation,
-				"args", extractArgs(ctx.Request().Query()),
-				"code", code,
-				"reason", reason,
-				"stack", stack,
-				"latency", time.Since(startTime).Seconds(),
-			)
+			ctx.Log().Logf(level, "%s.resp %s %s %d %s\n%s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), stack)
 			return
 		}
 	}
