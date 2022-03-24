@@ -3,7 +3,7 @@ package context
 import (
 	"net/url"
 
-	"github.com/zhiyunliu/velocity/extlib/xtypes"
+	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 type Path interface {

@@ -1,12 +1,13 @@
 package log
 
 import (
+	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xlog"
 )
 
 func init() {
 	DefaultLogger = &wraper{
-		xloger: xlog.New(xlog.WithName("default")),
+		xloger: xlog.New(xlog.WithName("default"), xlog.WithSid(session.Create())),
 	}
 }
 

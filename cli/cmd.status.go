@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	RegisterFunc(func(cfg *cliOptions) cli.Command {
+	RegisterFunc(func(cfg *Options) cli.Command {
 		return cli.Command{
 			Name:   "status",
 			Usage:  "查询状态，查询服务器运行、停止状态",

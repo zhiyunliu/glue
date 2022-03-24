@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	RegisterFunc(func(cfg *cliOptions) cli.Command {
+	RegisterFunc(func(cfg *Options) cli.Command {
 		return cli.Command{
 			Name:   "restart",
 			Usage:  "重启服务",

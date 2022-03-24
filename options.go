@@ -21,8 +21,9 @@ type Option = cli.Option
 // }
 
 var ID = cli.ID
-var Name = cli.Name
-var Version = cli.Version
+
+// var Name = cli.Name
+// var Version = cli.Version
 var Metadata = cli.Metadata
 var Endpoint = cli.Endpoint
 var Server = cli.Server

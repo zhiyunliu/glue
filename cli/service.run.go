@@ -32,7 +32,7 @@ func (p *ServiceApp) apprun(ctx context.Context) error {
 	wg := sync.WaitGroup{}
 	for _, srv := range p.options.Servers {
 		srv := srv
-		srv.Config(p.Config.Get(fmt.Sprintf("servers.%s", srv.Type())))
+		srv.Config(p.options.Config.Get(fmt.Sprintf("servers.%s", srv.Type())))
 		eg.Go(func() error {
 			<-ctx.Done() // wait for stop signal
 			sctx, cancel := context.WithTimeout(NewContext(context.Background(), p), p.options.StopTimeout)

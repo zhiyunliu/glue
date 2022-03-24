@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	RegisterFunc(func(cfg *cliOptions) cli.Command {
+	RegisterFunc(func(cfg *Options) cli.Command {
 		flags := getFlags(cfg)
 		return cli.Command{
 			Name:   "run",

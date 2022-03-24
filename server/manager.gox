@@ -8,7 +8,7 @@
 package server
 
 import (
-	"github.com/zhiyunliu/velocity/extlib/xtypes"
+	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 type Manager interface {

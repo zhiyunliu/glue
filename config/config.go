@@ -38,7 +38,7 @@ type config struct {
 	cached    sync.Map
 	observers sync.Map
 	watchers  []Watcher
-	log       log.Logger
+	//	log       log.Logger
 }
 
 // New new a config with options.
@@ -54,7 +54,7 @@ func New(opts ...Option) Config {
 	return &config{
 		opts:   o,
 		reader: newReader(o),
-		log:    log.New(log.WithName("config")),
+		//log:    log.DefaultLogger,
 	}
 }
 
@@ -69,20 +69,20 @@ func (c *config) watch(w Watcher) {
 	for {
 		kvs, err := w.Next()
 		if errors.Is(err, context.Canceled) {
-			c.log.Error("watcher's ctx cancel : %v", err)
+			c.opts.logger.Error("watcher's ctx cancel : %v", err)
 			return
 		}
 		if err != nil {
 			time.Sleep(time.Second)
-			c.log.Error("failed to watch next config: %v", err)
+			c.opts.logger.Error("failed to watch next config: %v", err)
 			continue
 		}
 		if err := c.reader.Merge(kvs...); err != nil {
-			c.log.Error("failed to merge next config: %v", err)
+			c.opts.logger.Error("failed to merge next config: %v", err)
 			continue
 		}
 		if err := c.reader.Resolve(); err != nil {
-			c.log.Error("failed to resolve next config: %v", err)
+			c.opts.logger.Error("failed to resolve next config: %v", err)
 			continue
 		}
 		c.cached.Range(func(key, value interface{}) bool {
@@ -109,22 +109,22 @@ func (c *config) Load() error {
 			return err
 		}
 		for _, v := range kvs {
-			c.log.Infof("config loaded: %s format: %s", v.Key, v.Format)
+			c.opts.logger.Infof("config loaded: %s format: %s", v.Key, v.Format)
 		}
 		if err = c.reader.Merge(kvs...); err != nil {
-			c.log.Errorf("failed to merge config source: %v", err)
+			c.opts.logger.Errorf("failed to merge config source: %v", err)
 			return err
 		}
 		w, err := src.Watch()
 		if err != nil {
-			c.log.Errorf("failed to watch config source: %v", err)
+			c.opts.logger.Errorf("failed to watch config source: %v", err)
 			return err
 		}
 		c.watchers = append(c.watchers, w)
 		go c.watch(w)
 	}
 	if err := c.reader.Resolve(); err != nil {
-		c.log.Errorf("failed to resolve config source: %v", err)
+		c.opts.logger.Errorf("failed to resolve config source: %v", err)
 		return err
 	}
 	return nil

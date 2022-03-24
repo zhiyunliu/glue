@@ -3,7 +3,8 @@ package mqc
 import (
 	"context"
 
-	"github.com/zhiyunliu/velocity/extlib/proto"
+	"github.com/zhiyunliu/golibs/xnet"
+	"github.com/zhiyunliu/velocity/config"
 	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/transport"
 )
@@ -39,6 +40,13 @@ func (e *Server) Options(opts ...Option) {
 
 func (e *Server) Name() string {
 	return e.name
+}
+func (e *Server) Type() string {
+	return Type
+}
+
+func (e *Server) Config(cfg config.Config) {
+	e.Options(WithConfig(cfg))
 }
 
 // Start 开始
@@ -92,7 +100,7 @@ func (e *Server) Stop(ctx context.Context) error {
 func (e *Server) newProcessor() {
 	var err error
 	config := e.opts.setting.Config
-	protoType, configName, err := proto.Parse(config.Addr)
+	protoType, configName, err := xnet.Parse(config.Addr)
 	if err != nil {
 		panic(err)
 	}

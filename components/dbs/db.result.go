@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/zhiyunliu/velocity/extlib/xtypes"
+	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 type Result = sql.Result

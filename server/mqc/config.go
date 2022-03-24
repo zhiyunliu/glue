@@ -15,6 +15,9 @@ import (
 			"tasks":[{"queue":"xx.xx.xx","service":"/xx/bb/cc","disable":true},{"queue":"yy.yy.yy","service":"/xx/bb/yy"}],
 		},
 ```*/
+
+const Type string = "mqc"
+
 type Setting struct {
 	Config      Config              `json:"config" yaml:"config"`
 	Middlewares []server.Middleware `json:"middlewares"  yaml:"middlewares"`

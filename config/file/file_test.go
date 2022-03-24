@@ -232,9 +232,8 @@ func testConfig(t *testing.T, c config.Config) {
 				t.Errorf("no expect key: %s value: %v, but got: %v", key, value, v)
 			}
 		case string:
-			if v, err := c.Value(key).String(); err != nil {
-				t.Error(key, value, err)
-			} else if v != value {
+			v := c.Value(key).String()
+			if v != value {
 				t.Errorf("no expect key: %s value: %v, but got: %v", key, value, v)
 			}
 		case time.Duration:

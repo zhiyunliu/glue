@@ -9,16 +9,29 @@ import (
 )
 
 type AlloterContext struct {
-	AloterCtx *alloter.Context
+	srvType string
+	Actx    *alloter.Context
+
+	areq   *ginRequest
+	aresp  *gresponse
+	logger log.Logger
 }
 
+func (ctx *AlloterContext) reset(gctx *alloter.Context) {
+	ctx.Actx = gctx
+	ctx.areq = nil
+}
+
+func (ctx *AlloterContext) ServerType() string {
+	return ctx.srvType
+}
 func (ctx *AlloterContext) Context() context.Context {
-	return ctx.AloterCtx.Request.Context()
+	return ctx.Actx.Request.Context()
 }
 
 func (ctx *AlloterContext) ResetContext(nctx context.Context) {
-	req := ctx.AloterCtx.Request.WithContext(nctx)
-	ctx.AloterCtx.Request = req
+	req := ctx.Actx.Request.WithContext(nctx)
+	ctx.Actx.Request = req
 }
 
 func (ctx *AlloterContext) Header(key string) string {
@@ -38,5 +51,5 @@ func (ctx *AlloterContext) Close() {
 
 }
 func (ctx *AlloterContext) GetImpl() interface{} {
-	return ctx.AloterCtx
+	return ctx.Actx
 }

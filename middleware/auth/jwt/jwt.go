@@ -12,7 +12,6 @@ import (
 
 	"github.com/zhiyunliu/velocity/errors"
 	"github.com/zhiyunliu/velocity/middleware"
-	"github.com/zhiyunliu/velocity/transport"
 )
 
 type authKey struct{}
@@ -89,45 +88,45 @@ func Server(keyFunc jwt.Keyfunc, opts ...Option) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 
-			if header, ok := transport.FromServerContext(ctx.Context()); ok {
-				if keyFunc == nil {
-					return ErrMissingKeyFunc
-				}
-				auths := strings.SplitN(header.RequestHeader().Get(authorizationKey), " ", 2)
-				if len(auths) != 2 || !strings.EqualFold(auths[0], bearerWord) {
-					return ErrMissingJwtToken
-				}
-				jwtToken := auths[1]
-				var (
-					tokenInfo *jwt.Token
-					err       error
-				)
-				if o.claims != nil {
-					tokenInfo, err = jwt.ParseWithClaims(jwtToken, o.claims(), keyFunc)
-				} else {
-					tokenInfo, err = jwt.Parse(jwtToken, keyFunc)
-				}
-				if err != nil {
-					if ve, ok := err.(*jwt.ValidationError); ok {
-						if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-							return ErrTokenInvalid
-						} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-							return ErrTokenExpired
-						} else {
-							return ErrTokenParseFail
-						}
-					}
-					return errors.Unauthorized(err.Error())
-				} else if !tokenInfo.Valid {
-					return ErrTokenInvalid
-				} else if tokenInfo.Method != o.signingMethod {
-					return ErrUnSupportSigningMethod
-				}
-				ctx = NewContext(ctx, tokenInfo.Claims)
-				return handler(ctx)
+			if keyFunc == nil {
+				return ErrMissingKeyFunc
 			}
-			return ErrWrongContext
+			authVal := ctx.Header(authorizationKey)
+
+			auths := strings.SplitN(authVal, " ", 2)
+			if len(auths) != 2 || !strings.EqualFold(auths[0], bearerWord) {
+				return ErrMissingJwtToken
+			}
+			jwtToken := auths[1]
+			var (
+				tokenInfo *jwt.Token
+				err       error
+			)
+			if o.claims != nil {
+				tokenInfo, err = jwt.ParseWithClaims(jwtToken, o.claims(), keyFunc)
+			} else {
+				tokenInfo, err = jwt.Parse(jwtToken, keyFunc)
+			}
+			if err != nil {
+				if ve, ok := err.(*jwt.ValidationError); ok {
+					if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+						return ErrTokenInvalid
+					} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+						return ErrTokenExpired
+					} else {
+						return ErrTokenParseFail
+					}
+				}
+				return errors.Unauthorized(err.Error())
+			} else if !tokenInfo.Valid {
+				return ErrTokenInvalid
+			} else if tokenInfo.Method != o.signingMethod {
+				return ErrUnSupportSigningMethod
+			}
+			ctx = NewContext(ctx, tokenInfo.Claims)
+			return handler(ctx)
 		}
+
 	}
 }
 
@@ -160,11 +159,8 @@ func Client(keyProvider jwt.Keyfunc, opts ...Option) middleware.Middleware {
 			if err != nil {
 				return ErrSignToken
 			}
-			if clientContext, ok := transport.FromClientContext(ctx.Context()); ok {
-				clientContext.RequestHeader().Set(authorizationKey, fmt.Sprintf(bearerFormat, tokenStr))
-				return handler(ctx)
-			}
-			return ErrWrongContext
+			ctx.Request().SetHeader(authorizationKey, fmt.Sprintf(bearerFormat, tokenStr))
+			return handler(ctx)
 		}
 	}
 }

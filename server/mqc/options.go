@@ -29,3 +29,12 @@ func setDefaultOption() options {
 	}
 
 }
+
+// WithStartedHook 设置启动回调函数
+func WithConfig(config config.Config) Option {
+	return func(o *options) {
+		setting := &Setting{}
+		config.Scan(setting)
+		o.setting = setting
+	}
+}

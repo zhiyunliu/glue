@@ -32,7 +32,7 @@ func newProcessor(setting config.Config) (p *processor, err error) {
 
 	p.consumer, err = queue.NewMQC(setting)
 	if err != nil {
-		return nil, fmt.Errorf("构建mqc服务失败(raw:%s) %v", setting.String(), err)
+		return nil, fmt.Errorf("构建mqc服务失败:%v", err)
 	}
 	p.engine = alloter.New()
 

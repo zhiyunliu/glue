@@ -26,7 +26,7 @@ func RegisterConsumer(resolver mqcResover) {
 //NewMQC 根据适配器名称及参数返回配置处理器
 func NewMQC(setting config.Config) (IMQC, error) {
 	val := setting.Value("proto")
-	proto, _ := val.String()
+	proto := val.String()
 	resolver, ok := mqcResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("mqc: 未知的协议类型:%s", proto)

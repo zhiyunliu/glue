@@ -3,7 +3,7 @@ package redis
 import (
 	"encoding/json"
 
-	"github.com/zhiyunliu/velocity/extlib/xtypes"
+	"github.com/zhiyunliu/golibs/xtypes"
 	"github.com/zhiyunliu/velocity/queue"
 )
 

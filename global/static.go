@@ -1,5 +1,5 @@
 package global
 
-import "github.com/zhiyunliu/velocity/extlib/xnet"
+import "github.com/zhiyunliu/golibs/xnet"
 
 var LocalIp = xnet.StaticLocalIP

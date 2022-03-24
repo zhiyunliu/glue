@@ -2,9 +2,8 @@ package consul
 
 import (
 	"fmt"
-	"strconv"
 
-	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/config"
 
 	"github.com/hashicorp/consul/api"
 	"github.com/zhiyunliu/velocity/registry"
@@ -17,30 +16,31 @@ func (f *consulFactory) Name() string {
 	return "consul"
 }
 
-func (f *consulFactory) Create(opts *registry.Options) (registry.Registrar, error) {
+func (f *consulFactory) Create(cfg config.Config) (registry.Registrar, error) {
 	config := api.DefaultConfig()
-
-	if addr, ok := opts.Metadata.Get("addr"); ok {
-		config.Address = fmt.Sprint(addr)
+	opts := options{
+		HealthCheck:         true,
+		HealthCheckInterval: 5,
 	}
+
+	err := cfg.Scan(&opts)
+	if err != nil {
+		err = fmt.Errorf("consul config error :%+v", err)
+		return nil, err
+	}
+
 	cliOpts := []Option{}
 
-	if tbv, ok := opts.Metadata.Get("enableHeartbeat"); ok {
-		bv, _ := strconv.ParseBool(fmt.Sprint(tbv))
-		cliOpts = append(cliOpts, WithHeartbeat(bv))
-	}
-	if tbv, ok := opts.Metadata.Get("enableHealthCheck"); ok {
-		bv, _ := strconv.ParseBool(fmt.Sprint(tbv))
-		cliOpts = append(cliOpts, WithHealthCheck(bv))
-	}
-	if tiv, ok := opts.Metadata.Get("healthcheckInterval"); ok {
-		iv, _ := strconv.ParseInt(fmt.Sprint(tiv), 10, 32)
-		cliOpts = append(cliOpts, WithHealthCheckInterval(int(iv)))
+	cliOpts = append(cliOpts, WithHeartbeat(opts.Heartbeat))
+	cliOpts = append(cliOpts, WithHealthCheck(opts.HealthCheck))
+	if opts.HealthCheckInterval > 0 {
+		cliOpts = append(cliOpts, WithHealthCheckInterval(opts.HealthCheckInterval))
 	}
 
 	client, err := api.NewClient(config)
 	if err != nil {
-		log.Fatal("consul client error : ", err)
+		err = fmt.Errorf("consul client error : %+v", err)
+		return nil, err
 	}
 	return New(client, cliOpts...), nil
 

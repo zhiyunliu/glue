@@ -26,7 +26,7 @@ type EncodeErrorFunc func(context.Context, error)
 func DefaultRequestDecoder(ctx context.Context, v interface{}) error {
 	codec, ok := CodecForRequest(ctx, "Content-Type")
 	if !ok {
-		return errors.BadRequest("CODEC", ctx.Request().Header("Content-Type"))
+		return errors.BadRequest("CODEC", ctx.Request().GetHeader("Content-Type"))
 	}
 	data, err := io.ReadAll(ctx.Request().Body())
 	if err != nil {
@@ -47,6 +47,7 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) error {
 	}
 	ctx.Response().Header("Content-Type", httputil.ContentType(codec.Name()))
 	err = ctx.Response().WriteBytes(data)
+
 	return err
 }
 
@@ -66,7 +67,7 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 
 // CodecForRequest get encoding.Codec via http.Request
 func CodecForRequest(ctx context.Context, name string) (encoding.Codec, bool) {
-	accept := ctx.Request().Header(name)
+	accept := ctx.Request().GetHeader(name)
 	codec := encoding.GetCodec(httputil.ContentSubtype(accept))
 	if codec != nil {
 		return codec, true

@@ -8,9 +8,9 @@ import (
 
 	"github.com/kardianos/service"
 	"github.com/urfave/cli"
+	"github.com/zhiyunliu/golibs/xsecurity/md5"
 	"github.com/zhiyunliu/velocity/config"
 	"github.com/zhiyunliu/velocity/config/file"
-	"github.com/zhiyunliu/velocity/extlib/xsecurity"
 	"github.com/zhiyunliu/velocity/global"
 	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/registry"
@@ -48,7 +48,7 @@ func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 	fileName := filepath.Base(path)
-	svcName := fmt.Sprintf("%s_%s", fileName, xsecurity.Md5(path)[:8])
+	svcName := fmt.Sprintf("%s_%s", fileName, md5.Str(path)[:8])
 
 	cfg := &service.Config{
 		Name:         svcName,
@@ -64,13 +64,11 @@ func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 
 //GetSrvApp SrvCfg
 func GetSrvApp(c *cli.Context) *ServiceApp {
-	cliOpts := c.App.Metadata[cli_options_key].(*cliOptions)
 	opts := c.App.Metadata[options_key].(*Options)
 
 	app := &ServiceApp{
-		cliCtx:     c,
-		cliOptions: cliOpts,
-		options:    opts,
+		cliCtx:  c,
+		options: opts,
 	}
 	app.Init()
 	return app
@@ -79,10 +77,8 @@ func GetSrvApp(c *cli.Context) *ServiceApp {
 //ServiceApp ServiceApp
 type ServiceApp struct {
 	cliCtx     *cli.Context
-	cliOptions *cliOptions
 	options    *Options
 	CancelFunc context.CancelFunc
-	Config     config.Config
 	setting    *appSetting
 	instance   *registry.ServiceInstance
 }
@@ -91,13 +87,13 @@ func (p *ServiceApp) ID() string {
 	return p.options.Id
 }
 
-func (p *ServiceApp) Name() string {
-	return p.options.Name
-}
+// func (p *ServiceApp) Name() string {
+// 	return p.options.Name
+// }
 
-func (p *ServiceApp) Version() string {
-	return p.options.Version
-}
+// func (p *ServiceApp) Version() string {
+// 	return p.options.Version
+// }
 
 func (p *ServiceApp) Metadata() map[string]string {
 	return p.options.Metadata
@@ -111,13 +107,13 @@ func (p *ServiceApp) Endpoint() []string {
 }
 
 func (app *ServiceApp) Init() {
-	if app.cliOptions.File == "" {
-		panic(fmt.Errorf("-f为必须参数"))
+	if app.options.initFile == "" {
+		panic(fmt.Errorf("-f 为必须参数"))
 	}
-	app.Config = config.New(config.WithSource(file.NewSource(app.cliOptions.File)))
-	err := app.Config.Load()
+	app.options.Config = config.New(config.WithSource(file.NewSource(app.options.initFile)))
+	err := app.options.Config.Load()
 	if err != nil {
-		log.Error("config.Load:%s,Error:%+v", app.cliOptions.File, err)
+		log.Error("config.Load:%s,Error:%+v", app.options.initFile, err)
 	}
 
 	app.loadAppSetting()
@@ -126,35 +122,31 @@ func (app *ServiceApp) Init() {
 
 func (app *ServiceApp) loadAppSetting() {
 	setting := &appSetting{}
-	err := app.Config.Value("app").Scan(setting)
+	err := app.options.Config.Value("app").Scan(setting)
 	if err != nil {
 		log.Errorf("获取app配置出错:%+v", err)
-	}
-	if err == nil {
-		if app.cliOptions.IPMask == "" {
-			app.cliOptions.IPMask = setting.IpMask
-		}
-		if app.cliOptions.Mode == "" {
-			app.cliOptions.Mode = setting.Mode
-		}
-		app.cliOptions.GracefulShutdownTimeout = setting.GracefulShutdownTimeout
-	}
-	if app.cliOptions.isDebug {
-		app.cliOptions.Mode = "debug"
 	}
 	app.setting = setting
 }
 
 func (app *ServiceApp) loadRegistry() {
 
-	regCfg := app.Config.Get("registry")
-
-	registrar, err := registry.GetRegistrar(regCfg)
+	registrar, err := registry.GetRegistrar(app.options.Config)
 	if err != nil {
 		log.Error("registry configuration Error:%+v", err)
 	}
 
 	app.options.Registrar = registrar
+}
+
+func (app *ServiceApp) loadConfig() {
+	newCfg, err := config.GetConfig(app.options.Config)
+	if err != nil {
+		log.Error("config configuration Error:%+v", err)
+	}
+	if newCfg != nil {
+		app.options.Config = newCfg
+	}
 }
 
 func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
@@ -175,8 +167,8 @@ func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
 	}
 	return &registry.ServiceInstance{
 		ID:        app.options.Id,
-		Name:      app.options.Name,
-		Version:   app.options.Version,
+		Name:      global.DisplayName,
+		Version:   global.Version,
 		Metadata:  app.options.Metadata,
 		Endpoints: endpoints,
 	}, nil
@@ -184,8 +176,8 @@ func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
 
 type AppInfo interface {
 	ID() string
-	Name() string
-	Version() string
+	// Name() string
+	// Version() string
 	Metadata() map[string]string
 	Endpoint() []string
 }

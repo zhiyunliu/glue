@@ -3,38 +3,38 @@
 ``` json 总体配置结构
 {
 	"app":{
+		"encrypt":"1234567890123456",
 		"mode":"debug",
 		"ip_mask":"192.168",
         "graceful_shutdown_timeout":15,
 		"dependencies":["After=network.target"],
 		"options":{"LimitNOFILE":10240,"MaxOPENFiles":4096}
 	},
-	"registry":{
-		"proto":"nacos",
-		"addr":"192.168.1.108",	
-	},	
-	"registry-1":"encrypt=ZmFzZGZhc2RmYXNkdnhjdnFld3J0ZGFzZmFzZGY=",		
-	"config":{"ref":"nacos"},
-	"http":{
-		"xxx":{ }
-	},
-	"log":{"proto":"","xx":"xx","yy":"yy"},
-    "log-1":"encrypt=ZmFzZGZhc2RmYXNkdnhjdnFld3J0ZGFzZmFzZGY",
-	"db":{
-		"db1":{ "proto":"mysql","conn_str":"","max_open":100,"max_idle":100,"life_time":100},
-		"db2":{ "proto":"ora","conn_str":"","max_open":100,"max_idle":100,"life_time":100},
-	},
+	"registry":"nacos://aliyun",
+ 	"config":"nacos://aliyun",
 	"cache":{
-		"redisxxx":{"proto":"redis","ref":"redis1" ,"xx":"xx",},
-		"memddd":{"proto":"memcached","xx":"xx",}
+		"redisxxx":"redis://redis1",
+		"redisyyy":"redis://redis1",
+	},
+	"queue":{
+		"redisxxx":"redis://redis1",
+		"nsq11":{"proto":"nsq","xx":"xx"},
+		"loacl22":{"proto":"loacl","xx":"xx"},
 	},
 	"redis":{
 		"redis1":{"addrs":["192.168.0.1","192.168.0.2"],"auth":"","db":"","dial_timeout":10,"read_timeout":10,"write_timeout":10,"pool_size":10}
 	},
-	"queue":{
-		"redisxxx":{"proto":"redis","ref":"redis1"},
-		"nsq11":{"proto":"nsq","xx":"xx"},
-		"loacl22":{"proto":"loacl","xx":"xx"},
+	"nacos":{
+		"aliyun":{
+			"encrypt":"false",
+			"client":{"NamespaceId":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
+			"server":[{"IpAddr":"192.168.0.120","Port":8848}],
+			"options":{"kind":"api","group":"charge","cluster":"grey"}
+		}
+	},
+	"db":{
+		"db1":{ "proto":"mysql","conn_str":"","max_open":100,"max_idle":100,"life_time":100},
+		"db2":{ "proto":"ora","conn_str":"","max_open":100,"max_idle":100,"life_time":100},
 	},
 	"servers":{
 		"api":{

@@ -1,6 +1,8 @@
 package server
 
-import "github.com/zhiyunliu/velocity/extlib/xtypes"
+import (
+	"github.com/zhiyunliu/golibs/xtypes"
+)
 
 type Middleware struct {
 	Name string

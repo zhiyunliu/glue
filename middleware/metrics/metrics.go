@@ -9,7 +9,6 @@ import (
 	"github.com/zhiyunliu/velocity/errors"
 	"github.com/zhiyunliu/velocity/metrics"
 	"github.com/zhiyunliu/velocity/middleware"
-	"github.com/zhiyunliu/velocity/transport"
 )
 
 // Option is metrics option.
@@ -47,14 +46,11 @@ func Server(opts ...Option) middleware.Middleware {
 			var (
 				code      int
 				reason    string
-				kind      string
+				kind      string = ctx.ServerType()
 				operation string = ctx.Request().Path().FullPath()
 			)
 			startTime := time.Now()
-			if info, ok := transport.FromServerContext(ctx.Context()); ok {
-				kind = info.Kind().String()
-				operation = info.Operation()
-			}
+
 			reply = handler(ctx)
 			var err error
 			if rerr, ok := reply.(error); ok {

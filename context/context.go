@@ -8,6 +8,7 @@ import (
 
 type Context interface {
 	GetImpl() interface{}
+	ServerType() string
 	ResetContext(ctx context.Context)
 	Context() context.Context
 	Header(key string) string

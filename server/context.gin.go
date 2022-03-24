@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/zhiyunliu/golibs/session"
-	"github.com/zhiyunliu/velocity/extlib/xtypes"
+	"github.com/zhiyunliu/golibs/xtypes"
 	"github.com/zhiyunliu/velocity/log"
 
 	"github.com/gin-gonic/gin"
@@ -17,16 +17,21 @@ import (
 const XRequestId = "x-request-id"
 
 type GinContext struct {
-	erf    EncodeResponseFunc
-	Gctx   *gin.Context
-	greq   *ginRequest
-	gresp  *gresponse
-	logger log.Logger
+	srvType string
+	erf     EncodeResponseFunc
+	Gctx    *gin.Context
+	greq    *ginRequest
+	gresp   *gresponse
+	logger  log.Logger
 }
 
 func (ctx *GinContext) reset(gctx *gin.Context) {
 	ctx.Gctx = gctx
 	ctx.greq = nil
+}
+
+func (ctx *GinContext) ServerType() string {
+	return ctx.srvType
 }
 
 func (ctx *GinContext) Context() context.Context {
@@ -124,8 +129,16 @@ func (r *ginRequest) GetClientIP() string {
 	return r.gctx.ClientIP()
 }
 
-func (r *ginRequest) Header(key string) string {
+// func (r *ginRequest) Header() vctx.Header {
+// 	return r.gctx.GetHeader(key)
+// }
+
+func (r *ginRequest) GetHeader(key string) string {
 	return r.gctx.GetHeader(key)
+}
+
+func (r *ginRequest) SetHeader(key, val string) {
+	r.gctx.Header(key, val)
 }
 
 func (r *ginRequest) Path() vctx.Path {
@@ -183,7 +196,7 @@ type gquery struct {
 func (q *gquery) Get(name string) string {
 	return q.gctx.Query(name)
 }
-func (q *gquery) XMap() xtypes.SMap {
+func (q *gquery) SMap() xtypes.SMap {
 	if q.params == nil {
 		vals := q.gctx.Request.URL.Query()
 		q.params = make(xtypes.SMap)
@@ -213,15 +226,39 @@ func (q *gbody) Scan(obj interface{}) error {
 }
 
 func (q *gbody) Read(p []byte) (n int, err error) {
+	err = q.loadBody()
+	if err != nil {
+		return
+	}
+	return bytes.NewReader(q.bodyBytes).Read(p)
+}
+
+func (q *gbody) Len() int {
+	err := q.loadBody()
+	if err != nil {
+		return 0
+	}
+	return len(q.bodyBytes)
+}
+
+func (q *gbody) Bytes() []byte {
+	err := q.loadBody()
+	if err != nil {
+		return nil
+	}
+	return q.bodyBytes
+}
+
+func (q *gbody) loadBody() (err error) {
 	if len(q.bodyBytes) == 0 && !q.hasRead {
 		q.hasRead = true
 		q.bodyBytes, err = ioutil.ReadAll(q.gctx.Request.Body)
 		if err != nil {
-			return 0, err
+			return err
 		}
 		q.gctx.Request.Body.Close()
 	}
-	return bytes.NewReader(q.bodyBytes).Read(p)
+	return nil
 }
 
 //gresponse --------------------------------

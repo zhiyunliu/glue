@@ -18,6 +18,7 @@ func (f *nacosFactory) Name() string {
 }
 
 func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
+
 	clientConfig := constant.ClientConfig{}
 	serverConfigs := []constant.ServerConfig{}
 

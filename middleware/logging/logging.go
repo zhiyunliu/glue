@@ -1,16 +1,17 @@
 package logging
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/velocity/context"
 	"github.com/zhiyunliu/velocity/log"
 
 	"github.com/zhiyunliu/velocity/errors"
 	"github.com/zhiyunliu/velocity/middleware"
-	"github.com/zhiyunliu/velocity/transport"
 )
 
 // Server is an server logging middleware.
@@ -18,16 +19,13 @@ func Server(logger log.Logger) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			var (
-				code     int = http.StatusOK
-				kind     string
+				code     int    = http.StatusOK
+				kind            = ctx.ServerType()
 				fullPath string = ctx.Request().Path().FullPath()
 			)
 			startTime := time.Now()
 
-			if info, ok := transport.FromServerContext(ctx.Context()); ok {
-				kind = info.Kind().String()
-			}
-			ctx.Log().Infof("%s.req %s %s from:%s", kind, ctx.Request().GetMethod(), fullPath, ctx.Request().GetClientIP())
+			ctx.Log().Infof("%s.req %s %s from:%s %s", kind, ctx.Request().GetMethod(), fullPath, ctx.Request().GetClientIP(), extractReq(ctx.Request()))
 
 			reply = handler(ctx)
 			var err error
@@ -40,52 +38,30 @@ func Server(logger log.Logger) middleware.Middleware {
 			}
 
 			level, stack := extractError(err)
-			ctx.Log().Logf(level, "%s.resp %s %s %d %s\n%s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), stack)
-			return
-		}
-	}
-}
-
-// Client is an client logging middleware.
-func Client(logger log.Logger) middleware.Middleware {
-	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context) (reply interface{}) {
-			var (
-				code      int
-				reason    string
-				kind      string
-				operation string = ctx.Request().Path().FullPath()
-			)
-			startTime := time.Now()
-			if info, ok := transport.FromClientContext(ctx.Context()); ok {
-				kind = info.Kind().String()
+			if level == log.LevelError {
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s\n%s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), stack)
+			} else {
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractResp(reply))
 			}
-			reply = handler(ctx)
-			var err error
-			if rerr, ok := reply.(error); ok {
-				err = rerr
-			}
-			if se := errors.FromError(err); se != nil {
-				code = se.Code
-			}
-			level, stack := extractError(err)
-			ctx.Log().Log(level,
-				"kind", "client",
-				"component", kind,
-				"operation", operation,
-				"args", extractArgs(ctx.Request().Query()),
-				"code", code,
-				"reason", reason,
-				"stack", stack,
-				"latency", time.Since(startTime).Seconds(),
-			)
 			return
 		}
 	}
 }
 
 // extractArgs returns the string of the req
-func extractArgs(req interface{}) string {
+func extractReq(req context.Request) string {
+	data := map[string]interface{}{}
+	if len(req.Query().SMap()) > 0 {
+		data["query"] = req.Query().SMap()
+	}
+	if req.Body().Len() > 0 {
+		data["body"] = bytesconv.BytesToString(req.Body().Bytes())
+	}
+	reqBytes, _ := json.Marshal(data)
+	return bytesconv.BytesToString(reqBytes)
+}
+
+func extractResp(req interface{}) string {
 	if stringer, ok := req.(fmt.Stringer); ok {
 		return stringer.String()
 	}
