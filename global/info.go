@@ -5,6 +5,6 @@ var (
 	BuildTime    = "unknown"
 	Version      = "unknown"
 	GoVersion    = "unknown"
-	DisplayName  = "unknown"
+	DisplayName  = ""
 	Usage        = "unknown"
 )

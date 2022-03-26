@@ -116,3 +116,7 @@ func New(opts ...Option) Logger {
 		xloger: xlog.GetLogger(opts...),
 	}
 }
+
+func Close() {
+	xlog.Close()
+}

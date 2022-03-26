@@ -41,6 +41,11 @@ func New(cli naming_client.INamingClient, opts *options) (r *Registry) {
 }
 
 // Register the registration.
+func (r *Registry) Name() string {
+	return "nacos"
+}
+
+// Register the registration.
 func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) error {
 	if si.Name == "" {
 		return fmt.Errorf("nacos: serviceInstance.name can not be empty")

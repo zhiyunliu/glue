@@ -10,13 +10,12 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/hashicorp/consul/api v1.12.0
 	github.com/imdario/mergo v0.3.12
-	github.com/kardianos/service v1.2.0
+	github.com/kardianos/service v1.2.1
 	github.com/nacos-group/nacos-sdk-go v1.1.0
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/urfave/cli v1.22.5
 	github.com/zhiyunliu/golibs v0.0.0-00010101000000-000000000000
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	google.golang.org/protobuf v1.26.0-rc.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )

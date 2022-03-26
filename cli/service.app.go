@@ -53,6 +53,10 @@ func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 	if global.AppName == "" {
 		global.AppName = fileName
 	}
+	if global.DisplayName == "" {
+		global.DisplayName = global.AppName
+	}
+
 	svcName := fmt.Sprintf("%s_%s", global.AppName, md5.Str(path)[:8])
 
 	cfg := &service.Config{
@@ -86,19 +90,12 @@ type ServiceApp struct {
 	CancelFunc context.CancelFunc
 	setting    *appSetting
 	instance   *registry.ServiceInstance
+	svcCtx     context.Context
 }
 
 func (p *ServiceApp) ID() string {
 	return p.options.Id
 }
-
-// func (p *ServiceApp) Name() string {
-// 	return p.options.Name
-// }
-
-// func (p *ServiceApp) Version() string {
-// 	return p.options.Version
-// }
 
 func (p *ServiceApp) Metadata() map[string]string {
 	return p.options.Metadata
@@ -123,6 +120,7 @@ func (app *ServiceApp) Init() {
 	app.loadAppSetting()
 	app.loadRegistry()
 	app.loadConfig()
+
 }
 
 func (app *ServiceApp) loadAppSetting() {

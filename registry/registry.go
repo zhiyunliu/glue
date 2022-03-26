@@ -4,6 +4,7 @@ import "context"
 
 // Registrar is service registrar.
 type Registrar interface {
+	Name() string
 	// Register the registration.
 	Register(ctx context.Context, service *ServiceInstance) error
 	// Deregister the registration.

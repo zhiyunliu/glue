@@ -81,6 +81,11 @@ func New(apiClient *api.Client, opts ...Option) *Registry {
 }
 
 // Register register service
+func (r *Registry) Name() string {
+	return "consul"
+}
+
+// Register register service
 func (r *Registry) Register(ctx context.Context, svc *registry.ServiceInstance) error {
 	return r.cli.Register(ctx, svc, r.enableHealthCheck)
 }

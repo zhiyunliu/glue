@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	apiSrv := api.New("xx")
+	apiSrv := api.New("")
 	//mqcSrv := mqc.New("bb")
 
 	apiSrv.Handle("/demo", func(ctx context.Context) interface{} {

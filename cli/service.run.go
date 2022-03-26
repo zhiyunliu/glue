@@ -2,15 +2,15 @@ package cli
 
 import (
 	"context"
-	"sync"
 	"time"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/zhiyunliu/velocity/log"
 )
 
 func (p *ServiceApp) run() (err error) {
 	errChan := make(chan error)
-	err = p.apprun(context.Background())
+	p.svcCtx = context.Background()
+	err = p.apprun(p.svcCtx)
 	if err != nil {
 		errChan <- err
 	}
@@ -23,30 +23,25 @@ func (p *ServiceApp) run() (err error) {
 }
 
 func (p *ServiceApp) apprun(ctx context.Context) error {
-
-	eg, ctx := errgroup.WithContext(ctx)
-	wg := sync.WaitGroup{}
 	for _, srv := range p.options.Servers {
-		srv := srv
 		srv.Config(p.options.Config)
-		eg.Go(func() error {
-			<-ctx.Done() // wait for stop signal
-			sctx, cancel := context.WithTimeout(NewContext(context.Background(), p), p.options.StopTimeout)
-			defer cancel()
-			return srv.Stop(sctx)
-		})
-		wg.Add(1)
-		eg.Go(func() error {
-			wg.Done()
-			return srv.Start(ctx)
-		})
+		err := srv.Start(ctx)
+		if err != nil {
+			return err
+		}
 	}
-	wg.Wait()
+	p.register(ctx)
+	return nil
+}
+
+func (p *ServiceApp) register(ctx context.Context) error {
 	instance, err := p.buildInstance()
 	if err != nil {
 		return err
 	}
 	if p.options.Registrar != nil {
+		log.Infof("register to %s", p.options.Registrar.Name())
+
 		rctx, rcancel := context.WithTimeout(ctx, p.options.RegistrarTimeout)
 		defer rcancel()
 		if err := p.options.Registrar.Register(rctx, instance); err != nil {
@@ -55,7 +50,18 @@ func (p *ServiceApp) apprun(ctx context.Context) error {
 		p.instance = instance
 	}
 	return nil
+}
 
+func (p *ServiceApp) deregister(ctx context.Context) error {
+
+	if p.options.Registrar == nil {
+		return nil
+	}
+	log.Infof("deregister %s", p.options.Registrar.Name())
+	if err := p.options.Registrar.Deregister(ctx, p.instance); err != nil {
+		return err
+	}
+	return nil
 }
 
 type appKey struct{}
