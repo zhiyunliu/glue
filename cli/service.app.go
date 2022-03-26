@@ -120,7 +120,6 @@ func (app *ServiceApp) Init() {
 	app.loadAppSetting()
 	app.loadRegistry()
 	app.loadConfig()
-
 }
 
 func (app *ServiceApp) loadAppSetting() {

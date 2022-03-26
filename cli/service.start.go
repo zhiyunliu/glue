@@ -7,6 +7,6 @@ import (
 
 //Start Start
 func (p *ServiceApp) Start(s service.Service) (err error) {
-	log.Debugf("服务启动:%s", p.cliCtx.App.Name)
+	log.Infof("服务启动:%s", p.cliCtx.App.Name)
 	return p.run()
 }

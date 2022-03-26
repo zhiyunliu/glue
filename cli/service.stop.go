@@ -17,7 +17,7 @@ func (p *ServiceApp) Stop(s service.Service) (err error) {
 		msg = err.Error()
 	}
 
-	log.Debugf("服务关闭:%s %s", p.cliCtx.App.Name, msg)
+	log.Infof("服务关闭:%s %s", p.cliCtx.App.Name, msg)
 
 	log.Close()
 	return nil

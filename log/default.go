@@ -54,26 +54,21 @@ func (l *wraper) Errorf(format string, args ...interface{}) {
 
 func (l *wraper) Debug(args ...interface{}) {
 	l.Log(LevelDebug, args...)
-
 }
 
 func (l *wraper) Debugf(format string, args ...interface{}) {
 	l.Logf(LevelDebug, format, args...)
-
 }
 
 func (l *wraper) Fatalf(format string, args ...interface{}) {
 	l.Logf(LevelFatal, format, args...)
-
 }
 func (l *wraper) Fatal(args ...interface{}) {
 	l.Log(LevelFatal, args...)
-
 }
 
 func (l *wraper) Warnf(format string, args ...interface{}) {
 	l.Logf(LevelWarn, format, args...)
-
 }
 func (l *wraper) Warn(args ...interface{}) {
 	l.Log(LevelWarn, args...)
