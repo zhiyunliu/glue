@@ -10,7 +10,7 @@ import (
 //IFactory 注册中心构建器
 type Factory interface {
 	Name() string
-	Create(Config) (Config, error)
+	Create(Config) (Source, error)
 }
 
 var factoryMap = map[string]Factory{}
@@ -27,7 +27,7 @@ func Register(factory Factory) {
 	factoryMap[name] = factory
 }
 
-func GetConfig(cfg Config) (Config, error) {
+func GetConfig(cfg Config) (Source, error) {
 	//nacos://xxxx
 	cfgVal := cfg.Value("config").String()
 
@@ -37,12 +37,12 @@ func GetConfig(cfg Config) (Config, error) {
 	}
 	factory, ok := factoryMap[protoName]
 	if !ok {
-		return nil, fmt.Errorf("Config 不支持的Proto类型[%s]", protoName)
+		return nil, fmt.Errorf("config 不支持的Proto类型[%s]", protoName)
 	}
 	regCfg := cfg.Get(protoName).Get(configName)
 	bval, err := regCfg.Value("encrypt").Bool()
 	if err != nil {
-		return nil, fmt.Errorf("Config:%s://%s.encrypt 配置有误：%+v", protoName, configName, err)
+		return nil, fmt.Errorf("config:%s://%s.encrypt 配置有误：%+v", protoName, configName, err)
 	}
 	if bval {
 		edval := regCfg.Value("data").String()

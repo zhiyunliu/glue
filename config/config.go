@@ -25,6 +25,7 @@ type Observer func(string, Value)
 // Config is a config interface.
 type Config interface {
 	Load() error
+	Source(sources ...Source) error
 	Scan(v interface{}) error
 	Value(key string) Value
 	Watch(key string, o Observer) error
@@ -54,7 +55,6 @@ func New(opts ...Option) Config {
 	return &config{
 		opts:   o,
 		reader: newReader(o),
-		//log:    log.DefaultLogger,
 	}
 }
 
@@ -102,8 +102,17 @@ func (c *config) watch(w Watcher) {
 	}
 }
 
+func (c *config) Source(sources ...Source) error {
+	c.opts.sources = append(c.opts.sources, sources...)
+	return c.loadSource(sources...)
+}
+
 func (c *config) Load() error {
-	for _, src := range c.opts.sources {
+	return c.loadSource(c.opts.sources...)
+}
+
+func (c *config) loadSource(sources ...Source) error {
+	for _, src := range sources {
 		kvs, err := src.Load()
 		if err != nil {
 			return err

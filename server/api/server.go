@@ -2,12 +2,15 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/zhiyunliu/golibs/host"
 	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/velocity/global"
 	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/middleware"
 	"github.com/zhiyunliu/velocity/server"
@@ -47,11 +50,17 @@ func (e *Server) Type() string {
 }
 
 func (e *Server) Name() string {
+	if e.name == "" {
+		e.name = e.Type()
+	}
 	return e.name
 }
 
 func (e *Server) Config(cfg config.Config) {
 	e.Options(WithConfig(cfg))
+	setting := &Setting{}
+	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(setting)
+	e.opts.setting = setting
 }
 
 // Start 开始
@@ -61,10 +70,6 @@ func (e *Server) Start(ctx context.Context) error {
 	e.registryEngineRoute()
 
 	lsr, err := net.Listen("tcp", e.opts.setting.Config.Addr)
-	if err != nil {
-		return err
-	}
-	err = e.setEndpoint()
 	if err != nil {
 		return err
 	}
@@ -86,7 +91,7 @@ func (e *Server) Start(ctx context.Context) error {
 		return ctx
 	}
 
-	log.Infof("API Server [%s] listening on %s", e.name, lsr.Addr().String())
+	log.Infof("API Server [%s] listening on %s", e.name, strings.ReplaceAll(lsr.Addr().String(), "[::]", global.LocalIp))
 	go func() {
 		if err = e.srv.Serve(lsr); err != nil {
 			log.Errorf("[%s] Server start error: %s", e.name, err.Error())
@@ -116,6 +121,9 @@ func (e *Server) Stop(ctx context.Context) error {
 
 //   http://127.0.0.1:8000
 func (s *Server) Endpoint() *url.URL {
+	if s.endpoint == nil {
+		s.endpoint = s.buildEndpoint()
+	}
 	return s.endpoint
 }
 
@@ -124,14 +132,12 @@ func (e *Server) Attempt() bool {
 	return !e.started
 }
 
-func (e *Server) setEndpoint() error {
-
+func (e *Server) buildEndpoint() *url.URL {
 	addr, err := host.Extract(e.opts.setting.Config.Addr)
 	if err != nil {
-		return err
+		panic(fmt.Errorf("API Server Addr:%s 配置错误", e.opts.setting.Config.Addr))
 	}
-	e.endpoint = transport.NewEndpoint("http", addr)
-	return nil
+	return transport.NewEndpoint("http", addr)
 }
 
 func (e *Server) Use(middlewares ...middleware.Middleware) {

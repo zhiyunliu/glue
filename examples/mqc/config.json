@@ -8,6 +8,9 @@
 	},
 	"registry":"nacos://aliyun",	
 	"config":"nacos://aliyun",
+	"queue":{
+		"default":"redis://localhost"
+	},
 	"nacos":{
 		"aliyun":{
 			"encrypt":false,
@@ -16,11 +19,26 @@
 			"options":{"prefix":"api","group":"charge","cluster":"grey","weight":100}
 		}
 	},
+	"redis":{
+		"localhost":{
+			"addrs":["192.168.0.120:6379"],
+			"db":0,
+			"dial_timeout":10,
+			"read_timeout":10,
+			"write_timeout":10,
+			"pool_size":20
+		}
+	},
     "servers":{
 		"api":{
 			"config":{"addr":":8080","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65525},
 			"middlewares":[],			
 			"header":{}
+		},
+		"mqc":{
+			"config":{"addr":"queue://default","status":"start"},
+			"middlewares":[{},{}],
+			"tasks":[{"queue":"xx.xx.xx","disable":true},{"queue":"yy.yy.yy"}]
 		}
     }
 }

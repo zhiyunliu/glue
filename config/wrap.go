@@ -28,3 +28,7 @@ func (l *wrap) Get(key string) Config {
 		curkey:     fmt.Sprintf("%s.%s", l.curkey, key),
 	}
 }
+
+func (c *wrap) Source(sources ...Source) error {
+	return c.rootConfig.Source(sources...)
+}

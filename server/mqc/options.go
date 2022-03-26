@@ -12,9 +12,9 @@ type options struct {
 	setting *Setting
 	router  *server.RouterGroup
 	config  config.Config
-	dec     server.DecodeRequestFunc
-	enc     server.EncodeResponseFunc
-	ene     server.EncodeErrorFunc
+	decReq  server.DecodeRequestFunc
+	encResp server.EncodeResponseFunc
+	encErr  server.EncodeErrorFunc
 
 	startedHooks []server.Hook
 	endHooks     []server.Hook
@@ -22,10 +22,10 @@ type options struct {
 
 func setDefaultOption() options {
 	return options{
-		dec:    server.DefaultRequestDecoder,
-		enc:    server.DefaultResponseEncoder,
-		ene:    server.DefaultErrorEncoder,
-		router: &server.RouterGroup{},
+		decReq:  server.DefaultRequestDecoder,
+		encResp: server.DefaultResponseEncoder,
+		encErr:  server.DefaultErrorEncoder,
+		router:  server.NewRouterGroup(),
 	}
 
 }
@@ -33,8 +33,6 @@ func setDefaultOption() options {
 // WithStartedHook 设置启动回调函数
 func WithConfig(config config.Config) Option {
 	return func(o *options) {
-		setting := &Setting{}
-		config.Scan(setting)
-		o.setting = setting
+		o.config = config
 	}
 }

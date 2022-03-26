@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -24,15 +23,12 @@ func (p *ServiceApp) run() (err error) {
 }
 
 func (p *ServiceApp) apprun(ctx context.Context) error {
-	instance, err := p.buildInstance()
-	if err != nil {
-		return err
-	}
+
 	eg, ctx := errgroup.WithContext(ctx)
 	wg := sync.WaitGroup{}
 	for _, srv := range p.options.Servers {
 		srv := srv
-		srv.Config(p.options.Config.Get(fmt.Sprintf("servers.%s", srv.Type())))
+		srv.Config(p.options.Config)
 		eg.Go(func() error {
 			<-ctx.Done() // wait for stop signal
 			sctx, cancel := context.WithTimeout(NewContext(context.Background(), p), p.options.StopTimeout)
@@ -46,6 +42,10 @@ func (p *ServiceApp) apprun(ctx context.Context) error {
 		})
 	}
 	wg.Wait()
+	instance, err := p.buildInstance()
+	if err != nil {
+		return err
+	}
 	if p.options.Registrar != nil {
 		rctx, rcancel := context.WithTimeout(ctx, p.options.RegistrarTimeout)
 		defer rcancel()

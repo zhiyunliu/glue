@@ -23,14 +23,14 @@ type processor struct {
 }
 
 //NewProcessor 创建processor
-func newProcessor(setting config.Config) (p *processor, err error) {
+func newProcessor(proto string, setting config.Config) (p *processor, err error) {
 	p = &processor{
 		status:    server.Unstarted,
 		closeChan: make(chan struct{}),
 		queues:    cmap.New(),
 	}
 
-	p.consumer, err = queue.NewMQC(setting)
+	p.consumer, err = queue.NewMQC(proto, setting)
 	if err != nil {
 		return nil, fmt.Errorf("构建mqc服务失败:%v", err)
 	}

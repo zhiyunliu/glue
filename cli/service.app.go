@@ -8,6 +8,8 @@ import (
 
 	"github.com/kardianos/service"
 	"github.com/urfave/cli"
+	"github.com/zhiyunliu/golibs/session"
+	"github.com/zhiyunliu/golibs/xnet"
 	"github.com/zhiyunliu/golibs/xsecurity/md5"
 	"github.com/zhiyunliu/velocity/config"
 	"github.com/zhiyunliu/velocity/config/file"
@@ -48,7 +50,10 @@ func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 	fileName := filepath.Base(path)
-	svcName := fmt.Sprintf("%s_%s", fileName, md5.Str(path)[:8])
+	if global.AppName == "" {
+		global.AppName = fileName
+	}
+	svcName := fmt.Sprintf("%s_%s", global.AppName, md5.Str(path)[:8])
 
 	cfg := &service.Config{
 		Name:         svcName,
@@ -115,9 +120,9 @@ func (app *ServiceApp) Init() {
 	if err != nil {
 		log.Error("config.Load:%s,Error:%+v", app.options.initFile, err)
 	}
-
 	app.loadAppSetting()
 	app.loadRegistry()
+	app.loadConfig()
 }
 
 func (app *ServiceApp) loadAppSetting() {
@@ -127,6 +132,9 @@ func (app *ServiceApp) loadAppSetting() {
 		log.Errorf("获取app配置出错:%+v", err)
 	}
 	app.setting = setting
+	global.Mode = app.setting.Mode
+	global.LocalIp = xnet.GetLocalIP(setting.IpMask)
+
 }
 
 func (app *ServiceApp) loadRegistry() {
@@ -140,36 +148,36 @@ func (app *ServiceApp) loadRegistry() {
 }
 
 func (app *ServiceApp) loadConfig() {
-	newCfg, err := config.GetConfig(app.options.Config)
+	newSource, err := config.GetConfig(app.options.Config)
 	if err != nil {
-		log.Error("config configuration Error:%+v", err)
+		log.Errorf("config configuration Error:%+v", err)
 	}
-	if newCfg != nil {
-		app.options.Config = newCfg
+	if newSource != nil {
+		app.options.Config.Source(newSource)
 	}
 }
 
 func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
-	endpoints := make([]string, 0, len(app.options.Endpoints))
+	endpoints := make([]string, 0)
 	for _, e := range app.options.Endpoints {
 		endpoints = append(endpoints, e.String())
 	}
 	if len(endpoints) == 0 {
 		for _, srv := range app.options.Servers {
 			if r, ok := srv.(transport.Endpointer); ok {
-				e, err := r.Endpoint()
-				if err != nil {
-					return nil, err
-				}
+				e := r.Endpoint()
 				endpoints = append(endpoints, e.String())
 			}
 		}
 	}
+	if app.options.Id == "" {
+		app.options.Id = session.Create()
+	}
 	return &registry.ServiceInstance{
 		ID:        app.options.Id,
+		Metadata:  app.options.Metadata,
 		Name:      global.DisplayName,
 		Version:   global.Version,
-		Metadata:  app.options.Metadata,
 		Endpoints: endpoints,
 	}, nil
 }

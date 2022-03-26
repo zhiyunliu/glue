@@ -5,9 +5,8 @@ import (
 )
 
 var (
-	ClusterName string = "prod"
-	GroupName   string = "default_group"
-	Namespace   string = "default_ns"
+	Mode    string = "debug"
+	AppName string = ""
 )
 
 var Setting config.Config

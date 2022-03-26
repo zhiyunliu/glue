@@ -6,6 +6,7 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 	"github.com/zhiyunliu/velocity"
 	"github.com/zhiyunliu/velocity/context"
+	_ "github.com/zhiyunliu/velocity/contrib/config/nacos"
 	_ "github.com/zhiyunliu/velocity/contrib/registry/nacos"
 	"github.com/zhiyunliu/velocity/errors"
 	"github.com/zhiyunliu/velocity/server/api"

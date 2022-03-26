@@ -9,7 +9,7 @@
         "type": "go",
         "request": "attach",
         "mode": "local",
-        "processId": 42392
+        "processId": 3360
     },
             {
             "name": "Launch Package",

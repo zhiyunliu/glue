@@ -13,11 +13,12 @@ type Option func(*options)
 
 type options struct {
 	setting *Setting
+	config  config.Config
 	handler http.Handler
 	router  *server.RouterGroup
-	dec     server.DecodeRequestFunc
-	enc     server.EncodeResponseFunc
-	ene     server.EncodeErrorFunc
+	decReq  server.DecodeRequestFunc
+	encResp server.EncodeResponseFunc
+	encErr  server.EncodeErrorFunc
 
 	startedHooks []server.Hook
 	endHooks     []server.Hook
@@ -28,9 +29,9 @@ func setDefaultOption() *options {
 		handler:      gin.New(),
 		startedHooks: make([]server.Hook, 0),
 		endHooks:     make([]server.Hook, 0),
-		dec:          server.DefaultRequestDecoder,
-		enc:          server.DefaultResponseEncoder,
-		ene:          server.DefaultErrorEncoder,
+		decReq:       server.DefaultRequestDecoder,
+		encResp:      server.DefaultResponseEncoder,
+		encErr:       server.DefaultErrorEncoder,
 
 		router: server.NewRouterGroup(),
 	}
@@ -52,8 +53,6 @@ func WithStartedHook(f server.Hook) Option {
 // WithStartedHook 设置启动回调函数
 func WithConfig(config config.Config) Option {
 	return func(o *options) {
-		setting := &Setting{}
-		config.Scan(setting)
-		o.setting = setting
+		o.config = config
 	}
 }

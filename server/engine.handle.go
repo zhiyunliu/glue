@@ -12,7 +12,7 @@ import (
 
 type AdapterEngine interface {
 	Handle(method string, path string, callfunc HandlerFunc)
-	EncodeResponseFunc(ctx context.Context, resp interface{}) error
+	Write(ctx context.Context, resp interface{})
 }
 type HandlerFunc func(context.Context)
 
@@ -47,8 +47,8 @@ func execRegistry(engine AdapterEngine, group *RouterGroup, defaultMiddlewares [
 func procHandler(engine AdapterEngine, group *reflect.ServiceGroup, middlewares ...middleware.Middleware) {
 	for method, v := range group.Services {
 		engine.Handle(method, group.GetReallyPath(), func(ctx context.Context) {
-			res := middleware.Chain(middlewares...)(engineHandler(group, v))(ctx)
-			engine.EncodeResponseFunc(ctx, res)
+			resp := middleware.Chain(middlewares...)(engineHandler(group, v))(ctx)
+			engine.Write(ctx, resp)
 		})
 	}
 	for i := range group.Children {

@@ -18,7 +18,7 @@ type Server interface {
 
 // Endpointer is registry endpoint.
 type Endpointer interface {
-	Endpoint() (*url.URL, error)
+	Endpoint() *url.URL
 }
 
 // Header is the storage medium used by a Header.

@@ -10,31 +10,31 @@ import (
 //Client redis客户端
 type Client struct {
 	redis.UniversalClient
-	opts *Options
+	opts *options
 }
 
 //NewByOpts 构建客户端
 func NewByOpts(opts ...Option) (r *Client, err error) {
-	redisOpts := &Options{}
+	redisOpts := &options{}
 	for i := range opts {
 		opts[i](redisOpts)
 	}
-	return New(redisOpts)
+	return newRedis(redisOpts)
 }
 
 //NewByConfig 构建客户端
 func NewByConfig(setting config.Config) (r *Client, err error) {
-	redisOpts := &Options{
+	redisOpts := &options{
 		DialTimeout:  5,
 		ReadTimeout:  5,
 		WriteTimeout: 5,
 		PoolSize:     20,
 	}
 	setting.Scan(redisOpts)
-	return New(redisOpts)
+	return newRedis(redisOpts)
 }
 
-func New(opts *Options) (r *Client, err error) {
+func newRedis(opts *options) (r *Client, err error) {
 	r = &Client{}
 	r.opts = opts
 

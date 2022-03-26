@@ -20,7 +20,7 @@ type Consumer struct {
 	queues  cmap.ConcurrentMap
 	closeCh chan struct{}
 	once    sync.Once
-	setting config.Config
+	config  config.Config
 }
 
 type QueueItem struct {
@@ -45,9 +45,9 @@ func (item *QueueItem) ReceiveStop() {
 }
 
 //NewConsumerByConfig 创建新的Consumer
-func NewConsumer(setting config.Config) (consumer *Consumer, err error) {
+func NewConsumer(config config.Config) (consumer *Consumer, err error) {
 	consumer = &Consumer{}
-	consumer.setting = setting
+	consumer.config = config
 
 	consumer.closeCh = make(chan struct{})
 	consumer.queues = cmap.New()
@@ -56,7 +56,7 @@ func NewConsumer(setting config.Config) (consumer *Consumer, err error) {
 
 //Connect  连接服务器
 func (consumer *Consumer) Connect() (err error) {
-	consumer.client, err = redis.NewByConfig(consumer.setting)
+	consumer.client, err = redis.NewByConfig(consumer.config)
 	return
 }
 

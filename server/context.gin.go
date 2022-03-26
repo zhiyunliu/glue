@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 
@@ -18,7 +19,7 @@ const XRequestId = "x-request-id"
 
 type GinContext struct {
 	srvType string
-	erf     EncodeResponseFunc
+	opts    *options
 	Gctx    *gin.Context
 	greq    *ginRequest
 	gresp   *gresponse
@@ -55,7 +56,7 @@ func (ctx *GinContext) Request() vctx.Request {
 }
 func (ctx *GinContext) Response() vctx.Response {
 	if ctx.gresp == nil {
-		ctx.gresp = &gresponse{gctx: ctx.Gctx}
+		ctx.gresp = &gresponse{gctx: ctx.Gctx, vctx: ctx}
 	}
 	return ctx.gresp
 }
@@ -99,6 +100,11 @@ func (ctx *GinContext) Close() {
 		ctx.greq.gpath.params = nil
 		ctx.greq.gpath.gctx = nil
 		ctx.greq.gpath = nil
+	}
+
+	if ctx.gresp != nil {
+		ctx.gresp.gctx = nil
+		ctx.gresp = nil
 	}
 
 	ctx.greq.gctx = nil
@@ -265,8 +271,7 @@ func (q *gbody) loadBody() (err error) {
 type gresponse struct {
 	vctx      *GinContext
 	gctx      *gin.Context
-	hasRead   bool
-	bodyBytes []byte
+	hasWrited bool
 }
 
 func (q *gresponse) Status(statusCode int) {
@@ -282,7 +287,15 @@ func (q *gresponse) ContextType(val string) {
 }
 
 func (q *gresponse) Write(obj interface{}) error {
-	return q.vctx.erf(q.vctx, obj)
+	if q.hasWrited {
+		panic(fmt.Errorf("%s：有多种方式写入响应", q.gctx.FullPath()))
+	}
+	q.hasWrited = true
+	if werr, ok := obj.(error); ok {
+		q.vctx.opts.ErrorEncoder(q.vctx, werr)
+		return nil
+	}
+	return q.vctx.opts.ResponseEncoder(q.vctx, obj)
 }
 
 func (q *gresponse) WriteBytes(bytes []byte) error {

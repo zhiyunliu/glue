@@ -167,7 +167,6 @@ var _ IRouter = &Engine{}
 // - UseRawPath:             false
 // - UnescapePathValues:     true
 func New() *Engine {
-	debugPrintWARNINGNew()
 	engine := &Engine{
 		RouterGroup: RouterGroup{
 			Handlers: nil,

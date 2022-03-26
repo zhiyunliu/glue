@@ -2,10 +2,13 @@ package mqc
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/zhiyunliu/golibs/xnet"
 	"github.com/zhiyunliu/velocity/config"
 	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/velocity/server"
 	"github.com/zhiyunliu/velocity/transport"
 )
 
@@ -27,7 +30,6 @@ func New(name string, opts ...Option) *Server {
 	}
 	s.Options(opts...)
 
-	s.newProcessor()
 	return s
 }
 
@@ -39,19 +41,27 @@ func (e *Server) Options(opts ...Option) {
 }
 
 func (e *Server) Name() string {
+	if e.name == "" {
+		e.name = e.Type()
+	}
 	return e.name
 }
+
 func (e *Server) Type() string {
 	return Type
 }
 
 func (e *Server) Config(cfg config.Config) {
 	e.Options(WithConfig(cfg))
+	setting := &Setting{}
+	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(setting)
+	e.opts.setting = setting
 }
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) error {
 	e.ctx = ctx
+	e.newProcessor()
 	if len(e.opts.startedHooks) > 0 {
 		for _, fn := range e.opts.startedHooks {
 			err := fn(ctx)
@@ -100,12 +110,23 @@ func (e *Server) Stop(ctx context.Context) error {
 func (e *Server) newProcessor() {
 	var err error
 	config := e.opts.setting.Config
+	//queue://default
 	protoType, configName, err := xnet.Parse(config.Addr)
 	if err != nil {
 		panic(err)
 	}
-	cfg := e.opts.config.Get(protoType).Get(configName)
-	e.processor, err = newProcessor(cfg)
+	cfg := e.opts.config.Get(protoType)
+	queueVal := cfg.Value(configName)
+	ptotoCfg := queueVal.String()
+
+	//redis://localhost
+	protoType, configName, err = xnet.Parse(ptotoCfg)
+	if err != nil {
+		panic(err)
+	}
+
+	cfg = e.opts.config.Get(fmt.Sprintf("%s.%s", protoType, configName))
+	e.processor, err = newProcessor(protoType, cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -115,4 +136,16 @@ func (e *Server) newProcessor() {
 		panic(err)
 	}
 	e.registryEngineRoute()
+}
+
+func (e *Server) Use(middlewares ...middleware.Middleware) {
+	e.opts.router.Use(middlewares...)
+}
+
+func (e *Server) Group(group string, middlewares ...middleware.Middleware) *server.RouterGroup {
+	return e.opts.router.Group(group, middlewares...)
+}
+
+func (e *Server) Handle(path string, obj interface{}, methods ...server.Method) {
+	e.opts.router.Handle(path, obj, methods...)
 }

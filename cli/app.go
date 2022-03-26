@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/urfave/cli"
 	"github.com/zhiyunliu/velocity/global"
 )
 
-const cli_options_key string = "cli_options_key"
 const options_key string = "options_key"
 
 //App  cli app
@@ -29,7 +29,10 @@ func (a *App) Start() error {
 //New 创建app
 func New(opts ...Option) *App {
 
-	app := &App{options: &Options{}}
+	app := &App{options: &Options{
+		RegistrarTimeout: 10 * time.Second,
+		StopTimeout:      10 * time.Second,
+	}}
 	for _, opt := range opts {
 		opt(app.options)
 	}

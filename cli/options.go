@@ -42,16 +42,6 @@ func ID(id string) Option {
 	return func(o *Options) { o.Id = id }
 }
 
-// // Name with service name.
-// func Name(name string) Option {
-// 	return func(o *Options) { o.Name = name }
-// }
-
-// // Version with service version.
-// func Version(version string) Option {
-// 	return func(o *Options) { o.Version = version }
-// }
-
 // Metadata with service metadata.
 func Metadata(md map[string]string) Option {
 	return func(o *Options) { o.Metadata = md }
@@ -68,9 +58,8 @@ func Server(srv ...transport.Server) Option {
 }
 
 type appSetting struct {
-	Mode                    string                 `json:"mode"`
-	IpMask                  string                 `json:"ip_mask"`
-	GracefulShutdownTimeout int                    `json:"graceful_shutdown_timeout"`
-	Dependencies            []string               `json:"dependencies"`
-	Options                 map[string]interface{} `json:"options"`
+	Mode         string                 `json:"mode"`
+	IpMask       string                 `json:"ip_mask"`
+	Dependencies []string               `json:"dependencies"`
+	Options      map[string]interface{} `json:"options"`
 }

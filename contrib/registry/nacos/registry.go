@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
 	"github.com/zhiyunliu/velocity/registry"
@@ -24,77 +23,19 @@ type options struct {
 	Weight  float64 `json:"weight"`
 	Cluster string  `json:"cluster"`
 	Group   string  `json:"group"`
-	Kind    string  `json:"kind"`
-}
-
-func (o *options) toOpts() []Option {
-	opts := []Option{}
-	if o.Prefix != "" {
-		opts = append(opts, WithPrefix(o.Prefix))
-	}
-	if o.Weight != 0 {
-		opts = append(opts, WithWeight(o.Weight))
-	}
-	if o.Cluster != "" {
-		opts = append(opts, WithCluster(o.Cluster))
-	}
-	if o.Group != "" {
-		opts = append(opts, WithGroup(o.Group))
-	}
-	if o.Kind != "" {
-		opts = append(opts, WithKind(o.Kind))
-	}
-	return opts
-}
-
-// Option is nacos option.
-type Option func(o *options)
-
-// WithPrefix with prefix path.
-func WithPrefix(prefix string) Option {
-	return func(o *options) { o.Prefix = prefix }
-}
-
-// WithWeight with weight option.
-func WithWeight(weight float64) Option {
-	return func(o *options) { o.Weight = weight }
-}
-
-// WithCluster with cluster option.
-func WithCluster(cluster string) Option {
-	return func(o *options) { o.Cluster = cluster }
-}
-
-// WithGroup with group option.
-func WithGroup(group string) Option {
-	return func(o *options) { o.Group = group }
-}
-
-// WithKind with default kind option.
-func WithKind(kind string) Option {
-	return func(o *options) { o.Kind = kind }
 }
 
 // Registry is nacos registry.
 type Registry struct {
-	opts options
+	opts *options
 	cli  naming_client.INamingClient
 }
 
 // New new a nacos registry.
-func New(cli naming_client.INamingClient, opts ...Option) (r *Registry) {
-	op := options{
-		Prefix:  "/microservices",
-		Cluster: "DEFAULT",
-		Group:   constant.DEFAULT_GROUP,
-		Weight:  100,
-		Kind:    "grpc",
-	}
-	for _, option := range opts {
-		option(&op)
-	}
+func New(cli naming_client.INamingClient, opts *options) (r *Registry) {
+
 	return &Registry{
-		opts: op,
+		opts: opts,
 		cli:  cli,
 	}
 }
@@ -102,7 +43,7 @@ func New(cli naming_client.INamingClient, opts ...Option) (r *Registry) {
 // Register the registration.
 func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) error {
 	if si.Name == "" {
-		return fmt.Errorf("kratos/nacos: serviceInstance.name can not be empty")
+		return fmt.Errorf("nacos: serviceInstance.name can not be empty")
 	}
 	for _, endpoint := range si.Endpoints {
 		u, err := url.Parse(endpoint)
@@ -181,7 +122,7 @@ func (r *Registry) Deregister(_ context.Context, service *registry.ServiceInstan
 
 // Watch creates a watcher according to the service name.
 func (r *Registry) Watch(ctx context.Context, serviceName string) (registry.Watcher, error) {
-	return newWatcher(ctx, r.cli, serviceName, r.opts.Group, r.opts.Kind, []string{r.opts.Cluster})
+	return newWatcher(ctx, r.cli, serviceName, r.opts.Group, []string{r.opts.Cluster})
 }
 
 // GetService return the service instances in memory according to the service name.
@@ -196,10 +137,7 @@ func (r *Registry) GetService(_ context.Context, serviceName string) ([]*registr
 	}
 	items := make([]*registry.ServiceInstance, 0, len(res))
 	for _, in := range res {
-		kind := r.opts.Kind
-		if k, ok := in.Metadata["kind"]; ok {
-			kind = k
-		}
+		kind := in.Metadata["kind"]
 		items = append(items, &registry.ServiceInstance{
 			ID:        in.InstanceId,
 			Name:      in.ServiceName,

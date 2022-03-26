@@ -41,14 +41,19 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 		return nil, fmt.Errorf("nacos NewNamingClient error:%+v", err)
 	}
 
-	clientOpts := options{}
+	opts := &options{
+		Prefix:  "/microservices",
+		Cluster: "DEFAULT",
+		Group:   constant.DEFAULT_GROUP,
+		Weight:  100,
+	}
 
-	err = cfg.Value("options").Scan(&clientOpts)
+	err = cfg.Value("options").Scan(opts)
 	if err != nil {
 		return nil, fmt.Errorf("nacos options error:%+v", err)
 	}
 
-	return New(namingClient, clientOpts.toOpts()...), nil
+	return New(namingClient, opts), nil
 
 }
 

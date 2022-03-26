@@ -7,9 +7,11 @@ import (
 func (e *Server) registryEngineRoute() {
 	engine := e.processor.engine
 
-	server.RegistryEngineRoute(&server.AlloterEngine{
-		Engine: engine,
-		ERF:    e.opts.enc,
-	}, e.opts.router)
+	adapterEngine := server.NewAlloterEngine(engine,
+		server.WithSrvType(e.Type()),
+		server.WithErrorEncoder(e.opts.encErr),
+		server.WithResponseEncoder(e.opts.encResp))
+
+	server.RegistryEngineRoute(adapterEngine, e.opts.router)
 
 }

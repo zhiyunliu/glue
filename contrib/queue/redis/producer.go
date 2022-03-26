@@ -12,15 +12,14 @@ import (
 
 // Producer memcache配置文件
 type Producer struct {
-	servers []string
-	client  *redis.Client
-	setting config.Config
+	client *redis.Client
+	config config.Config
 }
 
 // NewProducerByConfig 根据配置文件创建一个redis连接
-func NewProducer(setting config.Config) (m *Producer, err error) {
-	m = &Producer{setting: setting}
-	m.client, err = redis.NewByConfig(m.setting)
+func NewProducer(config config.Config) (m *Producer, err error) {
+	m = &Producer{config: config}
+	m.client, err = redis.NewByConfig(m.config)
 	if err != nil {
 		return
 	}
