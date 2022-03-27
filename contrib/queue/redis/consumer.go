@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	rds "github.com/go-redis/redis"
+
 	"github.com/zhiyunliu/velocity/config"
 	"github.com/zhiyunliu/velocity/contrib/redis"
 	"github.com/zhiyunliu/velocity/queue"
@@ -100,7 +102,7 @@ func doReceiveMsg(item *QueueItem) {
 		default:
 			cmd := client.BLPop(time.Duration(item.BlockTimeout)*time.Second, queue)
 			msgs, err := cmd.Result()
-			if err != nil {
+			if err != nil && err != rds.Nil {
 				log.Printf("BLPop.%s,Error:%+v", queue, err)
 				time.Sleep(time.Second)
 				continue

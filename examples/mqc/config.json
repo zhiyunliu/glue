@@ -38,7 +38,7 @@
 		"mqc":{
 			"config":{"addr":"queue://default","status":"start"},
 			"middlewares":[{},{}],
-			"tasks":[{"queue":"xx.xx.xx","disable":true},{"queue":"yy.yy.yy"}]
+			"tasks":[{"queue":"xx","disable":true},{"queue":"yy"}]
 		}
     }
 }

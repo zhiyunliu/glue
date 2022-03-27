@@ -484,7 +484,7 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
 			c.handlers = value.handlers
 			c.fullPath = value.fullPath
 			c.Next()
-			c.writermem.WriteHeaderNow()
+			//c.writermem.WriteHeaderNow()
 			return
 		}
 
@@ -508,36 +508,34 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
 }
 
 //HandleRequest 处理外部请求
-func (engine *Engine) HandleRequest(r IRequest) (w *responseWriter, err error) {
+func (engine *Engine) HandleRequest(r IRequest, resp ResponseWriter) (err error) {
 	c := engine.pool.Get().(*Context)
 	c.reset()
-	c.writermem.reset(w)
+	c.Writer = resp
+	c.Request = r
 	engine.HandleContext(c)
 	if len(c.Errors) > 0 {
 		err = c.Errors[0]
 	}
-	w = &c.writermem
-	c.writermem.reset(w)
+	c.Writer = nil
 	c.reset()
 	engine.pool.Put(c)
 	return
 }
 
-var mimePlain = []string{MIMEPlain}
-
 func serveError(c *Context, code int, defaultMessage []byte) {
-	c.writermem.status = code
+	c.Writer.WriteHeader(code)
 	c.Next()
-	if c.writermem.Written() {
+	if c.Writer.Written() {
 		return
 	}
-	if c.writermem.Status() == code {
-		c.writermem.Header()["Content-Type"] = mimePlain
+	if c.Writer.Status() == code {
+		c.Writer.Header()["Content-Type"] = MIMEPlain
 		_, err := c.Writer.Write(defaultMessage)
 		if err != nil {
 			debugPrint("cannot write message to writer during serve error: %v", err)
 		}
 		return
 	}
-	c.writermem.WriteHeaderNow()
+	//c.writermem.WriteHeaderNow()
 }

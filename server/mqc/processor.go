@@ -5,8 +5,10 @@ import (
 	"sync"
 
 	cmap "github.com/orcaman/concurrent-map"
+	"github.com/zhiyunliu/golibs/xstack"
 	"github.com/zhiyunliu/velocity/config"
 	"github.com/zhiyunliu/velocity/contrib/alloter"
+	"github.com/zhiyunliu/velocity/log"
 	"github.com/zhiyunliu/velocity/queue"
 	"github.com/zhiyunliu/velocity/server"
 )
@@ -56,6 +58,9 @@ func (s *processor) Start() error {
 //Add 添加队列信息
 func (s *processor) Add(tasks ...*Task) error {
 	for _, task := range tasks {
+		if task.Disable {
+			continue
+		}
 		if ok := s.queues.SetIfAbsent(task.Queue, task); ok && s.status == server.Running {
 			if err := s.consume(task); err != nil {
 				return err
@@ -122,14 +127,25 @@ func (s *processor) Close() error {
 
 func (s *processor) handleCallback(task *Task) func(queue.IMQCMessage) {
 	return func(m queue.IMQCMessage) {
+		defer func() {
+			if obj := recover(); obj != nil {
+				log.Errorf("mqc.handleCallback.Queue:%s,data:%s, error:%+v. stack:%s", task.Queue, m.GetMessage(), obj, xstack.GetStack(1))
+			}
+		}()
+
 		req, err := NewRequest(task, m)
 		if err != nil {
 			panic(err)
 		}
-		writer, err := s.engine.HandleRequest(req)
+		resp, err := NewResponse(task, m)
 		if err != nil {
 			panic(err)
 		}
-		writer.Flush()
+
+		err = s.engine.HandleRequest(req, resp)
+		if err != nil {
+			panic(err)
+		}
+		resp.Flush()
 	}
 }

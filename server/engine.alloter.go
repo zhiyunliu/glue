@@ -25,7 +25,7 @@ func NewAlloterEngine(engine *alloter.Engine, opts ...Option) *AlloterEngine {
 		opts[i](g.opts)
 	}
 	g.pool.New = func() interface{} {
-		return &GinContext{
+		return &AlloterContext{
 			opts: g.opts,
 		}
 	}
@@ -36,7 +36,7 @@ func (e *AlloterEngine) Handle(method string, path string, callfunc HandlerFunc)
 	e.Engine.Handle(method, path, func(ctx *alloter.Context) {
 		actx := e.pool.Get().(*AlloterContext)
 		actx.reset(ctx)
-		actx.srvType = e.opts.SrvType
+		actx.opts = e.opts
 		callfunc(actx)
 		actx.Close()
 		e.pool.Put(actx)

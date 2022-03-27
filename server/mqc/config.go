@@ -41,10 +41,13 @@ func (t *Task) GetService() string {
 	if t.Service != "" {
 		return t.Service
 	}
-	tmp := t.Queue
+	t.Service = getService(t.Queue)
+	return t.Service
+}
+
+func getService(queue string) string {
+	tmp := queue
 	tmp = strings.ReplaceAll(tmp, ":", "_")
 	tmp = strings.ReplaceAll(tmp, "/", "_")
-
-	t.Service = fmt.Sprintf("/mqc_%s", tmp)
-	return t.Service
+	return fmt.Sprintf("/mqc_%s", tmp)
 }

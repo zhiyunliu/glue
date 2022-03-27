@@ -146,6 +146,6 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *serv
 	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Handle(path string, obj interface{}, methods ...server.Method) {
-	e.opts.router.Handle(path, obj, methods...)
+func (e *Server) Handle(queue string, obj interface{}, methods ...server.Method) {
+	e.opts.router.Handle(getService(queue), obj, methods...)
 }

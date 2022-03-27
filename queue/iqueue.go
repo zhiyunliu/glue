@@ -17,6 +17,7 @@ type IMQCMessage interface {
 type Message interface {
 	Header() map[string]string
 	Body() map[string]string
+	String() string
 }
 
 type ConsumeCallback func(IMQCMessage)

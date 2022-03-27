@@ -1,1 +1,4 @@
-{"status":false,"layouts":[{"type":"file","level":"","path":"../logs/%date/%hh.log","layout":"[%datetime][%l][%session][%data] %content%n"},{"type":"stdout","level":"","layout":"[%datetime][%l][%session][%data] %content%n"}]}
+{"status":false,"layouts":[
+    {"type":"file","level":"","path":"../logs/%date/%hh.log","layout":"[%datetime][%l][%session][%idx] %content"},
+    {"type":"stdout","level":"","layout":"[%datetime][%l][%session][%idx] %content"}]
+}

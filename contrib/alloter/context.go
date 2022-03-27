@@ -18,9 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-contrib/sse"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/gin-gonic/gin/render"
 )
 
 // Content-Type MIME of the most common data formats.
@@ -44,9 +42,8 @@ const abortIndex int8 = math.MaxInt8 >> 1
 // Context is the most important part of gin. It allows us to pass variables between middleware,
 // manage the flow, validate the JSON of a request and render a JSON response for example.
 type Context struct {
-	writermem responseWriter
-	Request   IRequest
-	Writer    ResponseWriter
+	Request IRequest
+	Writer  ResponseWriter
 
 	Params   Params
 	handlers HandlersChain
@@ -86,7 +83,6 @@ type Context struct {
 /************************************/
 
 func (c *Context) reset() {
-	c.Writer = &c.writermem
 	c.Params = c.Params[:0]
 	c.handlers = nil
 	c.index = -1
@@ -105,13 +101,10 @@ func (c *Context) reset() {
 // This has to be used when the context has to be passed to a goroutine.
 func (c *Context) Copy() *Context {
 	cp := Context{
-		writermem: c.writermem,
-		Request:   c.Request,
-		Params:    c.Params,
-		engine:    c.engine,
+		Request: c.Request,
+		Params:  c.Params,
+		engine:  c.engine,
 	}
-	cp.writermem.ResponseWriter = nil
-	cp.Writer = &cp.writermem
 	cp.index = abortIndex
 	cp.handlers = nil
 	cp.Keys = map[string]interface{}{}
@@ -185,8 +178,7 @@ func (c *Context) Abort() {
 // AbortWithStatus calls `Abort()` and writes the headers with the specified status code.
 // For example, a failed attempt to authenticate a request could use: context.AbortWithStatus(401).
 func (c *Context) AbortWithStatus(code int) {
-	c.Status(code)
-	c.Writer.WriteHeaderNow()
+	c.WriteHeader(code)
 	c.Abort()
 }
 
@@ -256,14 +248,6 @@ func (c *Context) Get(key string) (value interface{}, exists bool) {
 	value, exists = c.Keys[key]
 	c.mu.RUnlock()
 	return
-}
-
-// MustGet returns the value for the given key if it exists, otherwise it panics.
-func (c *Context) MustGet(key string) interface{} {
-	if value, exists := c.Get(key); exists {
-		return value
-	}
-	panic("Key \"" + key + "\" does not exist")
 }
 
 // GetString returns the value associated with the key as a string.
@@ -523,7 +507,7 @@ func bodyAllowedForStatus(status int) bool {
 }
 
 // Status sets the HTTP response code.
-func (c *Context) Status(code int) {
+func (c *Context) WriteHeader(code int) {
 	c.Writer.WriteHeader(code)
 }
 
@@ -548,215 +532,42 @@ func (c *Context) SetSameSite(samesite http.SameSite) {
 	c.sameSite = samesite
 }
 
-// SetCookie adds a Set-Cookie header to the ResponseWriter's headers.
-// The provided cookie must have a valid Name. Invalid cookies may be
-// silently dropped.
-func (c *Context) SetCookie(name, value string, maxAge int, path, domain string, secure, httpOnly bool) {
-	if path == "" {
-		path = "/"
-	}
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     name,
-		Value:    url.QueryEscape(value),
-		MaxAge:   maxAge,
-		Path:     path,
-		Domain:   domain,
-		SameSite: c.sameSite,
-		Secure:   secure,
-		HttpOnly: httpOnly,
-	})
-}
-
-// Render writes the response headers and calls render.Render to render data.
-func (c *Context) Render(code int, r render.Render) {
-	c.Status(code)
+// Render writes the response headers and calls Render to render data.
+func (c *Context) Render(code int, r Render) {
+	c.WriteHeader(code)
 
 	if !bodyAllowedForStatus(code) {
 		r.WriteContentType(c.Writer)
-		c.Writer.WriteHeaderNow()
 		return
 	}
-
 	if err := r.Render(c.Writer); err != nil {
 		panic(err)
 	}
 }
 
-// HTML renders the HTTP template specified by its file name.
-// It also updates the HTTP code and sets the Content-Type as "text/html".
-// See http://golang.org/doc/articles/wiki/
-func (c *Context) HTML(code int, name string, obj interface{}) {
-	instance := c.engine.HTMLRender.Instance(name, obj)
-	c.Render(code, instance)
-}
-
-// IndentedJSON serializes the given struct as pretty JSON (indented + endlines) into the response body.
-// It also sets the Content-Type as "application/json".
-// WARNING: we recommend using this only for development purposes since printing pretty JSON is
-// more CPU and bandwidth consuming. Use Context.JSON() instead.
-func (c *Context) IndentedJSON(code int, obj interface{}) {
-	c.Render(code, render.IndentedJSON{Data: obj})
-}
-
-// SecureJSON serializes the given struct as Secure JSON into the response body.
-// Default prepends "while(1)," to response body if the given struct is array values.
-// It also sets the Content-Type as "application/json".
-func (c *Context) SecureJSON(code int, obj interface{}) {
-	c.Render(code, render.SecureJSON{Prefix: c.engine.secureJSONPrefix, Data: obj})
-}
-
 // JSON serializes the given struct as JSON into the response body.
 // It also sets the Content-Type as "application/json".
 func (c *Context) JSON(code int, obj interface{}) {
-	c.Render(code, render.JSON{Data: obj})
-}
-
-// AsciiJSON serializes the given struct as JSON into the response body with unicode to ASCII string.
-// It also sets the Content-Type as "application/json".
-func (c *Context) AsciiJSON(code int, obj interface{}) {
-	c.Render(code, render.AsciiJSON{Data: obj})
-}
-
-// PureJSON serializes the given struct as JSON into the response body.
-// PureJSON, unlike JSON, does not replace special html characters with their unicode entities.
-func (c *Context) PureJSON(code int, obj interface{}) {
-	c.Render(code, render.PureJSON{Data: obj})
+	c.Render(code, JSONRender{Data: obj})
 }
 
 // XML serializes the given struct as XML into the response body.
 // It also sets the Content-Type as "application/xml".
 func (c *Context) XML(code int, obj interface{}) {
-	c.Render(code, render.XML{Data: obj})
-}
-
-// YAML serializes the given struct as YAML into the response body.
-func (c *Context) YAML(code int, obj interface{}) {
-	c.Render(code, render.YAML{Data: obj})
-}
-
-// ProtoBuf serializes the given struct as ProtoBuf into the response body.
-func (c *Context) ProtoBuf(code int, obj interface{}) {
-	c.Render(code, render.ProtoBuf{Data: obj})
+	c.Render(code, XMLRender{Data: obj})
 }
 
 // String writes the given string into the response body.
 func (c *Context) String(code int, format string, values ...interface{}) {
-	c.Render(code, render.String{Format: format, Data: values})
+	c.Render(code, StringRender{Format: format, Data: values})
 }
 
 // Data writes some data into the body stream and updates the HTTP code.
 func (c *Context) Data(code int, contentType string, data []byte) {
-	c.Render(code, render.Data{
+	c.Render(code, DataRender{
 		ContentType: contentType,
 		Data:        data,
 	})
-}
-
-// DataFromReader writes the specified reader into the body stream and updates the HTTP code.
-func (c *Context) DataFromReader(code int, contentLength int64, contentType string, reader io.Reader, extraHeaders map[string]string) {
-	c.Render(code, render.Reader{
-		Headers:       extraHeaders,
-		ContentType:   contentType,
-		ContentLength: contentLength,
-		Reader:        reader,
-	})
-}
-
-// SSEvent writes a Server-Sent Event into the body stream.
-func (c *Context) SSEvent(name string, message interface{}) {
-	c.Render(-1, sse.Event{
-		Event: name,
-		Data:  message,
-	})
-}
-
-// Stream sends a streaming response and returns a boolean
-// indicates "Is client disconnected in middle of stream"
-func (c *Context) Stream(step func(w io.Writer) bool) bool {
-	w := c.Writer
-	clientGone := w.CloseNotify()
-	for {
-		select {
-		case <-clientGone:
-			return true
-		default:
-			keepOpen := step(w)
-			w.Flush()
-			if !keepOpen {
-				return false
-			}
-		}
-	}
-}
-
-/************************************/
-/******** CONTENT NEGOTIATION *******/
-/************************************/
-
-// Negotiate contains all negotiations data.
-type Negotiate struct {
-	Offered  []string
-	HTMLName string
-	HTMLData interface{}
-	JSONData interface{}
-	XMLData  interface{}
-	YAMLData interface{}
-	Data     interface{}
-}
-
-// Negotiate calls different Render according to acceptable Accept format.
-func (c *Context) Negotiate(code int, config Negotiate) {
-	switch c.NegotiateFormat(config.Offered...) {
-	case binding.MIMEJSON:
-		data := chooseData(config.JSONData, config.Data)
-		c.JSON(code, data)
-
-	case binding.MIMEHTML:
-		data := chooseData(config.HTMLData, config.Data)
-		c.HTML(code, config.HTMLName, data)
-
-	case binding.MIMEXML:
-		data := chooseData(config.XMLData, config.Data)
-		c.XML(code, data)
-
-	case binding.MIMEYAML:
-		data := chooseData(config.YAMLData, config.Data)
-		c.YAML(code, data)
-
-	default:
-		c.AbortWithError(http.StatusNotAcceptable, errors.New("the accepted formats are not offered by the server")) // nolint: errcheck
-	}
-}
-
-// NegotiateFormat returns an acceptable Accept format.
-func (c *Context) NegotiateFormat(offered ...string) string {
-	assert1(len(offered) > 0, "you must provide at least one offer")
-
-	if c.Accepted == nil {
-		c.Accepted = parseAccept(c.requestHeader("Accept"))
-	}
-	if len(c.Accepted) == 0 {
-		return offered[0]
-	}
-	for _, accepted := range c.Accepted {
-		for _, offer := range offered {
-			// According to RFC 2616 and RFC 2396, non-ASCII characters are not allowed in headers,
-			// therefore we can just iterate over the string without casting it into []rune
-			i := 0
-			for ; i < len(accepted); i++ {
-				if accepted[i] == '*' || offer[i] == '*' {
-					return offer
-				}
-				if accepted[i] != offer[i] {
-					break
-				}
-			}
-			if i == len(accepted) {
-				return offer
-			}
-		}
-	}
-	return ""
 }
 
 // SetAccepted sets Accept header data.

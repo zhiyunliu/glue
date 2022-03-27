@@ -36,7 +36,7 @@ func (e *GinEngine) Handle(method string, path string, callfunc HandlerFunc) {
 	e.Engine.Handle(method, path, func(gctx *gin.Context) {
 		actx := e.pool.Get().(*GinContext)
 		actx.reset(gctx)
-		actx.srvType = e.opts.SrvType
+		actx.opts = e.opts
 		callfunc(actx)
 		actx.Gctx.Writer.Flush()
 		actx.Close()

@@ -18,12 +18,11 @@ import (
 const XRequestId = "x-request-id"
 
 type GinContext struct {
-	srvType string
-	opts    *options
-	Gctx    *gin.Context
-	greq    *ginRequest
-	gresp   *gresponse
-	logger  log.Logger
+	opts   *options
+	Gctx   *gin.Context
+	greq   *ginRequest
+	gresp  *ginResponse
+	logger log.Logger
 }
 
 func (ctx *GinContext) reset(gctx *gin.Context) {
@@ -32,7 +31,7 @@ func (ctx *GinContext) reset(gctx *gin.Context) {
 }
 
 func (ctx *GinContext) ServerType() string {
-	return ctx.srvType
+	return ctx.opts.SrvType
 }
 
 func (ctx *GinContext) Context() context.Context {
@@ -56,7 +55,7 @@ func (ctx *GinContext) Request() vctx.Request {
 }
 func (ctx *GinContext) Response() vctx.Response {
 	if ctx.gresp == nil {
-		ctx.gresp = &gresponse{gctx: ctx.Gctx, vctx: ctx}
+		ctx.gresp = &ginResponse{gctx: ctx.Gctx, vctx: ctx}
 	}
 	return ctx.gresp
 }
@@ -268,25 +267,25 @@ func (q *gbody) loadBody() (err error) {
 }
 
 //gresponse --------------------------------
-type gresponse struct {
+type ginResponse struct {
 	vctx      *GinContext
 	gctx      *gin.Context
 	hasWrited bool
 }
 
-func (q *gresponse) Status(statusCode int) {
+func (q *ginResponse) Status(statusCode int) {
 	q.gctx.Writer.WriteHeader(statusCode)
 }
 
-func (q *gresponse) Header(key, val string) {
+func (q *ginResponse) Header(key, val string) {
 	q.gctx.Writer.Header().Set(key, val)
 }
 
-func (q *gresponse) ContextType(val string) {
+func (q *ginResponse) ContextType(val string) {
 	q.gctx.Writer.Header().Set("content-type", val)
 }
 
-func (q *gresponse) Write(obj interface{}) error {
+func (q *ginResponse) Write(obj interface{}) error {
 	if q.hasWrited {
 		panic(fmt.Errorf("%s：有多种方式写入响应", q.gctx.FullPath()))
 	}
@@ -298,7 +297,7 @@ func (q *gresponse) Write(obj interface{}) error {
 	return q.vctx.opts.ResponseEncoder(q.vctx, obj)
 }
 
-func (q *gresponse) WriteBytes(bytes []byte) error {
+func (q *ginResponse) WriteBytes(bytes []byte) error {
 	_, err := q.gctx.Writer.Write(bytes)
 	return err
 }

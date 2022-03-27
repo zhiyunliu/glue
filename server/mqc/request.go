@@ -2,6 +2,7 @@ package mqc
 
 import (
 	"bytes"
+	"context"
 	sctx "context"
 	"encoding/json"
 	"io"
@@ -22,13 +23,14 @@ type Request struct {
 	method string
 	params map[string]string
 	header map[string]string
-	body   map[string]string
+	body   cbody //map[string]string
 }
 
 //NewRequest 构建任务请求
 func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 
 	r = &Request{
+
 		IMQCMessage: m,
 		task:        task,
 		method:      "GET",
@@ -40,6 +42,11 @@ func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 
 	r.header = message.Header()
 	r.body = message.Body()
+	r.ctx = context.Background()
+
+	if r.header["Content-Type"] == "" {
+		r.header["Content-Type"] = "application/json"
+	}
 
 	return r, nil
 }

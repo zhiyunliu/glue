@@ -9,7 +9,7 @@ import (
 func main() {
 	mqcSrv := mqc.New("")
 
-	mqcSrv.Handle("xx.xx.xx", &demo{})
+	mqcSrv.Handle("yy", &demo{})
 
 	app := velocity.NewApp(velocity.Server(mqcSrv))
 

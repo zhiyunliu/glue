@@ -150,7 +150,7 @@ func (g *ServiceGroup) HasChildren() bool {
 }
 
 func (g *ServiceGroup) IsValid() error {
-	if !(g.HasService() && g.HasChildren()) {
+	if !(g.HasService() || g.HasChildren()) {
 		return fmt.Errorf("%s无可用注册处理函数", g.Path)
 	}
 	errs := []error{}
