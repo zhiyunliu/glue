@@ -25,9 +25,7 @@ func NewAlloterEngine(engine *alloter.Engine, opts ...Option) *AlloterEngine {
 		opts[i](g.opts)
 	}
 	g.pool.New = func() interface{} {
-		return &AlloterContext{
-			opts: g.opts,
-		}
+		return newAlloterContext(g.opts)
 	}
 	return g
 }

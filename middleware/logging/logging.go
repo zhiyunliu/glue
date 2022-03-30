@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -50,15 +49,14 @@ func Server(logger log.Logger) middleware.Middleware {
 
 // extractArgs returns the string of the req
 func extractReq(req context.Request) string {
-	data := map[string]interface{}{}
+	var query, body string
 	if len(req.Query().SMap()) > 0 {
-		data["query"] = req.Query().SMap()
+		query = req.Query().String()
 	}
 	if req.Body().Len() > 0 {
-		data["body"] = bytesconv.BytesToString(req.Body().Bytes())
+		body = bytesconv.BytesToString(req.Body().Bytes())
 	}
-	reqBytes, _ := json.Marshal(data)
-	return bytesconv.BytesToString(reqBytes)
+	return fmt.Sprintf("query:%s,body:%s", query, body)
 }
 
 func extractResp(req interface{}) string {

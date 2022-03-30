@@ -19,26 +19,27 @@ var CmdsRunNotifySignals = []os.Signal{os.Interrupt, os.Kill, syscall.SIGTERM, s
 var CmdsUpdateProcessSignal = syscall.SIGINT
 
 //AppClose AppClose
-func AppClose() {
+func AppClose() error {
 	pid := syscall.Getpid()
 
 	dll, err := syscall.LoadDLL("kernel32.dll")
 	if err != nil {
 		log.Errorf("syscall.LoadDLL(kernel32.dll),Error:%+v", err)
-		return
+		return err
 	}
 
 	p, err := dll.FindProc("GenerateConsoleCtrlEvent")
 	if err != nil {
 		log.Errorf("dll.FindProc(GenerateConsoleCtrlEvent),Error:%+v", err)
-		return
+		return err
 	}
 
 	r, _, err := p.Call(syscall.CTRL_BREAK_EVENT, uintptr(pid))
 	if r == 0 {
 		log.Errorf("prod.Call(CTRL_BREAK_EVENT,pid=%d),Error:%+v", pid, err)
-		return
+		return err
 	}
+	return nil
 }
 
 func init() {

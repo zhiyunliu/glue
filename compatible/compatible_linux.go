@@ -2,14 +2,13 @@
 package compatible
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
 )
- 
+
 //CheckPrivileges 检查是否有管理员权限
 func CheckPrivileges() error {
 	if output, err := exec.Command("id", "-g").Output(); err == nil {
@@ -29,7 +28,7 @@ var CmdsRunNotifySignals = []os.Signal{os.Interrupt, os.Kill, syscall.SIGTERM, s
 var CmdsUpdateProcessSignal = syscall.SIGUSR2
 
 //AppClose AppClose
-func AppClose() {
+func AppClose() error {
 	parent := syscall.Getpid()
 	return syscall.Kill(parent, syscall.SIGTERM)
 }

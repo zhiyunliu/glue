@@ -25,9 +25,21 @@ type GinContext struct {
 	logger log.Logger
 }
 
+func newGinContext(opts *options) *GinContext {
+	return &GinContext{
+		opts: opts,
+		greq: &ginRequest{
+			hasClose: true,
+			gpath:    &gpath{hasClose: true},
+			gquery:   &gquery{hasClose: true},
+			gbody:    &gbody{hasClose: true},
+		},
+		gresp: &ginResponse{hasClose: true},
+	}
+}
+
 func (ctx *GinContext) reset(gctx *gin.Context) {
 	ctx.Gctx = gctx
-	ctx.greq = nil
 }
 
 func (ctx *GinContext) ServerType() string {
@@ -48,14 +60,15 @@ func (ctx *GinContext) Header(key string) string {
 }
 
 func (ctx *GinContext) Request() vctx.Request {
-	if ctx.greq == nil {
-		ctx.greq = &ginRequest{gctx: ctx.Gctx}
+	if ctx.greq.hasClose {
+		ctx.greq.gctx = ctx.Gctx
 	}
 	return ctx.greq
 }
 func (ctx *GinContext) Response() vctx.Response {
-	if ctx.gresp == nil {
-		ctx.gresp = &ginResponse{gctx: ctx.Gctx, vctx: ctx}
+	if ctx.gresp.hasClose {
+		ctx.gresp.gctx = ctx.Gctx
+		ctx.gresp.vctx = ctx
 	}
 	return ctx.gresp
 }
@@ -77,36 +90,8 @@ func (ctx *GinContext) Log() log.Logger {
 }
 func (ctx *GinContext) Close() {
 
-	if ctx.greq.gpath != nil {
-		ctx.greq.gpath.params = nil
-		ctx.greq.gpath.gctx = nil
-		ctx.greq.gpath = nil
-	}
-
-	if ctx.greq.gquery != nil {
-		ctx.greq.gquery.params = nil
-		ctx.greq.gquery.gctx = nil
-		ctx.greq.gquery = nil
-	}
-
-	if ctx.greq.gbody != nil {
-		ctx.greq.gbody.bodyBytes = nil
-		ctx.greq.gbody.gctx = nil
-		ctx.greq.gbody = nil
-	}
-
-	if ctx.greq.gpath != nil {
-		ctx.greq.gpath.params = nil
-		ctx.greq.gpath.gctx = nil
-		ctx.greq.gpath = nil
-	}
-
-	if ctx.gresp != nil {
-		ctx.gresp.gctx = nil
-		ctx.gresp = nil
-	}
-
-	ctx.greq.gctx = nil
+	ctx.greq.Close()
+	ctx.gresp.Close()
 	ctx.Gctx = nil
 
 	ctx.logger.Close()
@@ -120,10 +105,11 @@ func (ctx *GinContext) GetImpl() interface{} {
 //--------------------------------
 
 type ginRequest struct {
-	gctx   *gin.Context
-	gpath  *gpath
-	gquery *gquery
-	gbody  *gbody
+	gctx     *gin.Context
+	gpath    *gpath
+	gquery   *gquery
+	gbody    *gbody
+	hasClose bool
 }
 
 func (r *ginRequest) GetMethod() string {
@@ -147,30 +133,37 @@ func (r *ginRequest) SetHeader(key, val string) {
 }
 
 func (r *ginRequest) Path() vctx.Path {
-	if r.gpath == nil {
-		r.gpath = &gpath{gctx: r.gctx}
+	if r.gpath.hasClose {
+		r.gpath.gctx = r.gctx
 	}
 	return r.gpath
 }
 
 func (r *ginRequest) Query() vctx.Query {
-	if r.gquery == nil {
-		r.gquery = &gquery{gctx: r.gctx}
+	if r.gquery.hasClose {
+		r.gquery.gctx = r.gctx
 	}
 	return r.gquery
 }
 func (r *ginRequest) Body() vctx.Body {
-	if r.gbody == nil {
-		r.gbody = &gbody{gctx: r.gctx}
+	if r.gbody.hasClose {
+		r.gbody.gctx = r.gctx
 	}
 	return r.gbody
+}
+func (q *ginRequest) Close() {
+	q.gctx = nil
+	q.gpath.Close()
+	q.gquery.Close()
+	q.gbody.Close()
 }
 
 //-path-------------------------
 
 type gpath struct {
-	gctx   *gin.Context
-	params xtypes.SMap
+	gctx     *gin.Context
+	params   xtypes.SMap
+	hasClose bool
 }
 
 func (p *gpath) GetURL() *url.URL {
@@ -190,12 +183,18 @@ func (p *gpath) Params() xtypes.SMap {
 	}
 	return p.params
 }
+func (q *gpath) Close() {
+	q.gctx = nil
+	q.params = nil
+	q.hasClose = true
+}
 
 //-gquery---------------------------------
 
 type gquery struct {
-	gctx   *gin.Context
-	params xtypes.SMap
+	gctx     *gin.Context
+	params   xtypes.SMap
+	hasClose bool
 }
 
 func (q *gquery) Get(name string) string {
@@ -219,11 +218,19 @@ func (q *gquery) String() string {
 	return q.gctx.Request.URL.RawQuery
 }
 
+func (q *gquery) Close() {
+	q.gctx = nil
+	q.params = nil
+	q.hasClose = true
+}
+
 //-gbody---------------------------------
 type gbody struct {
 	gctx      *gin.Context
 	hasRead   bool
 	bodyBytes []byte
+	reader    *bytes.Reader
+	hasClose  bool
 }
 
 func (q *gbody) Scan(obj interface{}) error {
@@ -235,7 +242,7 @@ func (q *gbody) Read(p []byte) (n int, err error) {
 	if err != nil {
 		return
 	}
-	return bytes.NewReader(q.bodyBytes).Read(p)
+	return q.reader.Read(p)
 }
 
 func (q *gbody) Len() int {
@@ -261,9 +268,17 @@ func (q *gbody) loadBody() (err error) {
 		if err != nil {
 			return err
 		}
+		q.reader = bytes.NewReader(q.bodyBytes)
 		q.gctx.Request.Body.Close()
 	}
 	return nil
+}
+func (q *gbody) Close() {
+	q.bodyBytes = nil
+	q.reader = nil
+	q.gctx = nil
+	q.hasClose = true
+	q.hasRead = false
 }
 
 //gresponse --------------------------------
@@ -271,6 +286,7 @@ type ginResponse struct {
 	vctx      *GinContext
 	gctx      *gin.Context
 	hasWrited bool
+	hasClose  bool
 }
 
 func (q *ginResponse) Status(statusCode int) {
@@ -287,7 +303,7 @@ func (q *ginResponse) ContextType(val string) {
 
 func (q *ginResponse) Write(obj interface{}) error {
 	if q.hasWrited {
-		panic(fmt.Errorf("%s：有多种方式写入响应", q.gctx.FullPath()))
+		panic(fmt.Errorf("%s:有多种方式写入响应", q.gctx.FullPath()))
 	}
 	q.hasWrited = true
 	if werr, ok := obj.(error); ok {
@@ -300,4 +316,11 @@ func (q *ginResponse) Write(obj interface{}) error {
 func (q *ginResponse) WriteBytes(bytes []byte) error {
 	_, err := q.gctx.Writer.Write(bytes)
 	return err
+}
+
+func (q *ginResponse) Close() {
+	q.vctx = nil
+	q.gctx = nil
+	q.hasWrited = false
+	q.hasClose = true
 }

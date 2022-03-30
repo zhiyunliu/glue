@@ -25,9 +25,7 @@ func NewGinEngine(engine *gin.Engine, opts ...Option) *GinEngine {
 	}
 
 	g.pool.New = func() interface{} {
-		return &GinContext{
-			opts: g.opts,
-		}
+		return newGinContext(g.opts)
 	}
 	return g
 }

@@ -48,6 +48,7 @@ func (p *ServiceApp) register(ctx context.Context) error {
 			return err
 		}
 		p.instance = instance
+		log.Infof("register to %s completed", p.options.Registrar.Name())
 	}
 	return nil
 }

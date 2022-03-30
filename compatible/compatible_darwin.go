@@ -29,7 +29,7 @@ var CmdsRunNotifySignals = []os.Signal{os.Interrupt, os.Kill, syscall.SIGTERM, s
 var CmdsUpdateProcessSignal = syscall.SIGUSR2
 
 //AppClose AppClose
-func AppClose() {
+func AppClose() error {
 	parent := syscall.Getpid()
-	syscall.Kill(parent, syscall.SIGTERM)
+	return syscall.Kill(parent, syscall.SIGTERM)
 }

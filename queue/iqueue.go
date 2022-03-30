@@ -11,6 +11,7 @@ type IQueue interface {
 type IMQCMessage interface {
 	Ack() error
 	Nack() error
+	Original() string
 	GetMessage() Message
 }
 

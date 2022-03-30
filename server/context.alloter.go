@@ -22,9 +22,23 @@ type AlloterContext struct {
 	logger log.Logger
 }
 
+func newAlloterContext(opts *options) *AlloterContext {
+	return &AlloterContext{
+		opts: opts,
+		areq: &alloterRequest{
+			hasClose: true,
+			apath:    &apath{hasClose: true},
+			aquery:   &aquery{hasClose: true},
+			abody:    &abody{hasClose: true},
+		},
+		aresp: &alloterResponse{
+			hasClose: true,
+		},
+	}
+}
+
 func (ctx *AlloterContext) reset(gctx *alloter.Context) {
 	ctx.Actx = gctx
-	ctx.areq = nil
 }
 
 func (ctx *AlloterContext) ServerType() string {
@@ -44,15 +58,20 @@ func (ctx *AlloterContext) Header(key string) string {
 }
 
 func (ctx *AlloterContext) Request() vctx.Request {
-	if ctx.areq == nil {
+	if ctx.areq.hasClose {
+		ctx.areq.hasClose = false
 		reqUrl, _ := url.Parse(ctx.Actx.Request.GetService())
-		ctx.areq = &alloterRequest{actx: ctx.Actx, vctx: ctx, reqUrl: reqUrl}
+		ctx.areq.actx = ctx.Actx
+		ctx.areq.vctx = ctx
+		ctx.areq.reqUrl = reqUrl
 	}
 	return ctx.areq
 }
 func (ctx *AlloterContext) Response() vctx.Response {
-	if ctx.aresp == nil {
-		ctx.aresp = &alloterResponse{actx: ctx.Actx, vctx: ctx}
+	if ctx.aresp.hasClose {
+		ctx.aresp.hasClose = false
+		ctx.aresp.actx = ctx.Actx
+		ctx.aresp.vctx = ctx
 	}
 	return ctx.aresp
 }
@@ -73,36 +92,8 @@ func (ctx *AlloterContext) Log() log.Logger {
 	return ctx.logger
 }
 func (ctx *AlloterContext) Close() {
-	if ctx.areq.apath != nil {
-		ctx.areq.apath.params = nil
-		ctx.areq.apath.actx = nil
-		ctx.areq.apath = nil
-	}
-
-	if ctx.areq.aquery != nil {
-		ctx.areq.aquery.params = nil
-		ctx.areq.aquery.actx = nil
-		ctx.areq.aquery = nil
-	}
-
-	if ctx.areq.abody != nil {
-		ctx.areq.abody.bodyBytes = nil
-		ctx.areq.abody.actx = nil
-		ctx.areq.abody = nil
-	}
-
-	if ctx.areq.apath != nil {
-		ctx.areq.apath.params = nil
-		ctx.areq.apath.actx = nil
-		ctx.areq.apath = nil
-	}
-
-	if ctx.aresp != nil {
-		ctx.aresp.actx = nil
-		ctx.aresp = nil
-	}
-
-	ctx.areq.actx = nil
+	ctx.areq.Close()
+	ctx.aresp.Close()
 	ctx.Actx = nil
 
 	ctx.logger.Close()
@@ -116,12 +107,13 @@ func (ctx *AlloterContext) GetImpl() interface{} {
 //-ginRequest-------------------------------
 
 type alloterRequest struct {
-	actx   *alloter.Context
-	vctx   *AlloterContext
-	apath  *apath
-	reqUrl *url.URL
-	aquery *aquery
-	abody  *abody
+	actx     *alloter.Context
+	vctx     *AlloterContext
+	apath    *apath
+	reqUrl   *url.URL
+	aquery   *aquery
+	abody    *abody
+	hasClose bool
 }
 
 func (r *alloterRequest) GetMethod() string {
@@ -141,31 +133,45 @@ func (r *alloterRequest) SetHeader(key, val string) {
 }
 
 func (r *alloterRequest) Path() vctx.Path {
-	if r.apath == nil {
-		r.apath = &apath{actx: r.actx, reqUrl: r.reqUrl}
+	if r.apath.hasClose {
+		r.apath.actx = r.actx
+		r.apath.reqUrl = r.reqUrl
 	}
 	return r.apath
 }
 
 func (r *alloterRequest) Query() vctx.Query {
-	if r.aquery == nil {
-		r.aquery = &aquery{actx: r.actx, reqUrl: r.reqUrl}
+	if r.aquery.hasClose {
+		r.aquery.actx = r.actx
+		r.aquery.reqUrl = r.reqUrl
 	}
 	return r.aquery
 }
 func (r *alloterRequest) Body() vctx.Body {
-	if r.abody == nil {
-		r.abody = &abody{actx: r.actx, vctx: r.vctx}
+	if r.abody.hasClose {
+		r.abody.actx = r.actx
+		r.abody.vctx = r.vctx
 	}
 	return r.abody
+}
+
+func (q *alloterRequest) Close() {
+	q.hasClose = true
+	q.actx = nil
+	q.vctx = nil
+	q.reqUrl = nil
+	q.apath.Close()
+	q.aquery.Close()
+	q.abody.Close()
 }
 
 //-path-------------------------
 
 type apath struct {
-	actx   *alloter.Context
-	params xtypes.SMap
-	reqUrl *url.URL
+	actx     *alloter.Context
+	params   xtypes.SMap
+	reqUrl   *url.URL
+	hasClose bool
 }
 
 func (p *apath) GetURL() *url.URL {
@@ -185,13 +191,20 @@ func (p *apath) Params() xtypes.SMap {
 	}
 	return p.params
 }
+func (q *apath) Close() {
+	q.hasClose = true
+	q.actx = nil
+	q.reqUrl = nil
+	q.params = nil
+}
 
 //-gquery---------------------------------
 
 type aquery struct {
-	actx   *alloter.Context
-	reqUrl *url.URL
-	params xtypes.SMap
+	actx     *alloter.Context
+	reqUrl   *url.URL
+	params   xtypes.SMap
+	hasClose bool
 }
 
 func (q *aquery) Get(name string) string {
@@ -215,12 +228,21 @@ func (q *aquery) String() string {
 	return q.reqUrl.RawQuery
 }
 
+func (q *aquery) Close() {
+	q.actx = nil
+	q.reqUrl = nil
+	q.params = nil
+	q.hasClose = true
+}
+
 //-gbody---------------------------------
 type abody struct {
 	actx      *alloter.Context
 	vctx      *AlloterContext
 	hasRead   bool
+	reader    *bytes.Reader
 	bodyBytes []byte
+	hasClose  bool
 }
 
 func (q *abody) Scan(obj interface{}) error {
@@ -232,7 +254,7 @@ func (q *abody) Read(p []byte) (n int, err error) {
 	if err != nil {
 		return
 	}
-	return bytes.NewReader(q.bodyBytes).Read(p)
+	return q.reader.Read(p)
 }
 
 func (q *abody) Len() int {
@@ -258,8 +280,17 @@ func (q *abody) loadBody() (err error) {
 		if err != nil {
 			return err
 		}
+		q.reader = bytes.NewReader(q.bodyBytes)
 	}
 	return nil
+}
+
+func (q *abody) Close() {
+	q.bodyBytes = nil
+	q.reader = nil
+	q.actx = nil
+	q.hasClose = true
+	q.hasRead = false
 }
 
 //gresponse --------------------------------
@@ -267,6 +298,7 @@ type alloterResponse struct {
 	vctx      *AlloterContext
 	actx      *alloter.Context
 	hasWrited bool
+	hasClose  bool
 }
 
 func (q *alloterResponse) Status(statusCode int) {
@@ -283,7 +315,7 @@ func (q *alloterResponse) ContextType(val string) {
 
 func (q *alloterResponse) Write(obj interface{}) error {
 	if q.hasWrited {
-		panic(fmt.Errorf("%s：有多种方式写入响应", q.actx.FullPath()))
+		panic(fmt.Errorf("%s:有多种方式写入响应", q.actx.FullPath()))
 	}
 	q.hasWrited = true
 	if werr, ok := obj.(error); ok {
@@ -296,4 +328,10 @@ func (q *alloterResponse) Write(obj interface{}) error {
 func (q *alloterResponse) WriteBytes(bytes []byte) error {
 	_, err := q.actx.Writer.Write(bytes)
 	return err
+}
+func (q *alloterResponse) Close() {
+	q.vctx = nil
+	q.actx = nil
+	q.hasWrited = false
+	q.hasClose = true
 }

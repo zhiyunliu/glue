@@ -2,7 +2,6 @@ package redis
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 	"time"
@@ -103,7 +102,6 @@ func doReceiveMsg(item *QueueItem) {
 			cmd := client.BLPop(time.Duration(item.BlockTimeout)*time.Second, queue)
 			msgs, err := cmd.Result()
 			if err != nil && err != rds.Nil {
-				log.Printf("BLPop.%s,Error:%+v", queue, err)
 				time.Sleep(time.Second)
 				continue
 			}

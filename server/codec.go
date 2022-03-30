@@ -7,6 +7,7 @@ import (
 
 	"github.com/zhiyunliu/golibs/httputil"
 	"github.com/zhiyunliu/velocity/encoding"
+	"github.com/zhiyunliu/velocity/encoding/text"
 	"github.com/zhiyunliu/velocity/errors"
 )
 
@@ -24,6 +25,7 @@ type EncodeErrorFunc func(context.Context, error)
 
 // DefaultRequestDecoder decodes the request body to object.
 func DefaultRequestDecoder(ctx context.Context, v interface{}) error {
+
 	codec, ok := CodecForRequest(ctx, "Content-Type")
 	if !ok {
 		return errors.BadRequest("CODEC", ctx.Request().GetHeader("Content-Type"))
@@ -40,7 +42,13 @@ func DefaultRequestDecoder(ctx context.Context, v interface{}) error {
 
 // DefaultResponseEncoder encodes the object to the HTTP response.
 func DefaultResponseEncoder(ctx context.Context, v interface{}) error {
-	codec, _ := CodecForRequest(ctx, "Accept")
+	var codec encoding.Codec
+	if _, ok := v.(string); ok {
+		codec = encoding.GetCodec(text.Name)
+	} else {
+		codec, _ = CodecForRequest(ctx, "Accept")
+	}
+
 	data, err := codec.Marshal(v)
 	if err != nil {
 		return err
