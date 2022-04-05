@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/zhiyunliu/velocity"
-	_ "github.com/zhiyunliu/velocity/contrib/queue/redis"
-	"github.com/zhiyunliu/velocity/server/mqc"
+	"github.com/zhiyunliu/gel"
+	_ "github.com/zhiyunliu/gel/contrib/queue/redis"
+	"github.com/zhiyunliu/gel/server/mqc"
 )
 
 func main() {
@@ -11,7 +11,7 @@ func main() {
 
 	mqcSrv.Handle("yy", &demo{})
 
-	app := velocity.NewApp(velocity.Server(mqcSrv))
+	app := gel.NewApp(gel.Server(mqcSrv))
 
 	app.Start()
 }

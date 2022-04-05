@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/kardianos/service"
-	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/gel/log"
 )
 
 //Stop Stop

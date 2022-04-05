@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/zhiyunliu/velocity/registry"
-	"github.com/zhiyunliu/velocity/selector"
-	"github.com/zhiyunliu/velocity/selector/filter"
+	"github.com/zhiyunliu/gel/registry"
+	"github.com/zhiyunliu/gel/selector"
+	"github.com/zhiyunliu/gel/selector/filter"
 )
 
 func TestWrr(t *testing.T) {

@@ -3,7 +3,7 @@ package filter
 import (
 	"context"
 
-	"github.com/zhiyunliu/velocity/selector"
+	"github.com/zhiyunliu/gel/selector"
 )
 
 // Version is version filter.

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zhiyunliu/velocity/registry"
-	"github.com/zhiyunliu/velocity/selector"
+	"github.com/zhiyunliu/gel/registry"
+	"github.com/zhiyunliu/gel/selector"
 )
 
 func TestDirect(t *testing.T) {

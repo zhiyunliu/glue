@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 
 	rds "github.com/go-redis/redis"
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/contrib/redis"
+	"github.com/zhiyunliu/gel/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/contrib/redis"
-	"github.com/zhiyunliu/velocity/queue"
 )
 
 // Producer memcache配置文件

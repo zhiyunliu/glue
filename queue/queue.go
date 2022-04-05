@@ -1,8 +1,8 @@
 package queue
 
 import (
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/container"
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/container"
 )
 
 const queueTypeNode = "queues"

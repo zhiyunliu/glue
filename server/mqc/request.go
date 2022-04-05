@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/zhiyunliu/velocity/contrib/alloter"
-	"github.com/zhiyunliu/velocity/queue"
+	"github.com/zhiyunliu/gel/contrib/alloter"
+	"github.com/zhiyunliu/gel/queue"
 )
 
 const XRemoteHeader = "x-remote-addr"

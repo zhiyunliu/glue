@@ -3,7 +3,7 @@ package queue
 import (
 	"errors"
 
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 )
 
 var Nil error = errors.New("Queue Nil")

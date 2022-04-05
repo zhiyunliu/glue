@@ -4,7 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/gel/registry"
 )
 
 type serviceSet struct {

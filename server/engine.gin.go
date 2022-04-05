@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/zhiyunliu/velocity/context"
-	"github.com/zhiyunliu/velocity/global"
+	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/global"
 )
 
 type GinEngine struct {

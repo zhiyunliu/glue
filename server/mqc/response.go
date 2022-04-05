@@ -3,9 +3,9 @@ package mqc
 import (
 	"net/http"
 
+	"github.com/zhiyunliu/gel/contrib/alloter"
+	"github.com/zhiyunliu/gel/queue"
 	"github.com/zhiyunliu/golibs/xtypes"
-	"github.com/zhiyunliu/velocity/contrib/alloter"
-	"github.com/zhiyunliu/velocity/queue"
 )
 
 var _ alloter.ResponseWriter = (*Response)(nil)

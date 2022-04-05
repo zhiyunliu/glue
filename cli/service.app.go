@@ -8,15 +8,15 @@ import (
 
 	"github.com/kardianos/service"
 	"github.com/urfave/cli"
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/config/file"
+	"github.com/zhiyunliu/gel/global"
+	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/gel/registry"
+	"github.com/zhiyunliu/gel/transport"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xnet"
 	"github.com/zhiyunliu/golibs/xsecurity/md5"
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/config/file"
-	"github.com/zhiyunliu/velocity/global"
-	"github.com/zhiyunliu/velocity/log"
-	"github.com/zhiyunliu/velocity/registry"
-	"github.com/zhiyunliu/velocity/transport"
 )
 
 type AppService struct {

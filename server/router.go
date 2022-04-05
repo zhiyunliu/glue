@@ -5,9 +5,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/zhiyunliu/velocity/log"
-	"github.com/zhiyunliu/velocity/middleware"
-	"github.com/zhiyunliu/velocity/reflect"
+	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/gel/reflect"
 )
 
 type Method string

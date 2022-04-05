@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 
+	"github.com/zhiyunliu/gel"
+	"github.com/zhiyunliu/gel/context"
+	_ "github.com/zhiyunliu/gel/contrib/config/nacos"
+	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
+	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/gel/server/api"
 	"github.com/zhiyunliu/golibs/xtypes"
-	"github.com/zhiyunliu/velocity"
-	"github.com/zhiyunliu/velocity/context"
-	_ "github.com/zhiyunliu/velocity/contrib/config/nacos"
-	_ "github.com/zhiyunliu/velocity/contrib/registry/nacos"
-	"github.com/zhiyunliu/velocity/errors"
-	"github.com/zhiyunliu/velocity/server/api"
 )
 
 func main() {
@@ -35,6 +35,6 @@ func main() {
 		return fmt.Errorf("xxx")
 	})
 
-	app := velocity.NewApp(velocity.Server(apiSrv))
+	app := gel.NewApp(gel.Server(apiSrv))
 	app.Start()
 }

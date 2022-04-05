@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/zhiyunliu/gel/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/xtypes"
-	"github.com/zhiyunliu/velocity/queue"
 )
 
 //RedisMessage reids消息

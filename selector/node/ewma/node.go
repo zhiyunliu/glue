@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zhiyunliu/velocity/errors"
-	"github.com/zhiyunliu/velocity/selector"
+	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/gel/selector"
 )
 
 const (

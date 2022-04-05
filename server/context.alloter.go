@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/url"
 
+	vctx "github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/contrib/alloter"
+	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
-	vctx "github.com/zhiyunliu/velocity/context"
-	"github.com/zhiyunliu/velocity/contrib/alloter"
-	"github.com/zhiyunliu/velocity/log"
 )
 
 type AlloterContext struct {

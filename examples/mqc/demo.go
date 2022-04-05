@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/zhiyunliu/velocity/context"
+	"github.com/zhiyunliu/gel/context"
 )
 
 type demo struct{}

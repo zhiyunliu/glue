@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zhiyunliu/velocity/registry"
-	"github.com/zhiyunliu/velocity/selector"
+	"github.com/zhiyunliu/gel/registry"
+	"github.com/zhiyunliu/gel/selector"
 )
 
 func TestVersion(t *testing.T) {

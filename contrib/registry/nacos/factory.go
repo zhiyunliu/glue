@@ -6,8 +6,8 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/registry"
 )
 
 type nacosFactory struct {

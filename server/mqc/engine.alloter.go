@@ -1,7 +1,7 @@
 package mqc
 
 import (
-	"github.com/zhiyunliu/velocity/server"
+	"github.com/zhiyunliu/gel/server"
 )
 
 func (e *Server) registryEngineRoute() {

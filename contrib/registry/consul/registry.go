@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/gel/registry"
 
 	"github.com/hashicorp/consul/api"
 )

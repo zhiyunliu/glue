@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 )
 
 //Client redis客户端

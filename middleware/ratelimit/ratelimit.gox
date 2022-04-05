@@ -1,12 +1,12 @@
 package ratelimit
 
 import (
-	"github.com/zhiyunliu/velocity/context"
+	"github.com/zhiyunliu/gel/context"
 
 	"github.com/go-kratos/aegis/ratelimit"
 	"github.com/go-kratos/aegis/ratelimit/bbr"
-	"github.com/zhiyunliu/velocity/errors"
-	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/gel/middleware"
 )
 
 // ErrLimitExceed is service unavailable due to rate limit exceeded.

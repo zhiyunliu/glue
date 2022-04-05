@@ -2,7 +2,7 @@ package prometheus
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/zhiyunliu/velocity/metrics"
+	"github.com/zhiyunliu/gel/metrics"
 )
 
 var _ metrics.Gauge = (*gauge)(nil)

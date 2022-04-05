@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 )
 
 // Server is transport server.

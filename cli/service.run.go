@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/gel/log"
 )
 
 func (p *ServiceApp) run() (err error) {

@@ -1,6 +1,6 @@
-package velocity
+package gel
 
-import "github.com/zhiyunliu/velocity/cli"
+import "github.com/zhiyunliu/gel/cli"
 
 // Option is an application option.
 type Option = cli.Option

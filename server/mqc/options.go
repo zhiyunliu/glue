@@ -1,8 +1,8 @@
 package mqc
 
 import (
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/server"
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/server"
 )
 
 // Option 参数设置类型

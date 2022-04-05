@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/gel/server"
+	"github.com/zhiyunliu/gel/transport"
 	"github.com/zhiyunliu/golibs/xnet"
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/log"
-	"github.com/zhiyunliu/velocity/middleware"
-	"github.com/zhiyunliu/velocity/server"
-	"github.com/zhiyunliu/velocity/transport"
 )
 
 type Server struct {

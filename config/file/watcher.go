@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 )
 
 type watcher struct {

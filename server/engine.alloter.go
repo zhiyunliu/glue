@@ -3,9 +3,9 @@ package server
 import (
 	"sync"
 
-	"github.com/zhiyunliu/velocity/context"
-	"github.com/zhiyunliu/velocity/contrib/alloter"
-	"github.com/zhiyunliu/velocity/global"
+	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/contrib/alloter"
+	"github.com/zhiyunliu/gel/global"
 )
 
 type AlloterEngine struct {

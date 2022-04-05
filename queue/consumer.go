@@ -3,7 +3,7 @@ package queue
 import (
 	"fmt"
 
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 )
 
 //mqcResover 定义消息消费解析器

@@ -1,14 +1,14 @@
 package circuitbreaker
 
 import (
-	"github.com/zhiyunliu/velocity/context"
+	"github.com/zhiyunliu/gel/context"
 
 	"github.com/go-kratos/aegis/circuitbreaker"
 	"github.com/go-kratos/aegis/circuitbreaker/sre"
-	"github.com/zhiyunliu/velocity/errors"
-	"github.com/zhiyunliu/velocity/internal/group"
-	"github.com/zhiyunliu/velocity/middleware"
-	"github.com/zhiyunliu/velocity/transport"
+	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/gel/internal/group"
+	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/gel/transport"
 )
 
 // ErrNotAllowed is request failed due to circuit breaker triggered.

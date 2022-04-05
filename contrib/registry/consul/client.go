@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zhiyunliu/velocity/log"
-	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/gel/registry"
 
 	"github.com/hashicorp/consul/api"
 )

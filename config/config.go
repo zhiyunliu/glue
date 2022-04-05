@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/gel/log"
 )
 
 var (

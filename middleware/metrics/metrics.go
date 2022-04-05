@@ -4,11 +4,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/zhiyunliu/velocity/context"
+	"github.com/zhiyunliu/gel/context"
 
-	"github.com/zhiyunliu/velocity/errors"
-	"github.com/zhiyunliu/velocity/metrics"
-	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/gel/metrics"
+	"github.com/zhiyunliu/gel/middleware"
 )
 
 // Option is metrics option.

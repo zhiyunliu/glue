@@ -3,10 +3,10 @@ package recovery
 import (
 	"runtime"
 
-	"github.com/zhiyunliu/velocity/context"
-	"github.com/zhiyunliu/velocity/errors"
+	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/errors"
 
-	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/gel/middleware"
 )
 
 // ErrUnknownRequest is unknown request error.

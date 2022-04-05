@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/velocity/context"
-	"github.com/zhiyunliu/velocity/log"
 
-	"github.com/zhiyunliu/velocity/errors"
-	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/gel/middleware"
 )
 
 // Server is an server logging middleware.

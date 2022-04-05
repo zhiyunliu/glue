@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/gel/registry"
 )
 
 type mockWeightedNode struct {

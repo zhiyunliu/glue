@@ -3,7 +3,7 @@ package dbs
 import (
 	"time"
 
-	"github.com/zhiyunliu/velocity/components/dbs/tpl"
+	"github.com/zhiyunliu/gel/components/dbs/tpl"
 )
 
 //IDB 数据库操作接口,安装可需能需要执行export LD_LIBRARY_PATH=/usr/local/lib

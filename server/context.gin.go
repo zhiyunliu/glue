@@ -7,12 +7,12 @@ import (
 	"io/ioutil"
 	"net/url"
 
+	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
-	"github.com/zhiyunliu/velocity/log"
 
 	"github.com/gin-gonic/gin"
-	vctx "github.com/zhiyunliu/velocity/context"
+	vctx "github.com/zhiyunliu/gel/context"
 )
 
 const XRequestId = "x-request-id"

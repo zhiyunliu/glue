@@ -1,13 +1,13 @@
 package server
 
 import (
-	"github.com/zhiyunliu/velocity/context"
+	"github.com/zhiyunliu/gel/context"
 
-	"github.com/zhiyunliu/velocity/errors"
-	"github.com/zhiyunliu/velocity/middleware"
-	"github.com/zhiyunliu/velocity/middleware/logging"
-	"github.com/zhiyunliu/velocity/middleware/recovery"
-	"github.com/zhiyunliu/velocity/reflect"
+	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/gel/middleware/logging"
+	"github.com/zhiyunliu/gel/middleware/recovery"
+	"github.com/zhiyunliu/gel/reflect"
 )
 
 type AdapterEngine interface {

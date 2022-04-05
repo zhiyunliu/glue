@@ -36,13 +36,10 @@ func (x *Error) GetMetadata() map[string]string {
 	return nil
 }
 
-//go:generate protoc -I. --go_out=paths=source_relative:. errors.proto
-
 func (e *Error) Error() string {
 	return fmt.Sprintf("error: code = %d message = %s metadata = %+v", e.Code, e.Message, e.Metadata)
 }
 
-// Is matches each error in the chain with the target value.
 func (e *Error) Is(err error) bool {
 	if se := new(Error); errors.As(err, &se) {
 		return se.Code == e.Code
@@ -50,13 +47,11 @@ func (e *Error) Is(err error) bool {
 	return false
 }
 
-// WithMetadata with an MD formed by the mapping of key, value.
 func (e *Error) WithMetadata(md map[string]string) *Error {
 	e.Metadata = md
 	return e
 }
 
-// New returns an error object for the code, message.
 func New(code int, message string) *Error {
 	return &Error{
 		Code:    code,
@@ -64,7 +59,6 @@ func New(code int, message string) *Error {
 	}
 }
 
-// Errorf returns an error object for the code, message and error info.
 func Errorf(code int, format string, a ...interface{}) error {
 	return New(code, fmt.Sprintf(format, a...))
 }

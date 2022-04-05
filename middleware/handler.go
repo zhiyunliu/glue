@@ -1,6 +1,6 @@
 package middleware
 
-import "github.com/zhiyunliu/velocity/context"
+import "github.com/zhiyunliu/gel/context"
 
 type Handler func(context.Context) interface{}
 

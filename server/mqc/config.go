@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zhiyunliu/velocity/metadata"
-	"github.com/zhiyunliu/velocity/server"
+	"github.com/zhiyunliu/gel/metadata"
+	"github.com/zhiyunliu/gel/server"
 )
 
 /*```

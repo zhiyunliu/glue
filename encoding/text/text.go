@@ -3,8 +3,8 @@ package text
 import (
 	"fmt"
 
+	"github.com/zhiyunliu/gel/encoding"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/velocity/encoding"
 )
 
 const Name = "text"

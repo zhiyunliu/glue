@@ -1,7 +1,7 @@
 package global
 
 import (
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 )
 
 var (

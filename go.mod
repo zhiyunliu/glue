@@ -1,4 +1,4 @@
-module github.com/zhiyunliu/velocity
+module github.com/zhiyunliu/gel
 
 go 1.17
 

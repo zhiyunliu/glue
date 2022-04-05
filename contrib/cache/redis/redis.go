@@ -3,9 +3,9 @@ package redis
 import (
 	"time"
 
-	"github.com/zhiyunliu/velocity/cache"
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/contrib/redis"
+	"github.com/zhiyunliu/gel/cache"
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/contrib/redis"
 )
 
 // Redis cache implement

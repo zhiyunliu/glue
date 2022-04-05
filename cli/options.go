@@ -4,9 +4,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/registry"
-	"github.com/zhiyunliu/velocity/transport"
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/registry"
+	"github.com/zhiyunliu/gel/transport"
 )
 
 // type cliOptions struct {

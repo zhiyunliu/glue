@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	cmap "github.com/orcaman/concurrent-map"
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/global"
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/global"
 )
 
 //ICloser 关闭

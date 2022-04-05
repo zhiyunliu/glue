@@ -5,12 +5,12 @@ import (
 	"sync"
 
 	cmap "github.com/orcaman/concurrent-map"
+	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/contrib/alloter"
+	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/gel/queue"
+	"github.com/zhiyunliu/gel/server"
 	"github.com/zhiyunliu/golibs/xstack"
-	"github.com/zhiyunliu/velocity/config"
-	"github.com/zhiyunliu/velocity/contrib/alloter"
-	"github.com/zhiyunliu/velocity/log"
-	"github.com/zhiyunliu/velocity/queue"
-	"github.com/zhiyunliu/velocity/server"
 )
 
 //processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除

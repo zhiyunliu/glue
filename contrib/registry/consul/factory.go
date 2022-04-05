@@ -3,10 +3,10 @@ package consul
 import (
 	"fmt"
 
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/gel/registry"
 )
 
 type consulFactory struct {

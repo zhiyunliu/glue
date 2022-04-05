@@ -5,7 +5,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/gel/log"
 )
 
 //CheckPrivileges 检查是否有管理员权限

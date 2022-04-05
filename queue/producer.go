@@ -3,7 +3,7 @@ package queue
 import (
 	"fmt"
 
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 )
 
 //imqpResover 定义配置文件转换方法

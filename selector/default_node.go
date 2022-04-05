@@ -3,7 +3,7 @@ package selector
 import (
 	"strconv"
 
-	"github.com/zhiyunliu/velocity/registry"
+	"github.com/zhiyunliu/gel/registry"
 )
 
 // DefaultNode is selector node

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/global"
+	"github.com/zhiyunliu/gel/global"
 )
 
 const options_key string = "options_key"

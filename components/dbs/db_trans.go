@@ -1,7 +1,7 @@
 package dbs
 
 import (
-	"github.com/zhiyunliu/velocity/components/dbs/tpl"
+	"github.com/zhiyunliu/gel/components/dbs/tpl"
 )
 
 //DBTrans 数据库事务操作类

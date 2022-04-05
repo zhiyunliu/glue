@@ -1,7 +1,7 @@
 package yaml
 
 import (
-	"github.com/zhiyunliu/velocity/encoding"
+	"github.com/zhiyunliu/gel/encoding"
 	"gopkg.in/yaml.v3"
 )
 

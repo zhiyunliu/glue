@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/velocity/compatible"
+	"github.com/zhiyunliu/gel/compatible"
 )
 
 func init() {

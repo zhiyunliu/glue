@@ -1,12 +1,12 @@
 package tracing
 
 import (
-	"github.com/zhiyunliu/velocity/context"
+	"github.com/zhiyunliu/gel/context"
 
-	"github.com/zhiyunliu/velocity/log"
+	"github.com/zhiyunliu/gel/log"
 
-	"github.com/zhiyunliu/velocity/middleware"
-	"github.com/zhiyunliu/velocity/transport"
+	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/gel/transport"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )

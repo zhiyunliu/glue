@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/zhiyunliu/velocity/server"
+	"github.com/zhiyunliu/gel/server"
 )
 
 /*```

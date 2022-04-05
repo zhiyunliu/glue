@@ -3,7 +3,7 @@ package cache
 import (
 	"fmt"
 
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 )
 
 type ICache interface {

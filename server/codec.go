@@ -3,12 +3,12 @@ package server
 import (
 	"io"
 
-	"github.com/zhiyunliu/velocity/context"
+	"github.com/zhiyunliu/gel/context"
 
+	"github.com/zhiyunliu/gel/encoding"
+	"github.com/zhiyunliu/gel/encoding/text"
+	"github.com/zhiyunliu/gel/errors"
 	"github.com/zhiyunliu/golibs/httputil"
-	"github.com/zhiyunliu/velocity/encoding"
-	"github.com/zhiyunliu/velocity/encoding/text"
-	"github.com/zhiyunliu/velocity/errors"
 )
 
 // SupportPackageIsVersion1 These constants should not be referenced from any other code.

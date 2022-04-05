@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/zhiyunliu/velocity/config"
+	"github.com/zhiyunliu/gel/config"
 )
 
 // Option is etcd config option.

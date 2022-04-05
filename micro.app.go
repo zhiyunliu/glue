@@ -1,12 +1,12 @@
-package velocity
+package gel
 
 import (
-	"github.com/zhiyunliu/velocity/cli"
-	"github.com/zhiyunliu/velocity/compatible"
-	_ "github.com/zhiyunliu/velocity/encoding/json"
-	_ "github.com/zhiyunliu/velocity/encoding/yaml"
+	"github.com/zhiyunliu/gel/cli"
+	"github.com/zhiyunliu/gel/compatible"
+	_ "github.com/zhiyunliu/gel/encoding/json"
+	_ "github.com/zhiyunliu/gel/encoding/yaml"
 
-	_ "github.com/zhiyunliu/velocity/contrib/registry/nacos"
+	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
 )
 
 //MicroApp  微服务应用
@@ -30,6 +30,5 @@ func (m *MicroApp) Start() error {
 
 //Close 关闭服务器
 func (m *MicroApp) Stop() error {
-	compatible.AppClose()
-	return nil
+	return compatible.AppClose()
 }

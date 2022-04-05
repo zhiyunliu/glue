@@ -3,9 +3,9 @@ package registry
 import (
 	"fmt"
 
+	"github.com/zhiyunliu/gel/config"
 	"github.com/zhiyunliu/golibs/xnet"
 	"github.com/zhiyunliu/golibs/xsecurity/aes"
-	"github.com/zhiyunliu/velocity/config"
 )
 
 //IFactory 注册中心构建器

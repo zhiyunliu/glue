@@ -3,8 +3,8 @@ package tracing
 import (
 	"context"
 
-	"github.com/zhiyunliu/velocity"
-	"github.com/zhiyunliu/velocity/metadata"
+	"github.com/zhiyunliu/gel"
+	"github.com/zhiyunliu/gel/metadata"
 	"go.opentelemetry.io/otel/propagation"
 )
 
@@ -17,7 +17,7 @@ var _ propagation.TextMapPropagator = Metadata{}
 
 // Inject sets metadata key-values from ctx into the carrier.
 func (b Metadata) Inject(ctx context.Context, carrier propagation.TextMapCarrier) {
-	app, ok := velocity.FromContext(ctx)
+	app, ok := gel.FromContext(ctx)
 	if ok {
 		carrier.Set(serviceHeader, app.Name())
 	}

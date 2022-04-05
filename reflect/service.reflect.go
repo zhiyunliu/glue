@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/zhiyunliu/velocity/context"
-	"github.com/zhiyunliu/velocity/middleware"
+	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/middleware"
 )
 
 const Handling = "Handling"

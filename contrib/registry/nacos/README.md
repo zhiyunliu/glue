@@ -13,7 +13,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
 	"github.com/go-kratos/kratos/contrib/registry/nacos/v2"
-	"github.com/zhiyunliu/velocity"
+	"github.com/zhiyunliu/gel"
 )
 
 func main() {
@@ -57,7 +57,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
 	"github.com/go-kratos/kratos/contrib/registry/nacos/v2"
-	"github.com/zhiyunliu/velocity/transport/grpc"
+	"github.com/zhiyunliu/gel/transport/grpc"
 )
 
 func main() {
