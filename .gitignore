@@ -17,4 +17,5 @@
 !*.go
 
 examples/mqc/mqc
+examples/api/api
 
