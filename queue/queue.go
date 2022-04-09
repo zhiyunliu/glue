@@ -9,21 +9,22 @@ const queueTypeNode = "queues"
 
 //StandardQueue queue
 type StandardQueue struct {
-	c container.IContainer
+	c container.Container
 }
 
 //NewStandardQueue 创建queue
-func NewStandardQueue(c container.IContainer) *StandardQueue {
+func NewStandardQueue(c container.Container) *StandardQueue {
 	return &StandardQueue{c: c}
 }
 
 //GetQueue GetQueue
-func (s *StandardQueue) GetQueue(name string) (q IQueue, err error) {
+func (s *StandardQueue) GetQueue(name string) (q IQueue) {
 	obj, err := s.c.GetOrCreate(queueTypeNode, name, func(setting config.Config) (interface{}, error) {
+
 		return newQueue(setting)
 	})
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return obj.(IQueue), nil
+	return obj.(IQueue)
 }

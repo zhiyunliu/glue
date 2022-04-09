@@ -80,5 +80,5 @@ func (s *redisResolver) Resolve(setting config.Config) (cache.ICache, error) {
 	}, err
 }
 func init() {
-	cache.RegisterCache(&redisResolver{})
+	cache.Register(&redisResolver{})
 }

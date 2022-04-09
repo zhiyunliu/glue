@@ -5,14 +5,16 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"reflect"
+
+	"github.com/zhiyunliu/gel/xdb"
 )
 
 func getError(err error, query string, args []interface{}) error {
 	return fmt.Errorf("%w(sql:%s,args:%+v)", err, query, args)
 }
 
-func resolveRows(rows *sql.Rows, col int) (dataRows Rows, err error) {
-	dataRows = NewRows()
+func resolveRows(rows *sql.Rows, col int) (dataRows xdb.Rows, err error) {
+	dataRows = xdb.NewRows()
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))

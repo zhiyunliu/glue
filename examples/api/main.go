@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/zhiyunliu/gel"
 	"github.com/zhiyunliu/gel/context"
+	_ "github.com/zhiyunliu/gel/contrib/cache/redis"
 	_ "github.com/zhiyunliu/gel/contrib/config/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
+	_ "github.com/zhiyunliu/gel/contrib/xdb/mysql"
 	"github.com/zhiyunliu/gel/errors"
 	"github.com/zhiyunliu/gel/server/api"
 	"github.com/zhiyunliu/golibs/xtypes"
@@ -35,7 +36,8 @@ func main() {
 		panic(fmt.Errorf("xx i am panic"))
 	})
 
-	apiSrv.Handle("/db", &DBdemo{})
+	apiSrv.Handle("/db", NewDb())
+	apiSrv.Handle("/cache", NewCache())
 
 	app := gel.NewApp(gel.Server(apiSrv))
 	app.Start()

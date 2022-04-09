@@ -1,35 +1,14 @@
 package xdb
 
 import (
+	"runtime"
 	"time"
 
-	"github.com/zhiyunliu/gel/xdb/internal"
-	"github.com/zhiyunliu/gel/xdb/tpl"
+	"github.com/zhiyunliu/gel/contrib/xdb/internal"
+	"github.com/zhiyunliu/gel/contrib/xdb/tpl"
+	"github.com/zhiyunliu/gel/xdb"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
-
-//IDB 数据库操作接口,安装可需能需要执行export LD_LIBRARY_PATH=/usr/local/lib
-type IDB interface {
-	Executer
-	Begin() (ITrans, error)
-	Close() error
-}
-
-//ITrans 数据库事务接口
-type ITrans interface {
-	Executer
-	Rollback() error
-	Commit() error
-}
-
-//Executer 数据库操作对象集合
-type Executer interface {
-	Query(sql string, input map[string]interface{}) (data Rows, err error)
-	First(sql string, input map[string]interface{}) (data Row, err error)
-	Scalar(sql string, input map[string]interface{}) (data interface{}, err error)
-	Exec(sql string, input map[string]interface{}) (r Result, err error)
-	//	ExecSp(procName string, input map[string]interface{}) (r Result, err error)
-}
 
 //DB 数据库操作类
 type xDB struct {
@@ -38,23 +17,27 @@ type xDB struct {
 }
 
 //NewDB 创建DB实例
-func NewDB(proto string, connString string, maxOpen int, maxIdle int, maxLifeTime int) (obj IDB, err error) {
+func NewDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime int) (obj xdb.IDB, err error) {
+	if maxOpen <= 0 {
+		maxOpen = runtime.NumCPU() * 10
+	}
+	if maxIdle <= 0 {
+		maxIdle = maxOpen
+	}
+	if maxLifeTime <= 0 {
+		maxLifeTime = 600 //10分钟
+	}
 	dbobj := &xDB{}
 	dbobj.tpl, err = tpl.GetDBTemplate(proto)
 	if err != nil {
 		return
 	}
-	dbobj.db, err = internal.NewSysDB(proto, connString, maxOpen, maxIdle, time.Duration(maxLifeTime)*time.Second)
+	dbobj.db, err = internal.NewSysDB(proto, conn, maxOpen, maxIdle, time.Duration(maxLifeTime)*time.Second)
 	return dbobj, err
 }
 
-//GetTPL 获取模板翻译参数
-func (db *xDB) GetTPL() tpl.SQLTemplate {
-	return db.tpl
-}
-
 //Query 查询数据
-func (db *xDB) Query(sql string, input map[string]interface{}) (rows Rows, err error) {
+func (db *xDB) Query(sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
 	data, err := db.db.Query(query, args...)
 	if err != nil {
@@ -67,7 +50,7 @@ func (db *xDB) Query(sql string, input map[string]interface{}) (rows Rows, err e
 	return
 }
 
-func (db *xDB) First(sql string, input map[string]interface{}) (data Row, err error) {
+func (db *xDB) First(sql string, input map[string]interface{}) (data xdb.Row, err error) {
 	rows, err := db.Query(sql, input)
 	if err != nil {
 		return
@@ -93,7 +76,7 @@ func (db *xDB) Scalar(sql string, input map[string]interface{}) (data interface{
 }
 
 //Execute 根据包含@名称占位符的语句执行查询语句
-func (db *xDB) Exec(sql string, input map[string]interface{}) (r Result, err error) {
+func (db *xDB) Exec(sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
 	r, err = db.db.Exec(query, args...)
 	if err != nil {
@@ -103,7 +86,7 @@ func (db *xDB) Exec(sql string, input map[string]interface{}) (r Result, err err
 }
 
 //ExecuteSP 根据包含@名称占位符的语句执行查询语句
-func (db *xDB) ExecSp(procName string, input map[string]interface{}, output ...interface{}) (r Result, err error) {
+func (db *xDB) ExecSp(procName string, input map[string]interface{}, output ...interface{}) (r xdb.Result, err error) {
 	query, args := db.tpl.GetSPContext(procName, input)
 	ni := append(args, output...)
 	r, err = db.db.Exec(query, ni...)
@@ -114,7 +97,7 @@ func (db *xDB) ExecSp(procName string, input map[string]interface{}, output ...i
 }
 
 //Begin 创建事务
-func (db *xDB) Begin() (t ITrans, err error) {
+func (db *xDB) Begin() (t xdb.ITrans, err error) {
 	tt := &xTrans{}
 	tt.tx, err = db.db.Begin()
 	if err != nil {

@@ -23,6 +23,11 @@ func RegisterProducer(resolver imqpResover) {
 	mqpResolvers[proto] = resolver
 }
 
+//Deregister 清理配置适配器
+func DeregisterProducer(name string) {
+	delete(mqpResolvers, name)
+}
+
 //NewMQP 根据适配器名称及参数返回配置处理器
 func NewMQP(setting config.Config) (IMQP, error) {
 	val := setting.Value("proto")

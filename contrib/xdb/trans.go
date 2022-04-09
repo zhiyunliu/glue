@@ -1,8 +1,9 @@
 package xdb
 
 import (
-	"github.com/zhiyunliu/gel/xdb/internal"
-	"github.com/zhiyunliu/gel/xdb/tpl"
+	"github.com/zhiyunliu/gel/contrib/xdb/internal"
+	"github.com/zhiyunliu/gel/contrib/xdb/tpl"
+	"github.com/zhiyunliu/gel/xdb"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -13,7 +14,7 @@ type xTrans struct {
 }
 
 //Query 查询数据
-func (t *xTrans) Query(sql string, input map[string]interface{}) (rows Rows, err error) {
+func (t *xTrans) Query(sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
 	query, args := t.tpl.GetSQLContext(sql, input)
 	data, err := t.tx.Query(query, args...)
 	if err != nil {
@@ -27,7 +28,7 @@ func (t *xTrans) Query(sql string, input map[string]interface{}) (rows Rows, err
 	return
 }
 
-func (t *xTrans) First(sql string, input map[string]interface{}) (data Row, err error) {
+func (t *xTrans) First(sql string, input map[string]interface{}) (data xdb.Row, err error) {
 	rows, err := t.Query(sql, input)
 	if err != nil {
 		return
@@ -54,7 +55,7 @@ func (t *xTrans) Scalar(sql string, input map[string]interface{}) (result interf
 }
 
 //Execute 根据包含@名称占位符的语句执行查询语句
-func (t *xTrans) Exec(sql string, input map[string]interface{}) (r Result, err error) {
+func (t *xTrans) Exec(sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	query, args := t.tpl.GetSQLContext(sql, input)
 	r, err = t.tx.Execute(query, args...)
 	if err != nil {

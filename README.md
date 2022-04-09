@@ -12,11 +12,11 @@
 	},
 	"registry":"nacos://aliyun",
  	"config":"nacos://aliyun",
-	"cache":{
+	"caches":{
 		"redisxxx":"redis://redis1",
 		"redisyyy":"redis://redis1",
 	},
-	"queue":{
+	"queues":{
 		"redisxxx":"redis://redis1",
 		"nsq11":{"proto":"nsq","xx":"xx"},
 		"loacl22":{"proto":"loacl","xx":"xx"},
@@ -32,9 +32,9 @@
 			"options":{"kind":"api","group":"charge","cluster":"grey"}
 		}
 	},
-	"db":{
+	"dbs":{
 		"db1":{ "proto":"mysql","conn_str":"","max_open":100,"max_idle":100,"life_time":100},
-		"db2":{ "proto":"ora","conn_str":"","max_open":100,"max_idle":100,"life_time":100},
+		"db2":{ "proto":"oracle","conn_str":"","max_open":100,"max_idle":100,"life_time":100},
 	},
 	"servers":{
 		"api":{

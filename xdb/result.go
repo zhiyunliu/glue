@@ -2,7 +2,6 @@ package xdb
 
 import (
 	"database/sql"
-	"encoding/json"
 
 	"github.com/zhiyunliu/golibs/xtypes"
 )
@@ -23,11 +22,4 @@ func NewRow() Row {
 //NewRows 构建Rows
 func NewRows() Rows {
 	return make([]xtypes.XMap, 0)
-}
-
-//NewRowsByJSON 根据json创建Rows
-func NewRowsByJSON(j string) (Rows, error) {
-	rows := make([]xtypes.XMap, 0)
-	err := json.Unmarshal([]byte(j), &rows)
-	return rows, err
 }
