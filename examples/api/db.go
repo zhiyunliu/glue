@@ -78,3 +78,65 @@ func (d *DBdemo) UpdateHandle(ctx context.Context) interface{} {
 		"Error2":       err2,
 	}
 }
+
+func (d *DBdemo) TransHandle(ctx context.Context) interface{} {
+	dbobj := xdb.GetDB("localhost")
+
+	trans, err := dbobj.Begin()
+	if err != nil {
+		return err
+	}
+
+	istResult, err := trans.Exec("insert into new_table(name) values(@name) ", map[string]interface{}{
+		"name": "trans insert",
+	})
+
+	if err != nil {
+		trans.Rollback()
+		return err
+	}
+
+	lastId, err := istResult.LastInsertId()
+	if err != nil {
+		trans.Rollback()
+		return err
+	}
+
+	result, err := trans.Exec("update new_table set name=@name where id=@id ", map[string]interface{}{
+		"id":   lastId,
+		"name": fmt.Sprintf("update-trans:%s", time.Now().Format("2006-01-02 15:04:05")),
+	})
+	if err != nil {
+		trans.Rollback()
+		return err
+	}
+	trans.Commit()
+
+	uefcnt, err := result.RowsAffected()
+
+	return map[string]interface{}{
+		"insertid": lastId,
+		"uefcnt":   uefcnt,
+		"err":      err,
+	}
+
+}
+
+func (d *DBdemo) SpHandle(ctx context.Context) interface{} {
+	dbobj := xdb.GetDB("localhost")
+	result, err := dbobj.Exec("update new_table set name=@name where id=@id ", map[string]interface{}{
+		"id":   ctx.Request().Query().Get("id"),
+		"name": fmt.Sprintf("update:%s", time.Now().Format("2006-01-02 15:04:05")),
+	})
+	if err != nil {
+		ctx.Log().Error(err)
+	}
+	lastId, err1 := result.LastInsertId()
+	effCnt, err2 := result.RowsAffected()
+	return map[string]interface{}{
+		"LastInsertId": lastId,
+		"RowsAffected": effCnt,
+		"Error1":       err1,
+		"Error2":       err2,
+	}
+}
