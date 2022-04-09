@@ -1,4 +1,4 @@
-package dbs
+package xdb
 
 import (
 	"database/sql"
@@ -9,24 +9,25 @@ import (
 
 type Result = sql.Result
 
-//QueryRow 单行数据
+//Row 单行数据
 type Row = xtypes.XMap
 
+//Rows 多行数据
 type Rows = xtypes.XMaps
 
-//NewQueryRow 构建QueryRow对象
+//NewRow 构建Row对象
 func NewRow() Row {
 	return make(xtypes.XMap)
 }
 
-//NewQueryRowsByJSON 根据json创建QueryRows
+//NewRows 构建Rows
+func NewRows() Rows {
+	return make([]xtypes.XMap, 0)
+}
+
+//NewRowsByJSON 根据json创建Rows
 func NewRowsByJSON(j string) (Rows, error) {
 	rows := make([]xtypes.XMap, 0)
 	err := json.Unmarshal([]byte(j), &rows)
 	return rows, err
-}
-
-//NewQueryRows 构建QueryRows
-func NewRows() Rows {
-	return make([]xtypes.XMap, 0)
 }

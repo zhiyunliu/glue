@@ -9,4 +9,4 @@ var (
 	AppName string = ""
 )
 
-var Setting config.Config
+var Config config.Config

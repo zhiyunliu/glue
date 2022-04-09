@@ -98,6 +98,10 @@ func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) err
 
 // Deregister the registration.
 func (r *Registry) Deregister(_ context.Context, service *registry.ServiceInstance) error {
+	if service == nil {
+		return nil
+	}
+
 	for _, endpoint := range service.Endpoints {
 		u, err := url.Parse(endpoint)
 		if err != nil {

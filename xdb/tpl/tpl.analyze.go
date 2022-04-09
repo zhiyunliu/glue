@@ -4,16 +4,47 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
+
+	"github.com/zhiyunliu/golibs/xsecurity/md5"
 )
+
+var tplcache sync.Map
+
+type cacheItem struct {
+	sql   string
+	names []string
+}
+
+func (item cacheItem) build(input map[string]interface{}) (params []interface{}) {
+	params = make([]interface{}, len(item.names))
+	for i := range item.names {
+		params[i] = input[item.names[i]]
+	}
+	return
+}
 
 func isNil(input interface{}) bool {
 	return input == nil || fmt.Sprintf("%v", input) == ""
 }
 
 //AnalyzeTPLFromCache 从缓存中获取已解析的SQL语句
-func AnalyzeTPLFromCache(name string, tpl string, input map[string]interface{}, prefix func() string) (sql string, params []interface{}) {
-	sql, params, _ = AnalyzeTPL(tpl, input, prefix)
-	return
+func AnalyzeTPLFromCache(name string, tpl string, input map[string]interface{}, placeholder func() string) (sql string, params []interface{}) {
+	hashVal := md5.Str(name + tpl)
+	tplval, ok := tplcache.Load(hashVal)
+	if !ok {
+		sql, params, names := AnalyzeTPL(tpl, input, placeholder)
+		tplval = &cacheItem{
+			sql:   sql,
+			names: names,
+		}
+		tplcache.Store(hashVal, tplval)
+		return sql, params
+	}
+
+	item := tplval.(*cacheItem)
+
+	return item.sql, item.build(input)
 }
 
 //AnalyzeTPL 解析模板内容，并返回解析后的SQL语句，入输入参数
@@ -22,10 +53,11 @@ func AnalyzeTPLFromCache(name string, tpl string, input map[string]interface{}, 
 //~表达式，检查值，值为空时返加"",否则返回: , name=value
 //&条件表达式，检查值，值为空时返加"",否则返回: and name=value
 //|条件表达式，检查值，值为空时返回"", 否则返回: or name=value
-func AnalyzeTPL(tpl string, input map[string]interface{}, prefix func() string) (sql string, params []interface{}, names []string) {
+func AnalyzeTPL(tpl string, input map[string]interface{}, placeholder func() string) (sql string, params []interface{}, names []string) {
 	params = make([]interface{}, 0)
 	names = make([]string, 0)
 	word, _ := regexp.Compile(`[\\]?[@|#|&|~|\||!|\$|\?]\w?[\.]?\w+`)
+
 	//@变量, 将数据放入params中
 	sql = word.ReplaceAllStringFunc(tpl, func(s string) string {
 		fullKey, key, name := s[1:], s[1:], s[1:]
@@ -43,7 +75,7 @@ func AnalyzeTPL(tpl string, input map[string]interface{}, prefix func() string) 
 				names = append(names, key)
 				params = append(params, "")
 			}
-			return prefix()
+			return placeholder()
 		case "$":
 			if !isNil(value) {
 				return fmt.Sprintf("%v", value)
@@ -53,14 +85,14 @@ func AnalyzeTPL(tpl string, input map[string]interface{}, prefix func() string) 
 			if !isNil(value) {
 				names = append(names, key)
 				params = append(params, value)
-				return fmt.Sprintf("and %s=%s", key, prefix())
+				return fmt.Sprintf("and %s=%s", key, placeholder())
 			}
 			return ""
 		case "|":
 			if !isNil(value) {
 				names = append(names, key)
 				params = append(params, value)
-				return fmt.Sprintf("or %s=%s", key, prefix())
+				return fmt.Sprintf("or %s=%s", key, placeholder())
 			}
 			return ""
 		default:

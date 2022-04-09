@@ -5,25 +5,19 @@ import (
 	"strings"
 )
 
-const (
-	cOra    = "ora"
-	cOracle = "oracle"
-	cSqlite = "sqlite"
-)
-
 var (
-	tpls map[string]ITPLContext
+	tpls map[string]SQLTemplate
 )
 
-//ITPLContext 模板上下文
-type ITPLContext interface {
+//Template 模板上下文
+type SQLTemplate interface {
 	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []interface{})
 	GetSPContext(tpl string, input map[string]interface{}) (query string, args []interface{})
 	Replace(sql string, args []interface{}) (r string)
 }
 
 func init() {
-	tpls = make(map[string]ITPLContext)
+	tpls = make(map[string]SQLTemplate)
 
 	Register("oracle", ATTPLContext{name: "oracle", prefix: ":"})
 	Register("ora", ATTPLContext{name: "ora", prefix: ":"})
@@ -31,15 +25,15 @@ func init() {
 	Register("sqlite", MTPLContext{name: "sqlite", prefix: "?"})
 	Register("postgres", ATTPLContext{name: "postgres", prefix: "$"})
 }
-func Register(name string, tpl ITPLContext) {
+func Register(name string, tpl SQLTemplate) {
 	if _, ok := tpls[name]; ok {
 		panic("重复的注册:" + name)
 	}
 	tpls[name] = tpl
 }
 
-//GetDBContext 获取数据库上下文操作
-func GetDBContext(name string) (ITPLContext, error) {
+//GetDBTemplate 获取数据库上下文操作
+func GetDBTemplate(name string) (SQLTemplate, error) {
 	if v, ok := tpls[strings.ToLower(name)]; ok {
 		return v, nil
 	}

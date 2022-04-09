@@ -96,7 +96,9 @@ func (ctx *AlloterContext) Close() {
 	ctx.aresp.Close()
 	ctx.Actx = nil
 
-	ctx.logger.Close()
+	if ctx.logger != nil {
+		ctx.logger.Close()
+	}
 	ctx.logger = nil
 
 }

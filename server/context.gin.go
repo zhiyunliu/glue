@@ -94,7 +94,9 @@ func (ctx *GinContext) Close() {
 	ctx.gresp.Close()
 	ctx.Gctx = nil
 
-	ctx.logger.Close()
+	if ctx.logger != nil {
+		ctx.logger.Close()
+	}
 	ctx.logger = nil
 }
 

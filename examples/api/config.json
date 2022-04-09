@@ -8,6 +8,9 @@
 	},
 	"registry":"nacos://aliyun",	
 	"config":"nacos://aliyun",
+	"db":{
+		"localhost":{"proto":"mysql","conn":"root:123456@tcp(localhost)/demo?charset=utf8","max_open":10,"max_idle":10,"life_time":100}
+	},
 	"nacos":{
 		"aliyun":{
 			"encrypt":false,

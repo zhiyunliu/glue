@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/zhiyunliu/gel"
 	"github.com/zhiyunliu/gel/context"
 	_ "github.com/zhiyunliu/gel/contrib/config/nacos"
@@ -32,8 +33,9 @@ func main() {
 	apiSrv.Handle("/panic", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("panic")
 		panic(fmt.Errorf("xx i am panic"))
-		return fmt.Errorf("xxx")
 	})
+
+	apiSrv.Handle("/db", &DBdemo{})
 
 	app := gel.NewApp(gel.Server(apiSrv))
 	app.Start()
