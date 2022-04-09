@@ -12,8 +12,13 @@ type DBdemo struct{}
 
 func (d *DBdemo) QueryHandle(ctx context.Context) interface{} {
 	dbobj := xdb.GetDB("localhost")
-	rows, err := dbobj.Query("select id,name from new_table t where t.id=@id", map[string]interface{}{
-		"id": ctx.Request().Query().Get("id"),
+	idval := ctx.Request().Query().Get("id")
+	sql := `select id,name from new_table t`
+	if len(idval) > 0 {
+		sql = `select id,name from new_table t where t.id=@id`
+	}
+	rows, err := dbobj.Query(sql, map[string]interface{}{
+		"id": idval,
 	})
 	if err != nil {
 		ctx.Log().Error(err)
