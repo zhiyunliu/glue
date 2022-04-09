@@ -14,13 +14,13 @@ func getError(err error, query string, args []interface{}) error {
 func resolveRows(rows *sql.Rows, col int) (dataRows Rows, err error) {
 	dataRows = NewRows()
 	columnTypes, _ := rows.ColumnTypes()
+	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))
-
+	prepareValues(values, columnTypes)
 	for rows.Next() {
-		prepareValues(values, columnTypes)
 		rows.Scan(values...)
 		mapValue := map[string]interface{}{}
-		scanIntoMap(mapValue, values, columnTypes)
+		scanIntoMap(mapValue, values, columns)
 		dataRows = append(dataRows, mapValue)
 	}
 	rows.Close()
@@ -30,7 +30,6 @@ func resolveRows(rows *sql.Rows, col int) (dataRows Rows, err error) {
 func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
 	if len(columnTypes) > 0 {
 		for idx, columnType := range columnTypes {
-			//fmt.Println("idx:", idx, columnType.Name(), columnType.ScanType())
 			if columnType.ScanType() != nil {
 				values[idx] = reflect.New(reflect.PtrTo(columnType.ScanType())).Interface()
 			} else {
@@ -44,23 +43,17 @@ func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
 	}
 }
 
-func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columnTypes []*sql.ColumnType) {
+func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columnTypes []string) {
 
-	for idx, colType := range columnTypes {
-		column := colType.Name()
-		//fmt.Println("column:", column)
+	for idx, column := range columnTypes {
 		if reflectValue := reflect.Indirect(reflect.Indirect(reflect.ValueOf(values[idx]))); reflectValue.IsValid() {
-			//fmt.Println("scanIntoMap.1")
 			mapValue[column] = reflectValue.Interface()
 			if valuer, ok := mapValue[column].(driver.Valuer); ok {
-				//fmt.Println("scanIntoMap.1.1", valuer)
 				mapValue[column], _ = valuer.Value()
 			} else if b, ok := mapValue[column].(sql.RawBytes); ok {
-				//fmt.Println("scanIntoMap.1.2", string(b))
 				mapValue[column] = string(b)
 			}
 		} else {
-			//fmt.Println("scanIntoMap.2")
 			mapValue[column] = nil
 		}
 	}
