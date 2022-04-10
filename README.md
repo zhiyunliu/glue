@@ -26,10 +26,10 @@
 	},
 	"nacos":{
 		"aliyun":{
-			"encrypt":"false",
-			"client":{"NamespaceId":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
-			"server":[{"IpAddr":"192.168.0.120","Port":8848}],
-			"options":{"kind":"api","group":"charge","cluster":"grey"}
+			"encrypt":false,
+			"client":{"namespace_id":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
+			"server":[{"ipaddr":"192.168.0.120","port":8848}],
+			"options":{"prefix":"api","group":"charge","cluster":"grey","weight":100}
 		}
 	},
 	"dbs":{
