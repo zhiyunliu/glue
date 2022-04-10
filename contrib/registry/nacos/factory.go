@@ -5,8 +5,10 @@ import (
 
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/contrib/nacos"
+	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/gel/registry"
 )
 
@@ -19,24 +21,12 @@ func (f *nacosFactory) Name() string {
 
 func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 
-	clientConfig := constant.ClientConfig{}
-	serverConfigs := []constant.ServerConfig{}
-
-	err := cfg.Value("client").Scan(&clientConfig)
+	ncp, err := nacos.GetClientParam(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("nacos client error:%+v", err)
-	}
-	err = cfg.Value("server").Scan(&serverConfigs)
-	if err != nil {
-		return nil, fmt.Errorf("nacos server error:%+v", err)
+		return nil, err
 	}
 
-	namingClient, err := clients.NewNamingClient(
-		vo.NacosClientParam{
-			ClientConfig:  &clientConfig,
-			ServerConfigs: serverConfigs,
-		},
-	)
+	namingClient, err := clients.NewNamingClient(*ncp)
 	if err != nil {
 		return nil, fmt.Errorf("nacos NewNamingClient error:%+v", err)
 	}
@@ -58,5 +48,7 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 }
 
 func init() {
+	logger.SetLogger(log.DefaultLogger)
+
 	registry.Register(&nacosFactory{})
 }

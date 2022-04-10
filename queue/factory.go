@@ -1,9 +1,13 @@
 package queue
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 var Nil error = errors.New("Queue Nil")
@@ -13,17 +17,30 @@ type queue struct {
 	q IMQP
 }
 
-func newQueue(setting config.Config) (IQueue, error) {
+func newQueue(proto string, cfg config.Config) (IQueue, error) {
 	var err error
 	q := &queue{}
-	q.q, err = NewMQP(setting)
+	q.q, err = NewMQP(proto, cfg)
 	return q, err
 }
 
 //Send 发送消息
-func (q *queue) Send(key string, value Message) error {
+func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 
-	return q.q.Push(key, value)
+	reqid := ctx.Header(context.XRequestId)
+
+	if msg, ok := value.(Message); ok {
+		header := msg.Header()
+		header[context.XRequestId] = reqid
+		return q.q.Push(key, msg)
+	}
+
+	msg, err := newMsgWrap(reqid, value)
+	if err != nil {
+		return fmt.Errorf("queue.Send:%s,Error:%w", key, err)
+	}
+
+	return q.q.Push(key, msg)
 }
 
 //Pop 从队列中获取一个消息
@@ -38,4 +55,47 @@ func (q *queue) Count(key string) (int64, error) {
 
 func (q *queue) Close() error {
 	return q.q.Close()
+}
+
+type msgWrap struct {
+	HeaderMap xtypes.SMap `json:"header"`
+	BodyMap   xtypes.XMap `json:"body"`
+	reqid     string      `json:"-"`
+	bytes     []byte      `json:"-"`
+}
+
+func newMsgWrap(reqid string, obj interface{}) (msg Message, err error) {
+	bytes, ok := obj.([]byte)
+	if !ok {
+		bytes, err = json.Marshal(obj)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &msgWrap{
+		reqid: reqid,
+		bytes: bytes,
+	}, nil
+}
+
+func (w *msgWrap) Header() map[string]string {
+	if w.HeaderMap == nil {
+		w.HeaderMap = map[string]string{
+			context.XRequestId: w.reqid,
+		}
+	}
+	return w.HeaderMap
+}
+func (w *msgWrap) Body() map[string]interface{} {
+	if w.BodyMap == nil {
+		w.BodyMap = map[string]interface{}{}
+		json.Unmarshal(w.bytes, &w.BodyMap)
+	}
+	return w.BodyMap
+
+}
+
+func (w *msgWrap) String() string {
+	return string(w.bytes)
 }

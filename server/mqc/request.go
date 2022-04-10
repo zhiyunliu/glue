@@ -96,7 +96,7 @@ type Body interface {
 	Scan(obj interface{}) error
 }
 
-type cbody map[string]string
+type cbody map[string]interface{}
 
 func (b cbody) Read(p []byte) (n int, err error) {
 	bodyBytes, err := json.Marshal(b)

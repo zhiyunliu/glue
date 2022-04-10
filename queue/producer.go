@@ -29,9 +29,7 @@ func DeregisterProducer(name string) {
 }
 
 //NewMQP 根据适配器名称及参数返回配置处理器
-func NewMQP(setting config.Config) (IMQP, error) {
-	val := setting.Value("proto")
-	proto := val.String()
+func NewMQP(proto string, setting config.Config) (IMQP, error) {
 	resolver, ok := mqpResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("mqp: 未知的协议类型:%s", proto)

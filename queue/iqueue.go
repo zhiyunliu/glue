@@ -1,8 +1,10 @@
 package queue
 
+import "github.com/zhiyunliu/gel/context"
+
 //IQueue 消息队列
 type IQueue interface {
-	Send(key string, value Message) error
+	Send(ctx context.Context, key string, value interface{}) error
 	Pop(key string) (string, error)
 	Count(key string) (int64, error)
 }
@@ -17,7 +19,7 @@ type IMQCMessage interface {
 
 type Message interface {
 	Header() map[string]string
-	Body() map[string]string
+	Body() map[string]interface{}
 	String() string
 }
 

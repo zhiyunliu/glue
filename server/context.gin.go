@@ -15,8 +15,6 @@ import (
 	vctx "github.com/zhiyunliu/gel/context"
 )
 
-const XRequestId = "x-request-id"
-
 type GinContext struct {
 	opts   *options
 	Gctx   *gin.Context
@@ -76,10 +74,10 @@ func (ctx *GinContext) Log() log.Logger {
 	if ctx.logger == nil {
 		logger, ok := log.FromContext(ctx.Context())
 		if !ok {
-			xreqId := ctx.Gctx.GetHeader(XRequestId)
+			xreqId := ctx.Gctx.GetHeader(vctx.XRequestId)
 			if xreqId == "" {
 				xreqId = session.Create()
-				ctx.Gctx.Header(XRequestId, xreqId)
+				ctx.Gctx.Header(vctx.XRequestId, xreqId)
 			}
 			logger = log.New(log.WithName("gin"), log.WithSid(xreqId))
 			ctx.ResetContext(log.WithContext(ctx.Context(), logger))

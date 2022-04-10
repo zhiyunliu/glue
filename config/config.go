@@ -69,20 +69,24 @@ func (c *config) watch(w Watcher) {
 	for {
 		kvs, err := w.Next()
 		if errors.Is(err, context.Canceled) {
-			c.opts.logger.Error("watcher's ctx cancel : %v", err)
+			c.opts.logger.Errorf("watcher's ctx cancel : %v", err)
 			return
+		}
+		if errors.Is(err, ErrorUnchanged) {
+			time.Sleep(time.Second)
+			continue
 		}
 		if err != nil {
 			time.Sleep(time.Second)
-			c.opts.logger.Error("failed to watch next config: %v", err)
+			c.opts.logger.Errorf("failed to watch next config: %v", err)
 			continue
 		}
 		if err := c.reader.Merge(kvs...); err != nil {
-			c.opts.logger.Error("failed to merge next config: %v", err)
+			c.opts.logger.Errorf("failed to merge next config: %v", err)
 			continue
 		}
 		if err := c.reader.Resolve(); err != nil {
-			c.opts.logger.Error("failed to resolve next config: %v", err)
+			c.opts.logger.Errorf("failed to resolve next config: %v", err)
 			continue
 		}
 		c.cached.Range(func(key, value interface{}) bool {

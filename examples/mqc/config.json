@@ -8,14 +8,14 @@
 	},
 	"registry":"nacos://aliyun",	
 	"config":"nacos://aliyun",
-	"queue":{
-		"default":"redis://localhost"
+	"queues":{
+		"default":"redis://localhost"		
 	},
 	"nacos":{
 		"aliyun":{
 			"encrypt":false,
-			"client":{"NamespaceId":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
-			"server":[{"IpAddr":"192.168.0.120","Port":8848}],
+			"client":{"namespace_id":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
+			"server":[{"ipaddr":"192.168.0.120","port":8848}],
 			"options":{"prefix":"api","group":"charge","cluster":"grey","weight":100}
 		}
 	},
@@ -30,15 +30,10 @@
 		}
 	},
     "servers":{
-		"api":{
-			"config":{"addr":":8080","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65525},
-			"middlewares":[],			
-			"header":{}
-		},
 		"mqc":{
 			"config":{"addr":"queue://default","status":"start"},
-			"middlewares":[{},{}],
-			"tasks":[{"queue":"xx","disable":true},{"queue":"yy"}]
+			"middlewares":[],
+			"tasks":[{"queue":"xx","disable":true},{"queue":"key"}]
 		}
     }
 }

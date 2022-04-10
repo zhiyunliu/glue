@@ -43,18 +43,23 @@ func (r *Redis) HashGet(hk, key string) (string, error) {
 	return r.client.HGet(hk, key).Result()
 }
 
+// HashSet from key
+func (r *Redis) HashSet(hk, key string, val string) (bool, error) {
+	return r.client.HSet(hk, key, val).Result()
+}
+
 // HashDel delete key in specify redis's hashtable
 func (r *Redis) HashDel(hk, key string) error {
 	return r.client.HDel(hk, key).Err()
 }
 
 // Increase
-func (r *Redis) Increase(key string) error {
-	return r.client.Incr(key).Err()
+func (r *Redis) Increase(key string) (int64, error) {
+	return r.client.Incr(key).Result()
 }
 
-func (r *Redis) Decrease(key string) error {
-	return r.client.Decr(key).Err()
+func (r *Redis) Decrease(key string) (int64, error) {
+	return r.client.Decr(key).Result()
 }
 
 // Set ttl

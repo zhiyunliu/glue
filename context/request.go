@@ -1,5 +1,7 @@
 package context
 
+const XRequestId = "x-request-id"
+
 type Request interface {
 	GetMethod() string
 	GetClientIP() string

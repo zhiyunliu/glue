@@ -2,7 +2,9 @@ package main
 
 import (
 	"github.com/zhiyunliu/gel"
+	_ "github.com/zhiyunliu/gel/contrib/config/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/queue/redis"
+	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
 	"github.com/zhiyunliu/gel/server/mqc"
 )
 

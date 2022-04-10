@@ -10,9 +10,8 @@ import (
 )
 
 type watcher struct {
-	f  *file
-	fw *fsnotify.Watcher
-
+	f      *file
+	fw     *fsnotify.Watcher
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -54,6 +53,9 @@ func (w *watcher) Next() ([]*config.KeyValue, error) {
 		kv, err := w.f.loadFile(path)
 		if err != nil {
 			return nil, err
+		}
+		if len(kv.Value) == 0 {
+			return nil, config.ErrorUnchanged
 		}
 		return []*config.KeyValue{kv}, nil
 	case err := <-w.fw.Errors:
