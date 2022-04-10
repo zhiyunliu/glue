@@ -30,6 +30,29 @@ func NewAlloterEngine(engine *alloter.Engine, opts ...Option) *AlloterEngine {
 	return g
 }
 
+func (e *AlloterEngine) NoMethod() {
+	e.Engine.NoMethod(func(ctx *alloter.Context) {
+		actx := e.pool.Get().(*AlloterContext)
+		actx.reset(ctx)
+		actx.opts = e.opts
+
+		actx.Log().Errorf("No Method for %s", actx.Request().Path().FullPath())
+
+		actx.Close()
+		e.pool.Put(actx)
+	})
+}
+func (e *AlloterEngine) NoRoute() {
+	e.Engine.NoRoute(func(ctx *alloter.Context) {
+		actx := e.pool.Get().(*AlloterContext)
+		actx.reset(ctx)
+		actx.opts = e.opts
+		actx.Log().Errorf("No Route for %s", actx.Request().Path().FullPath())
+		actx.Close()
+		e.pool.Put(actx)
+	})
+}
+
 func (e *AlloterEngine) Handle(method string, path string, callfunc HandlerFunc) {
 	e.Engine.Handle(method, path, func(ctx *alloter.Context) {
 		actx := e.pool.Get().(*AlloterContext)

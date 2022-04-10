@@ -15,5 +15,8 @@ func (e *Server) registryEngineRoute() {
 		server.WithRequestDecoder(e.opts.decReq),
 		server.WithResponseEncoder(e.opts.encResp))
 
+	engine.NoMethod()
+	engine.NoRoute()
+
 	server.RegistryEngineRoute(adapterEngine, e.opts.router)
 }

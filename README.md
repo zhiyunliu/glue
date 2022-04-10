@@ -55,7 +55,7 @@
 			"header":{},
 		},
 		"mqc":{
-			"config":{"addr":"redis://redisxxx","status":"start/stop"},
+			"config":{"addr":"queues://redisxxx","status":"start/stop"},
 			"middlewares":[{},{}],
 			"tasks":[{"queue":"xx.xx.xx","service":"/xx/bb/cc","disable":true},{"queue":"yy.yy.yy","service":"/xx/bb/yy"}],
 		},

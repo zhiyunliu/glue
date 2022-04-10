@@ -1,4 +1,4 @@
-package main
+package demos
 
 import (
 	"time"
@@ -6,9 +6,9 @@ import (
 	"github.com/zhiyunliu/gel/context"
 )
 
-type demo struct{}
+type Fulldemo struct{}
 
-func (d *demo) Handle(ctx context.Context) interface{} {
+func (d *Fulldemo) Handle(ctx context.Context) interface{} {
 	ctx.Log().Infof("mqc.demo:%s", time.Now().Format("2006-01-02 15:04:05"))
 
 	ctx.Log().Infof("header.a:%+v", ctx.Request().GetHeader("a"))
@@ -17,7 +17,7 @@ func (d *demo) Handle(ctx context.Context) interface{} {
 
 	ctx.Log().Infof("body-1:%s", ctx.Request().Body().Bytes())
 
-	mapData := map[string]string{}
+	mapData := map[string]interface{}{}
 	ctx.Request().Body().Scan(&mapData)
 	ctx.Log().Infof("body-2:%+v", mapData)
 

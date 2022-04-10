@@ -14,8 +14,7 @@
 	"caches":{
 		"default":"redis://localhost"
 	},
-	"queues":{	
-			 
+	"queues":{				 
 		"default":"redis://localhost"
 	},
 	"redis":{

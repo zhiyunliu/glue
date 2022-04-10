@@ -59,11 +59,11 @@ func extractReq(req context.Request) string {
 	return fmt.Sprintf("query:%s,body:%s", query, body)
 }
 
-func extractResp(req interface{}) string {
-	if stringer, ok := req.(fmt.Stringer); ok {
+func extractResp(resp interface{}) string {
+	if stringer, ok := resp.(fmt.Stringer); ok {
 		return stringer.String()
 	}
-	return fmt.Sprintf("%+v", req)
+	return fmt.Sprintf("%+v", resp)
 }
 
 // extractError returns the string of the error
