@@ -41,6 +41,7 @@ func main() {
 	apiSrv.Handle("/db", demos.NewDb())
 	apiSrv.Handle("/cache", demos.NewCache())
 	apiSrv.Handle("/queue", demos.NewQueue())
+	apiSrv.Handle("/log", demos.NewLogDemo())
 
 	app := gel.NewApp(gel.Server(apiSrv))
 	app.Start()
