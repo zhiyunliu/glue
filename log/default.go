@@ -115,3 +115,7 @@ func New(opts ...Option) Logger {
 func Close() {
 	xlog.Close()
 }
+
+func Concurrency(cnt int) {
+	xlog.Concurrency(cnt)
+}
