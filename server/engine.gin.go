@@ -29,6 +29,28 @@ func NewGinEngine(engine *gin.Engine, opts ...Option) *GinEngine {
 	}
 	return g
 }
+func (e *GinEngine) NoMethod() {
+	e.Engine.NoMethod(func(ctx *gin.Context) {
+		actx := e.pool.Get().(*GinContext)
+		actx.reset(ctx)
+		actx.opts = e.opts
+
+		actx.Log().Error("No Method for %s", actx.Request().Path().FullPath())
+
+		actx.Close()
+		e.pool.Put(actx)
+	})
+}
+func (e *GinEngine) NoRoute() {
+	e.Engine.NoRoute(func(ctx *gin.Context) {
+		actx := e.pool.Get().(*GinContext)
+		actx.reset(ctx)
+		actx.opts = e.opts
+		actx.Log().Error("No Route for %s", actx.Request().Path().FullPath())
+		actx.Close()
+		e.pool.Put(actx)
+	})
+}
 
 func (e *GinEngine) Handle(method string, path string, callfunc HandlerFunc) {
 	e.Engine.Handle(method, path, func(gctx *gin.Context) {

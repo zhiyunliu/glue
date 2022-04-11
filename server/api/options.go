@@ -3,7 +3,6 @@ package api
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/zhiyunliu/gel/config"
 	"github.com/zhiyunliu/gel/server"
 )
@@ -26,7 +25,6 @@ type options struct {
 
 func setDefaultOption() *options {
 	return &options{
-		handler:      gin.New(),
 		startedHooks: make([]server.Hook, 0),
 		endHooks:     make([]server.Hook, 0),
 		decReq:       server.DefaultRequestDecoder,

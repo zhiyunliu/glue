@@ -8,11 +8,30 @@
 	},
 	"registry":"nacos://aliyun",	
 	"config":"nacos://aliyun",
+	"dbs":{
+		"localhost":{"proto":"mysql","conn":"root:123456@tcp(localhost)/demo?charset=utf8","max_open":10,"max_idle":10,"life_time":100}
+	},
+	"caches":{
+		"default":"redis://localhost"
+	},
+	"queues":{				 
+		"default":"redis://localhost"
+	},
+	"redis":{
+		"localhost":{
+			"addrs":["192.168.0.120:6379"],
+			"db":0,
+			"dial_timeout":10,
+			"read_timeout":10,
+			"write_timeout":10,
+			"pool_size":20
+		}
+	},
 	"nacos":{
 		"aliyun":{
 			"encrypt":false,
-			"client":{"NamespaceId":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
-			"server":[{"IpAddr":"192.168.0.120","Port":8848}],
+			"client":{"namespace_id":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
+			"server":[{"ipaddr":"192.168.0.120","port":8848}],
 			"options":{"prefix":"api","group":"charge","cluster":"grey","weight":100}
 		}
 	},

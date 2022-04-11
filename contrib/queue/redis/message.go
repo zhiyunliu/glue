@@ -39,9 +39,9 @@ func (m *redisMessage) GetMessage() queue.Message {
 }
 
 type MsgBody struct {
-	msg       string
+	msg       string      `json:"-"`
 	HeaderMap xtypes.SMap `json:"header"`
-	BodyMap   xtypes.SMap `json:"body"`
+	BodyMap   xtypes.XMap `json:"body"`
 }
 
 func newMsgBody(msg string) *MsgBody {
@@ -51,7 +51,7 @@ func newMsgBody(msg string) *MsgBody {
 	body := &MsgBody{
 		msg:       msg,
 		HeaderMap: make(xtypes.SMap),
-		BodyMap:   make(xtypes.SMap),
+		BodyMap:   make(xtypes.XMap),
 	}
 	json.Unmarshal([]byte(msg), body)
 	return body
@@ -60,9 +60,10 @@ func newMsgBody(msg string) *MsgBody {
 func (m *MsgBody) Header() map[string]string {
 	return m.HeaderMap
 }
-func (m *MsgBody) Body() map[string]string {
+func (m *MsgBody) Body() map[string]interface{} {
 	return m.BodyMap
 }
+
 func (m *MsgBody) String() string {
 	return m.msg
 }

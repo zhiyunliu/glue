@@ -23,6 +23,11 @@ func RegisterConsumer(resolver mqcResover) {
 	mqcResolvers[name] = resolver
 }
 
+//Deregister 清理配置适配器
+func DeregisterrConsumer(name string) {
+	delete(mqcResolvers, name)
+}
+
 //NewMQC 根据适配器名称及参数返回配置处理器
 func NewMQC(proto string, setting config.Config) (IMQC, error) {
 	resolver, ok := mqcResolvers[proto]

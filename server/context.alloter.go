@@ -79,10 +79,10 @@ func (ctx *AlloterContext) Log() log.Logger {
 	if ctx.logger == nil {
 		logger, ok := log.FromContext(ctx.Context())
 		if !ok {
-			xreqId := ctx.Actx.GetHeader(XRequestId)
+			xreqId := ctx.Actx.GetHeader(vctx.XRequestId)
 			if xreqId == "" {
 				xreqId = session.Create()
-				ctx.Actx.Header(XRequestId, xreqId)
+				ctx.Actx.Header(vctx.XRequestId, xreqId)
 			}
 			logger = log.New(log.WithName("alloter"), log.WithSid(xreqId))
 			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
@@ -96,7 +96,9 @@ func (ctx *AlloterContext) Close() {
 	ctx.aresp.Close()
 	ctx.Actx = nil
 
-	ctx.logger.Close()
+	if ctx.logger != nil {
+		ctx.logger.Close()
+	}
 	ctx.logger = nil
 
 }

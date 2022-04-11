@@ -29,6 +29,7 @@ var funcCallback = map[string]reflectCallback{
 
 var suffixList = []string{Handling, Handler, Handled}
 
+//反射获取对象的Handle 方法
 func ReflectHandle(path string, obj interface{}, method ...string) (*ServiceGroup, error) {
 	//检查参数
 	if path == "" || obj == nil {
@@ -51,7 +52,8 @@ func ReflectHandle(path string, obj interface{}, method ...string) (*ServiceGrou
 	}
 
 	//reflect所有函数，检查函数签名
-	for i := 0; i < otype.NumMethod(); i++ {
+	cnt := otype.NumMethod()
+	for i := 0; i < cnt; i++ {
 
 		//检查函数参数是否符合接口要求
 		funcName := otype.Method(i).Name
@@ -65,7 +67,7 @@ func ReflectHandle(path string, obj interface{}, method ...string) (*ServiceGrou
 		//转换函数签名
 		nf, ok := getIsValidFunc(method.Interface())
 		if !ok {
-			return nil, fmt.Errorf("函数【%s】是钩子类型（%v）,但签名不是func(context.Context) interface{}", funcName, suffixList)
+			return nil, fmt.Errorf("函数【%s】是钩子类型(%v),但签名不是func(context.Context) interface{}", funcName, suffixList)
 		}
 		for _, sfx := range suffixList {
 			if strings.HasSuffix(funcName, sfx) {

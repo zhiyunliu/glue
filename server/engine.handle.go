@@ -11,6 +11,8 @@ import (
 )
 
 type AdapterEngine interface {
+	NoMethod()
+	NoRoute()
 	Handle(method string, path string, callfunc HandlerFunc)
 	Write(ctx context.Context, resp interface{})
 }
@@ -21,16 +23,18 @@ func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup) {
 		logging.Server(nil),
 		recovery.Recovery(),
 	}
-
+	engine.NoMethod()
+	engine.NoRoute()
 	execRegistry(engine, router, defaultMiddlewares)
 }
 
 func execRegistry(engine AdapterEngine, group *RouterGroup, defaultMiddlewares []middleware.Middleware) {
 
 	groups := group.ServiceGroups
-	mls := make([]middleware.Middleware, len(defaultMiddlewares)+len(group.middlewares))
-	copy(mls, defaultMiddlewares)
 	gmlen := len(group.middlewares)
+	mls := make([]middleware.Middleware, len(defaultMiddlewares)+gmlen)
+	copy(mls, defaultMiddlewares)
+
 	if gmlen > 0 {
 		copy(mls[len(defaultMiddlewares):], group.middlewares)
 	}
@@ -52,7 +56,7 @@ func procHandler(engine AdapterEngine, group *reflect.ServiceGroup, middlewares 
 		})
 	}
 	for i := range group.Children {
-		procHandler(engine, group.Children[i])
+		procHandler(engine, group.Children[i], middlewares...)
 	}
 }
 

@@ -152,6 +152,7 @@ func (app *ServiceApp) loadConfig() {
 	if newSource != nil {
 		app.options.Config.Source(newSource)
 	}
+	global.Config = app.options.Config
 }
 
 func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {

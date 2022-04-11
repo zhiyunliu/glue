@@ -6,12 +6,17 @@ import (
 )
 
 func (e *Server) registryEngineRoute() {
-	engine := e.opts.handler.(*gin.Engine)
+	gin.SetMode("release")
+	engine := gin.New()
+	e.opts.handler = engine
 	adapterEngine := server.NewGinEngine(engine,
 		server.WithSrvType(e.Type()),
 		server.WithErrorEncoder(e.opts.encErr),
 		server.WithRequestDecoder(e.opts.decReq),
 		server.WithResponseEncoder(e.opts.encResp))
+
+	engine.NoMethod()
+	engine.NoRoute()
 
 	server.RegistryEngineRoute(adapterEngine, e.opts.router)
 }

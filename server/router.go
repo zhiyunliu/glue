@@ -109,10 +109,6 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, metho
 	group.ServiceGroups[relativePath] = svcGroup
 }
 
-func (group *RouterGroup) GetRouterObject() {
-
-}
-
 func (group *RouterGroup) combineHandlers(middlewares ...middleware.Middleware) []middleware.Middleware {
 	finalSize := len(group.middlewares) + len(middlewares)
 

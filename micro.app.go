@@ -1,12 +1,13 @@
 package gel
 
 import (
+	"runtime"
+
 	"github.com/zhiyunliu/gel/cli"
 	"github.com/zhiyunliu/gel/compatible"
 	_ "github.com/zhiyunliu/gel/encoding/json"
 	_ "github.com/zhiyunliu/gel/encoding/yaml"
-
-	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
+	"github.com/zhiyunliu/gel/log"
 )
 
 //MicroApp  微服务应用
@@ -19,6 +20,7 @@ type MicroApp struct {
 func NewApp(opts ...Option) (m *MicroApp) {
 	m = &MicroApp{opts: opts}
 	m.cliApp = cli.New(opts...)
+	log.Concurrency(runtime.NumCPU() * 20)
 	return m
 }
 
