@@ -20,8 +20,31 @@ func (t *xTrans) Query(sql string, input map[string]interface{}) (rows xdb.Rows,
 	if err != nil {
 		return nil, getError(err, query, args)
 	}
+	defer func() {
+		if data != nil {
+			data.Close()
+		}
+	}()
+	rows, err = resolveRows(data)
+	if err != nil {
+		return nil, getError(err, query, args)
+	}
+	return
+}
 
-	rows, err = resolveRows(data, 0)
+//Query 查询数据
+func (db *xTrans) Multi(sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
+	query, args := db.tpl.GetSQLContext(sql, input)
+	sqlRows, err := db.tx.Query(query, args...)
+	if err != nil {
+		return nil, getError(err, query, args)
+	}
+	defer func() {
+		if sqlRows != nil {
+			sqlRows.Close()
+		}
+	}()
+	datasetRows, err = resolveMultiRows(sqlRows)
 	if err != nil {
 		return nil, getError(err, query, args)
 	}

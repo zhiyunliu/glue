@@ -10,6 +10,7 @@ import (
 	_ "github.com/zhiyunliu/gel/contrib/queue/redis"
 	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/mysql"
+	_ "github.com/zhiyunliu/gel/contrib/xdb/sqlserver"
 	"github.com/zhiyunliu/gel/errors"
 	"github.com/zhiyunliu/gel/examples/api/demos"
 	"github.com/zhiyunliu/gel/server/api"

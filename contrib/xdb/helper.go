@@ -13,20 +13,36 @@ func getError(err error, query string, args []interface{}) error {
 	return fmt.Errorf("%w(sql:%s,args:%+v)", err, query, args)
 }
 
-func resolveRows(rows *sql.Rows, col int) (dataRows xdb.Rows, err error) {
+func resolveRows(rows *sql.Rows) (dataRows xdb.Rows, err error) {
 	dataRows = xdb.NewRows()
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))
 	prepareValues(values, columnTypes)
 	for rows.Next() {
-		rows.Scan(values...)
+		err = rows.Scan(values...)
+		if err != nil {
+			return
+		}
 		mapValue := map[string]interface{}{}
 		scanIntoMap(mapValue, values, columns)
 		dataRows = append(dataRows, mapValue)
 	}
-	rows.Close()
 	return
+}
+
+func resolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
+	var setRows xdb.Rows
+	for {
+		setRows, err = resolveRows(rows)
+		if err != nil {
+			return
+		}
+		datasetRows = append(datasetRows, setRows)
+		if !rows.NextResultSet() {
+			return
+		}
+	}
 }
 
 func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {

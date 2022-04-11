@@ -3,7 +3,7 @@ package sqlserver
 import (
 	"fmt"
 
-	_ "github.com/mattn/go-adodb"
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/zhiyunliu/gel/config"
 	contribxdb "github.com/zhiyunliu/gel/contrib/xdb"
 	"github.com/zhiyunliu/gel/xdb"

@@ -11,6 +11,7 @@ import (
 
 var tplcache sync.Map
 
+type Placeholder func() string
 type cacheItem struct {
 	sql   string
 	names []string
@@ -29,11 +30,11 @@ func isNil(input interface{}) bool {
 }
 
 //AnalyzeTPLFromCache 从缓存中获取已解析的SQL语句
-func AnalyzeTPLFromCache(name string, tpl string, input map[string]interface{}, placeholder func() string) (sql string, params []interface{}) {
-	hashVal := md5.Str(name + tpl)
+func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}) (sql string, params []interface{}) {
+	hashVal := md5.Str(template.Name() + tpl)
 	tplval, ok := tplcache.Load(hashVal)
 	if !ok {
-		sql, params, names := AnalyzeTPL(tpl, input, placeholder)
+		sql, params, names := AnalyzeTPL(template, tpl, input)
 		tplval = &cacheItem{
 			sql:   sql,
 			names: names,
@@ -53,9 +54,14 @@ func AnalyzeTPLFromCache(name string, tpl string, input map[string]interface{}, 
 //~表达式，检查值，值为空时返加"",否则返回: , name=value
 //&条件表达式，检查值，值为空时返加"",否则返回: and name=value
 //|条件表达式，检查值，值为空时返回"", 否则返回: or name=value
-func AnalyzeTPL(tpl string, input map[string]interface{}, placeholder func() string) (sql string, params []interface{}, names []string) {
+func AnalyzeTPL(template SQLTemplate, tpl string, input map[string]interface{}) (sql string, params []interface{}, names []string) {
+	return template.analyzeTPL(tpl, input)
+}
+
+func defaultAnalyze(tpl string, input map[string]interface{}, placeholder func() string) (sql string, params []interface{}, names []string) {
 	params = make([]interface{}, 0)
 	names = make([]string, 0)
+
 	word, _ := regexp.Compile(`[\\]?[@|#|&|~|\||!|\$|\?]\w?[\.]?\w+`)
 
 	//@变量, 将数据放入params中
@@ -100,10 +106,10 @@ func AnalyzeTPL(tpl string, input map[string]interface{}, placeholder func() str
 		}
 	})
 
-	word2, _ := regexp.Compile(`[\\][@|#|&|~|\||!|\$|\?|>|<]`)
-	//@变量, 将数据放入params中
-	sql = word2.ReplaceAllStringFunc(sql, func(s string) string {
-		return s[1:]
-	})
+	// word2, _ := regexp.Compile(`[\\][@|#|&|~|\||!|\$|\?|>|<]`)
+	// //@变量, 将数据放入params中
+	// sql = word2.ReplaceAllStringFunc(sql, func(s string) string {
+	// 	return s[1:]
+	// })
 	return
 }

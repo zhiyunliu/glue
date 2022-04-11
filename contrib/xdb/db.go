@@ -43,7 +43,31 @@ func (db *xDB) Query(sql string, input map[string]interface{}) (rows xdb.Rows, e
 	if err != nil {
 		return nil, getError(err, query, args)
 	}
-	rows, err = resolveRows(data, 0)
+	defer func() {
+		if data != nil {
+			data.Close()
+		}
+	}()
+	rows, err = resolveRows(data)
+	if err != nil {
+		return nil, getError(err, query, args)
+	}
+	return
+}
+
+//Multi 查询数据(多个数据集)
+func (db *xDB) Multi(sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
+	query, args := db.tpl.GetSQLContext(sql, input)
+	sqlRows, err := db.db.Query(query, args...)
+	if err != nil {
+		return nil, getError(err, query, args)
+	}
+	defer func() {
+		if sqlRows != nil {
+			sqlRows.Close()
+		}
+	}()
+	datasetRows, err = resolveMultiRows(sqlRows)
 	if err != nil {
 		return nil, getError(err, query, args)
 	}
@@ -81,17 +105,6 @@ func (db *xDB) Exec(sql string, input map[string]interface{}) (r xdb.Result, err
 	r, err = db.db.Exec(query, args...)
 	if err != nil {
 		return nil, getError(err, query, args)
-	}
-	return
-}
-
-//ExecuteSP 根据包含@名称占位符的语句执行查询语句
-func (db *xDB) ExecSp(procName string, input map[string]interface{}, output ...interface{}) (r xdb.Result, err error) {
-	query, args := db.tpl.GetSPContext(procName, input)
-	ni := append(args, output...)
-	r, err = db.db.Exec(query, ni...)
-	if err != nil {
-		return nil, getError(err, query, ni)
 	}
 	return
 }

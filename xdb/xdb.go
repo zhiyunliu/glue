@@ -23,9 +23,11 @@ type ITrans interface {
 //Executer 数据库操作对象集合
 type Executer interface {
 	Query(sql string, input map[string]interface{}) (data Rows, err error)
+	Multi(sql string, input map[string]interface{}) (data []Rows, err error)
 	First(sql string, input map[string]interface{}) (data Row, err error)
 	Scalar(sql string, input map[string]interface{}) (data interface{}, err error)
 	Exec(sql string, input map[string]interface{}) (r Result, err error)
+	//StoredProc(procName string, input map[string]interface{}) (r Result, err error)
 }
 
 //dbResover 定义配置文件转换方法

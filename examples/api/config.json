@@ -9,7 +9,8 @@
 	"registry":"nacos://aliyun",	
 	"config":"nacos://aliyun",
 	"dbs":{
-		"localhost":{"proto":"mysql","conn":"root:123456@tcp(localhost)/demo?charset=utf8","max_open":10,"max_idle":10,"life_time":100}
+		"localhost":{"proto":"mysql","conn":"root:123456@tcp(localhost)/demo?charset=utf8","max_open":10,"max_idle":10,"life_time":100},
+		"microsql":{"proto":"sqlserver","conn":"server=118.123.165.15;database=xunyou0725;persist security info=false;user id=xy;password=LAM$13CT808^p#you.data;Min Pool Size=10;Max Pool Size=20","max_open":10,"max_idle":10,"life_time":100}
 	},
 	"caches":{
 		"default":"redis://localhost"
@@ -19,7 +20,7 @@
 	},
 	"redis":{
 		"localhost":{
-			"addrs":["192.168.0.120:6379"],
+			"addrs":["192.168.1.155:6379"],
 			"db":0,
 			"dial_timeout":10,
 			"read_timeout":10,
@@ -31,7 +32,7 @@
 		"aliyun":{
 			"encrypt":false,
 			"client":{"namespace_id":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
-			"server":[{"ipaddr":"192.168.0.120","port":8848}],
+			"server":[{"ipaddr":"192.168.1.155","port":8848}],
 			"options":{"prefix":"api","group":"charge","cluster":"grey","weight":100}
 		}
 	},

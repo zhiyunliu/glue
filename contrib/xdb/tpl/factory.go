@@ -11,19 +11,20 @@ var (
 
 //Template 模板上下文
 type SQLTemplate interface {
+	Name() string
+	Placeholder() Placeholder
 	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []interface{})
-	GetSPContext(tpl string, input map[string]interface{}) (query string, args []interface{})
-	Replace(sql string, args []interface{}) (r string)
+	analyzeTPL(tpl string, input map[string]interface{}) (sql string, params []interface{}, names []string)
 }
 
 func init() {
 	tpls = make(map[string]SQLTemplate)
 
-	Register("oracle", ATTPLContext{name: "oracle", prefix: ":"})
-	Register("ora", ATTPLContext{name: "ora", prefix: ":"})
-	Register("mysql", MTPLContext{name: "mysql", prefix: "?"})
-	Register("sqlite", MTPLContext{name: "sqlite", prefix: "?"})
-	Register("postgres", ATTPLContext{name: "postgres", prefix: "$"})
+	Register("mysql", &FixedContext{name: "mysql", prefix: "?"})
+	Register("sqlite", &FixedContext{name: "sqlite", prefix: "?"})
+	Register("oracle", &SeqContext{name: "oracle", prefix: ":"})
+	Register("postgres", &SeqContext{name: "postgres", prefix: "$"})
+	Register("sqlserver", &MssqlContext{name: "sqlserver", prefix: "@p"})
 }
 func Register(name string, tpl SQLTemplate) {
 	if _, ok := tpls[name]; ok {

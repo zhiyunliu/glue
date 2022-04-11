@@ -1,6 +1,7 @@
 package demos
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -124,6 +125,30 @@ func (d *DBdemo) TransHandle(ctx context.Context) interface{} {
 		"err":      err,
 	}
 
+}
+
+func (d *DBdemo) MultiHandle(ctx context.Context) interface{} {
+	dbobj := gel.DB().GetDB("microsql")
+
+	var outArg string
+	result, err := dbobj.Multi(`
+DECLARE	@return_value int
+
+EXEC	#return_value = [dbo].[test_aaa]
+	@id = #id,
+	@name = #name OUTPUT
+
+	`, map[string]interface{}{
+		"id":   ctx.Request().Query().Get("id"),
+		"name": sql.Named("name", sql.Out{Dest: &outArg}),
+	})
+	if err != nil {
+		ctx.Log().Error(err)
+	}
+
+	ctx.Log().Debug("outArg:", outArg)
+
+	return result
 }
 
 func (d *DBdemo) SpHandle(ctx context.Context) interface{} {

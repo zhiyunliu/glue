@@ -11,10 +11,9 @@ import (
 )
 
 var nameMap = xtypes.SMap{
-	"ora":       "oci8",
-	"oracle":    "oci8",
-	"sqlite":    "sqlite3",
-	"sqlserver": "adodb",
+	"ora":    "oci8",
+	"oracle": "oci8",
+	"sqlite": "sqlite3",
 }
 
 type ISysDB interface {
