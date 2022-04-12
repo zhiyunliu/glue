@@ -17,5 +17,11 @@
 !*.go
 
 examples/mqc/mqc
+examples/cron/cron
 examples/api/api
+
+examples/mqcserver/mqcserver
+examples/cronserver/cronserver
+examples/apiserver/apiserver
+
 
