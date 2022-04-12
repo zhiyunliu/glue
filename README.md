@@ -33,8 +33,9 @@
 		}
 	},
 	"dbs":{
-		"db1":{ "proto":"mysql","conn_str":"","max_open":100,"max_idle":100,"life_time":100},
-		"db2":{ "proto":"oracle","conn_str":"","max_open":100,"max_idle":100,"life_time":100},
+		"localhost":{"proto":"mysql","conn":"root:123456@tcp(localhost)/demo?charset=utf8","max_open":10,"max_idle":10,"life_time":100},
+		"microsql":{"proto":"sqlserver","conn":"server=192.168.0.123;database=demos;persist security info=false;user id=admin;password=123456;Min Pool Size=10;Max Pool Size=20","max_open":10,"max_idle":10,"life_time":100}
+
 	},
 	"servers":{
 		"api":{
@@ -62,7 +63,7 @@
 		"cron":{
 			"config":{"status":"start/stop","sharding":1},
 			"middlewares":[{},{}],
-			"job":[{"cron":"* 15 2 * * ? *","service":"/xx/bb/cc","status":"enable"},{"cron":"* 15 2 * * ? *","service":"/xx/bb/yy"}],
+			"jobs":[{"cron":"* 15 2 * * ? *","service":"/xx/bb/cc","disable":false},{"cron":"* 15 2 * * ? *","service":"/xx/bb/yy"}],
 		}		
 	}
 }

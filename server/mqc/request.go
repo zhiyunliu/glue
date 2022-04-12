@@ -2,16 +2,16 @@ package mqc
 
 import (
 	"bytes"
-	"context"
 	sctx "context"
 	"encoding/json"
 	"io"
 
+	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/server"
+
 	"github.com/zhiyunliu/gel/contrib/alloter"
 	"github.com/zhiyunliu/gel/queue"
 )
-
-const XRemoteHeader = "x-remote-addr"
 
 var _ alloter.IRequest = (*Request)(nil)
 
@@ -33,7 +33,7 @@ func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 
 		IMQCMessage: m,
 		task:        task,
-		method:      "GET",
+		method:      server.MethodGet,
 		params:      make(map[string]string),
 	}
 
@@ -42,7 +42,7 @@ func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 
 	r.header = message.Header()
 	r.body = message.Body()
-	r.ctx = context.Background()
+	r.ctx = sctx.Background()
 
 	if r.header["Content-Type"] == "" {
 		r.header["Content-Type"] = "application/json"
@@ -80,7 +80,7 @@ func (m *Request) Body() []byte {
 }
 
 func (m *Request) GetRemoteAddr() string {
-	return m.header[XRemoteHeader]
+	return m.header[context.XRemoteHeader]
 }
 
 func (m *Request) Context() sctx.Context {

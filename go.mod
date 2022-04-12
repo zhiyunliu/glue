@@ -6,7 +6,6 @@ require (
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/gin-gonic/gin v1.7.7
-	github.com/go-ole/go-ole v1.2.6
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang-jwt/jwt/v4 v4.3.0
@@ -18,6 +17,7 @@ require (
 	github.com/nacos-group/nacos-sdk-go v1.1.0
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/prometheus/client_golang v1.11.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/urfave/cli v1.22.5
 	github.com/zhiyunliu/golibs v0.0.0-00010101000000-000000000000
 	google.golang.org/protobuf v1.26.0-rc.1
