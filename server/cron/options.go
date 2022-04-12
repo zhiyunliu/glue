@@ -30,7 +30,7 @@ func setDefaultOption() options {
 
 }
 
-// WithStartedHook 设置启动回调函数
+// WithConfig 设置Config
 func WithConfig(config config.Config) Option {
 	return func(o *options) {
 		o.config = config

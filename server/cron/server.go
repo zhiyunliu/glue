@@ -65,7 +65,7 @@ func (e *Server) Start(ctx context.Context) error {
 		for _, fn := range e.opts.startedHooks {
 			err := fn(ctx)
 			if err != nil {
-				log.Error("mqc.StartedHooks:", err)
+				log.Error("cron.startedHooks:", err)
 				return err
 			}
 		}
@@ -83,7 +83,7 @@ func (e *Server) Start(ctx context.Context) error {
 			for _, fn := range e.opts.endHooks {
 				err := fn(ctx)
 				if err != nil {
-					log.Error("mqc.endHooks:", err)
+					log.Error("cron.endHooks:", err)
 				}
 			}
 		}

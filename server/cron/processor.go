@@ -96,15 +96,6 @@ func (s *processor) reset(req *Request) (err error) {
 	return
 }
 
-// //Remove 除移队列信息
-// func (s *processor) Remove(jobs ...*Job) error {
-// 	for _, t := range jobs {
-// 		s.consumer.Unconsume(t.Queue)
-// 		s.queues.Remove(t.Queue)
-// 	}
-// 	return nil
-// }
-
 //Remove 移除服务
 func (s *processor) Remove(key string) {
 	s.lock.Lock()
