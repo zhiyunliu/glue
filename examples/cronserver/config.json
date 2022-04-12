@@ -35,9 +35,10 @@
 			"middlewares":[],
 			"jobs":[
 				{"cron":"@every 10s","service":"/demo/notrun","disable":true},
-				{"cron":"@every 5s","service":"/demo","disable":false},
-				{"cron":"@every 10s","service":"/demo","disable":false,"meta":{}},
-				{"cron":"@every 15s","service":"/demo/nonebody"}
+				{"cron":"@every 5s","service":"/demo"},
+				{"cron":"@every 10s","service":"/demo","meta":{"a":"1","b":"2","c":"3"}},
+				{"cron":"@every 15s","service":"/demo/nonebody"},
+				{"cron":"@every 2s","service":"/demo/nonebody","immediately":true,"meta":{"immediately":"true"}}
 			]
 		}
     }
