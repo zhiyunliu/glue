@@ -14,7 +14,6 @@ import (
 
 var (
 	_ registry.Registrar = &Registry{}
-	_ registry.Discovery = &Registry{}
 )
 
 // Option is consul registry option.

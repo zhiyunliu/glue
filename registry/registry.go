@@ -9,10 +9,7 @@ type Registrar interface {
 	Register(ctx context.Context, service *ServiceInstance) error
 	// Deregister the registration.
 	Deregister(ctx context.Context, service *ServiceInstance) error
-}
 
-// Discovery is service discovery.
-type Discovery interface {
 	// GetService return the service instances in memory according to the service name.
 	GetService(ctx context.Context, serviceName string) ([]*ServiceInstance, error)
 	// Watch creates a watcher according to the service name.

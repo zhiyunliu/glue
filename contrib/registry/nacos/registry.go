@@ -15,7 +15,6 @@ import (
 
 var (
 	_ registry.Registrar = (*Registry)(nil)
-	_ registry.Discovery = (*Registry)(nil)
 )
 
 type options struct {
@@ -92,6 +91,7 @@ func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) err
 		if e != nil {
 			return fmt.Errorf("RegisterInstance err %v,%v", e, endpoint)
 		}
+
 	}
 	return nil
 }
@@ -138,6 +138,7 @@ func (r *Registry) GetService(_ context.Context, serviceName string) ([]*registr
 	res, err := r.cli.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: serviceName,
 		GroupName:   r.opts.Group,
+		Clusters:    []string{r.opts.Cluster},
 		HealthyOnly: true,
 	})
 	if err != nil {
