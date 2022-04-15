@@ -126,6 +126,10 @@ func (r *alloterRequest) GetClientIP() string {
 	return r.actx.ClientIP()
 }
 
+func (r *alloterRequest) Header() map[string]string {
+	return r.actx.Request.GetHeader()
+}
+
 func (r *alloterRequest) GetHeader(key string) string {
 	return r.actx.GetHeader(key)
 }

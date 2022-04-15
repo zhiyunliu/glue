@@ -1,0 +1,97 @@
+package rpc
+
+import (
+	"bytes"
+	sctx "context"
+	"encoding/json"
+	"io"
+
+	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/xgrpc/grpcproto"
+
+	"github.com/zhiyunliu/gel/contrib/alloter"
+)
+
+var _ alloter.IRequest = (*Request)(nil)
+
+//Request 处理任务请求
+type Request struct {
+	ctx    sctx.Context
+	rpcReq *grpcproto.Request
+	method string
+	params map[string]string
+	header map[string]string
+	body   cbody
+}
+
+//NewRequest 构建任务请求
+func NewRequest(rpcReq *grpcproto.Request) (r *Request, err error) {
+
+	r = &Request{
+		rpcReq: rpcReq,
+		method: rpcReq.Method,
+		header: rpcReq.Header,
+		params: make(map[string]string),
+	}
+
+	r.body = cbody(rpcReq.Body)
+
+	r.ctx = sctx.Background()
+
+	return r, nil
+}
+
+//GetName 获取任务名称
+func (m *Request) GetName() string {
+	return m.rpcReq.Service
+}
+
+//GetService 服务名
+func (m *Request) GetService() string {
+	return m.rpcReq.Service
+}
+
+//GetMethod 方法名
+func (m *Request) GetMethod() string {
+	return m.method
+}
+
+func (m *Request) Params() map[string]string {
+	return m.params
+}
+
+func (m *Request) GetHeader() map[string]string {
+	return m.header
+}
+
+func (m *Request) Body() []byte {
+	bytes, _ := json.Marshal(m.body)
+	return bytes
+}
+
+func (m *Request) GetRemoteAddr() string {
+	return m.header[context.XRemoteHeader]
+}
+
+func (m *Request) Context() sctx.Context {
+	return m.ctx
+}
+func (m *Request) WithContext(ctx sctx.Context) alloter.IRequest {
+	m.ctx = ctx
+	return m
+}
+
+type Body interface {
+	io.Reader
+	Scan(obj interface{}) error
+}
+
+type cbody []byte
+
+func (b cbody) Read(p []byte) (n int, err error) {
+	return bytes.NewReader(b).Read(p)
+}
+
+func (b cbody) Scan(obj interface{}) error {
+	return json.Unmarshal(b, obj)
+}

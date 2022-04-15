@@ -52,9 +52,7 @@ func (e *Server) Type() string {
 
 func (e *Server) Config(cfg config.Config) {
 	e.Options(WithConfig(cfg))
-	setting := &Setting{}
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(setting)
-	e.opts.setting = setting
+	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
 }
 
 // Start 开始

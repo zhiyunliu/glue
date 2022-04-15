@@ -25,6 +25,7 @@ type options struct {
 
 func setDefaultOption() *options {
 	return &options{
+		setting:      &Setting{},
 		startedHooks: make([]server.Hook, 0),
 		endHooks:     make([]server.Hook, 0),
 		decReq:       server.DefaultRequestDecoder,

@@ -23,4 +23,10 @@ examples/api/api
 examples/mqcserver/mqcserver
 examples/cronserver/cronserver
 examples/apiserver/apiserver
+examples/rpcserver/rpcserver
 .vscode/launch.json
+
+examples/apiserver/cache
+examples/mqcserver/cache
+examples/cronserver/cache
+examples/rpcserver/cache

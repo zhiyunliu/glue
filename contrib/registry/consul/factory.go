@@ -10,20 +10,24 @@ import (
 )
 
 type consulFactory struct {
+	opts *options
 }
 
 func (f *consulFactory) Name() string {
 	return "consul"
 }
+func (f *consulFactory) ServerConfigs() string {
+	return f.opts.Addr
+}
 
 func (f *consulFactory) Create(cfg config.Config) (registry.Registrar, error) {
 	config := api.DefaultConfig()
-	opts := options{
+	opts := &options{
 		HealthCheck:         true,
 		HealthCheckInterval: 5,
 	}
 
-	err := cfg.Scan(&opts)
+	err := cfg.Scan(opts)
 	if err != nil {
 		err = fmt.Errorf("consul config error :%+v", err)
 		return nil, err
@@ -42,6 +46,7 @@ func (f *consulFactory) Create(cfg config.Config) (registry.Registrar, error) {
 		err = fmt.Errorf("consul client error : %+v", err)
 		return nil, err
 	}
+	f.opts = opts
 	return New(client, cliOpts...), nil
 
 }

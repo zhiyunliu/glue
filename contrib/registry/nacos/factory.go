@@ -2,6 +2,7 @@ package nacos
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
@@ -42,6 +43,14 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 	if err != nil {
 		return nil, fmt.Errorf("nacos options error:%+v", err)
 	}
+
+	addrs := make([]string, 0)
+
+	for _, s := range ncp.ServerConfigs {
+		addrs = append(addrs, fmt.Sprintf("%s:%d", s.IpAddr, s.Port))
+	}
+
+	opts.serverConfigs = strings.Join(addrs, ",")
 
 	return New(namingClient, opts), nil
 

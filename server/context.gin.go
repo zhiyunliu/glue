@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"strings"
 
 	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/golibs/session"
@@ -106,6 +107,7 @@ func (ctx *GinContext) GetImpl() interface{} {
 
 type ginRequest struct {
 	gctx     *gin.Context
+	gheader  map[string]string
 	gpath    *gpath
 	gquery   *gquery
 	gbody    *gbody
@@ -120,9 +122,17 @@ func (r *ginRequest) GetClientIP() string {
 	return r.gctx.ClientIP()
 }
 
-// func (r *ginRequest) Header() vctx.Header {
-// 	return r.gctx.GetHeader(key)
-// }
+func (r *ginRequest) Header() map[string]string {
+	if r.gheader == nil {
+		r.gheader = map[string]string{}
+		gheader := r.gctx.Request.Header
+		for k, v := range gheader {
+			r.gheader[k] = strings.Join(v, ",")
+		}
+	}
+
+	return r.gheader
+}
 
 func (r *ginRequest) GetHeader(key string) string {
 	return r.gctx.GetHeader(key)
@@ -153,6 +163,7 @@ func (r *ginRequest) Body() vctx.Body {
 }
 func (q *ginRequest) Close() {
 	q.gctx = nil
+	q.gheader = nil
 	q.gpath.Close()
 	q.gquery.Close()
 	q.gbody.Close()

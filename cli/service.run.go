@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/zhiyunliu/gel/log"
@@ -40,12 +41,12 @@ func (p *ServiceApp) register(ctx context.Context) error {
 		return err
 	}
 	if p.options.Registrar != nil {
-		log.Infof("register to %s", p.options.Registrar.Name())
+		log.Infof("register to %s [%s]", p.options.Registrar.Name(), p.options.Registrar.ServerConfigs())
 
 		rctx, rcancel := context.WithTimeout(ctx, p.options.RegistrarTimeout)
 		defer rcancel()
 		if err := p.options.Registrar.Register(rctx, instance); err != nil {
-			return err
+			return fmt.Errorf("register to %s [%s] error:%w", p.options.Registrar.Name(), p.options.Registrar.ServerConfigs(), err)
 		}
 		p.instance = instance
 		log.Infof("register to %s completed", p.options.Registrar.Name())

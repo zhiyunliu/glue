@@ -10,7 +10,7 @@
 	"config":"nacos://aliyun",
 	"dbs":{
 		"localhost":{"proto":"mysql","conn":"root:123456@tcp(localhost)/demo?charset=utf8","max_open":10,"max_idle":10,"life_time":100},
-		"microsql":{"proto":"sqlserver","conn":"server=192.168.0.1;database=demo;persist security info=false;user id=admin;password=123456;Min Pool Size=10;Max Pool Size=20","max_open":10,"max_idle":10,"life_time":100}
+		"microsql":{"proto":"sqlserver","conn":"server=localhost;database=demo;persist security info=false;user id=admin;password=123456;Min Pool Size=10;Max Pool Size=20","max_open":10,"max_idle":10,"life_time":100}
 	},
 	"caches":{
 		"default":"redis://localhost"
@@ -31,7 +31,7 @@
 	"nacos":{
 		"aliyun":{
 			"encrypt":false,
-			"client":{"namespace_id":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
+			"client":{"namespace_id":"365a3498-120a-4b56-8322-1990954b1675"},
 			"server":[{"ipaddr":"192.168.1.155","port":8848}],
 			"options":{"prefix":"api","group":"charge","cluster":"grey","weight":100}
 		}

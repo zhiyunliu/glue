@@ -18,8 +18,8 @@ import (
 )
 
 type Server struct {
-	name     string
 	ctx      context.Context
+	name     string
 	srv      *http.Server
 	endpoint *url.URL
 	opts     *options
@@ -58,9 +58,7 @@ func (e *Server) Name() string {
 
 func (e *Server) Config(cfg config.Config) {
 	e.Options(WithConfig(cfg))
-	setting := &Setting{}
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(setting)
-	e.opts.setting = setting
+	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
 }
 
 // Start 开始

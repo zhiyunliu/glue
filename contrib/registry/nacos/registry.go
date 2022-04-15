@@ -18,10 +18,11 @@ var (
 )
 
 type options struct {
-	Prefix  string  `json:"prefix"`
-	Weight  float64 `json:"weight"`
-	Cluster string  `json:"cluster"`
-	Group   string  `json:"group"`
+	Prefix        string  `json:"prefix"`
+	Weight        float64 `json:"weight"`
+	Cluster       string  `json:"cluster"`
+	Group         string  `json:"group"`
+	serverConfigs string  `json:"-"`
 }
 
 // Registry is nacos registry.
@@ -42,6 +43,10 @@ func New(cli naming_client.INamingClient, opts *options) (r *Registry) {
 // Register the registration.
 func (r *Registry) Name() string {
 	return "nacos"
+}
+
+func (r *Registry) ServerConfigs() string {
+	return r.opts.serverConfigs
 }
 
 // Register the registration.
