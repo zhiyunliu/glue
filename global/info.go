@@ -1,10 +1,9 @@
 package global
 
 var (
-	GitCommitLog = "unknown"
-	BuildTime    = "unknown"
-	Version      = "unknown"
-	GoVersion    = "unknown"
-	DisplayName  = ""
-	Usage        = "unknown"
+	GitCommit   = "unknown"
+	BuildTime   = "unknown"
+	Version     = "unknown"
+	DisplayName = ""
+	Usage       = "unknown"
 )

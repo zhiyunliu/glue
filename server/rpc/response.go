@@ -71,6 +71,6 @@ func (r *Response) WriteString(s string) (n int, err error) {
 	return r.data.WriteString(s)
 }
 
-func (r *Response) Flush() {
-
+func (r *Response) Flush() error {
+	return r.data.Flush()
 }

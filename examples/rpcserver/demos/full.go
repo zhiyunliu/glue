@@ -18,7 +18,19 @@ func (d *Fulldemo) Handle(ctx context.Context) interface{} {
 	ctx.Request().Body().Scan(&mapData)
 	ctx.Log().Infof("body-2:%+v", mapData)
 
-	return "success"
+	return map[string]interface{}{
+		"a": 1,
+		"b": "2",
+		"c": struct {
+			A string
+			B int
+			C float32
+		}{
+			A: "a",
+			B: 1,
+			C: 1.13,
+		},
+	}
 }
 
 func (d *Fulldemo) NoneBodyHandle(ctx context.Context) interface{} {

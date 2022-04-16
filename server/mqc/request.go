@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/gel/server"
 
 	"github.com/zhiyunliu/gel/contrib/alloter"
@@ -80,7 +80,7 @@ func (m *Request) Body() []byte {
 }
 
 func (m *Request) GetRemoteAddr() string {
-	return m.header[context.XRemoteHeader]
+	return m.header[constants.HeaderRemoteHeader]
 }
 
 func (m *Request) Context() sctx.Context {

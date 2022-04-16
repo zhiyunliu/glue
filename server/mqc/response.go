@@ -12,7 +12,7 @@ var _ alloter.ResponseWriter = (*Response)(nil)
 
 const (
 	noWritten     = -1
-	defaultStatus = http.StatusOK
+	_sucessStatus = http.StatusOK
 )
 
 //Request 处理任务请求
@@ -29,7 +29,7 @@ func NewResponse(task *Task, msg queue.IMQCMessage) (r *Response, err error) {
 	r = &Response{
 		header: make(xtypes.SMap),
 		size:   noWritten,
-		status: defaultStatus,
+		status: _sucessStatus,
 		msg:    msg,
 		//stream: bufio.NewWriter(os.Stdout),
 	}
@@ -69,10 +69,9 @@ func (r *Response) WriteString(s string) (n int, err error) {
 	return
 }
 
-func (r *Response) Flush() {
-	if r.status == defaultStatus {
-		r.msg.Ack()
-	} else {
-		r.msg.Nack()
+func (r *Response) Flush() error {
+	if r.status == _sucessStatus {
+		return r.msg.Ack()
 	}
+	return r.msg.Nack()
 }

@@ -1,6 +1,8 @@
 package demos
 
 import (
+	"strconv"
+
 	"github.com/zhiyunliu/gel"
 	"github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/gel/xgrpc"
@@ -14,8 +16,19 @@ func NewGrpcDemo() *GrpcDemo {
 
 func (d *GrpcDemo) RequestHandle(ctx context.Context) interface{} {
 
+	wfr := ctx.Request().Query().Get("wfr")
+	wfrv, _ := strconv.ParseBool(wfr)
+
 	client := gel.RPC().GetRPC("default")
-	body, err := client.Request(ctx.Context(), "grpc://rpcserver/demo", map[string]interface{}{}, xgrpc.WithTraceID("aaa"))
+	body, err := client.Request(ctx.Context(), "grpc://rpcserver/demo", map[string]interface{}{
+		"body-a": "1",
+		"body-b": 2,
+		"body-c": struct {
+			A string
+		}{
+			A: "s-1",
+		},
+	}, xgrpc.WithTraceID("aaa"), xgrpc.WithWaitForReady(wfrv))
 	if err != nil {
 		ctx.Log().Error(err)
 		return err
@@ -24,7 +37,7 @@ func (d *GrpcDemo) RequestHandle(ctx context.Context) interface{} {
 	ctx.Log().Info("body.GetHeader", body.GetHeader())
 	ctx.Log().Info("body.GetStatus", body.GetStatus())
 	ctx.Log().Info("body.GetResult", string(body.GetResult()))
-	return "success"
+	return string(body.GetResult())
 }
 
 func (d *GrpcDemo) SwapHandle(ctx context.Context) interface{} {

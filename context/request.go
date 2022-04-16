@@ -1,8 +1,5 @@
 package context
 
-const XRequestId = "x-request-id"
-const XRemoteHeader = "x-remote-addr"
-
 type Request interface {
 	GetMethod() string
 	GetClientIP() string

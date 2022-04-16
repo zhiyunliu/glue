@@ -38,7 +38,7 @@ func Server(logger log.Logger) middleware.Middleware {
 
 			level, stack := extractError(err)
 			if level == log.LevelError {
-				ctx.Log().Logf(level, "%s.resp %s %s %d %s\n%s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), stack)
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), stack)
 			} else {
 				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractResp(reply))
 			}

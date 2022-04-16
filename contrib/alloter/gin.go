@@ -517,6 +517,7 @@ func (engine *Engine) HandleRequest(r IRequest, resp ResponseWriter) (err error)
 	if len(c.Errors) > 0 {
 		err = c.Errors[0]
 	}
+	resp.Flush()
 	c.Writer = nil
 	c.reset()
 	engine.pool.Put(c)

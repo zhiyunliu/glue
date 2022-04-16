@@ -3,7 +3,7 @@ package xgrpc
 import (
 	"net/http"
 
-	"github.com/zhiyunliu/gel/constants/contenttype"
+	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
@@ -17,7 +17,7 @@ func newBodyByError(err error) Body {
 	return &errorBody{
 		err: err,
 		header: map[string]string{
-			contenttype.Name: contenttype.TextPlain,
+			constants.ContentTypeName: constants.ContentTypeTextPlain,
 		},
 	}
 }

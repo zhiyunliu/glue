@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
@@ -28,12 +29,12 @@ func newGinContext(opts *options) *GinContext {
 	return &GinContext{
 		opts: opts,
 		greq: &ginRequest{
-			hasClose: true,
-			gpath:    &gpath{hasClose: true},
-			gquery:   &gquery{hasClose: true},
-			gbody:    &gbody{hasClose: true},
+			closed: true,
+			gpath:  &gpath{closed: true},
+			gquery: &gquery{closed: true},
+			gbody:  &gbody{closed: true},
 		},
-		gresp: &ginResponse{hasClose: true},
+		gresp: &ginResponse{closed: true},
 	}
 }
 
@@ -59,13 +60,15 @@ func (ctx *GinContext) Header(key string) string {
 }
 
 func (ctx *GinContext) Request() vctx.Request {
-	if ctx.greq.hasClose {
+	if ctx.greq.closed {
+		ctx.greq.closed = false
 		ctx.greq.gctx = ctx.Gctx
 	}
 	return ctx.greq
 }
 func (ctx *GinContext) Response() vctx.Response {
-	if ctx.gresp.hasClose {
+	if ctx.gresp.closed {
+		ctx.gresp.closed = false
 		ctx.gresp.gctx = ctx.Gctx
 		ctx.gresp.vctx = ctx
 	}
@@ -75,10 +78,10 @@ func (ctx *GinContext) Log() log.Logger {
 	if ctx.logger == nil {
 		logger, ok := log.FromContext(ctx.Context())
 		if !ok {
-			xreqId := ctx.Gctx.GetHeader(vctx.XRequestId)
+			xreqId := ctx.Gctx.GetHeader(constants.HeaderRequestId)
 			if xreqId == "" {
 				xreqId = session.Create()
-				ctx.Gctx.Header(vctx.XRequestId, xreqId)
+				ctx.Gctx.Header(constants.HeaderRequestId, xreqId)
 			}
 			logger = log.New(log.WithName("gin"), log.WithSid(xreqId))
 			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
@@ -106,12 +109,12 @@ func (ctx *GinContext) GetImpl() interface{} {
 //--------------------------------
 
 type ginRequest struct {
-	gctx     *gin.Context
-	gheader  map[string]string
-	gpath    *gpath
-	gquery   *gquery
-	gbody    *gbody
-	hasClose bool
+	gctx    *gin.Context
+	gheader map[string]string
+	gpath   *gpath
+	gquery  *gquery
+	gbody   *gbody
+	closed  bool
 }
 
 func (r *ginRequest) GetMethod() string {
@@ -143,25 +146,29 @@ func (r *ginRequest) SetHeader(key, val string) {
 }
 
 func (r *ginRequest) Path() vctx.Path {
-	if r.gpath.hasClose {
+	if r.gpath.closed {
 		r.gpath.gctx = r.gctx
+		r.gpath.closed = false
 	}
 	return r.gpath
 }
 
 func (r *ginRequest) Query() vctx.Query {
-	if r.gquery.hasClose {
+	if r.gquery.closed {
 		r.gquery.gctx = r.gctx
+		r.gquery.closed = false
 	}
 	return r.gquery
 }
 func (r *ginRequest) Body() vctx.Body {
-	if r.gbody.hasClose {
+	if r.gbody.closed {
 		r.gbody.gctx = r.gctx
+		r.gbody.closed = false
 	}
 	return r.gbody
 }
 func (q *ginRequest) Close() {
+	q.closed = true
 	q.gctx = nil
 	q.gheader = nil
 	q.gpath.Close()
@@ -172,9 +179,9 @@ func (q *ginRequest) Close() {
 //-path-------------------------
 
 type gpath struct {
-	gctx     *gin.Context
-	params   xtypes.SMap
-	hasClose bool
+	gctx   *gin.Context
+	params xtypes.SMap
+	closed bool
 }
 
 func (p *gpath) GetURL() *url.URL {
@@ -182,6 +189,9 @@ func (p *gpath) GetURL() *url.URL {
 }
 
 func (p *gpath) FullPath() string {
+	if p.gctx == nil {
+		fmt.Println("xxx")
+	}
 	return p.gctx.FullPath()
 }
 func (p *gpath) Params() xtypes.SMap {
@@ -197,15 +207,15 @@ func (p *gpath) Params() xtypes.SMap {
 func (q *gpath) Close() {
 	q.gctx = nil
 	q.params = nil
-	q.hasClose = true
+	q.closed = true
 }
 
 //-gquery---------------------------------
 
 type gquery struct {
-	gctx     *gin.Context
-	params   xtypes.SMap
-	hasClose bool
+	gctx   *gin.Context
+	params xtypes.SMap
+	closed bool
 }
 
 func (q *gquery) Get(name string) string {
@@ -232,7 +242,7 @@ func (q *gquery) String() string {
 func (q *gquery) Close() {
 	q.gctx = nil
 	q.params = nil
-	q.hasClose = true
+	q.closed = true
 }
 
 //-gbody---------------------------------
@@ -241,7 +251,7 @@ type gbody struct {
 	hasRead   bool
 	bodyBytes []byte
 	reader    *bytes.Reader
-	hasClose  bool
+	closed    bool
 }
 
 func (q *gbody) Scan(obj interface{}) error {
@@ -288,7 +298,7 @@ func (q *gbody) Close() {
 	q.bodyBytes = nil
 	q.reader = nil
 	q.gctx = nil
-	q.hasClose = true
+	q.closed = true
 	q.hasRead = false
 }
 
@@ -297,7 +307,7 @@ type ginResponse struct {
 	vctx      *GinContext
 	gctx      *gin.Context
 	hasWrited bool
-	hasClose  bool
+	closed    bool
 }
 
 func (q *ginResponse) Status(statusCode int) {
@@ -309,7 +319,7 @@ func (q *ginResponse) Header(key, val string) {
 }
 
 func (q *ginResponse) ContextType(val string) {
-	q.gctx.Writer.Header().Set("content-type", val)
+	q.gctx.Writer.Header().Set(constants.ContentTypeName, val)
 }
 
 func (q *ginResponse) Write(obj interface{}) error {
@@ -333,5 +343,5 @@ func (q *ginResponse) Close() {
 	q.vctx = nil
 	q.gctx = nil
 	q.hasWrited = false
-	q.hasClose = true
+	q.closed = true
 }

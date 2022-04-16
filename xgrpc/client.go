@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/gel/registry"
 	"github.com/zhiyunliu/gel/xgrpc/balancer"
 	"github.com/zhiyunliu/gel/xgrpc/grpcproto"
@@ -51,13 +52,17 @@ func (c *Client) Request(ctx context.Context, input interface{}, opts ...Request
 	if err != nil {
 		return nil, err
 	}
+
+	opts = append(opts, WithContentType(constants.ContentTypeApplicationJSON))
 	return c.RequestByString(ctx, buff, opts...)
 }
 
 //RequestByString 发送Request请求
 func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...RequestOption) (res Body, err error) {
 	//处理可选参数
-	o := &requestOptions{}
+	o := &requestOptions{
+		Header: make(map[string]string),
+	}
 	for _, opt := range opts {
 		opt(o)
 	}
@@ -102,7 +107,6 @@ func (c *Client) connect() (err error) {
 }
 
 func (c *Client) clientRequest(ctx context.Context, o *requestOptions, input []byte) (response *grpcproto.Response, err error) {
-
 	return c.client.Process(ctx,
 		&grpcproto.Request{
 			Method:  http.MethodPost, //借用http的method

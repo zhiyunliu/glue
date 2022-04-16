@@ -8,7 +8,7 @@ import (
 	"time"
 
 	cron "github.com/robfig/cron/v3"
-	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/gel/contrib/alloter"
 	"github.com/zhiyunliu/gel/server"
 )
@@ -81,7 +81,7 @@ func (m *Request) Body() []byte {
 }
 
 func (m *Request) GetRemoteAddr() string {
-	return m.header[context.XRemoteHeader]
+	return m.header[constants.HeaderRemoteHeader]
 }
 
 func (m *Request) Context() sctx.Context {

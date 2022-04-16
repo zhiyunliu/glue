@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/zhiyunliu/gel/constants"
 	vctx "github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/gel/contrib/alloter"
 	"github.com/zhiyunliu/gel/log"
@@ -26,13 +27,13 @@ func newAlloterContext(opts *options) *AlloterContext {
 	return &AlloterContext{
 		opts: opts,
 		areq: &alloterRequest{
-			hasClose: true,
-			apath:    &apath{hasClose: true},
-			aquery:   &aquery{hasClose: true},
-			abody:    &abody{hasClose: true},
+			closed: true,
+			apath:  &apath{closed: true},
+			aquery: &aquery{closed: true},
+			abody:  &abody{closed: true},
 		},
 		aresp: &alloterResponse{
-			hasClose: true,
+			closed: true,
 		},
 	}
 }
@@ -58,8 +59,8 @@ func (ctx *AlloterContext) Header(key string) string {
 }
 
 func (ctx *AlloterContext) Request() vctx.Request {
-	if ctx.areq.hasClose {
-		ctx.areq.hasClose = false
+	if ctx.areq.closed {
+		ctx.areq.closed = false
 		reqUrl, _ := url.Parse(ctx.Actx.Request.GetService())
 		ctx.areq.actx = ctx.Actx
 		ctx.areq.vctx = ctx
@@ -68,8 +69,8 @@ func (ctx *AlloterContext) Request() vctx.Request {
 	return ctx.areq
 }
 func (ctx *AlloterContext) Response() vctx.Response {
-	if ctx.aresp.hasClose {
-		ctx.aresp.hasClose = false
+	if ctx.aresp.closed {
+		ctx.aresp.closed = false
 		ctx.aresp.actx = ctx.Actx
 		ctx.aresp.vctx = ctx
 	}
@@ -79,10 +80,10 @@ func (ctx *AlloterContext) Log() log.Logger {
 	if ctx.logger == nil {
 		logger, ok := log.FromContext(ctx.Context())
 		if !ok {
-			xreqId := ctx.Actx.GetHeader(vctx.XRequestId)
+			xreqId := ctx.Actx.GetHeader(constants.HeaderRequestId)
 			if xreqId == "" {
 				xreqId = session.Create()
-				ctx.Actx.Header(vctx.XRequestId, xreqId)
+				ctx.Actx.Header(constants.HeaderRequestId, xreqId)
 			}
 			logger = log.New(log.WithName("alloter"), log.WithSid(xreqId))
 			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
@@ -109,13 +110,13 @@ func (ctx *AlloterContext) GetImpl() interface{} {
 //-ginRequest-------------------------------
 
 type alloterRequest struct {
-	actx     *alloter.Context
-	vctx     *AlloterContext
-	apath    *apath
-	reqUrl   *url.URL
-	aquery   *aquery
-	abody    *abody
-	hasClose bool
+	actx   *alloter.Context
+	vctx   *AlloterContext
+	apath  *apath
+	reqUrl *url.URL
+	aquery *aquery
+	abody  *abody
+	closed bool
 }
 
 func (r *alloterRequest) GetMethod() string {
@@ -139,7 +140,8 @@ func (r *alloterRequest) SetHeader(key, val string) {
 }
 
 func (r *alloterRequest) Path() vctx.Path {
-	if r.apath.hasClose {
+	if r.apath.closed {
+		r.apath.closed = false
 		r.apath.actx = r.actx
 		r.apath.reqUrl = r.reqUrl
 	}
@@ -147,14 +149,16 @@ func (r *alloterRequest) Path() vctx.Path {
 }
 
 func (r *alloterRequest) Query() vctx.Query {
-	if r.aquery.hasClose {
+	if r.aquery.closed {
+		r.aquery.closed = false
 		r.aquery.actx = r.actx
 		r.aquery.reqUrl = r.reqUrl
 	}
 	return r.aquery
 }
 func (r *alloterRequest) Body() vctx.Body {
-	if r.abody.hasClose {
+	if r.abody.closed {
+		r.abody.closed = false
 		r.abody.actx = r.actx
 		r.abody.vctx = r.vctx
 	}
@@ -162,7 +166,7 @@ func (r *alloterRequest) Body() vctx.Body {
 }
 
 func (q *alloterRequest) Close() {
-	q.hasClose = true
+	q.closed = true
 	q.actx = nil
 	q.vctx = nil
 	q.reqUrl = nil
@@ -174,10 +178,10 @@ func (q *alloterRequest) Close() {
 //-path-------------------------
 
 type apath struct {
-	actx     *alloter.Context
-	params   xtypes.SMap
-	reqUrl   *url.URL
-	hasClose bool
+	actx   *alloter.Context
+	params xtypes.SMap
+	reqUrl *url.URL
+	closed bool
 }
 
 func (p *apath) GetURL() *url.URL {
@@ -198,7 +202,7 @@ func (p *apath) Params() xtypes.SMap {
 	return p.params
 }
 func (q *apath) Close() {
-	q.hasClose = true
+	q.closed = true
 	q.actx = nil
 	q.reqUrl = nil
 	q.params = nil
@@ -207,10 +211,10 @@ func (q *apath) Close() {
 //-gquery---------------------------------
 
 type aquery struct {
-	actx     *alloter.Context
-	reqUrl   *url.URL
-	params   xtypes.SMap
-	hasClose bool
+	actx   *alloter.Context
+	reqUrl *url.URL
+	params xtypes.SMap
+	closed bool
 }
 
 func (q *aquery) Get(name string) string {
@@ -238,7 +242,7 @@ func (q *aquery) Close() {
 	q.actx = nil
 	q.reqUrl = nil
 	q.params = nil
-	q.hasClose = true
+	q.closed = true
 }
 
 //-gbody---------------------------------
@@ -248,7 +252,7 @@ type abody struct {
 	hasRead   bool
 	reader    *bytes.Reader
 	bodyBytes []byte
-	hasClose  bool
+	closed    bool
 }
 
 func (q *abody) Scan(obj interface{}) error {
@@ -295,7 +299,7 @@ func (q *abody) Close() {
 	q.bodyBytes = nil
 	q.reader = nil
 	q.actx = nil
-	q.hasClose = true
+	q.closed = true
 	q.hasRead = false
 }
 
@@ -304,7 +308,7 @@ type alloterResponse struct {
 	vctx      *AlloterContext
 	actx      *alloter.Context
 	hasWrited bool
-	hasClose  bool
+	closed    bool
 }
 
 func (q *alloterResponse) Status(statusCode int) {
@@ -316,7 +320,7 @@ func (q *alloterResponse) Header(key, val string) {
 }
 
 func (q *alloterResponse) ContextType(val string) {
-	q.actx.Writer.Header().Set("content-type", val)
+	q.actx.Writer.Header().Set(constants.ContentTypeName, val)
 }
 
 func (q *alloterResponse) Write(obj interface{}) error {
@@ -339,5 +343,5 @@ func (q *alloterResponse) Close() {
 	q.vctx = nil
 	q.actx = nil
 	q.hasWrited = false
-	q.hasClose = true
+	q.closed = true
 }

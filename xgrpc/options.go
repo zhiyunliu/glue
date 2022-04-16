@@ -1,5 +1,7 @@
 package xgrpc
 
+import "github.com/zhiyunliu/gel/constants"
+
 const RoundRobin = "round_robin"
 
 //Option 配置选项
@@ -33,7 +35,6 @@ type RequestOption func(*requestOptions)
 
 type requestOptions struct {
 	Header       map[string]string
-	TraceId      string
 	WaitForReady bool
 }
 
@@ -45,11 +46,17 @@ func WithHeaders(header map[string]string) RequestOption {
 
 func WithTraceID(traceId string) RequestOption {
 	return func(o *requestOptions) {
-		o.TraceId = traceId
+		o.Header[constants.HeaderRequestId] = traceId
 	}
 }
 func WithWaitForReady(waitForReady bool) RequestOption {
 	return func(o *requestOptions) {
 		o.WaitForReady = waitForReady
+	}
+}
+
+func WithContentType(contentType string) RequestOption {
+	return func(o *requestOptions) {
+		o.Header[constants.ContentTypeName] = contentType
 	}
 }

@@ -33,7 +33,7 @@ type ResponseWriter interface {
 	Write(p []byte) (n int, err error)
 	// Writes the string into the response body.
 	WriteString(string) (int, error)
-	Flush()
+	Flush() error
 }
 
 type responseWriter struct {
@@ -87,6 +87,6 @@ func (w *responseWriter) Written() bool {
 }
 
 // Flush implements the http.Flush interface.
-func (w *responseWriter) Flush() {
-	w.writer.Flush()
+func (w *responseWriter) Flush() error {
+	return w.writer.Flush()
 }

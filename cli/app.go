@@ -3,11 +3,12 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/urfave/cli"
 	"github.com/zhiyunliu/gel/global"
+	"github.com/zhiyunliu/golibs/xfile"
 )
 
 const options_key string = "options_key"
@@ -37,21 +38,29 @@ func New(opts ...Option) *App {
 		opt(app.options)
 	}
 
+	fileName := xfile.GetNameWithoutExt(os.Args[0])
+	if global.AppName == "" {
+		global.AppName = fileName
+	}
+	if global.DisplayName == "" {
+		global.DisplayName = global.AppName
+	}
+
 	app.cliApp = cli.NewApp()
-	app.cliApp.Name = filepath.Base(os.Args[0])
+	app.cliApp.Name = global.AppName
 	app.cliApp.Version = fmt.Sprintf(`
-	GitCommitLog = %s
+	GitCommit = %s
 	BuildTime    = %s
 	Version      = %s
-	GoVersion    = %s
 	DisplayName  = %s
+	GoVersion    = %s
 	Usage        = %s
 	`,
-		global.GitCommitLog,
+		global.GitCommit,
 		global.BuildTime,
 		global.Version,
-		global.GoVersion,
 		global.DisplayName,
+		runtime.Version(),
 		global.Usage,
 	)
 	app.cliApp.Usage = global.Usage

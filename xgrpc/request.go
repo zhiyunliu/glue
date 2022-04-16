@@ -8,6 +8,7 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map"
 
+	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/gel/global"
 	"github.com/zhiyunliu/gel/registry"
@@ -44,7 +45,7 @@ func (r *Request) Swap(ctx context.Context, service string, opts ...RequestOptio
 
 	//获取内容
 	input := ctx.Request().Body().Bytes()
-	opts = append(opts, WithTraceID(ctx.Request().GetHeader(context.XRequestId)))
+	opts = append(opts, WithTraceID(ctx.Request().GetHeader(constants.HeaderRequestId)))
 
 	//复制请求头
 	hd := ctx.Request().Header()
@@ -88,8 +89,8 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	client := tmpClient.(*Client)
 	nopts := make([]RequestOption, 0, len(opts)+1)
 	nopts = append(nopts, opts...)
-	if reqid := fmt.Sprint(ctx.Value(context.XRequestId)); reqid != "" {
-		nopts = append(nopts, WithTraceID(reqid))
+	if reqidVal := ctx.Value(constants.HeaderRequestId); reqidVal != nil {
+		nopts = append(nopts, WithTraceID(fmt.Sprintf("%+v", reqidVal)))
 	}
 
 	var bodyBytes []byte
@@ -103,6 +104,7 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 		bodyBytes = bytesconv.StringToBytes(*t)
 	default:
 		bodyBytes, _ = json.Marshal(t)
+		nopts = append(nopts, WithContentType(constants.ContentTypeApplicationJSON))
 	}
 
 	return client.RequestByString(ctx, bodyBytes, nopts...)

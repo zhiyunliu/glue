@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/gel/xgrpc/grpcproto"
 
 	"github.com/zhiyunliu/gel/contrib/alloter"
@@ -33,7 +33,9 @@ func NewRequest(rpcReq *grpcproto.Request) (r *Request, err error) {
 		header: rpcReq.Header,
 		params: make(map[string]string),
 	}
-
+	if r.header == nil {
+		r.header = map[string]string{}
+	}
 	r.body = cbody(rpcReq.Body)
 
 	r.ctx = sctx.Background()
@@ -65,15 +67,15 @@ func (m *Request) GetHeader() map[string]string {
 }
 
 func (m *Request) Body() []byte {
-	bytes, _ := json.Marshal(m.body)
-	return bytes
+	return m.body
 }
 
 func (m *Request) GetRemoteAddr() string {
-	return m.header[context.XRemoteHeader]
+	return m.header[constants.HeaderRemoteHeader]
 }
 
 func (m *Request) Context() sctx.Context {
+
 	return m.ctx
 }
 func (m *Request) WithContext(ctx sctx.Context) alloter.IRequest {

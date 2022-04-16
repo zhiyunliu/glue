@@ -65,6 +65,6 @@ func (r *Response) WriteString(s string) (n int, err error) {
 	return
 }
 
-func (r *Response) Flush() {
-
+func (r *Response) Flush() error {
+	return nil
 }

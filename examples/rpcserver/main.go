@@ -7,7 +7,7 @@ import (
 	_ "github.com/zhiyunliu/gel/contrib/registry/consul"
 	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
 
-	"github.com/zhiyunliu/gel/examples/cronserver/demos"
+	"github.com/zhiyunliu/gel/examples/rpcserver/demos"
 	"github.com/zhiyunliu/gel/server/rpc"
 )
 

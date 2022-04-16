@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
@@ -27,11 +28,11 @@ func newQueue(proto string, cfg config.Config) (IQueue, error) {
 //Send 发送消息
 func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 
-	reqid := ctx.Header(context.XRequestId)
+	reqid := ctx.Header(constants.HeaderRequestId)
 
 	if msg, ok := value.(Message); ok {
 		header := msg.Header()
-		header[context.XRequestId] = reqid
+		header[constants.HeaderRequestId] = reqid
 		return q.q.Push(key, msg)
 	}
 
@@ -82,7 +83,7 @@ func newMsgWrap(reqid string, obj interface{}) (msg Message, err error) {
 func (w *msgWrap) Header() map[string]string {
 	if w.HeaderMap == nil {
 		w.HeaderMap = map[string]string{
-			context.XRequestId: w.reqid,
+			constants.HeaderRequestId: w.reqid,
 		}
 	}
 	return w.HeaderMap

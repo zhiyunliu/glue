@@ -49,13 +49,6 @@ func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 //GetSrvConfig SrvCfg
 func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
-	fileName := filepath.Base(path)
-	if global.AppName == "" {
-		global.AppName = fileName
-	}
-	if global.DisplayName == "" {
-		global.DisplayName = global.AppName
-	}
 
 	svcName := fmt.Sprintf("%s_%s", global.AppName, md5.Str(path)[:8])
 
@@ -174,7 +167,7 @@ func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
 	return &registry.ServiceInstance{
 		ID:        app.options.Id,
 		Metadata:  app.options.Metadata,
-		Name:      global.DisplayName,
+		Name:      global.AppName,
 		Version:   global.Version,
 		Endpoints: endpoints,
 	}, nil
