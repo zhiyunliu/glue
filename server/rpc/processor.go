@@ -46,7 +46,7 @@ func (s *processor) Process(context context.Context, request *grpcproto.Request)
 
 	//处理响应内容
 	response.Status = int32(resp.Status())
-	response.Result = resp.dataBytes
+	response.Result = resp.buffer.Bytes()
 	response.Header = resp.Header()
 	return response, nil
 

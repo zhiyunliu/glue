@@ -16,9 +16,6 @@ type consulFactory struct {
 func (f *consulFactory) Name() string {
 	return "consul"
 }
-func (f *consulFactory) ServerConfigs() string {
-	return f.opts.Addr
-}
 
 func (f *consulFactory) Create(cfg config.Config) (registry.Registrar, error) {
 	config := api.DefaultConfig()

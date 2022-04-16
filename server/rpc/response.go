@@ -18,26 +18,23 @@ const (
 
 //Request 处理任务请求
 type Response struct {
-	status    int
-	size      int
-	header    xtypes.SMap
-	dataBytes []byte
-	data      *bufio.Writer
-
-	//stream *bufio.Writer
+	status int
+	size   int
+	header xtypes.SMap
+	data   *bufio.Writer
+	buffer *bytes.Buffer
 }
 
 //NewRequest 构建任务请求
 func NewResponse() (r *Response) {
 
 	r = &Response{
-		header:    make(xtypes.SMap),
-		size:      noWritten,
-		status:    defaultStatus,
-		dataBytes: make([]byte, 0),
+		header: make(xtypes.SMap),
+		size:   noWritten,
+		status: defaultStatus,
 	}
-	buffer := bytes.NewBuffer(r.dataBytes)
-	r.data = bufio.NewWriter(buffer)
+	r.buffer = bytes.NewBuffer(make([]byte, 0))
+	r.data = bufio.NewWriter(r.buffer)
 	return r
 }
 

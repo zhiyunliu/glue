@@ -20,6 +20,13 @@ var (
 type Option func(*Registry)
 
 // WithHealthCheck with registry health check option.
+func WithAddr(addr string) Option {
+	return func(o *Registry) {
+		o.addr = addr
+	}
+}
+
+// WithHealthCheck with registry health check option.
 func WithHealthCheck(enable bool) Option {
 	return func(o *Registry) {
 		o.enableHealthCheck = enable
@@ -62,6 +69,7 @@ type Config struct {
 type Registry struct {
 	cli               *Client
 	enableHealthCheck bool
+	addr              string
 	registry          map[string]*serviceSet
 	lock              sync.RWMutex
 }
@@ -82,6 +90,10 @@ func New(apiClient *api.Client, opts ...Option) *Registry {
 // Register register service
 func (r *Registry) Name() string {
 	return "consul"
+}
+
+func (r *Registry) ServerConfigs() string {
+	return r.addr
 }
 
 // Register register service
