@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/zhiyunliu/gel/context"
@@ -49,14 +50,15 @@ func Server(logger log.Logger) middleware.Middleware {
 
 // extractArgs returns the string of the req
 func extractReq(req context.Request) string {
-	var query, body string
+	result := make([]string, 2)
 	if len(req.Query().SMap()) > 0 {
-		query = req.Query().String()
+		result[0] = req.Query().String()
 	}
 	if req.Body().Len() > 0 {
-		body = bytesconv.BytesToString(req.Body().Bytes())
+		result[1] = bytesconv.BytesToString(req.Body().Bytes())
 	}
-	return fmt.Sprintf("query:%s,body:%s", query, body)
+
+	return strings.Join(result, " ")
 }
 
 func extractResp(resp interface{}) string {
