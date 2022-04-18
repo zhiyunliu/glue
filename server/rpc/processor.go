@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/zhiyunliu/gel/contrib/alloter"
-	"github.com/zhiyunliu/gel/xgrpc/grpcproto"
+	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 

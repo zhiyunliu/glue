@@ -7,7 +7,7 @@ import (
 	"io"
 
 	"github.com/zhiyunliu/gel/constants"
-	"github.com/zhiyunliu/gel/xgrpc/grpcproto"
+	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/grpcproto"
 
 	"github.com/zhiyunliu/gel/contrib/alloter"
 )

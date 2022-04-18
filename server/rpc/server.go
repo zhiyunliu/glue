@@ -8,12 +8,13 @@ import (
 	"strings"
 
 	"github.com/zhiyunliu/gel/config"
+	_ "github.com/zhiyunliu/gel/contrib/xrpc/grpc"
+	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/gel/global"
 	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/gel/middleware"
 	"github.com/zhiyunliu/gel/server"
 	"github.com/zhiyunliu/gel/transport"
-	"github.com/zhiyunliu/gel/xgrpc/grpcproto"
 	"github.com/zhiyunliu/golibs/host"
 	"google.golang.org/grpc"
 )

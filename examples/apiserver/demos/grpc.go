@@ -5,7 +5,8 @@ import (
 
 	"github.com/zhiyunliu/gel"
 	"github.com/zhiyunliu/gel/context"
-	"github.com/zhiyunliu/gel/xgrpc"
+	_ "github.com/zhiyunliu/gel/contrib/xrpc/grpc"
+	"github.com/zhiyunliu/gel/xrpc"
 )
 
 type GrpcDemo struct{}
@@ -28,7 +29,7 @@ func (d *GrpcDemo) RequestHandle(ctx context.Context) interface{} {
 		}{
 			A: "s-1",
 		},
-	}, xgrpc.WithTraceID("aaa"), xgrpc.WithWaitForReady(wfrv))
+	}, xrpc.WithXRequestID("aaa"), xrpc.WithWaitForReady(wfrv))
 	if err != nil {
 		ctx.Log().Error(err)
 		return err
@@ -42,7 +43,7 @@ func (d *GrpcDemo) RequestHandle(ctx context.Context) interface{} {
 
 func (d *GrpcDemo) SwapHandle(ctx context.Context) interface{} {
 	client := gel.RPC().GetRPC("")
-	body, err := client.Swap(ctx, "grpc://rpcserver/demo", xgrpc.WithTraceID("aaa"))
+	body, err := client.Swap(ctx, "grpc://rpcserver/demo", xrpc.WithXRequestID("aaa"))
 	if err != nil {
 		ctx.Log().Error(err)
 		return err

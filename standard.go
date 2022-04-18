@@ -7,7 +7,7 @@ import (
 	"github.com/zhiyunliu/gel/container"
 	"github.com/zhiyunliu/gel/queue"
 	"github.com/zhiyunliu/gel/xdb"
-	"github.com/zhiyunliu/gel/xgrpc"
+	"github.com/zhiyunliu/gel/xrpc"
 )
 
 //todo: file struct aren't well.
@@ -16,7 +16,7 @@ var (
 	contanier  = container.NewContainer()
 	standCache *cache.StandardCache
 	standQueue *queue.StandardQueue
-	standRPC   *xgrpc.StandardRPC
+	standRPC   xrpc.StandardRPC
 	standDB    *xdb.StandardDB
 )
 
@@ -63,7 +63,7 @@ func Queue() *queue.StandardQueue {
 	return standQueue
 }
 
-func RPC() *xgrpc.StandardRPC {
+func RPC() xrpc.StandardRPC {
 	if standRPC != nil {
 		return standRPC
 	}
@@ -72,7 +72,7 @@ func RPC() *xgrpc.StandardRPC {
 	if standRPC != nil {
 		return standRPC
 	}
-	standRPC = xgrpc.NewStandardRPC(contanier)
+	standRPC = xrpc.NewXRPC(contanier)
 	return standRPC
 }
 

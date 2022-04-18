@@ -1,4 +1,4 @@
-package xgrpc
+package grpc
 
 import "github.com/zhiyunliu/gel/config"
 

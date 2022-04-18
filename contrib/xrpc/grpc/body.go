@@ -1,19 +1,14 @@
-package xgrpc
+package grpc
 
 import (
 	"net/http"
 
 	"github.com/zhiyunliu/gel/constants"
+	"github.com/zhiyunliu/gel/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
-type Body interface {
-	GetStatus() int32
-	GetHeader() map[string]string
-	GetResult() []byte
-}
-
-func newBodyByError(err error) Body {
+func newBodyByError(err error) xrpc.Body {
 	return &errorBody{
 		err: err,
 		header: map[string]string{

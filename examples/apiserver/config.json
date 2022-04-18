@@ -12,6 +12,9 @@
 		"localhost":{"proto":"mysql","conn":"root:123456@tcp(localhost)/demo?charset=utf8","max_open":10,"max_idle":10,"life_time":100},
 		"microsql":{"proto":"sqlserver","conn":"server=localhost;database=demo;persist security info=false;user id=admin;password=123456;Min Pool Size=10;Max Pool Size=20","max_open":10,"max_idle":10,"life_time":100}
 	},
+	"rpcs":{
+		"default":{"proto":"grpc"}
+	},
 	"caches":{
 		"default":"redis://localhost"
 	},
