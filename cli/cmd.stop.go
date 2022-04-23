@@ -9,6 +9,7 @@ func init() {
 		return cli.Command{
 			Name:   "stop",
 			Usage:  "停止服务，停止服务器运行",
+			Flags:  getFlags(cfg),
 			Action: doStop,
 		}
 	})

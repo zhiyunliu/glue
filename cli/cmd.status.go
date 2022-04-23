@@ -11,6 +11,7 @@ func init() {
 		return cli.Command{
 			Name:   "status",
 			Usage:  "查询状态，查询服务器运行、停止状态",
+			Flags:  getFlags(cfg),
 			Action: doStatus,
 		}
 	})

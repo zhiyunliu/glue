@@ -56,6 +56,9 @@ func New(client *api.Client, opts ...Option) (config.Source, error) {
 		options: options,
 	}, nil
 }
+func (c *source) Name() string {
+	return _name
+}
 
 // Load return the config values
 func (s *source) Load() ([]*config.KeyValue, error) {

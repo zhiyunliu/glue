@@ -9,6 +9,7 @@ func init() {
 		return cli.Command{
 			Name:   "restart",
 			Usage:  "重启服务",
+			Flags:  getFlags(cfg),
 			Action: doRestart,
 		}
 	})

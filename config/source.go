@@ -9,6 +9,7 @@ type KeyValue struct {
 
 // Source is config source.
 type Source interface {
+	Name() string
 	Load() ([]*KeyValue, error)
 	Watch() (Watcher, error)
 }

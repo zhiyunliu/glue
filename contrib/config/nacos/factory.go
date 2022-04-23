@@ -11,11 +11,13 @@ import (
 	"github.com/zhiyunliu/gel/log"
 )
 
+const _name = "nacos"
+
 type nacosFactory struct {
 }
 
 func (f *nacosFactory) Name() string {
-	return "nacos"
+	return _name
 }
 
 func (f *nacosFactory) Create(cfg config.Config) (config.Source, error) {

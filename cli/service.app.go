@@ -15,12 +15,19 @@ import (
 	"github.com/zhiyunliu/gel/registry"
 	"github.com/zhiyunliu/gel/transport"
 	"github.com/zhiyunliu/golibs/session"
+	"github.com/zhiyunliu/golibs/xfile"
 	"github.com/zhiyunliu/golibs/xnet"
 	"github.com/zhiyunliu/golibs/xsecurity/md5"
 )
 
+var (
+	_appmode = "release"
+)
+
 type AppService struct {
 	service.Service
+
+	srvApp      *ServiceApp
 	ServiceName string
 	DisplayName string
 	Description string
@@ -30,6 +37,9 @@ type AppService struct {
 //GetService GetServices
 func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 	srvApp := GetSrvApp(c)
+	if err = srvApp.initApp(); err != nil {
+		return
+	}
 	//1. 构建服务配置
 	cfg := GetSrvConfig(srvApp, args...)
 	//2.创建本地服务
@@ -39,6 +49,7 @@ func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 	}
 	return &AppService{
 		Service:     appSrv,
+		srvApp:      srvApp,
 		ServiceName: cfg.Name,
 		DisplayName: cfg.DisplayName,
 		Description: cfg.Description,
@@ -71,8 +82,11 @@ func GetSrvApp(c *cli.Context) *ServiceApp {
 	app := &ServiceApp{
 		cliCtx:  c,
 		options: opts,
+		setting: &appSetting{
+			Mode:   _appmode,
+			IpMask: "",
+		},
 	}
-	app.Init()
 	return app
 }
 
@@ -101,51 +115,62 @@ func (p *ServiceApp) Endpoint() []string {
 	return p.instance.Endpoints
 }
 
-func (app *ServiceApp) Init() {
+func (app *ServiceApp) initApp() error {
 	if app.options.initFile == "" {
-		panic(fmt.Errorf("-f 为必须参数"))
+		return fmt.Errorf("-f 为必须参数")
 	}
+	if !xfile.Exists(app.options.initFile) {
+		global.Mode = app.setting.Mode
+		global.LocalIp = xnet.GetLocalIP(app.setting.IpMask)
+		return nil
+	}
+
 	app.options.Config = config.New(config.WithSource(file.NewSource(app.options.initFile)))
 	err := app.options.Config.Load()
 	if err != nil {
-		log.Error("config.Load:%s,Error:%+v", app.options.initFile, err)
+		return fmt.Errorf("config.Load:%s,Error:%+v", app.options.initFile, err)
 	}
-	app.loadAppSetting()
-	app.loadRegistry()
-	app.loadConfig()
+	log.Info("serviceApp load appSetting")
+	if err = app.loadAppSetting(); err != nil {
+		return err
+	}
+	global.Config = app.options.Config
+	return nil
 }
 
-func (app *ServiceApp) loadAppSetting() {
-	setting := &appSetting{}
-	err := app.options.Config.Value("app").Scan(setting)
+func (app *ServiceApp) loadAppSetting() error {
+	err := app.options.Config.Value("app").Scan(app.setting)
 	if err != nil {
-		log.Errorf("获取app配置出错:%+v", err)
+		return fmt.Errorf("获取app配置出错:%+v", err)
 	}
-	app.setting = setting
 	global.Mode = app.setting.Mode
-	global.LocalIp = xnet.GetLocalIP(setting.IpMask)
-
+	global.LocalIp = xnet.GetLocalIP(app.setting.IpMask)
+	return nil
 }
 
-func (app *ServiceApp) loadRegistry() {
+func (app *ServiceApp) loadRegistry() error {
 
 	registrar, err := registry.GetRegistrar(app.options.Config)
 	if err != nil {
-		log.Error("registry configuration Error:%+v", err)
+		return fmt.Errorf("registry configuration Error:%+v", err)
 	}
-
 	app.options.Registrar = registrar
+	return nil
 }
 
-func (app *ServiceApp) loadConfig() {
+func (app *ServiceApp) loadConfig() error {
 	newSource, err := config.GetConfig(app.options.Config)
 	if err != nil {
-		log.Errorf("config configuration Error:%+v", err)
+		return fmt.Errorf("get source Error:%+v", err)
 	}
 	if newSource != nil {
-		app.options.Config.Source(newSource)
+		err = app.options.Config.Source(newSource)
+		if err != nil {
+			return fmt.Errorf("load Source Error:%+v", err)
+		}
 	}
 	global.Config = app.options.Config
+	return nil
 }
 
 func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {

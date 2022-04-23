@@ -20,11 +20,9 @@ func init() {
 
 //doRun 服务启动
 func doRun(c *cli.Context) (err error) {
-
 	srv, err := getService(c, os.Args[2:]...)
 	if err != nil {
 		return err
 	}
-	err = srv.Run()
-	return err
+	return srv.Run()
 }

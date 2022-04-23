@@ -23,6 +23,9 @@ type Config struct {
 func NewConfigSource(client config_client.IConfigClient, opts options) config.Source {
 	return &Config{client: client, opts: opts}
 }
+func (c *Config) Name() string {
+	return _name
+}
 
 func (c *Config) Load() ([]*config.KeyValue, error) {
 	content, err := c.client.GetConfig(vo.ConfigParam{

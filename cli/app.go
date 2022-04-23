@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli"
 	"github.com/zhiyunliu/gel/global"
+	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/golibs/xfile"
 )
 
@@ -73,6 +74,9 @@ func New(opts ...Option) *App {
 		Usage: "查看版本信息",
 	}
 	app.cliApp.Metadata = map[string]interface{}{}
-
+	app.cliApp.ExitErrHandler = func(ctx *cli.Context, err error) {
+		log.Error(err)
+		log.Close()
+	}
 	return app
 }

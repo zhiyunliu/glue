@@ -9,6 +9,7 @@ func init() {
 		return cli.Command{
 			Name:   "remove",
 			Usage:  "删除服务，从本地服务器移除服务",
+			Flags:  getFlags(cfg),
 			Action: doRemove,
 		}
 	})

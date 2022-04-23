@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/zhiyunliu/golibs/xnet"
 	"github.com/zhiyunliu/golibs/xsecurity/aes"
@@ -30,6 +31,9 @@ func Register(factory Factory) {
 func GetConfig(cfg Config) (Source, error) {
 	//nacos://xxxx
 	cfgVal := cfg.Value("config").String()
+	if strings.TrimSpace(cfgVal) == "" {
+		return nil, nil
+	}
 
 	protoName, configName, err := xnet.Parse(cfgVal)
 	if err != nil {

@@ -6,6 +6,8 @@ import (
 
 var _ Source = (*strSource)(nil)
 
+const _strSourceName string = "str"
+
 type strSource struct {
 	content string
 }
@@ -15,11 +17,14 @@ func NewStrSource(content string) Source {
 	return &strSource{content: content}
 }
 
-func (f *strSource) Load() (kvs []*KeyValue, err error) {
+func (f *strSource) Name() string {
+	return _strSourceName
+}
 
+func (f *strSource) Load() (kvs []*KeyValue, err error) {
 	return []*KeyValue{
 		{
-			Key:    "str",
+			Key:    _strSourceName,
 			Format: "json",
 			Value:  bytesconv.StringToBytes(f.content),
 		}}, nil

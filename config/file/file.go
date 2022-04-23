@@ -59,6 +59,9 @@ func (f *file) loadDir(path string) (kvs []*config.KeyValue, err error) {
 	}
 	return
 }
+func (f *file) Name() string {
+	return "file"
+}
 
 func (f *file) Load() (kvs []*config.KeyValue, err error) {
 	fi, err := os.Stat(f.path)
