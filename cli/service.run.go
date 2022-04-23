@@ -3,12 +3,22 @@ package cli
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
 	"time"
 
 	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/golibs/xlog"
 )
 
+var _defaultTraceAddr = ":56060"
+
 func (p *ServiceApp) run() (err error) {
+
+	if p.cliCtx.Bool("nostd") {
+		xlog.RemoveAppender(xlog.Stdout)
+	}
+
 	errChan := make(chan error)
 	p.svcCtx = context.Background()
 	err = p.apprun(p.svcCtx)
@@ -31,8 +41,40 @@ func (p *ServiceApp) apprun(ctx context.Context) error {
 			return err
 		}
 	}
-	p.register(ctx)
+	if err := p.register(ctx); err != nil {
+		return err
+	}
+	if err := p.startTraceServer(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (p *ServiceApp) startTraceServer() error {
+	errChan := make(chan error)
+	go func() {
+		if p.setting.TraceAddr == "" {
+			p.setting.TraceAddr = _defaultTraceAddr
+		}
+		lsr, err := net.Listen("tcp", p.setting.TraceAddr)
+		if err != nil {
+			errChan <- err
+			log.Errorf("start trace server listen error:%+v", err)
+			return
+		}
+		traceSrv := &http.Server{}
+
+		if err = traceSrv.Serve(lsr); err != nil {
+			errChan <- err
+			log.Errorf("start trace server Serve error:%+v", err)
+			return
+		}
+		errChan <- nil
+		<-p.svcCtx.Done()
+	}()
+
+	err := <-errChan
+	return err
 }
 
 func (p *ServiceApp) register(ctx context.Context) error {
@@ -45,9 +87,21 @@ func (p *ServiceApp) register(ctx context.Context) error {
 
 		rctx, rcancel := context.WithTimeout(ctx, p.options.RegistrarTimeout)
 		defer rcancel()
-		if err := p.options.Registrar.Register(rctx, instance); err != nil {
+
+		errChan := make(chan error)
+		go func() {
+			if err := p.options.Registrar.Register(rctx, instance); err != nil {
+				errChan <- err
+			}
+		}()
+
+		select {
+		case err := <-errChan:
 			return fmt.Errorf("register to %s [%s] error:%w", p.options.Registrar.Name(), p.options.Registrar.ServerConfigs(), err)
+		case <-rctx.Done():
+			return fmt.Errorf("register to %s [%s] timeout:%d", p.options.Registrar.Name(), p.options.Registrar.ServerConfigs(), p.options.RegistrarTimeout)
 		}
+
 		p.instance = instance
 		log.Infof("register to %s completed", p.options.Registrar.Name())
 	}

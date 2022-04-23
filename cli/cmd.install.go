@@ -24,8 +24,8 @@ func doInstall(c *cli.Context) (err error) {
 	if err = compatible.CheckPrivileges(); err != nil {
 		return err
 	}
+	args := []string{"run", "--nostd"}
 
-	args := []string{"run"}
 	args = append(args, os.Args[2:]...)
 	//3.创建本地服务
 	srv, err := getService(c, args...)

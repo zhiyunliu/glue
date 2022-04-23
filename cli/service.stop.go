@@ -7,8 +7,8 @@ import (
 
 //Stop Stop
 func (p *ServiceApp) Stop(s service.Service) (err error) {
-	if p.CancelFunc != nil {
-		p.CancelFunc()
+	if p.cancelFunc != nil {
+		p.cancelFunc()
 	}
 
 	err = p.deregister(p.svcCtx)

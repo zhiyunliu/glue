@@ -80,7 +80,7 @@ func GetSrvApp(c *cli.Context) *ServiceApp {
 type ServiceApp struct {
 	cliCtx     *cli.Context
 	options    *Options
-	CancelFunc context.CancelFunc
+	cancelFunc context.CancelFunc
 	setting    *appSetting
 	instance   *registry.ServiceInstance
 	svcCtx     context.Context

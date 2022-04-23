@@ -59,6 +59,7 @@ func Server(srv ...transport.Server) Option {
 
 type appSetting struct {
 	Mode         string                 `json:"mode"`
+	TraceAddr    string                 `json:"trace_addr"`
 	IpMask       string                 `json:"ip_mask"`
 	Dependencies []string               `json:"dependencies"`
 	Options      map[string]interface{} `json:"options"`

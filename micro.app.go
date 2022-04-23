@@ -1,6 +1,7 @@
 package gel
 
 import (
+	_ "net/http/pprof"
 	"runtime"
 
 	"github.com/zhiyunliu/gel/cli"
