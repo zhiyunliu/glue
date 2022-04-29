@@ -1,56 +1,47 @@
 package queue
 
-import (
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/container"
-	"github.com/zhiyunliu/golibs/xnet"
-)
+import "github.com/zhiyunliu/gel/context"
 
-const QueueTypeNode = "queues"
+//IQueue 消息队列
+type IQueue interface {
+	Send(ctx context.Context, key string, value interface{}) error
+	Pop(key string) (string, error)
+	Count(key string) (int64, error)
+}
 
-type StandardQueue interface {
+//IMQCMessage  队列消息
+type IMQCMessage interface {
+	Ack() error
+	Nack() error
+	Original() string
+	GetMessage() Message
+}
+
+type Message interface {
+	Header() map[string]string
+	Body() map[string]interface{}
+	String() string
+}
+
+type ConsumeCallback func(IMQCMessage)
+
+//IMQC consumer接口
+type IMQC interface {
+	Connect() error
+	Consume(queue string, callback ConsumeCallback) (err error)
+	Unconsume(queue string)
+	Close()
+}
+
+//IMQP 消息生产
+type IMQP interface {
+	Push(key string, value Message) error
+	Pop(key string) (string, error)
+	Count(key string) (int64, error)
+	Close() error
+}
+
+//IComponentQueue Component Queue
+type IComponentQueue interface {
 	GetQueue(name string) (q IQueue)
-}
-
-//xQueue queue
-type xQueue struct {
-	c container.Container
-}
-
-//NewStandardQueue 创建queue
-func NewStandardQueue(c container.Container) StandardQueue {
-	return &xQueue{c: c}
-}
-
-//GetQueue GetQueue
-func (s *xQueue) GetQueue(name string) (q IQueue) {
-	obj, err := s.c.GetOrCreate(QueueTypeNode, name, func(cfg config.Config) (interface{}, error) {
-		cfgVal := cfg.Get(QueueTypeNode).Value(name)
-		cacheVal := cfgVal.String()
-		//redis://localhost
-		protoType, configName, err := xnet.Parse(cacheVal)
-		if err != nil {
-			panic(err)
-		}
-		queueCfg := cfg.Get(protoType).Get(configName)
-		return newQueue(protoType, queueCfg)
-	})
-	if err != nil {
-		panic(err)
-	}
-	return obj.(IQueue)
-}
-
-type xBuilder struct{}
-
-func NewBuilder() container.StandardBuilder {
-	return &xBuilder{}
-}
-
-func (xBuilder) Name() string {
-	return QueueTypeNode
-}
-
-func (xBuilder) Build(c container.Container) interface{} {
-	return NewStandardQueue(c)
 }

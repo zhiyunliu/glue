@@ -16,13 +16,13 @@ func DB() xdb.StandardDB {
 
 //Cache 获取Cache 处理对象
 func Cache() cache.StandardCache {
-	obj := getStandardInstance(cache.CacheTypeNode)
+	obj := getStandardInstance(cache.TypeNode)
 	return obj.(cache.StandardCache)
 }
 
 //Queue 获取Queue 处理对象
 func Queue() queue.StandardQueue {
-	obj := getStandardInstance(queue.QueueTypeNode)
+	obj := getStandardInstance(queue.TypeNode)
 	return obj.(queue.StandardQueue)
 }
 

@@ -1,57 +1,52 @@
 package cache
 
 import (
+	"fmt"
+
 	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/container"
-	"github.com/zhiyunliu/golibs/xnet"
 )
 
-const CacheTypeNode = "caches"
-
-//StandardCache cache
-type StandardCache interface {
-	GetCache(name string) (q ICache)
+type ICache interface {
+	Name() string
+	Get(key string) (string, error)
+	Set(key string, val interface{}, expire int) error
+	Del(key string) error
+	HashGet(hk, key string) (string, error)
+	HashSet(hk, key string, val string) (bool, error)
+	HashDel(hk, key string) error
+	Increase(key string) (int64, error)
+	Decrease(key string) (int64, error)
+	Expire(key string, expire int) error
+	GetImpl() interface{}
 }
 
-//StandardCache cache
-type xCache struct {
-	c container.Container
+//cacheResover 定义配置文件转换方法
+type cacheResover interface {
+	Name() string
+	Resolve(setting config.Config) (ICache, error)
 }
 
-//NewStandardCache 创建cache
-func NewStandardCache(c container.Container) StandardCache {
-	return &xCache{c: c}
-}
+var cacheResolvers = make(map[string]cacheResover)
 
-//GetCaches GetCaches
-func (s *xCache) GetCache(name string) (q ICache) {
-	obj, err := s.c.GetOrCreate(CacheTypeNode, name, func(cfg config.Config) (interface{}, error) {
-		cfgVal := cfg.Get(CacheTypeNode).Value(name)
-		cacheVal := cfgVal.String()
-		//redis://localhost
-		protoType, configName, err := xnet.Parse(cacheVal)
-		if err != nil {
-			panic(err)
-		}
-		cacheCfg := cfg.Get(protoType).Get(configName)
-		return newCache(protoType, cacheCfg)
-	})
-	if err != nil {
-		panic(err)
+//RegisterCache 注册配置文件适配器
+func Register(resolver cacheResover) {
+	proto := resolver.Name()
+	if _, ok := cacheResolvers[proto]; ok {
+		panic(fmt.Errorf("cache: 不能重复注册:%s", proto))
 	}
-	return obj.(ICache)
+	cacheResolvers[proto] = resolver
 }
 
-type xBuilder struct{}
-
-func NewBuilder() container.StandardBuilder {
-	return &xBuilder{}
+//Deregister 清理配置适配器
+func Deregister(name string) {
+	delete(cacheResolvers, name)
 }
 
-func (xBuilder) Name() string {
-	return CacheTypeNode
-}
-
-func (xBuilder) Build(c container.Container) interface{} {
-	return NewStandardCache(c)
+//newCache 根据适配器名称及参数返回配置处理器
+func newCache(proto string, setting config.Config) (ICache, error) {
+	resolver, ok := cacheResolvers[proto]
+	if !ok {
+		return nil, fmt.Errorf("cache: 未知的协议类型:%s", proto)
+	}
+	return resolver.Resolve(setting)
 }
