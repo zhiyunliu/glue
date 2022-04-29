@@ -24,6 +24,11 @@ type Container interface {
 	ICloser
 }
 
+type StandardBuilder interface {
+	Name() string
+	Build(Container) interface{}
+}
+
 //Container 容器用于缓存公共组件
 type container struct {
 	mutex sync.Mutex

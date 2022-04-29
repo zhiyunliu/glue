@@ -1,81 +1,42 @@
 package gel
 
 import (
-	"sync"
-
 	"github.com/zhiyunliu/gel/cache"
-	"github.com/zhiyunliu/gel/container"
 	"github.com/zhiyunliu/gel/queue"
 	"github.com/zhiyunliu/gel/xdb"
 	"github.com/zhiyunliu/gel/xrpc"
 )
 
-//todo: file struct aren't well.
-
-var (
-	contanier  = container.NewContainer()
-	standCache *cache.StandardCache
-	standQueue *queue.StandardQueue
-	standRPC   xrpc.StandardRPC
-	standDB    *xdb.StandardDB
-)
-
-var (
-	lock sync.Mutex
-)
-
-func DB() *xdb.StandardDB {
-	if standDB != nil {
-		return standDB
-	}
-	lock.Lock()
-	defer lock.Unlock()
-	if standDB != nil {
-		return standDB
-	}
-	standDB = xdb.NewStandardDB(contanier)
-	return standDB
+//DB 获取DB 处理对象
+func DB() xdb.StandardDB {
+	obj := getStandardInstance(xdb.DbTypeNode)
+	return obj.(xdb.StandardDB)
 }
 
-func Cache() *cache.StandardCache {
-	if standCache != nil {
-		return standCache
-	}
-	lock.Lock()
-	defer lock.Unlock()
-	if standCache != nil {
-		return standCache
-	}
-	standCache = cache.NewStandardCache(contanier)
-	return standCache
+//Cache 获取Cache 处理对象
+func Cache() cache.StandardCache {
+	obj := getStandardInstance(cache.CacheTypeNode)
+	return obj.(cache.StandardCache)
 }
 
-func Queue() *queue.StandardQueue {
-	if standQueue != nil {
-		return standQueue
-	}
-	lock.Lock()
-	defer lock.Unlock()
-	if standQueue != nil {
-		return standQueue
-	}
-	standQueue = queue.NewStandardQueue(contanier)
-	return standQueue
+//Queue 获取Queue 处理对象
+func Queue() queue.StandardQueue {
+	obj := getStandardInstance(queue.QueueTypeNode)
+	return obj.(queue.StandardQueue)
 }
 
+//RPC 获取RPC 处理对象
 func RPC() xrpc.StandardRPC {
-	if standRPC != nil {
-		return standRPC
-	}
-	lock.Lock()
-	defer lock.Unlock()
-	if standRPC != nil {
-		return standRPC
-	}
-	standRPC = xrpc.NewXRPC(contanier)
-	return standRPC
+	obj := getStandardInstance(xrpc.TypeNode)
+	return obj.(xrpc.StandardRPC)
 }
 
-func Dlocker() {
+func DLocker() {
 
+}
+
+//暂时没考虑用泛型
+func Custom(name string) interface{} {
+	obj := getStandardInstance(name)
+	return obj
 }

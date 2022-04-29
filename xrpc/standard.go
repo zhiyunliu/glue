@@ -8,7 +8,7 @@ import (
 	"github.com/zhiyunliu/gel/context"
 )
 
-const _typeNode = "rpcs"
+const TypeNode = "rpcs"
 const _defaultName = "default"
 
 type StandardRPC interface {
@@ -48,12 +48,26 @@ func (s *xRPC) GetRPC(name ...string) (c Client) {
 		realName = name[0]
 	}
 
-	obj, err := s.container.GetOrCreate(_typeNode, realName, func(cfg config.Config) (interface{}, error) {
-		dbcfg := cfg.Get(_typeNode).Get(realName)
+	obj, err := s.container.GetOrCreate(TypeNode, realName, func(cfg config.Config) (interface{}, error) {
+		dbcfg := cfg.Get(TypeNode).Get(realName)
 		return newXRPC(dbcfg)
 	})
 	if err != nil {
 		panic(err)
 	}
 	return obj.(Client)
+}
+
+type xBuilder struct{}
+
+func NewBuilder() container.StandardBuilder {
+	return &xBuilder{}
+}
+
+func (xBuilder) Name() string {
+	return TypeNode
+}
+
+func (xBuilder) Build(c container.Container) interface{} {
+	return NewXRPC(c)
 }

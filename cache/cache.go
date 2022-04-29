@@ -6,22 +6,27 @@ import (
 	"github.com/zhiyunliu/golibs/xnet"
 )
 
-const cacheTypeNode = "caches"
+const CacheTypeNode = "caches"
 
 //StandardCache cache
-type StandardCache struct {
+type StandardCache interface {
+	GetCache(name string) (q ICache)
+}
+
+//StandardCache cache
+type xCache struct {
 	c container.Container
 }
 
 //NewStandardCache 创建cache
-func NewStandardCache(c container.Container) *StandardCache {
-	return &StandardCache{c: c}
+func NewStandardCache(c container.Container) StandardCache {
+	return &xCache{c: c}
 }
 
 //GetCaches GetCaches
-func (s *StandardCache) GetCache(name string) (q ICache) {
-	obj, err := s.c.GetOrCreate(cacheTypeNode, name, func(cfg config.Config) (interface{}, error) {
-		cfgVal := cfg.Get(cacheTypeNode).Value(name)
+func (s *xCache) GetCache(name string) (q ICache) {
+	obj, err := s.c.GetOrCreate(CacheTypeNode, name, func(cfg config.Config) (interface{}, error) {
+		cfgVal := cfg.Get(CacheTypeNode).Value(name)
 		cacheVal := cfgVal.String()
 		//redis://localhost
 		protoType, configName, err := xnet.Parse(cacheVal)
@@ -35,4 +40,18 @@ func (s *StandardCache) GetCache(name string) (q ICache) {
 		panic(err)
 	}
 	return obj.(ICache)
+}
+
+type xBuilder struct{}
+
+func NewBuilder() container.StandardBuilder {
+	return &xBuilder{}
+}
+
+func (xBuilder) Name() string {
+	return CacheTypeNode
+}
+
+func (xBuilder) Build(c container.Container) interface{} {
+	return NewStandardCache(c)
 }

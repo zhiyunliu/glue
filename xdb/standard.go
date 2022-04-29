@@ -5,26 +5,45 @@ import (
 	"github.com/zhiyunliu/gel/container"
 )
 
-const dbTypeNode = "dbs"
+const DbTypeNode = "dbs"
 
 //StandardDB
-type StandardDB struct {
+type StandardDB interface {
+	GetDB(name string) (q IDB)
+}
+
+//StandardDB
+type xDB struct {
 	container container.Container
 }
 
 //NewStandardDBs 创建DB
-func NewStandardDB(container container.Container) *StandardDB {
-	return &StandardDB{container: container}
+func NewStandardDB(container container.Container) StandardDB {
+	return &xDB{container: container}
 }
 
 //GetDB
-func (s *StandardDB) GetDB(name string) (q IDB) {
-	obj, err := s.container.GetOrCreate(dbTypeNode, name, func(cfg config.Config) (interface{}, error) {
-		dbcfg := cfg.Get(dbTypeNode).Get(name)
+func (s *xDB) GetDB(name string) (q IDB) {
+	obj, err := s.container.GetOrCreate(DbTypeNode, name, func(cfg config.Config) (interface{}, error) {
+		dbcfg := cfg.Get(DbTypeNode).Get(name)
 		return newDB(dbcfg)
 	})
 	if err != nil {
 		panic(err)
 	}
 	return obj.(IDB)
+}
+
+type xBuilder struct{}
+
+func NewBuilder() container.StandardBuilder {
+	return &xBuilder{}
+}
+
+func (xBuilder) Name() string {
+	return DbTypeNode
+}
+
+func (xBuilder) Build(c container.Container) interface{} {
+	return NewStandardDB(c)
 }
