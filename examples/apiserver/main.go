@@ -6,6 +6,7 @@ import (
 	"github.com/zhiyunliu/gel"
 	"github.com/zhiyunliu/gel/context"
 	_ "github.com/zhiyunliu/gel/contrib/cache/redis"
+	_ "github.com/zhiyunliu/gel/contrib/config/consul"
 	_ "github.com/zhiyunliu/gel/contrib/config/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/queue/redis"
 	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
