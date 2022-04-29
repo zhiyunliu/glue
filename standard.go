@@ -2,6 +2,7 @@ package gel
 
 import (
 	"github.com/zhiyunliu/gel/cache"
+	"github.com/zhiyunliu/gel/dlocker"
 	"github.com/zhiyunliu/gel/queue"
 	"github.com/zhiyunliu/gel/xdb"
 	"github.com/zhiyunliu/gel/xrpc"
@@ -31,8 +32,10 @@ func RPC() xrpc.StandardRPC {
 	return obj.(xrpc.StandardRPC)
 }
 
-func DLocker() {
-
+//DLocker 获取DLocker 处理对象
+func DLocker() dlocker.DLocker {
+	obj := getStandardInstance(dlocker.TypeNode)
+	return obj.(dlocker.DLocker)
 }
 
 //暂时没考虑用泛型
