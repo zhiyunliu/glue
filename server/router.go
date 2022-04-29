@@ -7,7 +7,7 @@ import (
 
 	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/gel/middleware"
-	"github.com/zhiyunliu/gel/reflect"
+	"github.com/zhiyunliu/gel/router"
 )
 
 type Method string
@@ -37,20 +37,21 @@ func adjustMethods(methods ...Method) []Method {
 }
 
 func isValidMethod(method Method) bool {
-	_, ok := methodMap[strings.ToLower(string(method))]
+	_, ok := methodMap[strings.ToUpper(string(method))]
 	return ok
 }
 
 type RouterGroup struct {
 	basePath      string
 	middlewares   []middleware.Middleware
-	ServiceGroups map[string]*reflect.ServiceGroup
+	ServiceGroups map[string]*router.Group
 	Children      map[string]*RouterGroup
 }
 
-func NewRouterGroup() *RouterGroup {
+func NewRouterGroup(basePath string) *RouterGroup {
 	return &RouterGroup{
-		ServiceGroups: make(map[string]*reflect.ServiceGroup),
+		basePath:      basePath,
+		ServiceGroups: make(map[string]*router.Group),
 		Children:      make(map[string]*RouterGroup),
 	}
 }
@@ -95,7 +96,7 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, metho
 		mths[i] = string(methods[i])
 	}
 
-	svcGroup, err := reflect.ReflectHandle(relativePath, handler, mths...)
+	svcGroup, err := router.ReflectHandle(relativePath, handler, mths...)
 	if err != nil {
 		log.Error(err)
 		return

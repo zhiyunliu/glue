@@ -31,8 +31,7 @@ func setDefaultOption() *options {
 		decReq:       server.DefaultRequestDecoder,
 		encResp:      server.DefaultResponseEncoder,
 		encErr:       server.DefaultErrorEncoder,
-
-		router: server.NewRouterGroup(),
+		router:       server.NewRouterGroup(""),
 	}
 }
 

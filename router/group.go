@@ -1,4 +1,4 @@
-package reflect
+package router
 
 import (
 	"fmt"
@@ -49,57 +49,57 @@ group.children = [{
 group.service={}
 */
 
-type ServiceGroup struct {
+type Group struct {
 	Path     string //原始注册服务路径
 	Handling middleware.Handler
 	Handled  middleware.Handler
-	Children map[string]*ServiceGroup
-	Services map[string]*ServiceUnit
-	parent   *ServiceGroup
+	Children map[string]*Group
+	Services map[string]*Unit
+	parent   *Group
 	methods  []string
 }
 
-type ServiceUnit struct {
+type Unit struct {
 	Name     string
 	Handling middleware.Handler
 	Handled  middleware.Handler
 	Handle   middleware.Handler
-	Group    *ServiceGroup
+	Group    *Group
 }
 
-func newServiceGroup(path string, methods ...string) *ServiceGroup {
+func newGroup(path string, methods ...string) *Group {
 	if len(methods) == 0 {
 		methods = []string{http.MethodGet, http.MethodPost}
 	}
-	return &ServiceGroup{
+	return &Group{
 		Path:     path,
 		methods:  methods,
-		Services: make(map[string]*ServiceUnit),
-		Children: make(map[string]*ServiceGroup),
+		Services: make(map[string]*Unit),
+		Children: make(map[string]*Group),
 	}
 }
 
-func (g *ServiceGroup) GetChild(name string) *ServiceGroup {
+func (g *Group) GetChild(name string) *Group {
 	child, ok := g.Children[name]
 	if ok {
 		return child
 	}
 
-	child = &ServiceGroup{
+	child = &Group{
 		Path:     name,
 		parent:   g,
 		methods:  g.methods,
-		Services: make(map[string]*ServiceUnit),
-		Children: make(map[string]*ServiceGroup, 0),
+		Services: make(map[string]*Unit),
+		Children: make(map[string]*Group, 0),
 	}
 	g.Children[name] = child
 	return child
 }
 
-func (g *ServiceGroup) AddHandle(subName string, handler middleware.Handler) {
+func (g *Group) AddHandle(subName string, handler middleware.Handler) {
 	if strings.EqualFold(subName, "") {
 		for _, m := range g.methods {
-			g.Services[m] = &ServiceUnit{
+			g.Services[m] = &Unit{
 				Name:   m,
 				Handle: handler,
 				Group:  g,
@@ -111,10 +111,10 @@ func (g *ServiceGroup) AddHandle(subName string, handler middleware.Handler) {
 	}
 }
 
-func (g *ServiceGroup) AddHandling(subName string, handler middleware.Handler) {
+func (g *Group) AddHandling(subName string, handler middleware.Handler) {
 	if strings.EqualFold(subName, "") {
 		for _, m := range g.methods {
-			g.Services[m] = &ServiceUnit{
+			g.Services[m] = &Unit{
 				Name:     m,
 				Handling: handler,
 				Group:    g,
@@ -126,10 +126,10 @@ func (g *ServiceGroup) AddHandling(subName string, handler middleware.Handler) {
 	}
 }
 
-func (g *ServiceGroup) AddHandled(subName string, handler middleware.Handler) {
+func (g *Group) AddHandled(subName string, handler middleware.Handler) {
 	if strings.EqualFold(subName, "") {
 		for _, m := range g.methods {
-			g.Services[m] = &ServiceUnit{
+			g.Services[m] = &Unit{
 				Name:    m,
 				Handled: handler,
 				Group:   g,
@@ -141,15 +141,15 @@ func (g *ServiceGroup) AddHandled(subName string, handler middleware.Handler) {
 	}
 }
 
-func (g *ServiceGroup) HasService() bool {
+func (g *Group) HasService() bool {
 	return len(g.Services) > 0
 }
 
-func (g *ServiceGroup) HasChildren() bool {
+func (g *Group) HasChildren() bool {
 	return len(g.Children) > 0
 }
 
-func (g *ServiceGroup) IsValid() error {
+func (g *Group) IsValid() error {
 	if !(g.HasService() || g.HasChildren()) {
 		return fmt.Errorf("%s无可用注册处理函数", g.Path)
 	}
@@ -174,7 +174,7 @@ func (g *ServiceGroup) IsValid() error {
 	}
 	return nil
 }
-func (g *ServiceGroup) GetReallyPath() string {
+func (g *Group) GetReallyPath() string {
 	if g.parent != nil {
 		return fmt.Sprintf("%s/%s", g.parent.GetReallyPath(), g.Path)
 	}

@@ -2,12 +2,12 @@ package server
 
 import (
 	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/router"
 
 	"github.com/zhiyunliu/gel/errors"
 	"github.com/zhiyunliu/gel/middleware"
 	"github.com/zhiyunliu/gel/middleware/logging"
 	"github.com/zhiyunliu/gel/middleware/recovery"
-	"github.com/zhiyunliu/gel/reflect"
 )
 
 type AdapterEngine interface {
@@ -48,7 +48,7 @@ func execRegistry(engine AdapterEngine, group *RouterGroup, defaultMiddlewares [
 	}
 }
 
-func procHandler(engine AdapterEngine, group *reflect.ServiceGroup, middlewares ...middleware.Middleware) {
+func procHandler(engine AdapterEngine, group *router.Group, middlewares ...middleware.Middleware) {
 	for method, v := range group.Services {
 		engine.Handle(method, group.GetReallyPath(), func(ctx context.Context) {
 			resp := middleware.Chain(middlewares...)(engineHandler(group, v))(ctx)
@@ -60,7 +60,7 @@ func procHandler(engine AdapterEngine, group *reflect.ServiceGroup, middlewares 
 	}
 }
 
-func engineHandler(group *reflect.ServiceGroup, unit *reflect.ServiceUnit) middleware.Handler {
+func engineHandler(group *router.Group, unit *router.Unit) middleware.Handler {
 
 	return func(hctx context.Context) interface{} {
 
