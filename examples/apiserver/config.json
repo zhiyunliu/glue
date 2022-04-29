@@ -39,6 +39,16 @@
 			"options":{"prefix":"api","group":"charge","cluster":"grey","weight":100}
 		}
 	},
+	"consul":{
+		"aliyun":{
+			"addr":"192.168.1.155:8500",
+			"datacenter":"",
+			"namespace":"",
+			"partition":"",
+			"scheme":"",
+			"token":""
+		}
+	},
     "servers":{
 		"api":{
 			"config":{"addr":":8080","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65525},
