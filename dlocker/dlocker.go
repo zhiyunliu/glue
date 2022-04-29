@@ -2,23 +2,24 @@ package dlocker
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/zhiyunliu/gel/config"
 )
 
 type DLocker interface {
-	Lock(key string) error
-	TryLock(key string, timeout time.Duration) error
-	UnLock(key string) error
-	KeepAlive(key string) error
-	GetImpl() interface{}
+	Acquire(expire int) (bool, error)
+	Release() (bool, error)
+	Renewal(expire int) error
+}
+
+type DLockerBuilder interface {
+	Build(key string, opts ...Option) DLocker
 }
 
 //cacheResover 定义配置文件转换方法
 type xResover interface {
 	Name() string
-	Resolve(setting config.Config) (DLocker, error)
+	Resolve(setting config.Config) (DLockerBuilder, error)
 }
 
 var lockerResolvers = make(map[string]xResover)
@@ -38,7 +39,7 @@ func Deregister(name string) {
 }
 
 //newCache 根据适配器名称及参数返回配置处理器
-func newXLocker(proto string, setting config.Config) (DLocker, error) {
+func newXLocker(proto string, setting config.Config) (DLockerBuilder, error) {
 	resolver, ok := lockerResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("dlocker: 未知的协议类型:%s", proto)

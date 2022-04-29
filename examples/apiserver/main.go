@@ -12,6 +12,9 @@ import (
 	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/mysql"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/sqlserver"
+
+	_ "github.com/zhiyunliu/gel/contrib/dlocker/redis"
+
 	"github.com/zhiyunliu/gel/errors"
 	"github.com/zhiyunliu/gel/examples/apiserver/demos"
 	"github.com/zhiyunliu/gel/server/api"
