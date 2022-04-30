@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/protobuf/proto"
 )
 
 // Tracer is otel span tracer
@@ -53,10 +52,7 @@ func (t *Tracer) Start(ctx context.Context, path string, carrier propagation.Tex
 // End finish tracing span
 func (t *Tracer) End(ctx context.Context, span trace.Span, m interface{}) {
 	var err error
-	err, ok := m.(error)
-	if ok {
-
-	}
+	err, _ = m.(error)
 
 	if err != nil {
 		span.RecordError(err)
@@ -66,14 +62,6 @@ func (t *Tracer) End(ctx context.Context, span trace.Span, m interface{}) {
 		span.SetStatus(codes.Error, err.Error())
 	} else {
 		span.SetStatus(codes.Ok, "OK")
-	}
-
-	if p, ok := m.(proto.Message); ok {
-		if t.kind == trace.SpanKindServer {
-			span.SetAttributes(attribute.Key("send_msg.size").Int(proto.Size(p)))
-		} else {
-			span.SetAttributes(attribute.Key("recv_msg.size").Int(proto.Size(p)))
-		}
 	}
 	span.End()
 }

@@ -14,6 +14,7 @@ func (e *Server) registryEngineRoute() {
 	e.opts.handler = engine
 	adapterEngine := server.NewGinEngine(engine,
 		server.WithSrvType(e.Type()),
+		server.WithSrvName(e.Name()),
 		server.WithErrorEncoder(e.opts.encErr),
 		server.WithRequestDecoder(e.opts.decReq),
 		server.WithResponseEncoder(e.opts.encResp))

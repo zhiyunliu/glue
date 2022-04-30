@@ -46,6 +46,10 @@ func (ctx *GinContext) ServerType() string {
 	return ctx.opts.SrvType
 }
 
+func (ctx *GinContext) ServerName() string {
+	return ctx.opts.SrvName
+}
+
 func (ctx *GinContext) Context() context.Context {
 	return ctx.Gctx.Request.Context()
 }

@@ -9,6 +9,7 @@ func (e *Server) registryEngineRoute() {
 
 	adapterEngine := server.NewAlloterEngine(engine,
 		server.WithSrvType(e.Type()),
+		server.WithSrvName(e.Name()),
 		server.WithErrorEncoder(e.opts.encErr),
 		server.WithRequestDecoder(e.opts.decReq),
 		server.WithResponseEncoder(e.opts.encResp))

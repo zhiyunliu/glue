@@ -4,6 +4,7 @@ type Option func(*options)
 
 type options struct {
 	SrvType         string
+	SrvName         string
 	RequestDecoder  DecodeRequestFunc  //:          server.DefaultRequestDecoder,
 	ResponseEncoder EncodeResponseFunc //:          server.DefaultResponseEncoder,
 	ErrorEncoder    EncodeErrorFunc    //:          server.DefaultErrorEncoder,
@@ -24,6 +25,11 @@ func WithSrvType(srvType string) Option {
 	}
 }
 
+func WithSrvName(name string) Option {
+	return func(o *options) {
+		o.SrvName = name
+	}
+}
 func WithRequestDecoder(requestDecoder DecodeRequestFunc) Option {
 	return func(o *options) {
 		o.RequestDecoder = requestDecoder

@@ -9,6 +9,7 @@ import (
 type Context interface {
 	GetImpl() interface{}
 	ServerType() string
+	ServerName() string
 	ResetContext(ctx context.Context)
 	Context() context.Context
 	Header(key string) string

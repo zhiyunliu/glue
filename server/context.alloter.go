@@ -45,6 +45,11 @@ func (ctx *AlloterContext) reset(gctx *alloter.Context) {
 func (ctx *AlloterContext) ServerType() string {
 	return ctx.opts.SrvType
 }
+
+func (ctx *AlloterContext) ServerName() string {
+	return ctx.opts.SrvName
+}
+
 func (ctx *AlloterContext) Context() context.Context {
 	return ctx.Actx.Request.Context()
 }
