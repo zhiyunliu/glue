@@ -33,9 +33,9 @@ func RPC() xrpc.StandardRPC {
 }
 
 //DLocker 获取DLocker 处理对象
-func DLocker() dlocker.DLocker {
+func DLocker() dlocker.DLockerBuilder {
 	obj := getStandardInstance(dlocker.TypeNode)
-	return obj.(dlocker.DLocker)
+	return obj.(dlocker.DLockerBuilder)
 }
 
 //暂时没考虑用泛型

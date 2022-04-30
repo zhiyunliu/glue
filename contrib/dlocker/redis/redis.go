@@ -17,7 +17,7 @@ func (r *Redis) GetImpl() interface{} {
 }
 
 // Build 构建锁
-func (r *Redis) Build(key string, opts ...dlocker.Option) dlocker.DLocker {
+func (r *Redis) Build(key string) dlocker.DLocker {
 	return NewLock(r, key)
 }
 
