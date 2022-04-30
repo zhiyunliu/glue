@@ -1,7 +1,7 @@
 package tracing
 
-//	{"counter":"aaaa","observer":"bbbb"}
+//	{"provider":"skywalking","propagator":"propagator"}
 type Config struct {
-	CounterName  string `json:"counter" yaml:"counter"`
-	ObserverName string `json:"observer" yaml:"observer"`
+	Provider   string `json:"provider" yaml:"provider"`
+	Propagator string `json:"propagator" yaml:"propagator"`
 }
