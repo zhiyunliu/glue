@@ -5,6 +5,12 @@ import "github.com/zhiyunliu/golibs/xtypes"
 type Header interface {
 	Get(name string) string
 	Set(name, val string)
-	Scan(obj interface{}) error
-	Values() xtypes.SMap
+	Values() map[string]string
+	Keys() []string
+}
+
+type MapHeader xtypes.SMap
+
+func (m MapHeader) Values() map[string]string {
+	return m
 }

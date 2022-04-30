@@ -2,7 +2,6 @@ package tracing
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/zhiyunliu/gel/errors"
 	"go.opentelemetry.io/otel"
@@ -32,23 +31,17 @@ func NewTracer(kind trace.SpanKind, opts ...Option) *Tracer {
 		otel.SetTracerProvider(op.tracerProvider)
 	}
 
-	switch kind {
-	case trace.SpanKindClient:
-		return &Tracer{tracer: otel.Tracer("kratos"), kind: kind, opt: &op}
-	case trace.SpanKindServer:
-		return &Tracer{tracer: otel.Tracer("kratos"), kind: kind, opt: &op}
-	default:
-		panic(fmt.Sprintf("unsupported span kind: %v", kind))
-	}
+	return &Tracer{tracer: otel.Tracer("gel"), kind: kind, opt: &op}
+
 }
 
 // Start start tracing span
-func (t *Tracer) Start(ctx context.Context, operation string, carrier propagation.TextMapCarrier) (context.Context, trace.Span) {
+func (t *Tracer) Start(ctx context.Context, path string, carrier propagation.TextMapCarrier) (context.Context, trace.Span) {
 	if t.kind == trace.SpanKindServer {
 		ctx = t.opt.propagator.Extract(ctx, carrier)
 	}
 	ctx, span := t.tracer.Start(ctx,
-		operation,
+		path,
 		trace.WithSpanKind(t.kind),
 	)
 	if t.kind == trace.SpanKindClient {
@@ -58,7 +51,13 @@ func (t *Tracer) Start(ctx context.Context, operation string, carrier propagatio
 }
 
 // End finish tracing span
-func (t *Tracer) End(ctx context.Context, span trace.Span, m interface{}, err error) {
+func (t *Tracer) End(ctx context.Context, span trace.Span, m interface{}) {
+	var err error
+	err, ok := m.(error)
+	if ok {
+
+	}
+
 	if err != nil {
 		span.RecordError(err)
 		if e := errors.FromError(err); e != nil {

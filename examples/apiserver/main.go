@@ -12,6 +12,8 @@ import (
 	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/mysql"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/sqlserver"
+	"github.com/zhiyunliu/gel/middleware/ratelimit"
+	"github.com/zhiyunliu/gel/middleware/tracing"
 
 	_ "github.com/zhiyunliu/gel/contrib/dlocker/redis"
 
@@ -48,6 +50,9 @@ func main() {
 	apiSrv.Handle("/queue", demos.NewQueue())
 	apiSrv.Handle("/log", demos.NewLogDemo())
 	apiSrv.Handle("/rpc", demos.NewGrpcDemo())
+
+	apiSrv.Use(ratelimit.Server())
+	apiSrv.Use(tracing.Server())
 
 	app := gel.NewApp(gel.Server(apiSrv))
 	app.Start()

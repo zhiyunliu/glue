@@ -3,7 +3,7 @@ package context
 type Request interface {
 	GetMethod() string
 	GetClientIP() string
-	Header() map[string]string
+	Header() Header
 	GetHeader(key string) string
 	SetHeader(key, val string)
 	Path() Path

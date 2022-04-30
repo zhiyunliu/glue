@@ -1,89 +1,41 @@
 package tracing
 
 import (
-	"context"
 	"net"
 	"net/url"
 	"strings"
 
+	"github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/gel/metadata"
-	"github.com/zhiyunliu/gel/transport"
-	"github.com/zhiyunliu/gel/transport/http"
 
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/proto"
 )
-
-func setClientSpan(ctx context.Context, span trace.Span, m interface{}) {
-	attrs := []attribute.KeyValue{}
-	var remote string
-	var operation string
-	var rpcKind string
-	if tr, ok := transport.FromClientContext(ctx); ok {
-		operation = tr.Operation()
-		rpcKind = tr.Kind().String()
-		if tr.Kind() == transport.KindHTTP {
-			if ht, ok := tr.(http.Transporter); ok {
-				method := ht.Request().Method
-				route := ht.PathTemplate()
-				path := ht.Request().URL.Path
-				attrs = append(attrs, semconv.HTTPMethodKey.String(method))
-				attrs = append(attrs, semconv.HTTPRouteKey.String(route))
-				attrs = append(attrs, semconv.HTTPTargetKey.String(path))
-				remote = ht.Request().Host
-			}
-		} else if tr.Kind() == transport.KindGRPC {
-			remote, _ = parseTarget(tr.Endpoint())
-		}
-	}
-	attrs = append(attrs, semconv.RPCSystemKey.String(rpcKind))
-	_, mAttrs := parseFullMethod(operation)
-	attrs = append(attrs, mAttrs...)
-	if remote != "" {
-		attrs = append(attrs, peerAttr(remote)...)
-	}
-	if p, ok := m.(proto.Message); ok {
-		attrs = append(attrs, attribute.Key("send_msg.size").Int(proto.Size(p)))
-	}
-
-	span.SetAttributes(attrs...)
-}
 
 func setServerSpan(ctx context.Context, span trace.Span, m interface{}) {
 	attrs := []attribute.KeyValue{}
 	var remote string
 	var operation string
-	var rpcKind string
-	if tr, ok := transport.FromServerContext(ctx); ok {
-		operation = tr.Operation()
-		rpcKind = tr.Kind().String()
-		if tr.Kind() == transport.KindHTTP {
-			if ht, ok := tr.(http.Transporter); ok {
-				method := ht.Request().Method
-				route := ht.PathTemplate()
-				path := ht.Request().URL.Path
-				attrs = append(attrs, semconv.HTTPMethodKey.String(method))
-				attrs = append(attrs, semconv.HTTPRouteKey.String(route))
-				attrs = append(attrs, semconv.HTTPTargetKey.String(path))
-				remote = ht.Request().RemoteAddr
-			}
-		} else if tr.Kind() == transport.KindGRPC {
-			if p, ok := peer.FromContext(ctx); ok {
-				remote = p.Addr.String()
-			}
-		}
-	}
-	attrs = append(attrs, semconv.RPCSystemKey.String(rpcKind))
+	serverType := ctx.ServerType()
+
+	method := ctx.Request().GetMethod()
+	route := ctx.Request().Path().FullPath()
+	path := ctx.Request().Path().GetURL().Path
+	attrs = append(attrs, semconv.HTTPMethodKey.String(method))
+	attrs = append(attrs, semconv.HTTPRouteKey.String(route))
+	attrs = append(attrs, semconv.HTTPTargetKey.String(path))
+	remote = ctx.Request().GetClientIP()
+
+	attrs = append(attrs, semconv.RPCSystemKey.String(serverType))
 	_, mAttrs := parseFullMethod(operation)
 	attrs = append(attrs, mAttrs...)
 	attrs = append(attrs, peerAttr(remote)...)
 	if p, ok := m.(proto.Message); ok {
 		attrs = append(attrs, attribute.Key("recv_msg.size").Int(proto.Size(p)))
 	}
-	if md, ok := metadata.FromServerContext(ctx); ok {
+	if md, ok := metadata.FromServerContext(ctx.Context()); ok {
 		attrs = append(attrs, semconv.PeerServiceKey.String(md.Get(serviceHeader)))
 	}
 

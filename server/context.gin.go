@@ -110,7 +110,7 @@ func (ctx *GinContext) GetImpl() interface{} {
 
 type ginRequest struct {
 	gctx    *gin.Context
-	gheader map[string]string
+	gheader xtypes.SMap
 	gpath   *gpath
 	gquery  *gquery
 	gbody   *gbody
@@ -125,7 +125,7 @@ func (r *ginRequest) GetClientIP() string {
 	return r.gctx.ClientIP()
 }
 
-func (r *ginRequest) Header() map[string]string {
+func (r *ginRequest) Header() vctx.Header {
 	if r.gheader == nil {
 		r.gheader = map[string]string{}
 		gheader := r.gctx.Request.Header

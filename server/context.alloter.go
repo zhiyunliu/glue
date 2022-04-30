@@ -127,8 +127,8 @@ func (r *alloterRequest) GetClientIP() string {
 	return r.actx.ClientIP()
 }
 
-func (r *alloterRequest) Header() map[string]string {
-	return r.actx.Request.GetHeader()
+func (r *alloterRequest) Header() vctx.Header {
+	return xtypes.SMap(r.actx.Request.GetHeader())
 }
 
 func (r *alloterRequest) GetHeader(key string) string {
