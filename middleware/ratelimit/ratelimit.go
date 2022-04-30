@@ -35,6 +35,19 @@ func Server(opts ...Option) middleware.Middleware {
 	for _, o := range opts {
 		o(options)
 	}
+	return serverByOption(options)
+}
+
+func serverByConfig(cfg *Config) middleware.Middleware {
+	options := &options{
+		limiter: bbr.NewLimiter(),
+	}
+	return serverByOption(options)
+}
+
+// Server ratelimiter middleware
+func serverByOption(options *options) middleware.Middleware {
+
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			done, e := options.limiter.Allow()

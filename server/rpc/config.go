@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"github.com/zhiyunliu/gel/middleware"
 	"github.com/zhiyunliu/gel/server"
 )
 
@@ -16,7 +17,7 @@ const Type string = "rpc"
 
 type Setting struct {
 	Config      Config              `json:"config" yaml:"config"`
-	Middlewares []server.Middleware `json:"middlewares"  yaml:"middlewares"`
+	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
 }
 
 type Config struct {

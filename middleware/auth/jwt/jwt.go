@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"fmt"
 	"strings"
 
 	sysctx "context"
@@ -50,30 +49,12 @@ type Option func(*options)
 // Parser is a jwt parser
 type options struct {
 	signingMethod jwt.SigningMethod
-	claims        func() jwt.Claims
-	tokenHeader   map[string]interface{}
 }
 
 // WithSigningMethod with signing method option.
 func WithSigningMethod(method jwt.SigningMethod) Option {
 	return func(o *options) {
 		o.signingMethod = method
-	}
-}
-
-// WithClaims with customer claim
-// If you use it in Server, f needs to return a new jwt.Claims object each time to avoid concurrent write problems
-// If you use it in Client, f only needs to return a single object to provide performance
-func WithClaims(f func() jwt.Claims) Option {
-	return func(o *options) {
-		o.claims = f
-	}
-}
-
-// WithTokenHeader withe customer tokenHeader for client side
-func WithTokenHeader(header map[string]interface{}) Option {
-	return func(o *options) {
-		o.tokenHeader = header
 	}
 }
 
@@ -102,11 +83,9 @@ func Server(keyFunc jwt.Keyfunc, opts ...Option) middleware.Middleware {
 				tokenInfo *jwt.Token
 				err       error
 			)
-			if o.claims != nil {
-				tokenInfo, err = jwt.ParseWithClaims(jwtToken, o.claims(), keyFunc)
-			} else {
-				tokenInfo, err = jwt.Parse(jwtToken, keyFunc)
-			}
+
+			tokenInfo, err = jwt.Parse(jwtToken, keyFunc)
+
 			if err != nil {
 				if ve, ok := err.(*jwt.ValidationError); ok {
 					if ve.Errors&jwt.ValidationErrorMalformed != 0 {
@@ -127,41 +106,6 @@ func Server(keyFunc jwt.Keyfunc, opts ...Option) middleware.Middleware {
 			return handler(ctx)
 		}
 
-	}
-}
-
-// Client is a client jwt middleware.
-func Client(keyProvider jwt.Keyfunc, opts ...Option) middleware.Middleware {
-	claims := jwt.RegisteredClaims{}
-	o := &options{
-		signingMethod: jwt.SigningMethodHS256,
-		claims:        func() jwt.Claims { return claims },
-	}
-	for _, opt := range opts {
-		opt(o)
-	}
-	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context) (reply interface{}) {
-			if keyProvider == nil {
-				return ErrNeedTokenProvider
-			}
-			token := jwt.NewWithClaims(o.signingMethod, o.claims())
-			if o.tokenHeader != nil {
-				for k, v := range o.tokenHeader {
-					token.Header[k] = v
-				}
-			}
-			key, err := keyProvider(token)
-			if err != nil {
-				return ErrGetKey
-			}
-			tokenStr, err := token.SignedString(key)
-			if err != nil {
-				return ErrSignToken
-			}
-			ctx.Request().SetHeader(authorizationKey, fmt.Sprintf(bearerFormat, tokenStr))
-			return handler(ctx)
-		}
 	}
 }
 

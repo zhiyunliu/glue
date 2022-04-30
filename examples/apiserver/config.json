@@ -51,9 +51,9 @@
 	},
     "servers":{
 		"api":{
-			"config":{"addr":":8080","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65525},
-			"middlewares":[],			
-			"header":{}
+			"config":{"addr":":8080","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65535},
+			"middlewares":[{"name":"jwt","data":{"secret":"123456789","method":"sha256","expire":"3600","excludes":["/a/**","/demo/**"]}}],			
+			"header":{"a":"1","b":"2"}
 		}
     }
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/zhiyunliu/gel/middleware"
 	"github.com/zhiyunliu/gel/server"
 )
 
@@ -20,7 +21,7 @@ import (
 ```*/
 type Setting struct {
 	Config      Config              `json:"config" yaml:"config"`
-	Middlewares []server.Middleware `json:"middlewares"  yaml:"middlewares"`
+	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
 	Header      server.Header       `json:"header"  yaml:"header"`
 }
 

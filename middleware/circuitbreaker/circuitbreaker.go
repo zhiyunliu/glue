@@ -6,7 +6,7 @@ import (
 	"github.com/go-kratos/aegis/circuitbreaker"
 	"github.com/go-kratos/aegis/circuitbreaker/sre"
 	"github.com/zhiyunliu/gel/errors"
-	"github.com/zhiyunliu/gel/internal/group"
+	"github.com/zhiyunliu/gel/golibs/group"
 	"github.com/zhiyunliu/gel/middleware"
 	"github.com/zhiyunliu/gel/transport"
 )

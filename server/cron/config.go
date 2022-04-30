@@ -2,6 +2,7 @@ package cron
 
 import (
 	"github.com/zhiyunliu/gel/metadata"
+	"github.com/zhiyunliu/gel/middleware"
 	"github.com/zhiyunliu/gel/server"
 	"github.com/zhiyunliu/golibs/xsecurity/md5"
 )
@@ -18,7 +19,7 @@ const Type string = "cron"
 
 type Setting struct {
 	Config      Config              `json:"config" yaml:"config"`
-	Middlewares []server.Middleware `json:"middlewares"  yaml:"middlewares"`
+	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
 	Jobs        []*Job              `json:"jobs"  yaml:"jobs"`
 }
 

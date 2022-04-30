@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/zhiyunliu/gel/metadata"
+	"github.com/zhiyunliu/gel/middleware"
 	"github.com/zhiyunliu/gel/server"
 )
 
@@ -20,7 +21,7 @@ const Type string = "mqc"
 
 type Setting struct {
 	Config      Config              `json:"config" yaml:"config"`
-	Middlewares []server.Middleware `json:"middlewares"  yaml:"middlewares"`
+	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
 	Tasks       []*Task             `json:"tasks"  yaml:"tasks"`
 }
 

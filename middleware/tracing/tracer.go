@@ -19,18 +19,13 @@ type Tracer struct {
 }
 
 // NewTracer create tracer instance
-func NewTracer(kind trace.SpanKind, opts ...Option) *Tracer {
-	op := options{
-		propagator: propagation.NewCompositeTextMapPropagator(Metadata{}, propagation.Baggage{}, propagation.TraceContext{}),
-	}
-	for _, o := range opts {
-		o(&op)
-	}
+func NewTracer(kind trace.SpanKind, op *options) *Tracer {
+
 	if op.tracerProvider != nil {
 		otel.SetTracerProvider(op.tracerProvider)
 	}
 
-	return &Tracer{tracer: otel.Tracer("gel"), kind: kind, opt: &op}
+	return &Tracer{tracer: otel.Tracer("gel"), kind: kind, opt: op}
 
 }
 

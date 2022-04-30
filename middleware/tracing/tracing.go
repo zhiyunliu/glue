@@ -32,9 +32,28 @@ func WithTracerProvider(provider trace.TracerProvider) Option {
 	}
 }
 
-// Server returns a new server middleware for OpenTelemetry.
+// Server ratelimiter middleware
 func Server(opts ...Option) middleware.Middleware {
-	tracer := NewTracer(trace.SpanKindServer, opts...)
+	options := &options{
+		propagator: propagation.NewCompositeTextMapPropagator(Metadata{}, propagation.Baggage{}, propagation.TraceContext{}),
+	}
+	for _, o := range opts {
+		o(options)
+	}
+	return serverByOption(options)
+}
+
+func serverByConfig(cfg *Config) middleware.Middleware {
+	options := &options{
+		propagator: propagation.NewCompositeTextMapPropagator(Metadata{}, propagation.Baggage{}, propagation.TraceContext{}),
+	}
+	return serverByOption(options)
+}
+
+// Server ratelimiter middleware
+func serverByOption(options *options) middleware.Middleware {
+
+	tracer := NewTracer(trace.SpanKindServer, options)
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			if _, ok := transport.FromServerContext(ctx.Context()); ok {

@@ -57,8 +57,16 @@ func NewRouterGroup(basePath string) *RouterGroup {
 }
 
 // Use adds middleware to the group, see example code in GitHub.
-func (group *RouterGroup) Use(middleware ...middleware.Middleware) {
-	group.middlewares = append(group.middlewares, middleware...)
+func (group *RouterGroup) Use(middlewares ...middleware.Middleware) *RouterGroup {
+	newmids := make([]middleware.Middleware, 0)
+	for i := range middlewares {
+		if middlewares[i] != nil {
+			newmids = append(newmids, middlewares[i])
+		}
+	}
+
+	group.middlewares = append(group.middlewares, newmids...)
+	return group
 }
 
 // Group creates a new router group. You should add all the routes that have common middlewares or the same path prefix.

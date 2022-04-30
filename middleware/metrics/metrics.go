@@ -35,12 +35,23 @@ type options struct {
 	seconds metrics.Observer
 }
 
-// Server is middleware server-side metrics.
 func Server(opts ...Option) middleware.Middleware {
 	op := options{}
 	for _, o := range opts {
 		o(&op)
 	}
+	return serverByOptions(&op)
+}
+
+func serverByConfig(cfg *Config) middleware.Middleware {
+	op := options{}
+
+	return serverByOptions(&op)
+}
+
+// Server is middleware server-side metrics.
+func serverByOptions(op *options) middleware.Middleware {
+
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			var (

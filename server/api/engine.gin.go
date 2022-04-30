@@ -3,6 +3,9 @@ package api
 import (
 	"net/http"
 
+	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/gel/middleware"
+
 	"github.com/gin-gonic/gin"
 	"github.com/zhiyunliu/gel/global"
 	"github.com/zhiyunliu/gel/server"
@@ -17,11 +20,21 @@ func (e *Server) registryEngineRoute() {
 		server.WithSrvName(e.Name()),
 		server.WithErrorEncoder(e.opts.encErr),
 		server.WithRequestDecoder(e.opts.decReq),
-		server.WithResponseEncoder(e.opts.encResp))
+
+		server.WithResponseEncoder(func(ctx context.Context, resp interface{}) error {
+			for k, v := range e.opts.setting.Header {
+				ctx.Response().Header(k, v)
+			}
+			return e.opts.encResp(ctx, resp)
+		}))
 
 	engine.Handle(http.MethodGet, "/healthcheck", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "success")
 	})
+
+	for _, m := range e.opts.setting.Middlewares {
+		e.opts.router.Use(middleware.Resolve(&m))
+	}
 
 	server.RegistryEngineRoute(adapterEngine, e.opts.router)
 }
