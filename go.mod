@@ -22,6 +22,8 @@ require (
 	github.com/urfave/cli v1.22.5
 	github.com/zhiyunliu/golibs v0.0.0-00010101000000-000000000000
 	go.opentelemetry.io/otel v1.7.0
+	go.opentelemetry.io/otel/exporters/jaeger v1.7.0
+	go.opentelemetry.io/otel/sdk v1.7.0
 	go.opentelemetry.io/otel/trace v1.7.0
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.26.0

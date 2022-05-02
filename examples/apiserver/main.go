@@ -12,13 +12,13 @@ import (
 	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/mysql"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/sqlserver"
+	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/gel/middleware/auth/jwt"
 	"github.com/zhiyunliu/gel/middleware/ratelimit"
 	"github.com/zhiyunliu/gel/middleware/tracing"
 
 	_ "github.com/zhiyunliu/gel/contrib/dlocker/redis"
 
-	ojwt "github.com/golang-jwt/jwt/v4"
 	"github.com/zhiyunliu/gel/errors"
 	"github.com/zhiyunliu/gel/examples/apiserver/demos"
 	"github.com/zhiyunliu/gel/server/api"
@@ -53,11 +53,15 @@ func main() {
 	apiSrv.Handle("/log", demos.NewLogDemo())
 	apiSrv.Handle("/rpc", demos.NewGrpcDemo())
 
-	apiSrv.Use(jwt.Server(func(*ojwt.Token) (interface{}, error) {
-		return []byte("123456"), nil
-	}))
+	provider, err := newTracerProvider("", "")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	apiSrv.Use(jwt.Server(jwt.WithSecret("123456")))
 	apiSrv.Use(ratelimit.Server())
-	apiSrv.Use(tracing.Server())
+	apiSrv.Use(tracing.Server(tracing.WithTracerProvider(provider)))
 
 	app := gel.NewApp(gel.Server(apiSrv))
 	app.Start()
