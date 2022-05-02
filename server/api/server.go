@@ -149,3 +149,11 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *serv
 func (e *Server) Handle(path string, obj interface{}, methods ...server.Method) {
 	e.opts.router.Handle(path, obj, methods...)
 }
+
+func (e *Server) StaticFile(path, filepath string) {
+	e.opts.static[path] = Static{RouterPath: path, FilePath: filepath, IsFile: true}
+}
+
+func (e *Server) Static(path, root string) {
+	e.opts.static[path] = Static{RouterPath: path, FilePath: root, IsFile: false}
+}

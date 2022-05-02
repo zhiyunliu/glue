@@ -59,6 +59,17 @@ func (ctx *GinContext) ResetContext(nctx context.Context) {
 	ctx.Gctx.Request = req
 }
 
+func (ctx *GinContext) Bind(obj interface{}) error {
+	err := ctx.Request().Body().Scan(obj)
+	if err != nil {
+		return err
+	}
+	if chr, ok := obj.(IChecker); ok {
+		return chr.Check()
+	}
+	return nil
+}
+
 func (ctx *GinContext) Header(key string) string {
 	return ctx.Gctx.GetHeader(key)
 }

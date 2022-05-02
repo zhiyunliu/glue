@@ -36,5 +36,12 @@ func (e *Server) registryEngineRoute() {
 		e.opts.router.Use(middleware.Resolve(&m))
 	}
 
+	for _, s := range e.opts.static {
+		if s.IsFile {
+			engine.StaticFile(s.RouterPath, s.FilePath)
+		} else {
+			engine.Static(s.RouterPath, s.FilePath)
+		}
+	}
 	server.RegistryEngineRoute(adapterEngine, e.opts.router)
 }

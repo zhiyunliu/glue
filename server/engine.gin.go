@@ -23,7 +23,6 @@ func NewGinEngine(engine *gin.Engine, opts ...Option) *GinEngine {
 	for i := range opts {
 		opts[i](g.opts)
 	}
-
 	g.pool.New = func() interface{} {
 		return newGinContext(g.opts)
 	}

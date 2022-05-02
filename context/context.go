@@ -14,6 +14,7 @@ type Context interface {
 	Context() context.Context
 	Header(key string) string
 	Request() Request
+	Bind(interface{}) error
 	Response() Response
 	Log() log.Logger
 	Close()

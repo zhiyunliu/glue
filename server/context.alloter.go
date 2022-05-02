@@ -63,6 +63,17 @@ func (ctx *AlloterContext) Header(key string) string {
 	return ctx.Actx.GetHeader(key)
 }
 
+func (ctx *AlloterContext) Bind(obj interface{}) error {
+	err := ctx.Request().Body().Scan(obj)
+	if err != nil {
+		return err
+	}
+	if chr, ok := obj.(IChecker); ok {
+		return chr.Check()
+	}
+	return nil
+}
+
 func (ctx *AlloterContext) Request() vctx.Request {
 	if ctx.areq.closed {
 		ctx.areq.closed = false

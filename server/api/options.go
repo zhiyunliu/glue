@@ -15,6 +15,7 @@ type options struct {
 	config  config.Config
 	handler http.Handler
 	router  *server.RouterGroup
+	static  map[string]Static
 	decReq  server.DecodeRequestFunc
 	encResp server.EncodeResponseFunc
 	encErr  server.EncodeErrorFunc
@@ -26,6 +27,7 @@ type options struct {
 func setDefaultOption() *options {
 	return &options{
 		setting:      &Setting{},
+		static:       make(map[string]Static),
 		startedHooks: make([]server.Hook, 0),
 		endHooks:     make([]server.Hook, 0),
 		decReq:       server.DefaultRequestDecoder,
