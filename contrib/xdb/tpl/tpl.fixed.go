@@ -2,8 +2,17 @@ package tpl
 
 //FixedContext  模板
 type FixedContext struct {
-	name   string
-	prefix string
+	name    string
+	prefix  string
+	symbols Symbols
+}
+
+func NewFixed(name, prefix string) SQLTemplate {
+	return &FixedContext{
+		name:    name,
+		prefix:  prefix,
+		symbols: defaultSymbols,
+	}
 }
 
 func (ctx FixedContext) Name() string {
@@ -19,6 +28,6 @@ func (ctx *FixedContext) Placeholder() Placeholder {
 	return func() string { return ctx.prefix }
 }
 
-func (ctx *FixedContext) analyzeTPL(tpl string, input map[string]interface{}) (sql string, params []interface{}, names []string) {
-	return defaultAnalyze(tpl, input, ctx.Placeholder())
+func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}) (sql string, names []string, values []interface{}) {
+	return DefaultAnalyze(ctx.symbols, tpl, input, ctx.Placeholder())
 }

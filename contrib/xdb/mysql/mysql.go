@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/zhiyunliu/gel/config"
 	contribxdb "github.com/zhiyunliu/gel/contrib/xdb"
+	"github.com/zhiyunliu/gel/contrib/xdb/tpl"
 	"github.com/zhiyunliu/gel/xdb"
 )
 
@@ -28,4 +29,6 @@ func (s *mysqlResolver) Resolve(setting config.Config) (xdb.IDB, error) {
 }
 func init() {
 	xdb.Register(&mysqlResolver{})
+	tpl.Register(tpl.NewFixed(Proto, "?"))
+
 }

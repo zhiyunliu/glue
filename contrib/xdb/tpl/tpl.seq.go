@@ -6,8 +6,17 @@ import (
 
 //SeqContext 参数化时使用@+参数名作为占位符的SQL数据库如:oracle,sql server
 type SeqContext struct {
-	name   string
-	prefix string
+	name    string
+	prefix  string
+	symbols Symbols
+}
+
+func NewSeq(name, prefix string) SQLTemplate {
+	return &FixedContext{
+		name:    name,
+		prefix:  prefix,
+		symbols: defaultSymbols,
+	}
 }
 
 func (ctx SeqContext) Name() string {
@@ -28,6 +37,6 @@ func (ctx *SeqContext) Placeholder() Placeholder {
 	return f
 }
 
-func (ctx *SeqContext) analyzeTPL(tpl string, input map[string]interface{}) (sql string, params []interface{}, names []string) {
-	return defaultAnalyze(tpl, input, ctx.Placeholder())
+func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}) (sql string, names []string, values []interface{}) {
+	return DefaultAnalyze(ctx.symbols, tpl, input, ctx.Placeholder())
 }

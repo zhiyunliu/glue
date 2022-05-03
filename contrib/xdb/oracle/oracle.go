@@ -6,6 +6,7 @@ import (
 	_ "github.com/mattn/go-oci8"
 	"github.com/zhiyunliu/gel/config"
 	contribxdb "github.com/zhiyunliu/gel/contrib/xdb"
+	"github.com/zhiyunliu/gel/contrib/xdb/tpl"
 	"github.com/zhiyunliu/gel/xdb"
 )
 
@@ -28,4 +29,6 @@ func (s *oracleResolver) Resolve(setting config.Config) (xdb.IDB, error) {
 }
 func init() {
 	xdb.Register(&oracleResolver{})
+	tpl.Register(tpl.NewSeq(Proto, ":"))
+
 }

@@ -13,6 +13,7 @@ require (
 	github.com/hashicorp/consul/api v1.12.0
 	github.com/imdario/mergo v0.3.12
 	github.com/kardianos/service v1.2.1
+	github.com/lib/pq v1.10.5
 	github.com/mattn/go-oci8 v0.1.1
 	github.com/mattn/go-sqlite3 v1.14.12
 	github.com/nacos-group/nacos-sdk-go v1.1.0
