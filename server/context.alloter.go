@@ -15,9 +15,9 @@ import (
 )
 
 type AlloterContext struct {
-	Actx *alloter.Context
-	opts *options
-
+	Actx   *alloter.Context
+	opts   *options
+	meta   map[string]interface{}
 	areq   *alloterRequest
 	aresp  *alloterResponse
 	logger log.Logger
@@ -26,6 +26,7 @@ type AlloterContext struct {
 func newAlloterContext(opts *options) *AlloterContext {
 	return &AlloterContext{
 		opts: opts,
+		meta: make(map[string]interface{}),
 		areq: &alloterRequest{
 			closed: true,
 			apath:  &apath{closed: true},
@@ -50,6 +51,9 @@ func (ctx *AlloterContext) ServerName() string {
 	return ctx.opts.SrvName
 }
 
+func (ctx *AlloterContext) Meta() map[string]interface{} {
+	return ctx.meta
+}
 func (ctx *AlloterContext) Context() context.Context {
 	return ctx.Actx.Request.Context()
 }
@@ -112,7 +116,7 @@ func (ctx *AlloterContext) Close() {
 	ctx.areq.Close()
 	ctx.aresp.Close()
 	ctx.Actx = nil
-
+	ctx.meta = make(map[string]interface{})
 	if ctx.logger != nil {
 		ctx.logger.Close()
 	}

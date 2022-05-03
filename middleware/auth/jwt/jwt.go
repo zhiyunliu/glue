@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -101,7 +102,13 @@ func serverByOptions(opts *options) middleware.Middleware {
 			isMatch, _ := excludeMatch.Match(path, "/")
 			if isMatch {
 				//是排除路径，不进行jwt检查
-				return handler(ctx)
+				reply = handler(ctx)
+				if tmpdata, ok := ctx.Meta()["jwt_data"]; ok {
+					if data, ok := tmpdata.(map[string]interface{}); ok {
+						write(ctx, opts, data)
+					}
+				}
+				return reply
 			}
 
 			if keyFunc == "" {
@@ -177,4 +184,17 @@ func Sign(signingMethod string, secret string, data map[string]interface{}, time
 	method := jwt.GetSigningMethod(signingMethod)
 	token := jwt.NewWithClaims(method, claims)
 	return token.SignedString([]byte(secret))
+}
+
+func write(ctx context.Context, opts *options, data map[string]interface{}) error {
+	tokenVal, err := Sign(opts.signingMethod.Alg(), opts.Secret, data, int64(opts.Expire))
+	if err != nil {
+		return err
+	}
+	ctx.Response().Header(authorizationKey, fmt.Sprintf("%s %s", bearerWord, tokenVal))
+	return nil
+}
+
+func Write(ctx context.Context, data map[string]interface{}) {
+	ctx.Meta()["jwt_data"] = data
 }

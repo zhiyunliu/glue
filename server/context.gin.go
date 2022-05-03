@@ -19,6 +19,7 @@ import (
 
 type GinContext struct {
 	opts   *options
+	meta   map[string]interface{}
 	Gctx   *gin.Context
 	greq   *ginRequest
 	gresp  *ginResponse
@@ -35,6 +36,7 @@ func newGinContext(opts *options) *GinContext {
 			gbody:  &gbody{closed: true},
 		},
 		gresp: &ginResponse{closed: true},
+		meta:  make(map[string]interface{}),
 	}
 }
 
@@ -49,7 +51,9 @@ func (ctx *GinContext) ServerType() string {
 func (ctx *GinContext) ServerName() string {
 	return ctx.opts.SrvName
 }
-
+func (ctx *GinContext) Meta() map[string]interface{} {
+	return ctx.meta
+}
 func (ctx *GinContext) Context() context.Context {
 	return ctx.Gctx.Request.Context()
 }
@@ -110,6 +114,7 @@ func (ctx *GinContext) Close() {
 	ctx.greq.Close()
 	ctx.gresp.Close()
 	ctx.Gctx = nil
+	ctx.meta = make(map[string]interface{})
 
 	if ctx.logger != nil {
 		ctx.logger.Close()

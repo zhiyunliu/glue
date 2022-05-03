@@ -16,6 +16,7 @@ type Context interface {
 	Request() Request
 	Bind(interface{}) error
 	Response() Response
+	Meta() map[string]interface{}
 	Log() log.Logger
 	Close()
 }
