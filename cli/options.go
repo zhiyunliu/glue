@@ -19,9 +19,7 @@ import (
 // }
 
 type Options struct {
-	Id string
-	// Name      string
-	// Version   string
+	Id        string
 	Metadata  map[string]string
 	Endpoints []*url.URL
 
@@ -31,6 +29,7 @@ type Options struct {
 	StopTimeout      time.Duration
 	Servers          []transport.Server
 
+	setting  *appSetting
 	initFile string
 }
 
@@ -57,8 +56,50 @@ func Server(srv ...transport.Server) Option {
 	return func(o *Options) { o.Servers = srv }
 }
 
+//WithAppMode
+func WithAppMode(mode AppMode) Option {
+	return func(o *Options) {
+		o.setting.Mode = mode
+	}
+}
+
+//IpMask
+func IpMask(mask string) Option {
+	return func(o *Options) {
+		o.setting.IpMask = mask
+	}
+}
+
+//TraceAddr
+func TraceAddr(addr string) Option {
+	return func(o *Options) {
+		o.setting.TraceAddr = addr
+	}
+}
+
+// ServiceOption
+func ServiceOption(key string, val interface{}) Option {
+	return func(o *Options) {
+		o.setting.Options[key] = val
+	}
+}
+
+// ServiceDependencies
+func ServiceDependencies(dependencies ...string) Option {
+	return func(o *Options) {
+		o.setting.Dependencies = dependencies
+	}
+}
+
+type AppMode string
+
+const (
+	Debug   AppMode = "debug"
+	Release AppMode = "release"
+)
+
 type appSetting struct {
-	Mode         string                 `json:"mode"`
+	Mode         AppMode                `json:"mode"`
 	TraceAddr    string                 `json:"trace_addr"`
 	IpMask       string                 `json:"ip_mask"`
 	Dependencies []string               `json:"dependencies"`

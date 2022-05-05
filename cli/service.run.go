@@ -11,8 +11,6 @@ import (
 	"github.com/zhiyunliu/golibs/xlog"
 )
 
-var _defaultTraceAddr = ":56060"
-
 func (p *ServiceApp) run() (err error) {
 
 	if p.cliCtx.Bool("nostd") {
@@ -53,10 +51,7 @@ func (p *ServiceApp) apprun(ctx context.Context) error {
 func (p *ServiceApp) startTraceServer() error {
 	errChan := make(chan error)
 	go func() {
-		if p.setting.TraceAddr == "" {
-			p.setting.TraceAddr = _defaultTraceAddr
-		}
-		lsr, err := net.Listen("tcp", p.setting.TraceAddr)
+		lsr, err := net.Listen("tcp", p.options.setting.TraceAddr)
 		if err != nil {
 			errChan <- err
 			log.Errorf("start trace server listen error:%+v", err)

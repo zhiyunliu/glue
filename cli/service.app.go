@@ -21,7 +21,9 @@ import (
 )
 
 var (
-	_appmode = "release"
+	_defaultAppmode   AppMode = Release
+	_defaultTraceAddr         = ":56060"
+	_defaultIpMask            = "192.168"
 )
 
 type AppService struct {
@@ -68,24 +70,19 @@ func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 		DisplayName:  global.DisplayName,
 		Description:  global.Usage,
 		Arguments:    args,
-		Dependencies: app.setting.Dependencies,
+		Dependencies: app.options.setting.Dependencies,
 	}
 	cfg.WorkingDirectory = filepath.Dir(path)
-	cfg.Option = app.setting.Options
+	cfg.Option = app.options.setting.Options
 	return cfg
 }
 
 //GetSrvApp SrvCfg
 func GetSrvApp(c *cli.Context) *ServiceApp {
 	opts := c.App.Metadata[options_key].(*Options)
-
 	app := &ServiceApp{
 		cliCtx:  c,
 		options: opts,
-		setting: &appSetting{
-			Mode:   _appmode,
-			IpMask: "",
-		},
 	}
 	return app
 }
@@ -95,7 +92,6 @@ type ServiceApp struct {
 	cliCtx     *cli.Context
 	options    *Options
 	cancelFunc context.CancelFunc
-	setting    *appSetting
 	instance   *registry.ServiceInstance
 	svcCtx     context.Context
 }
@@ -120,8 +116,8 @@ func (app *ServiceApp) initApp() error {
 		return fmt.Errorf("-f 为必须参数")
 	}
 	if !xfile.Exists(app.options.initFile) {
-		global.Mode = app.setting.Mode
-		global.LocalIp = xnet.GetLocalIP(app.setting.IpMask)
+		global.Mode = string(app.options.setting.Mode)
+		global.LocalIp = xnet.GetLocalIP(app.options.setting.IpMask)
 		return nil
 	}
 
@@ -139,12 +135,12 @@ func (app *ServiceApp) initApp() error {
 }
 
 func (app *ServiceApp) loadAppSetting() error {
-	err := app.options.Config.Value("app").Scan(app.setting)
+	err := app.options.Config.Value("app").Scan(app.options.setting)
 	if err != nil {
 		return fmt.Errorf("获取app配置出错:%+v", err)
 	}
-	global.Mode = app.setting.Mode
-	global.LocalIp = xnet.GetLocalIP(app.setting.IpMask)
+	global.Mode = string(app.options.setting.Mode)
+	global.LocalIp = xnet.GetLocalIP(app.options.setting.IpMask)
 	return nil
 }
 

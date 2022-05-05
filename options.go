@@ -24,6 +24,13 @@ var ID = cli.ID
 
 // var Name = cli.Name
 // var Version = cli.Version
-var Metadata = cli.Metadata
-var Endpoint = cli.Endpoint
-var Server = cli.Server
+var (
+	Metadata            = cli.Metadata
+	Endpoint            = cli.Endpoint
+	Server              = cli.Server
+	AppMode             = cli.WithAppMode
+	IpMask              = cli.IpMask
+	TraceAddr           = cli.TraceAddr
+	ServiceDependencies = cli.ServiceDependencies
+	ServiceOption       = cli.ServiceOption
+)
