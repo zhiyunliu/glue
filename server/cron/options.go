@@ -22,7 +22,11 @@ type options struct {
 
 func setDefaultOption() options {
 	return options{
-		setting: &Setting{},
+		setting: &Setting{
+			Config: Config{
+				Status: server.StatusStart,
+			},
+		},
 		decReq:  server.DefaultRequestDecoder,
 		encResp: server.DefaultResponseEncoder,
 		encErr:  server.DefaultErrorEncoder,

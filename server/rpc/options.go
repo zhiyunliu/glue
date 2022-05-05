@@ -1,6 +1,8 @@
 package rpc
 
 import (
+	"math"
+
 	"github.com/zhiyunliu/gel/config"
 	"github.com/zhiyunliu/gel/server"
 )
@@ -22,7 +24,14 @@ type options struct {
 
 func setDefaultOption() options {
 	return options{
-		setting: &Setting{},
+		setting: &Setting{
+			Config: Config{
+				Addr:           ":28080",
+				Status:         server.StatusStart,
+				MaxRecvMsgSize: math.MaxInt32,
+				MaxSendMsgSize: math.MaxInt32,
+			},
+		},
 		decReq:  server.DefaultRequestDecoder,
 		encResp: server.DefaultResponseEncoder,
 		encErr:  server.DefaultErrorEncoder,

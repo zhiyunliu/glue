@@ -51,6 +51,9 @@ func (e *Server) Type() string {
 }
 
 func (e *Server) Config(cfg config.Config) {
+	if cfg == nil {
+		return
+	}
 	e.Options(WithConfig(cfg))
 	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
 }

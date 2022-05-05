@@ -24,8 +24,7 @@ type Setting struct {
 }
 
 type Config struct {
-	Status   server.Status `json:"status"`
-	Sharding int           `json:"sharding"`
+	Status server.Status `json:"status"`
 }
 
 type Job struct {

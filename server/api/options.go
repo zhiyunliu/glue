@@ -1,6 +1,7 @@
 package api
 
 import (
+	"math"
 	"net/http"
 
 	"github.com/zhiyunliu/gel/config"
@@ -26,7 +27,16 @@ type options struct {
 
 func setDefaultOption() *options {
 	return &options{
-		setting:      &Setting{},
+		setting: &Setting{
+			Config: Config{
+				Addr:              ":8080",
+				Status:            server.StatusStart,
+				ReadTimeout:       10,
+				WriteTimeout:      10,
+				ReadHeaderTimeout: 10,
+				MaxHeaderBytes:    math.MaxInt,
+			},
+		},
 		static:       make(map[string]Static),
 		startedHooks: make([]server.Hook, 0),
 		endHooks:     make([]server.Hook, 0),

@@ -22,7 +22,12 @@ type options struct {
 
 func setDefaultOption() options {
 	return options{
-		setting: &Setting{},
+		setting: &Setting{
+			Config: Config{
+				Status: server.StatusStart,
+				Addr:   "queues://default",
+			},
+		},
 		decReq:  server.DefaultRequestDecoder,
 		encResp: server.DefaultResponseEncoder,
 		encErr:  server.DefaultErrorEncoder,

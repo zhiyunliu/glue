@@ -51,6 +51,7 @@ func (p *ServiceApp) apprun(ctx context.Context) error {
 func (p *ServiceApp) startTraceServer() error {
 	errChan := make(chan error)
 	go func() {
+		log.Infof("trace addr:%s", p.options.setting.TraceAddr)
 		lsr, err := net.Listen("tcp", p.options.setting.TraceAddr)
 		if err != nil {
 			errChan <- err

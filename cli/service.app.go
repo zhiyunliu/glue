@@ -22,7 +22,7 @@ import (
 
 var (
 	_defaultAppmode   AppMode = Release
-	_defaultTraceAddr         = ":56060"
+	_defaultTraceAddr         = ":18081"
 	_defaultIpMask            = "192.168"
 )
 
@@ -112,6 +112,7 @@ func (p *ServiceApp) Endpoint() []string {
 }
 
 func (app *ServiceApp) initApp() error {
+
 	if app.options.initFile == "" {
 		return fmt.Errorf("-f 为必须参数")
 	}
@@ -145,6 +146,9 @@ func (app *ServiceApp) loadAppSetting() error {
 }
 
 func (app *ServiceApp) loadRegistry() error {
+	if app.options.Config == nil {
+		return nil
+	}
 
 	registrar, err := registry.GetRegistrar(app.options.Config)
 	if err != nil {
@@ -155,6 +159,9 @@ func (app *ServiceApp) loadRegistry() error {
 }
 
 func (app *ServiceApp) loadConfig() error {
+	if app.options.Config == nil {
+		return nil
+	}
 	newSource, err := config.GetConfig(app.options.Config)
 	if err != nil {
 		return fmt.Errorf("get source Error:%+v", err)
