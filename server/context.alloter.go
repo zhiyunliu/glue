@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/zhiyunliu/gel/constants"
 	vctx "github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/gel/contrib/alloter"
+	"github.com/zhiyunliu/gel/errors"
 	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
@@ -71,6 +74,10 @@ func (ctx *AlloterContext) Bind(obj interface{}) error {
 	err := ctx.Request().Body().Scan(obj)
 	if err != nil {
 		return err
+	}
+	//验证数据格式
+	if _, err := govalidator.ValidateStruct(obj); err != nil {
+		return errors.New(http.StatusNotAcceptable, fmt.Sprintf("输入参数有误:%v", err))
 	}
 	if chr, ok := obj.(IChecker); ok {
 		return chr.Check()
@@ -240,7 +247,7 @@ type aquery struct {
 func (q *aquery) Get(name string) string {
 	return q.reqUrl.Query().Get(name)
 }
-func (q *aquery) SMap() xtypes.SMap {
+func (q *aquery) Values() xtypes.SMap {
 	if q.params == nil {
 		vals := q.reqUrl.Query()
 		q.params = make(xtypes.SMap)
@@ -251,7 +258,7 @@ func (q *aquery) SMap() xtypes.SMap {
 	return q.params
 }
 func (q *aquery) Scan(obj interface{}) error {
-	return q.SMap().Scan(obj)
+	return q.Values().Scan(obj)
 }
 
 func (q *aquery) String() string {

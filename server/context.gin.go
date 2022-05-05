@@ -5,10 +5,13 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/zhiyunliu/gel/constants"
+	"github.com/zhiyunliu/gel/errors"
 	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
@@ -67,6 +70,10 @@ func (ctx *GinContext) Bind(obj interface{}) error {
 	err := ctx.Request().Body().Scan(obj)
 	if err != nil {
 		return err
+	}
+	//验证数据格式
+	if _, err := govalidator.ValidateStruct(obj); err != nil {
+		return errors.New(http.StatusNotAcceptable, fmt.Sprintf("输入参数有误:%v", err))
 	}
 	if chr, ok := obj.(IChecker); ok {
 		return chr.Check()
@@ -241,7 +248,7 @@ type gquery struct {
 func (q *gquery) Get(name string) string {
 	return q.gctx.Query(name)
 }
-func (q *gquery) SMap() xtypes.SMap {
+func (q *gquery) Values() xtypes.SMap {
 	if q.params == nil {
 		vals := q.gctx.Request.URL.Query()
 		q.params = make(xtypes.SMap)

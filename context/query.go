@@ -6,7 +6,7 @@ import (
 
 type Query interface {
 	Get(name string) string
-	SMap() xtypes.SMap
+	Values() xtypes.SMap
 	Scan(obj interface{}) error
 	String() string
 }

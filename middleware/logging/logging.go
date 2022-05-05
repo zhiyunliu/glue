@@ -51,7 +51,7 @@ func Server(logger log.Logger) middleware.Middleware {
 // extractArgs returns the string of the req
 func extractReq(req context.Request) string {
 	result := make([]string, 2)
-	if len(req.Query().SMap()) > 0 {
+	if len(req.Query().Values()) > 0 {
 		result[0] = req.Query().String()
 	}
 	if req.Body().Len() > 0 {

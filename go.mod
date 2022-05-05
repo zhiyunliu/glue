@@ -3,6 +3,7 @@ module github.com/zhiyunliu/gel
 go 1.17
 
 require (
+	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/gin-gonic/gin v1.7.7
