@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/zhiyunliu/gel/constants"
@@ -71,14 +72,24 @@ func (ctx *AlloterContext) Header(key string) string {
 }
 
 func (ctx *AlloterContext) Bind(obj interface{}) error {
+	val := reflect.TypeOf(obj)
+	if val.Kind() != reflect.Ptr {
+		return fmt.Errorf("Bind只接收Ptr类型的数据,目前是:%s", val.Kind())
+	}
+
 	err := ctx.Request().Body().Scan(obj)
 	if err != nil {
 		return err
 	}
-	//验证数据格式
-	if _, err := govalidator.ValidateStruct(obj); err != nil {
-		return errors.New(http.StatusNotAcceptable, fmt.Sprintf("输入参数有误:%v", err))
+	val = val.Elem()
+	// we only accept structs
+	if val.Kind() == reflect.Struct {
+		//验证数据格式
+		if _, err := govalidator.ValidateStruct(obj); err != nil {
+			return errors.New(http.StatusNotAcceptable, fmt.Sprintf("输入参数有误:%v", err))
+		}
 	}
+
 	if chr, ok := obj.(IChecker); ok {
 		return chr.Check()
 	}
