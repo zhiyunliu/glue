@@ -21,7 +21,7 @@ type MicroApp struct {
 func NewApp(opts ...Option) (m *MicroApp) {
 	m = &MicroApp{opts: opts}
 	m.cliApp = cli.New(opts...)
-	log.Concurrency(runtime.NumCPU() * 20)
+	log.Concurrency(runtime.NumCPU() * 5)
 	return m
 }
 
