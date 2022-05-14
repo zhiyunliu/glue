@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/zhiyunliu/gel/config"
 	"github.com/zhiyunliu/gel/global"
@@ -92,7 +91,7 @@ func (e *Server) Start(ctx context.Context) error {
 		return ctx
 	}
 
-	log.Infof("API Server [%s] listening on %s", e.name, strings.ReplaceAll(lsr.Addr().String(), "[::]", global.LocalIp))
+	log.Infof("API Server [%s] listening on %s%s", e.name, global.LocalIp, e.opts.setting.Config.Addr)
 	go func() {
 		if err = e.srv.Serve(lsr); err != nil {
 			log.Errorf("[%s] Server start error: %s", e.name, err.Error())

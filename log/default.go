@@ -60,6 +60,14 @@ func (l *wraper) Debugf(format string, args ...interface{}) {
 	l.Logf(LevelDebug, format, args...)
 }
 
+func (l *wraper) Panic(args ...interface{}) {
+	l.Log(LevelPanic, args...)
+}
+
+func (l *wraper) Panicf(format string, args ...interface{}) {
+	l.Logf(LevelPanic, format, args...)
+}
+
 func (l *wraper) Fatalf(format string, args ...interface{}) {
 	l.Logf(LevelFatal, format, args...)
 }
@@ -104,6 +112,14 @@ func Error(args ...interface{}) {
 
 func Errorf(template string, args ...interface{}) {
 	DefaultLogger.Errorf(template, args...)
+}
+
+func Panic(args ...interface{}) {
+	DefaultLogger.Panic(args...)
+}
+
+func Panicf(template string, args ...interface{}) {
+	DefaultLogger.Panicf(template, args...)
 }
 
 func New(opts ...Option) Logger {

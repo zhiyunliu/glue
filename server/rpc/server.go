@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-	"strings"
 
 	"github.com/zhiyunliu/gel/config"
 	_ "github.com/zhiyunliu/gel/contrib/xrpc/grpc"
@@ -96,7 +95,7 @@ func (e *Server) Start(ctx context.Context) error {
 
 	e.newProcessor()
 
-	log.Infof("RPC Server [%s] listening on %s", e.name, strings.ReplaceAll(lsr.Addr().String(), "[::]", global.LocalIp))
+	log.Infof("RPC Server [%s] listening on %s%s", e.name, global.LocalIp, e.opts.setting.Config.Addr)
 
 	go func() {
 

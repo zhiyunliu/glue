@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zhiyunliu/gel/global"
 	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/golibs/xlog"
 )
@@ -17,7 +18,7 @@ func (p *ServiceApp) run() (err error) {
 		xlog.RemoveAppender(xlog.Stdout)
 	}
 
-	errChan := make(chan error)
+	errChan := make(chan error, 1)
 	p.svcCtx = context.Background()
 	err = p.apprun(p.svcCtx)
 	if err != nil {
@@ -49,28 +50,31 @@ func (p *ServiceApp) apprun(ctx context.Context) error {
 }
 
 func (p *ServiceApp) startTraceServer() error {
-	errChan := make(chan error)
+	errChan := make(chan error, 1)
 	go func() {
-		log.Infof("trace addr:%s", p.options.setting.TraceAddr)
+		log.Infof("pprof trace addr %s%s", global.LocalIp, p.options.setting.TraceAddr)
 		lsr, err := net.Listen("tcp", p.options.setting.TraceAddr)
 		if err != nil {
 			errChan <- err
-			log.Errorf("start trace server listen error:%+v", err)
+			log.Errorf("trace server listen error:%+v", err)
 			return
 		}
 		traceSrv := &http.Server{}
 
-		if err = traceSrv.Serve(lsr); err != nil {
-			errChan <- err
-			log.Errorf("start trace server Serve error:%+v", err)
+		select {
+		case errChan <- traceSrv.Serve(lsr):
+			return
+		case <-p.svcCtx.Done():
 			return
 		}
-		errChan <- nil
-		<-p.svcCtx.Done()
 	}()
 
-	err := <-errChan
-	return err
+	select {
+	case err := <-errChan:
+		return fmt.Errorf("trace server Serve error:%+v", err)
+	case <-time.After(time.Second):
+		return nil
+	}
 }
 
 func (p *ServiceApp) register(ctx context.Context) error {
@@ -84,28 +88,26 @@ func (p *ServiceApp) register(ctx context.Context) error {
 		rctx, rcancel := context.WithTimeout(ctx, p.options.RegistrarTimeout)
 		defer rcancel()
 
-		errChan := make(chan error)
+		errChan := make(chan error, 1)
 		go func() {
-			if err := p.options.Registrar.Register(rctx, instance); err != nil {
-				errChan <- err
-			}
+			errChan <- p.options.Registrar.Register(rctx, instance)
 		}()
 
 		select {
 		case err := <-errChan:
-			return fmt.Errorf("register to %s [%s] error:%w", p.options.Registrar.Name(), p.options.Registrar.ServerConfigs(), err)
+			if err != nil {
+				return fmt.Errorf("register to %s [%s] error:%w", p.options.Registrar.Name(), p.options.Registrar.ServerConfigs(), err)
+			}
+			p.instance = instance
+			log.Infof("register to %s completed", p.options.Registrar.Name())
 		case <-rctx.Done():
-			return fmt.Errorf("register to %s [%s] timeout:%d", p.options.Registrar.Name(), p.options.Registrar.ServerConfigs(), p.options.RegistrarTimeout)
+			return fmt.Errorf("register to %s [%s] timeout:%s", p.options.Registrar.Name(), p.options.Registrar.ServerConfigs(), p.options.RegistrarTimeout.String())
 		}
-
-		p.instance = instance
-		log.Infof("register to %s completed", p.options.Registrar.Name())
 	}
 	return nil
 }
 
 func (p *ServiceApp) deregister(ctx context.Context) error {
-
 	if p.options.Registrar == nil {
 		return nil
 	}

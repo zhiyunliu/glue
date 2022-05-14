@@ -34,10 +34,15 @@ func Register(factory Factory) {
 	_factoryMap[name] = factory
 }
 
-func GetRegistrar(cfg config.Config) (Registrar, error) {
+func GetRegistrarName(cfg config.Config) string {
 	//nacos://xxxx
 	cfgVal := cfg.Value("registry").String()
+	return cfgVal
+}
 
+func GetRegistrar(cfg config.Config) (Registrar, error) {
+
+	cfgVal := GetRegistrarName(cfg)
 	tmpVal := _cache.Upsert(cfgVal, nil, func(exist bool, valueInMap, newValue interface{}) interface{} {
 		if exist {
 			return valueInMap

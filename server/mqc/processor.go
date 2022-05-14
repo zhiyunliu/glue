@@ -129,7 +129,7 @@ func (s *processor) handleCallback(task *Task) func(queue.IMQCMessage) {
 	return func(m queue.IMQCMessage) {
 		defer func() {
 			if obj := recover(); obj != nil {
-				log.Errorf("mqc.handleCallback.Queue:%s,data:%s, error:%+v. stack:%s", task.Queue, m.Original(), obj, xstack.GetStack(1))
+				log.Panicf("mqc.handleCallback.Queue:%s,data:%s, error:%+v. stack:%s", task.Queue, m.Original(), obj, xstack.GetStack(1))
 			}
 		}()
 

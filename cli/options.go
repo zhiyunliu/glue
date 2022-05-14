@@ -9,15 +9,6 @@ import (
 	"github.com/zhiyunliu/gel/transport"
 )
 
-// type cliOptions struct {
-// 	isDebug                 bool
-// 	Mode                    string
-// 	IPMask                  string
-// 	File                    string
-// 	GracefulShutdownTimeout int
-// 	Registry                string
-// }
-
 type Options struct {
 	Id        string
 	Metadata  map[string]string

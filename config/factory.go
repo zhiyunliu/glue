@@ -28,13 +28,17 @@ func Register(factory Factory) {
 	factoryMap[name] = factory
 }
 
+func GetConfigName(cfg Config) string {
+	return cfg.Value("config").String()
+}
+
 func GetConfig(cfg Config) (Source, error) {
-	//nacos://xxxx
-	cfgVal := cfg.Value("config").String()
+	cfgVal := GetConfigName(cfg)
 	if strings.TrimSpace(cfgVal) == "" {
 		return nil, nil
 	}
 
+	//nacos://xxxx
 	protoName, configName, err := xnet.Parse(cfgVal)
 	if err != nil {
 		return nil, err

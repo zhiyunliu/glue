@@ -127,7 +127,7 @@ func (s *processor) getOffset(now time.Time, next time.Time) (pos int, circle in
 func (s *processor) handle(req *Request) {
 	defer func() {
 		if obj := recover(); obj != nil {
-			log.Errorf("cron.handle.Cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
+			log.Panicf("cron.handle.Cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
 		}
 	}()
 

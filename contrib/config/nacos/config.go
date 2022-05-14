@@ -11,8 +11,8 @@ import (
 )
 
 type options struct {
-	Group  string `json:"group"`
-	DataID string `json:"data_id"`
+	Group  string `json:"group,omitempty"`
+	DataID string `json:"data_id,omitempty"`
 }
 
 type Config struct {

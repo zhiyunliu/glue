@@ -35,7 +35,10 @@ type ServerConfig struct {
 }
 
 func GetClientParam(cfg config.Config) (param *vo.NacosClientParam, err error) {
-	clientConfig := &ClientConfig{}
+	clientConfig := &ClientConfig{
+		LogDir:   "../logs/nacos",
+		CacheDir: "../conf/nacos",
+	}
 	serverConfigs := []ServerConfig{}
 
 	err = cfg.Value("client").Scan(clientConfig)

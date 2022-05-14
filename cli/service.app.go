@@ -149,7 +149,11 @@ func (app *ServiceApp) loadRegistry() error {
 	if app.options.Config == nil {
 		return nil
 	}
-
+	registrarName := registry.GetRegistrarName(app.options.Config)
+	if registrarName == "" {
+		return nil
+	}
+	log.Info("serviceApp load registry:", registrarName)
 	registrar, err := registry.GetRegistrar(app.options.Config)
 	if err != nil {
 		return fmt.Errorf("registry configuration Error:%+v", err)
@@ -162,6 +166,12 @@ func (app *ServiceApp) loadConfig() error {
 	if app.options.Config == nil {
 		return nil
 	}
+	configName := config.GetConfigName(app.options.Config)
+	if configName == "" {
+		return nil
+	}
+	log.Info("serviceApp load config", configName)
+
 	newSource, err := config.GetConfig(app.options.Config)
 	if err != nil {
 		return fmt.Errorf("get source Error:%+v", err)

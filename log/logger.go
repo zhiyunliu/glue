@@ -15,6 +15,9 @@ type Logger interface {
 	Debug(args ...interface{})
 	Debugf(format string, args ...interface{})
 
+	Panic(args ...interface{})
+	Panicf(format string, args ...interface{})
+
 	Fatal(args ...interface{})
 	Fatalf(format string, args ...interface{})
 

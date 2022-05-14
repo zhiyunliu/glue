@@ -46,7 +46,7 @@ func Recovery(opts ...Option) middleware.Middleware {
 					buf := make([]byte, 64<<10) //nolint:gomnd
 					n := runtime.Stack(buf, false)
 					buf = buf[:n]
-					ctx.Log().Errorf("%v: \n%s\n", rerr, buf)
+					ctx.Log().Panicf("%v: \n%s\n", rerr, buf)
 
 					reply = op.handler(ctx, rerr)
 				}

@@ -31,7 +31,7 @@ func (f *nacosFactory) Create(cfg config.Config) (config.Source, error) {
 	}
 
 	opts := options{
-		DataID: global.AppName,
+		DataID: fmt.Sprintf("%s.json", global.AppName),
 	}
 
 	err = cfg.Value("options").Scan(&opts)
