@@ -22,3 +22,7 @@ func (d *Logdemo) ConcurrencyHandle(ctx context.Context) interface{} {
 	}
 
 }
+
+func (d *Logdemo) InfoHandle(ctx context.Context) interface{} {
+	return xlog.Stats()
+}

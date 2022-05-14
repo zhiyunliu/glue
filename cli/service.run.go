@@ -33,6 +33,7 @@ func (p *ServiceApp) run() (err error) {
 }
 
 func (p *ServiceApp) apprun(ctx context.Context) error {
+	p.closeWaitGroup.Add(len(p.options.Servers))
 	for _, srv := range p.options.Servers {
 		srv.Config(p.options.Config)
 		err := srv.Start(ctx)
@@ -60,9 +61,9 @@ func (p *ServiceApp) startTraceServer() error {
 			return
 		}
 		traceSrv := &http.Server{}
-
 		select {
 		case errChan <- traceSrv.Serve(lsr):
+			p.closeWaitGroup.Add(1)
 			return
 		case <-p.svcCtx.Done():
 			return
@@ -111,7 +112,7 @@ func (p *ServiceApp) deregister(ctx context.Context) error {
 	if p.options.Registrar == nil {
 		return nil
 	}
-	log.Infof("deregister %s", p.options.Registrar.Name())
+	log.Infof("serviceApp close:%s unload registrar-%s", p.cliCtx.App.Name, p.options.Registrar.Name())
 	if err := p.options.Registrar.Deregister(ctx, p.instance); err != nil {
 		return err
 	}

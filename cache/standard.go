@@ -31,7 +31,7 @@ func (s *xCache) GetCache(name string) (q ICache) {
 		//redis://localhost
 		protoType, configName, err := xnet.Parse(cacheVal)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		cacheCfg := cfg.Get(protoType).Get(configName)
 		return newCache(protoType, cacheCfg)

@@ -30,3 +30,4 @@ examples/apiserver/cache
 examples/mqcserver/cache
 examples/cronserver/cache
 examples/rpcserver/cache
+examples/conf/*

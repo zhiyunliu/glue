@@ -1,7 +1,6 @@
 package file
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -267,10 +266,6 @@ func testConfig(t *testing.T, c config.Config) {
 		t.Errorf("no expect duration_key value: %v, but got: %v", settings.DurationKey, v)
 	}
 
-	// not found
-	if _, err := c.Value("not_found_key").Bool(); errors.Is(err, config.ErrNotFound) {
-		t.Logf("not_found_key not match: %v", err)
-	}
 }
 
 func testScan(t *testing.T, c config.Config) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/kardianos/service"
 	"github.com/urfave/cli"
@@ -81,19 +82,21 @@ func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 func GetSrvApp(c *cli.Context) *ServiceApp {
 	opts := c.App.Metadata[options_key].(*Options)
 	app := &ServiceApp{
-		cliCtx:  c,
-		options: opts,
+		cliCtx:         c,
+		options:        opts,
+		closeWaitGroup: &sync.WaitGroup{},
 	}
 	return app
 }
 
 //ServiceApp ServiceApp
 type ServiceApp struct {
-	cliCtx     *cli.Context
-	options    *Options
-	cancelFunc context.CancelFunc
-	instance   *registry.ServiceInstance
-	svcCtx     context.Context
+	cliCtx         *cli.Context
+	options        *Options
+	cancelFunc     context.CancelFunc
+	instance       *registry.ServiceInstance
+	svcCtx         context.Context
+	closeWaitGroup *sync.WaitGroup
 }
 
 func (p *ServiceApp) ID() string {

@@ -33,4 +33,5 @@ var (
 	TraceAddr           = cli.TraceAddr
 	ServiceDependencies = cli.ServiceDependencies
 	ServiceOption       = cli.ServiceOption
+	LogConcurrency      = cli.LogConcurrency
 )

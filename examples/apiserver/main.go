@@ -67,6 +67,6 @@ func main() {
 	apiSrv.Use(ratelimit.Server())
 	apiSrv.Use(tracing.Server(tracing.WithTracerProvider(provider)))
 
-	app := gel.NewApp(gel.Server(apiSrv))
+	app := gel.NewApp(gel.Server(apiSrv), gel.LogConcurrency(1))
 	app.Start()
 }

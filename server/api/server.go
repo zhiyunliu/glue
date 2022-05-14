@@ -80,7 +80,7 @@ func (e *Server) Start(ctx context.Context) error {
 			for _, fn := range e.opts.endHooks {
 				err := fn(ctx)
 				if err != nil {
-					log.Error("EndHook:", err)
+					log.Error("API Server EndHook:", err)
 					return
 				}
 			}
@@ -106,7 +106,7 @@ func (e *Server) Start(ctx context.Context) error {
 		for _, fn := range e.opts.startedHooks {
 			err := fn(ctx)
 			if err != nil {
-				log.Error("api.StartedHooks:", err)
+				log.Error("API Server StartedHooks:", err)
 				return err
 			}
 		}
@@ -114,8 +114,13 @@ func (e *Server) Start(ctx context.Context) error {
 	return nil
 }
 
+func (e *Server) Restart() {
+
+}
+
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
+	e.started = false
 	return e.srv.Shutdown(ctx)
 }
 

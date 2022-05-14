@@ -14,7 +14,7 @@ import (
 
 var (
 	_ Value = (*atomicValue)(nil)
-	_ Value = (*errValue)(nil)
+	_ Value = (*emptyValue)(nil)
 )
 
 // Value is config value interface.
@@ -138,17 +138,17 @@ func (v *atomicValue) Scan(obj interface{}) error {
 	return json.Unmarshal(data, obj)
 }
 
-type errValue struct {
+type emptyValue struct {
 	err error
 }
 
-func (v errValue) Bool() (bool, error)              { return false, v.err }
-func (v errValue) Int() (int64, error)              { return 0, v.err }
-func (v errValue) Float() (float64, error)          { return 0.0, v.err }
-func (v errValue) Duration() (time.Duration, error) { return 0, v.err }
-func (v errValue) String() string                   { return v.err.Error() }
-func (v errValue) Scan(interface{}) error           { return v.err }
-func (v errValue) Load() interface{}                { return nil }
-func (v errValue) Store(interface{})                {}
-func (v errValue) Slice() ([]Value, error)          { return nil, v.err }
-func (v errValue) Map() (map[string]Value, error)   { return nil, v.err }
+func (v emptyValue) Bool() (bool, error)              { return false, v.err }
+func (v emptyValue) Int() (int64, error)              { return 0, v.err }
+func (v emptyValue) Float() (float64, error)          { return 0.0, v.err }
+func (v emptyValue) Duration() (time.Duration, error) { return 0, v.err }
+func (v emptyValue) String() string                   { return "" }
+func (v emptyValue) Scan(interface{}) error           { return v.err }
+func (v emptyValue) Load() interface{}                { return nil }
+func (v emptyValue) Store(interface{})                {}
+func (v emptyValue) Slice() ([]Value, error)          { return nil, v.err }
+func (v emptyValue) Map() (map[string]Value, error)   { return nil, v.err }

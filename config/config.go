@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"sync"
 	"time"
@@ -11,13 +12,12 @@ import (
 )
 
 var (
-	// ErrNotFound is key not found.
-	ErrNotFound = errors.New("key not found")
-	// ErrTypeAssert is type assert error.
-	ErrTypeAssert = errors.New("type assert error")
-
 	_ Config = (*config)(nil)
 )
+
+func buildKeyNotFoundError(key string) error {
+	return fmt.Errorf("key=%s not found", key)
+}
 
 // Observer is config observer.
 type Observer func(string, Value)
@@ -151,7 +151,7 @@ func (c *config) Value(key string) Value {
 		c.cached.Store(key, v)
 		return v
 	}
-	return &errValue{err: ErrNotFound}
+	return &emptyValue{err: buildKeyNotFoundError(key)}
 }
 
 func (c *config) Scan(v interface{}) error {
@@ -164,7 +164,7 @@ func (c *config) Scan(v interface{}) error {
 
 func (c *config) Watch(key string, o Observer) error {
 	if v := c.Value(key); v.Load() == nil {
-		return ErrNotFound
+		return buildKeyNotFoundError(key)
 	}
 	c.observers.Store(key, o)
 	return nil
