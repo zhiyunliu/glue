@@ -9,7 +9,7 @@ import (
 //rpcResover 定义配置文件转换方法
 type rpcResover interface {
 	Name() string
-	Resolve(setting config.Config) (Client, error)
+	Resolve(name string, setting config.Config) (Client, error)
 }
 
 var dbResolvers = make(map[string]rpcResover)
@@ -28,13 +28,13 @@ func Deregister(name string) {
 	delete(dbResolvers, name)
 }
 
-//newDB 根据适配器名称及参数返回配置处理器
-func newXRPC(setting config.Config) (Client, error) {
+//newXRPC 根据适配器名称及参数返回配置处理器
+func newXRPC(name string, setting config.Config) (Client, error) {
 	val := setting.Value("proto")
 	proto := val.String()
 	resolver, ok := dbResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("xrpc: 未知的协议类型:%s", proto)
 	}
-	return resolver.Resolve(setting)
+	return resolver.Resolve(name, setting)
 }

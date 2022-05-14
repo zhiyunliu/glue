@@ -5,6 +5,7 @@ import (
 	"github.com/zhiyunliu/gel/dlocker"
 	"github.com/zhiyunliu/gel/queue"
 	"github.com/zhiyunliu/gel/xdb"
+	"github.com/zhiyunliu/gel/xhttp"
 	"github.com/zhiyunliu/gel/xrpc"
 )
 
@@ -30,6 +31,12 @@ func Queue() queue.StandardQueue {
 func RPC() xrpc.StandardRPC {
 	obj := getStandardInstance(xrpc.TypeNode)
 	return obj.(xrpc.StandardRPC)
+}
+
+//Http 获取Http处理对象
+func Http() xhttp.StandardHttp {
+	obj := getStandardInstance(xhttp.TypeNode)
+	return obj.(xhttp.StandardHttp)
 }
 
 //DLocker 获取DLocker 处理对象

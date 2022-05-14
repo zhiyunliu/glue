@@ -25,7 +25,7 @@ git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch examp
 		"redisxxx":"redis://redis1"
 	},
 	"rpcs":{
-		"default":{"balancer":"round_robin","connection_timeout":10}
+		"default":{"proto":"grpc","balancer":"round_robin","conn_timeout":10}
 	},
 	"redis":{
 		"redis1":{"addrs":["192.168.0.1","192.168.0.2"],"auth":"","db":0,"dial_timeout":10,"read_timeout":10,"write_timeout":10,"pool_size":10}

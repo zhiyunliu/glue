@@ -2,13 +2,11 @@ package grpc
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/balancer"
 	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/gel/registry"
@@ -28,7 +26,7 @@ type Client struct {
 	ctxCancel       context.CancelFunc
 }
 
-//NewClientByConf 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
+//NewClient 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
 func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL) (*Client, error) {
 	client := &Client{
 		registrar: registrar,
@@ -39,24 +37,23 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 
 	err := client.connect()
 	if err != nil {
-		err = fmt.Errorf("grpc.connect失败:%s(%v)(err:%v)", reqPath.String(), client.setting.ConntTimeout, err)
+		err = fmt.Errorf("grpc.connect失败:%s(%v)(err:%v)", reqPath.String(), client.setting.ConnTimeout, err)
 		return nil, err
 	}
-	time.Sleep(time.Second)
 	return client, nil
 }
 
-//Request 发送Request请求
-func (c *Client) Request(ctx context.Context, input interface{}, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
-	//处理可选参数
-	buff, err := json.Marshal(input)
-	if err != nil {
-		return nil, err
-	}
+// //Request 发送Request请求
+// func (c *Client) Request(ctx context.Context, input interface{}, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
+// 	//处理可选参数
+// 	buff, err := json.Marshal(input)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	opts = append(opts, xrpc.WithContentType(constants.ContentTypeApplicationJSON))
-	return c.RequestByString(ctx, buff, opts...)
-}
+// 	opts = append(opts, xrpc.WithContentType(constants.ContentTypeApplicationJSON))
+// 	return c.RequestByString(ctx, buff, opts...)
+// }
 
 //RequestByString 发送Request请求
 func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
@@ -91,7 +88,7 @@ func (c *Client) Close() {
 func (c *Client) connect() (err error) {
 	c.balancerBuilder = balancer.NewRegistrarBuilder(c.ctx, c.registrar, c.reqPath)
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Duration(c.setting.ConntTimeout)*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), time.Duration(c.setting.ConnTimeout)*time.Second)
 	c.conn, err = grpc.DialContext(ctx,
 		c.reqPath.String(),
 		grpc.WithInsecure(),

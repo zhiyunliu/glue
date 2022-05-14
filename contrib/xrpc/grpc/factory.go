@@ -17,10 +17,11 @@ func (s *grpcResolver) Name() string {
 	return Proto
 }
 
-func (s *grpcResolver) Resolve(cfg config.Config) (xrpc.Client, error) {
+func (s *grpcResolver) Resolve(name string, cfg config.Config) (xrpc.Client, error) {
 	setval := &setting{
-		Balancer:     roundrobin.Name,
-		ConntTimeout: 10,
+		Name:        name,
+		Balancer:    roundrobin.Name,
+		ConnTimeout: 10,
 	}
 	err := cfg.Scan(setval)
 	if err != nil {

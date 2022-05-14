@@ -1,4 +1,4 @@
-package xrpc
+package xhttp
 
 import (
 	sctx "context"
@@ -6,13 +6,14 @@ import (
 	"github.com/zhiyunliu/gel/config"
 	"github.com/zhiyunliu/gel/container"
 	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/golibs/httputil"
 )
 
-const TypeNode = "rpcs"
+const TypeNode = "https"
 const _defaultName = "default"
 
-type StandardRPC interface {
-	GetRPC(name ...string) (c Client)
+type StandardHttp interface {
+	GetHttp(name ...string) (c Client)
 }
 
 type Client interface {
@@ -23,26 +24,22 @@ type Client interface {
 	Request(ctx sctx.Context, service string, input interface{}, opts ...RequestOption) (res Body, err error)
 }
 
-type Body interface {
-	GetStatus() int32
-	GetHeader() map[string]string
-	GetResult() []byte
-}
+type Body = httputil.Body
 
-//StandardRPC rpc服务
-type xRPC struct {
+//xHttp 服务
+type xHttp struct {
 	container container.Container
 }
 
-//NewStandardRPC 创建RPC服务代理
-func NewXRPC(container container.Container) StandardRPC {
-	return &xRPC{
+//NewXhttp 服务代理
+func NewXhttp(container container.Container) StandardHttp {
+	return &xHttp{
 		container: container,
 	}
 }
 
 //GetRPC 获取缓存操作对象
-func (s *xRPC) GetRPC(name ...string) (c Client) {
+func (s *xHttp) GetHttp(name ...string) (c Client) {
 	realName := _defaultName
 	if len(name) > 0 {
 		realName = name[0]
@@ -50,7 +47,7 @@ func (s *xRPC) GetRPC(name ...string) (c Client) {
 
 	obj, err := s.container.GetOrCreate(TypeNode, realName, func(cfg config.Config) (interface{}, error) {
 		dbcfg := cfg.Get(TypeNode).Get(realName)
-		return newXRPC(realName, dbcfg)
+		return newXhttp(realName, dbcfg)
 	})
 	if err != nil {
 		panic(err)
@@ -69,5 +66,5 @@ func (xBuilder) Name() string {
 }
 
 func (xBuilder) Build(c container.Container) interface{} {
-	return NewXRPC(c)
+	return NewXhttp(c)
 }

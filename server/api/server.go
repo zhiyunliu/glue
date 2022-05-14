@@ -126,10 +126,6 @@ func (e *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-func (e *Server) Restart() {
-
-}
-
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
 	e.started = false

@@ -12,7 +12,7 @@ import (
 	"github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/gel/global"
 	"github.com/zhiyunliu/gel/registry"
-	"github.com/zhiyunliu/gel/xrpc"
+	"github.com/zhiyunliu/gel/xhttp"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
@@ -32,24 +32,24 @@ func NewRequest(setting *setting) *Request {
 }
 
 //Swap 将当前请求参数作为RPC参数并发送RPC请求
-func (r *Request) Swap(ctx context.Context, service string, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
+func (r *Request) Swap(ctx context.Context, service string, opts ...xhttp.RequestOption) (res xhttp.Body, err error) {
 
 	//获取内容
 	input := ctx.Request().Body().Bytes()
-	opts = append(opts, xrpc.WithXRequestID(ctx.Request().GetHeader(constants.HeaderRequestId)))
+	opts = append(opts, xhttp.WithXRequestID(ctx.Request().GetHeader(constants.HeaderRequestId)))
 
 	//复制请求头
 	hd := ctx.Request().Header()
 
-	opts = append(opts, xrpc.WithHeaders(hd.Values()))
+	opts = append(opts, xhttp.WithHeaders(hd.Values()))
 
 	// 发送请求
 	return r.Request(ctx.Context(), service, input, opts...)
 }
 
 //RequestByCtx RPC请求，可通过context撤销请求
-//service=grpc://servername/path
-func (r *Request) Request(ctx sctx.Context, service string, input interface{}, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
+//service=http://servername/path
+func (r *Request) Request(ctx sctx.Context, service string, input interface{}, opts ...xhttp.RequestOption) (res xhttp.Body, err error) {
 
 	pathVal, err := url.Parse(service)
 	if err != nil {
@@ -58,7 +58,7 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	}
 
 	//todo:当前是通过url 进行client 构建，是否考虑只通过服务来构建客户端？
-	key := fmt.Sprintf("%s:%s", r.setting.Name, service)
+	key := fmt.Sprintf("%s:%s", r.setting.Name, pathVal.Host)
 	tmpClient := r.requests.Upsert(key, pathVal, func(exist bool, valueInMap interface{}, newValue interface{}) interface{} {
 		if exist {
 			return valueInMap
@@ -78,10 +78,10 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	})
 
 	client := tmpClient.(*Client)
-	nopts := make([]xrpc.RequestOption, 0, len(opts)+1)
+	nopts := make([]xhttp.RequestOption, 0, len(opts)+1)
 	nopts = append(nopts, opts...)
 	if reqidVal := ctx.Value(constants.HeaderRequestId); reqidVal != nil {
-		nopts = append(nopts, xrpc.WithXRequestID(fmt.Sprintf("%+v", reqidVal)))
+		nopts = append(nopts, xhttp.WithXRequestID(fmt.Sprintf("%+v", reqidVal)))
 	}
 
 	var bodyBytes []byte
@@ -95,7 +95,7 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 		bodyBytes = bytesconv.StringToBytes(*t)
 	default:
 		bodyBytes, _ = json.Marshal(t)
-		nopts = append(nopts, xrpc.WithContentType(constants.ContentTypeApplicationJSON))
+		nopts = append(nopts, xhttp.WithContentType(constants.ContentTypeApplicationJSON))
 	}
 
 	return client.RequestByString(ctx, bodyBytes, nopts...)

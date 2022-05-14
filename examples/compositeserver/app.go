@@ -6,21 +6,21 @@ import (
 	"github.com/zhiyunliu/gel"
 	"github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/gel/examples/compositeserver/handles"
+	"github.com/zhiyunliu/gel/transport"
 
 	"github.com/zhiyunliu/gel/server/api"
+	"github.com/zhiyunliu/gel/server/cron"
 	"github.com/zhiyunliu/gel/server/mqc"
 	"github.com/zhiyunliu/gel/server/rpc"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 func init() {
-	apiserver()
-	mqcserver()
-	rpcserver()
-	cronserver()
+	srvOpt := gel.Server(apiserver(), mqcserver(), cronserver(), rpcserver())
+	opts = append(opts, srvOpt, gel.LogConcurrency(1))
 }
 
-func apiserver() {
+func apiserver() transport.Server {
 	apiSrv := api.New("apiserver")
 	apiSrv.Handle("/log", handles.NewLogDemo())
 	apiSrv.Handle("/demo", func(ctx context.Context) interface{} {
@@ -30,25 +30,25 @@ func apiserver() {
 			"b": 2,
 		}
 	})
-
-	opts = append(opts, gel.Server(apiSrv))
+	return apiSrv
 }
 
-func mqcserver() {
+func mqcserver() transport.Server {
 	mqcSrv := mqc.New("mqcserver")
 
 	mqcSrv.Handle("/demomqc", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demomqc")
+
 		return xtypes.XMap{
 			"a": 1,
 			"b": 2,
 		}
 	})
 
-	opts = append(opts, gel.Server(mqcSrv))
+	return mqcSrv
 }
 
-func rpcserver() {
+func rpcserver() transport.Server {
 	rpcSrv := rpc.New("rpcserver")
 
 	rpcSrv.Handle("/demorpc", func(ctx context.Context) interface{} {
@@ -59,11 +59,11 @@ func rpcserver() {
 		}
 	})
 
-	opts = append(opts, gel.Server(rpcSrv))
+	return rpcSrv
 }
 
-func cronserver() {
-	cronSrv := rpc.New("cronserver")
+func cronserver() transport.Server {
+	cronSrv := cron.New("cronserver")
 
 	cronSrv.Handle("/democron", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("democron")
@@ -77,6 +77,5 @@ func cronserver() {
 			"b": 2,
 		}
 	})
-
-	opts = append(opts, gel.Server(cronSrv))
+	return cronSrv
 }
