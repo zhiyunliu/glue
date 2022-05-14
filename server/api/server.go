@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/zhiyunliu/gel/config"
 	"github.com/zhiyunliu/gel/global"
@@ -90,18 +91,27 @@ func (e *Server) Start(ctx context.Context) error {
 	e.srv.BaseContext = func(_ net.Listener) context.Context {
 		return ctx
 	}
-
+	errChan := make(chan error, 1)
 	log.Infof("API Server [%s] listening on %s%s", e.name, global.LocalIp, e.opts.setting.Config.Addr)
 	go func() {
-		if err = e.srv.Serve(lsr); err != nil {
-			log.Errorf("[%s] Server start error: %s", e.name, err.Error())
-		}
-		<-ctx.Done()
-		err = e.Stop(ctx)
-		if err != nil {
-			log.Errorf("[%s] Server shutdown error: %s", e.name, err.Error())
+		done := make(chan struct{})
+		go func() {
+			errChan <- e.srv.Serve(lsr)
+			close(done)
+		}()
+
+		select {
+		case <-done:
+			fmt.Println("x")
+		case <-time.After(time.Second * 2):
+			errChan <- nil
 		}
 	}()
+	err = <-errChan
+	if err != nil {
+		log.Errorf("API Server [%s] start error: %s", e.name, err.Error())
+		return err
+	}
 	if len(e.opts.startedHooks) > 0 {
 		for _, fn := range e.opts.startedHooks {
 			err := fn(ctx)
@@ -111,6 +121,8 @@ func (e *Server) Start(ctx context.Context) error {
 			}
 		}
 	}
+
+	log.Infof("API Server [%s] start completed", e.name)
 	return nil
 }
 
@@ -121,7 +133,13 @@ func (e *Server) Restart() {
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
 	e.started = false
-	return e.srv.Shutdown(ctx)
+	err := e.srv.Shutdown(ctx)
+	if err != nil {
+		log.Errorf("API Server [%s] stop error: %s", e.name, err.Error())
+		return err
+	}
+	log.Infof("API Server [%s] stop completed", e.name)
+	return err
 }
 
 //   http://127.0.0.1:8000

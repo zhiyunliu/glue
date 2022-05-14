@@ -5,7 +5,7 @@ type MiddlewareBuilder interface {
 	Name() string
 }
 
-// Middleware is HTTP/gRPC transport middleware.
+// Middleware is HTTP/gRPC/Mqc/Cron transport middleware.
 type Middleware func(Handler) Handler
 
 // Chain returns a Middleware that specifies the chained handler for endpoint.

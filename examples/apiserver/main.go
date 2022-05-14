@@ -17,7 +17,6 @@ import (
 	_ "github.com/zhiyunliu/gel/contrib/xdb/sqlserver"
 
 	"github.com/zhiyunliu/gel/log"
-	"github.com/zhiyunliu/gel/middleware/auth/jwt"
 	"github.com/zhiyunliu/gel/middleware/ratelimit"
 	"github.com/zhiyunliu/gel/middleware/tracing"
 
@@ -63,7 +62,7 @@ func main() {
 		return
 	}
 
-	apiSrv.Use(jwt.Server(jwt.WithSecret("123456")))
+	//apiSrv.Use(jwt.Server(jwt.WithSecret("123456")))
 	apiSrv.Use(ratelimit.Server())
 	apiSrv.Use(tracing.Server(tracing.WithTracerProvider(provider)))
 

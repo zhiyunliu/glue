@@ -93,7 +93,6 @@ func GetSrvApp(c *cli.Context) *ServiceApp {
 type ServiceApp struct {
 	cliCtx         *cli.Context
 	options        *Options
-	cancelFunc     context.CancelFunc
 	instance       *registry.ServiceInstance
 	svcCtx         context.Context
 	closeWaitGroup *sync.WaitGroup

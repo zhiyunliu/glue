@@ -29,7 +29,7 @@ func (e *Server) registryEngineRoute() {
 		}))
 
 	engine.Handle(http.MethodGet, "/healthcheck", func(ctx *gin.Context) {
-		ctx.String(http.StatusOK, "success")
+		ctx.AbortWithStatus(http.StatusOK)
 	})
 
 	for _, m := range e.opts.setting.Middlewares {
