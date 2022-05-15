@@ -4,6 +4,9 @@ import (
 	"fmt"
 
 	"github.com/zhiyunliu/gel/config"
+	_ "github.com/zhiyunliu/gel/selector/p2c"
+	_ "github.com/zhiyunliu/gel/selector/random"
+	_ "github.com/zhiyunliu/gel/selector/wrr"
 	"github.com/zhiyunliu/gel/xhttp"
 )
 
