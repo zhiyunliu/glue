@@ -3,8 +3,10 @@ package cron
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/gel/global"
 	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/gel/middleware"
 	"github.com/zhiyunliu/gel/server"
@@ -62,38 +64,40 @@ func (e *Server) Config(cfg config.Config) {
 func (e *Server) Start(ctx context.Context) error {
 	e.ctx = ctx
 	e.newProcessor()
+
+	errChan := make(chan error, 1)
+	log.Infof("CRON Server [%s] listening on %s", e.name, global.LocalIp)
+	go func() {
+		e.started = true
+
+		done := make(chan struct{})
+		go func() {
+			errChan <- e.processor.Start()
+			close(done)
+		}()
+
+		select {
+		case <-done:
+			return
+		case <-time.After(time.Second):
+			errChan <- nil
+		}
+	}()
+	err := <-errChan
+	if err != nil {
+		log.Errorf("CRON Server [%s] start error: %s", e.name, err.Error())
+		return err
+	}
 	if len(e.opts.startedHooks) > 0 {
 		for _, fn := range e.opts.startedHooks {
 			err := fn(ctx)
 			if err != nil {
-				log.Error("cron.startedHooks:", err)
+				log.Errorf("CRON Server [%s] StartedHooks:%+v", e.name, err)
 				return err
 			}
 		}
 	}
-	go func() {
-
-		e.started = true
-		err := e.processor.Start()
-		if err != nil {
-			log.Errorf("[%s] Server start error: %s", e.name, err.Error())
-		}
-		<-ctx.Done()
-
-		if len(e.opts.endHooks) > 0 {
-			for _, fn := range e.opts.endHooks {
-				err := fn(ctx)
-				if err != nil {
-					log.Error("cron.endHooks:", err)
-				}
-			}
-		}
-		err = e.Stop(ctx)
-		if err != nil {
-			log.Errorf("[%s] Server shutdown error: %s", e.name, err.Error())
-		}
-	}()
-
+	log.Infof("CRON Server [%s] start completed", e.name)
 	return nil
 }
 
@@ -104,7 +108,25 @@ func (e *Server) Attempt() bool {
 
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
-	return e.processor.Close()
+
+	err := e.processor.Close()
+	if err != nil {
+		log.Errorf("CRON Server [%s] stop error: %s", e.name, err.Error())
+		return err
+	}
+
+	if len(e.opts.endHooks) > 0 {
+		for _, fn := range e.opts.endHooks {
+			err := fn(ctx)
+			if err != nil {
+				log.Errorf("CRON Server [%s] EndHook:", e.name, err)
+				return err
+			}
+		}
+	}
+	log.Infof("CRON Server [%s] stop completed", e.name)
+
+	return nil
 }
 
 func (e *Server) newProcessor() {

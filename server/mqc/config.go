@@ -30,6 +30,10 @@ type Config struct {
 	Status server.Status `json:"status"`
 }
 
+func (c Config) String() string {
+	return c.Addr
+}
+
 type Task struct {
 	Queue       string            `json:"queue"`
 	Service     string            `json:"service,omitempty"`

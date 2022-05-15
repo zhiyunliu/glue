@@ -81,7 +81,7 @@ func (e *Server) Start(ctx context.Context) error {
 			for _, fn := range e.opts.endHooks {
 				err := fn(ctx)
 				if err != nil {
-					log.Error("API Server EndHook:", err)
+					log.Errorf("API Server [%s] EndHook:%+v", e.name, err)
 					return
 				}
 			}
@@ -102,8 +102,8 @@ func (e *Server) Start(ctx context.Context) error {
 
 		select {
 		case <-done:
-			fmt.Println("x")
-		case <-time.After(time.Second * 2):
+			return
+		case <-time.After(time.Second):
 			errChan <- nil
 		}
 	}()
@@ -116,7 +116,7 @@ func (e *Server) Start(ctx context.Context) error {
 		for _, fn := range e.opts.startedHooks {
 			err := fn(ctx)
 			if err != nil {
-				log.Error("API Server StartedHooks:", err)
+				log.Errorf("API Server [%s] StartedHooks:%+v", e.name, err)
 				return err
 			}
 		}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"time"
 
 	"github.com/zhiyunliu/gel/config"
 	_ "github.com/zhiyunliu/gel/contrib/xrpc/grpc"
@@ -70,16 +71,6 @@ func (e *Server) Config(cfg config.Config) {
 // Start 开始
 func (e *Server) Start(ctx context.Context) error {
 	e.ctx = ctx
-	if len(e.opts.startedHooks) > 0 {
-		for _, fn := range e.opts.startedHooks {
-			err := fn(ctx)
-			if err != nil {
-				log.Error("mqc.StartedHooks:", err)
-				return err
-			}
-		}
-	}
-
 	lsr, err := net.Listen("tcp", e.opts.setting.Config.Addr)
 	if err != nil {
 		return err
@@ -95,30 +86,39 @@ func (e *Server) Start(ctx context.Context) error {
 
 	e.newProcessor()
 
+	errChan := make(chan error, 1)
 	log.Infof("RPC Server [%s] listening on %s%s", e.name, global.LocalIp, e.opts.setting.Config.Addr)
-
 	go func() {
-
 		e.started = true
-		if err := e.srv.Serve(lsr); err != nil {
-			log.Errorf("[%s] Server start error: %s", e.name, err.Error())
-		}
-		<-ctx.Done()
+		done := make(chan struct{})
+		go func() {
+			errChan <- e.srv.Serve(lsr)
+			close(done)
+		}()
 
-		if len(e.opts.endHooks) > 0 {
-			for _, fn := range e.opts.endHooks {
-				err := fn(ctx)
-				if err != nil {
-					log.Error("mqc.endHooks:", err)
-				}
-			}
-		}
-		err = e.Stop(ctx)
-		if err != nil {
-			log.Errorf("[%s] Server shutdown error: %s", e.name, err.Error())
+		select {
+		case <-done:
+			return
+		case <-time.After(time.Second):
+			errChan <- nil
 		}
 	}()
+	err = <-errChan
+	if err != nil {
+		log.Errorf("RPC Server [%s] start error: %s", e.name, err.Error())
+		return err
+	}
 
+	if len(e.opts.startedHooks) > 0 {
+		for _, fn := range e.opts.startedHooks {
+			err := fn(ctx)
+			if err != nil {
+				log.Errorf("RPC Server [%s] StartedHooks:%+v", e.name, err)
+				return err
+			}
+		}
+	}
+	log.Infof("RPC Server [%s] start completed", e.name)
 	return nil
 }
 
@@ -130,6 +130,16 @@ func (e *Server) Attempt() bool {
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
 	e.srv.GracefulStop()
+	if len(e.opts.endHooks) > 0 {
+		for _, fn := range e.opts.endHooks {
+			err := fn(ctx)
+			if err != nil {
+				log.Errorf("RPC Server [%s] EndHook:", e.name, err)
+				return err
+			}
+		}
+	}
+	log.Infof("RPC Server [%s] stop completed", e.name)
 	return nil
 }
 

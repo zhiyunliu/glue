@@ -63,38 +63,35 @@ func (e *Server) Config(cfg config.Config) {
 func (e *Server) Start(ctx context.Context) error {
 	e.ctx = ctx
 	e.newProcessor()
+
+	errChan := make(chan error, 1)
+	log.Infof("MQC Server [%s] listening on %s", e.name, e.opts.setting.Config.String())
+	go func() {
+		e.started = true
+		err := e.processor.Start()
+		if err != nil {
+			errChan <- err
+			return
+		}
+		errChan <- nil
+	}()
+
+	err := <-errChan
+	if err != nil {
+		log.Errorf("MQC Server [%s] start error: %s", e.name, err.Error())
+		return err
+	}
+
 	if len(e.opts.startedHooks) > 0 {
 		for _, fn := range e.opts.startedHooks {
 			err := fn(ctx)
 			if err != nil {
-				log.Error("mqc.StartedHooks:", err)
+				log.Errorf("MQC Server [%s] StartedHooks:%+v", e.name, err)
 				return err
 			}
 		}
 	}
-	go func() {
-
-		e.started = true
-		err := e.processor.Start()
-		if err != nil {
-			log.Errorf("[%s] Server start error: %s", e.name, err.Error())
-		}
-		<-ctx.Done()
-
-		if len(e.opts.endHooks) > 0 {
-			for _, fn := range e.opts.endHooks {
-				err := fn(ctx)
-				if err != nil {
-					log.Error("mqc.endHooks:", err)
-				}
-			}
-		}
-		err = e.Stop(ctx)
-		if err != nil {
-			log.Errorf("[%s] Server shutdown error: %s", e.name, err.Error())
-		}
-	}()
-
+	log.Infof("MQC Server [%s] start completed", e.name)
 	return nil
 }
 
@@ -105,7 +102,24 @@ func (e *Server) Attempt() bool {
 
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
-	return e.processor.Close()
+	err := e.processor.Close()
+	if err != nil {
+		log.Errorf("MQC Server [%s] stop error: %s", e.name, err.Error())
+		return err
+	}
+
+	if len(e.opts.endHooks) > 0 {
+		for _, fn := range e.opts.endHooks {
+			err := fn(ctx)
+			if err != nil {
+				log.Errorf("MQC Server [%s] EndHook:", e.name, err)
+				return err
+			}
+		}
+	}
+	log.Infof("MQC Server [%s] stop completed", e.name)
+	return nil
+
 }
 
 func (e *Server) newProcessor() {
