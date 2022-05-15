@@ -14,6 +14,8 @@ import (
 
 	"github.com/zhiyunliu/gel/contrib/xhttp/default/balancer"
 	"github.com/zhiyunliu/gel/registry"
+	"github.com/zhiyunliu/gel/selector"
+	"github.com/zhiyunliu/gel/selector/filter"
 	"github.com/zhiyunliu/gel/xhttp"
 	"github.com/zhiyunliu/golibs/httputil"
 )
@@ -21,25 +23,29 @@ import (
 type Client struct {
 	registrar registry.Registrar
 	setting   *setting
-	reqPath   *url.URL
 	client    *http.Client
-	resolver  balancer.Resovler
+	selector  selector.Selector
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 }
 
 //NewClientByConf 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
-func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL) (*Client, error) {
+func NewClient(registrar registry.Registrar, setting *setting, serviceName string) (*Client, error) {
 	client := &Client{
 		registrar: registrar,
 		setting:   setting,
-		reqPath:   reqPath,
 		client:    &http.Client{},
 	}
 	tlsCfg, err := client.getTlsConfig()
 	if err != nil {
 		return nil, err
 	}
+
+	client.selector, err = balancer.NewSelector(client.ctx, registrar, serviceName, setting.Balancer)
+	if err != nil {
+		return nil, err
+	}
+
 	client.client.Transport = &http.Transport{
 		TLSClientConfig: tlsCfg,
 		Proxy:           client.getProxy(),
@@ -54,21 +60,21 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 		ExpectContinueTimeout: 1 * time.Second,
 	}
 	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
-	client.resolver = balancer.NewResolver(client.ctx, registrar, reqPath)
 	return client, nil
 }
 
 //RequestByString 发送Request请求
-func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xhttp.RequestOption) (res xhttp.Body, err error) {
+func (c *Client) RequestByString(ctx context.Context, reqPath *url.URL, input []byte, opts ...xhttp.RequestOption) (res xhttp.Body, err error) {
 	//处理可选参数
 	o := &xhttp.Options{
+		Method: http.MethodGet,
 		Header: make(map[string]string),
 	}
 	for _, opt := range opts {
 		opt(o)
 	}
 
-	response, err := c.clientRequest(ctx, o, input)
+	response, err := c.clientRequest(ctx, reqPath, o, input)
 	if err != nil {
 		return newBodyByError(err), err
 	}
@@ -80,11 +86,15 @@ func (c *Client) Close() {
 	c.ctxCancel()
 }
 
-func (c *Client) clientRequest(ctx context.Context, o *xhttp.Options, input []byte) (response xhttp.Body, err error) {
-	addr, err := c.resolver.Pick()
+func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.Options, input []byte) (response xhttp.Body, err error) {
+
+	node, done, err := c.selector.Select(ctx, selector.WithFilter(filter.Version(o.Version)))
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		done(ctx, selector.DoneInfo{Err: err})
+	}()
 
 	httpOpts := make([]httputil.Option, 0)
 	for k, v := range o.Header {
@@ -92,7 +102,7 @@ func (c *Client) clientRequest(ctx context.Context, o *xhttp.Options, input []by
 	}
 	httpOpts = append(httpOpts, httputil.WithClient(c.client))
 
-	return httputil.Request(o.Method, addr, input, httpOpts...)
+	return httputil.Request(o.Method, fmt.Sprintf("%s%s", node.Address(), reqPath.Path), input, httpOpts...)
 }
 
 func (c *Client) getTlsConfig() (*tls.Config, error) {

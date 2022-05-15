@@ -19,6 +19,7 @@ func (s *httpResolver) Name() string {
 func (s *httpResolver) Resolve(name string, cfg config.Config) (xhttp.Client, error) {
 	setval := &setting{
 		Name:                name,
+		Balancer:            "random",
 		KeepaliveTimeout:    15,
 		ConnTimeout:         10,
 		MaxIdleConns:        100,

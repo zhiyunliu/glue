@@ -68,9 +68,14 @@ func (d *Default) Apply(nodes []Node) {
 
 // DefaultBuilder is de
 type DefaultBuilder struct {
-	Node     WeightedNodeBuilder
-	Balancer BalancerBuilder
-	Filters  []Filter
+	BuilderName string
+	Node        WeightedNodeBuilder
+	Balancer    BalancerBuilder
+	Filters     []Filter
+}
+
+func (db *DefaultBuilder) Name() string {
+	return db.BuilderName
 }
 
 // Build create builder

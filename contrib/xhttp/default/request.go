@@ -53,31 +53,11 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 
 	pathVal, err := url.Parse(service)
 	if err != nil {
-		err = fmt.Errorf("grpc.Request url.Parse=%s,Error:%w", service, err)
+		err = fmt.Errorf("http.Request url.Parse=%s,Error:%w", service, err)
 		return
 	}
 
-	//todo:当前是通过url 进行client 构建，是否考虑只通过服务来构建客户端？
-	key := fmt.Sprintf("%s:%s", r.setting.Name, pathVal.Host)
-	tmpClient := r.requests.Upsert(key, pathVal, func(exist bool, valueInMap interface{}, newValue interface{}) interface{} {
-		if exist {
-			return valueInMap
-		}
-
-		registrar, err := registry.GetRegistrar(global.Config)
-		if err != nil {
-			panic(err)
-		}
-
-		pathVal = newValue.(*url.URL)
-		client, err := NewClient(registrar, r.setting, pathVal)
-		if err != nil {
-			panic(err)
-		}
-		return client
-	})
-
-	client := tmpClient.(*Client)
+	client := r.getClient(pathVal)
 	nopts := make([]xhttp.RequestOption, 0, len(opts)+1)
 	nopts = append(nopts, opts...)
 	if reqidVal := ctx.Value(constants.HeaderRequestId); reqidVal != nil {
@@ -98,7 +78,7 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 		nopts = append(nopts, xhttp.WithContentType(constants.ContentTypeApplicationJSON))
 	}
 
-	return client.RequestByString(ctx, bodyBytes, nopts...)
+	return client.RequestByString(ctx, pathVal, bodyBytes, nopts...)
 }
 
 //Close 关闭RPC连接
@@ -109,4 +89,25 @@ func (r *Request) Close() error {
 	})
 	r.requests.Clear()
 	return nil
+}
+
+func (r *Request) getClient(pathVal *url.URL) *Client {
+	//todo:当前是通过url 进行client 构建，是否考虑只通过服务来构建客户端？
+	key := fmt.Sprintf("%s:%s.%s", r.setting.Name, pathVal.Host, pathVal.Scheme)
+	tmpClient := r.requests.Upsert(key, pathVal, func(exist bool, valueInMap interface{}, newValue interface{}) interface{} {
+		if exist {
+			return valueInMap
+		}
+		registrar, err := registry.GetRegistrar(global.Config)
+		if err != nil {
+			panic(err)
+		}
+		reqPath := newValue.(*url.URL)
+		client, err := NewClient(registrar, r.setting, fmt.Sprintf("%s.%s", reqPath.Host, reqPath.Scheme))
+		if err != nil {
+			panic(err)
+		}
+		return client
+	})
+	return tmpClient.(*Client)
 }

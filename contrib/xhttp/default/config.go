@@ -4,6 +4,7 @@ import "github.com/zhiyunliu/gel/config"
 
 type setting struct {
 	Name                string        `json:"-"`
+	Balancer            string        `json:"balancer"` //selector.Selector
 	ConnTimeout         int           `json:"conn_timeout"`
 	CertFile            string        `json:"cert_file"`
 	KeyFile             string        `json:"file_file"`

@@ -95,9 +95,10 @@ func NewBuilder(opts ...Option) selector.Builder {
 		opt(&option)
 	}
 	return &selector.DefaultBuilder{
-		Filters:  option.filters,
-		Balancer: &Builder{},
-		Node:     &ewma.Builder{},
+		BuilderName: Name,
+		Filters:     option.filters,
+		Balancer:    &Builder{},
+		Node:        &ewma.Builder{},
 	}
 }
 

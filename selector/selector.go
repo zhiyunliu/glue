@@ -26,6 +26,7 @@ type Rebalancer interface {
 
 // Builder build selector
 type Builder interface {
+	Name() string
 	Build() Selector
 }
 
@@ -55,11 +56,6 @@ type DoneInfo struct {
 	Err error
 	// Response Metadata
 	ReplyMeta ReplyMeta
-
-	// BytesSent indicates if any bytes have been sent to the server.
-	BytesSent bool
-	// BytesReceived indicates if any byte has been received from the server.
-	BytesReceived bool
 }
 
 // ReplyMeta is Reply Metadata.
