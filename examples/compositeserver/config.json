@@ -13,6 +13,9 @@
 	"rpcs":{
 		"default":{"proto":"grpc"}
 	},
+	"xhttp":{
+		"default":{"balancer":"wrr","conn_timeout":10}
+	},
 	"caches":{
 		"default":"redis://localhost"
 	},
@@ -43,13 +46,13 @@
 		},
 		"mqcserver":{
 			"config":{"addr":"queues://default","status":"start"},
-			"tasks":[{"queue":"xx.xx.xx","service":"/demomqc","disable":true}]
+			"tasks":[{"queue":"xx.xx.xx","service":"/demomqc"}]
 		},
 		"rpcserver":{
 			"config":{"addr":":8081","status":"start","read_timeout":10,"connection_timeout":10,"max_recv_size":65535,"max_send_size":65535}
 		},
 		"cronserver":{
-			"config":{"status":"start","sharding":1},
+			"config":{"status":"stop","sharding":1},
 			"jobs":[{"cron":"@every 10s","service":"/democron","disable":false}]
 		}	
 

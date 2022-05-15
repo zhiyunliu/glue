@@ -1,12 +1,15 @@
 package main
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/zhiyunliu/gel"
 	"github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/gel/examples/compositeserver/handles"
 	"github.com/zhiyunliu/gel/transport"
+	"github.com/zhiyunliu/gel/xhttp"
+	"github.com/zhiyunliu/gel/xrpc"
 
 	"github.com/zhiyunliu/gel/server/api"
 	"github.com/zhiyunliu/gel/server/cron"
@@ -16,15 +19,28 @@ import (
 )
 
 func init() {
-	srvOpt := gel.Server(apiserver(), mqcserver(), cronserver(), rpcserver())
+	srvOpt := gel.Server(
+		apiserver(),
+		mqcserver(),
+		cronserver(),
+		rpcserver(),
+	)
 	opts = append(opts, srvOpt, gel.LogConcurrency(1))
 }
 
 func apiserver() transport.Server {
 	apiSrv := api.New("apiserver")
 	apiSrv.Handle("/log", handles.NewLogDemo())
-	apiSrv.Handle("/demo", func(ctx context.Context) interface{} {
+	apiSrv.Handle("/demoapi", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demo")
+
+		body, err := gel.RPC().GetRPC().Swap(ctx, "grpc://compositeserver/demorpc", xrpc.WithWaitForReady(false))
+		if err != nil {
+			ctx.Log().Error("gel.RPC().GetRPC().Swap:", err)
+		}
+		ctx.Log().Debug(string(body.GetResult()))
+		ctx.Log().Debug(body.GetHeader())
+		ctx.Log().Debug(body.GetStatus())
 		return xtypes.XMap{
 			"a": 1,
 			"b": 2,
@@ -38,6 +54,13 @@ func mqcserver() transport.Server {
 
 	mqcSrv.Handle("/demomqc", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demomqc")
+		body, err := gel.Http().GetHttp().Swap(ctx, "http://compositeserver/demoapi", xhttp.WithMethod(http.MethodPost))
+		if err != nil {
+			ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
+		}
+		ctx.Log().Debug(string(body.GetResult()))
+		ctx.Log().Debug(body.GetHeader())
+		ctx.Log().Debug(body.GetStatus())
 
 		return xtypes.XMap{
 			"a": 1,
