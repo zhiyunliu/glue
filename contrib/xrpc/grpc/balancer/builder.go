@@ -2,6 +2,7 @@ package balancer
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"sync"
 
@@ -55,7 +56,7 @@ func (b *registrarBuilder) Build(target resolver.Target, clientConn resolver.Cli
 	rr := &registrarResolver{
 		ctx:            b.ctx,
 		registrar:      b.registrar,
-		reqPath:        b.reqPath,
+		serviceName:    fmt.Sprintf("%s.%s", b.reqPath.Host, b.reqPath.Scheme),
 		clientConn:     clientConn,
 		waitGroup:      sync.WaitGroup{},
 		resolveNowChan: make(chan struct{}, 1),

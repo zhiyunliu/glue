@@ -2,10 +2,10 @@ package balancer
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"sync"
 
+	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/gel/registry"
 	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/resolver"
@@ -14,7 +14,7 @@ import (
 type registrarResolver struct {
 	ctx            context.Context
 	registrar      registry.Registrar
-	reqPath        *url.URL
+	serviceName    string
 	clientConn     resolver.ClientConn
 	waitGroup      sync.WaitGroup
 	resolveNowChan chan struct{}
@@ -47,9 +47,10 @@ func (r *registrarResolver) watcher() {
 		case <-r.resolveNowChan:
 
 		}
-		instances, err := r.registrar.GetService(r.ctx, fmt.Sprintf("%s.%s", r.reqPath.Host, r.reqPath.Scheme))
-
+		instances, err := r.registrar.GetService(r.ctx, r.serviceName)
 		if err != nil {
+			log.Errorf("grpc:registrar.GetService=%s,error:%+v", r.serviceName, err)
+
 			continue
 		}
 
@@ -71,7 +72,7 @@ func (r *registrarResolver) buildAddress(instances []*registry.ServiceInstance) 
 
 			a := resolver.Address{
 				Addr:       epv.Host,
-				ServerName: r.reqPath.Host,
+				ServerName: v.Name,
 				Attributes: attributes.New(v.Name, equalMap(v.Metadata)),
 			}
 			addresses = append(addresses, a)
@@ -85,7 +86,7 @@ func (r *registrarResolver) watchRegistrar() {
 	if r.registrar == nil {
 		return
 	}
-	watcher, _ := r.registrar.Watch(r.ctx, fmt.Sprintf("%s.%s", r.reqPath.Host, r.reqPath.Scheme))
+	watcher, _ := r.registrar.Watch(r.ctx, r.serviceName)
 	for {
 
 		select {
@@ -94,10 +95,13 @@ func (r *registrarResolver) watchRegistrar() {
 		default:
 			instances, err := watcher.Next()
 			if err != nil {
+				log.Errorf("grpc:registrar.Watch=%s,error:%+v", r.serviceName, err)
+
 				continue
 			}
 			addresses, err := r.buildAddress(instances)
-			if err != nil || len(addresses) == 0 {
+			if err != nil {
+
 				continue
 			}
 			r.clientConn.UpdateState(resolver.State{Addresses: addresses})

@@ -2,9 +2,9 @@ package balancer
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
+	"github.com/zhiyunliu/gel/log"
 	"github.com/zhiyunliu/gel/registry"
 	"github.com/zhiyunliu/gel/selector"
 )
@@ -62,8 +62,7 @@ func (r *httpSelector) resolveNow() {
 func (r *httpSelector) buildAddress(instances []*registry.ServiceInstance) []selector.Node {
 
 	var addresses = make([]selector.Node, 0, len(instances))
-	for idx, v := range instances {
-		fmt.Printf("instances:%d,%+v\n", idx, v)
+	for _, v := range instances {
 		for _, ep := range v.Endpoints {
 			addresses = append(addresses, selector.NewNode(ep, v))
 		}
@@ -84,6 +83,7 @@ func (r *httpSelector) watchRegistrar() {
 		default:
 			instances, err := watcher.Next()
 			if err != nil {
+				log.Errorf("http:registrar.Next=%s,error:%+v", r.serviceName, err)
 				continue
 			}
 			addresses := r.buildAddress(instances)
@@ -109,6 +109,7 @@ func (r *httpSelector) watcher() {
 		}
 		instances, err := r.registrar.GetService(r.ctx, r.serviceName)
 		if err != nil {
+			log.Errorf("http:registrar.GetService=%s,error:%+v", r.serviceName, err)
 			continue
 		}
 
