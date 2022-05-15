@@ -2,6 +2,7 @@ package balancer
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/zhiyunliu/gel/registry"
@@ -59,8 +60,10 @@ func (r *httpSelector) resolveNow() {
 }
 
 func (r *httpSelector) buildAddress(instances []*registry.ServiceInstance) []selector.Node {
+
 	var addresses = make([]selector.Node, 0, len(instances))
-	for _, v := range instances {
+	for idx, v := range instances {
+		fmt.Printf("instances:%d,%+v\n", idx, v)
 		for _, ep := range v.Endpoints {
 			addresses = append(addresses, selector.NewNode(ep, v))
 		}

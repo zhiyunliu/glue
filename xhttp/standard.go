@@ -9,7 +9,7 @@ import (
 	"github.com/zhiyunliu/golibs/httputil"
 )
 
-const TypeNode = "https"
+const TypeNode = "xhttp"
 const _defaultName = "default"
 
 type StandardHttp interface {

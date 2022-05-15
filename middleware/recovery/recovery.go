@@ -1,6 +1,7 @@
 package recovery
 
 import (
+	"fmt"
 	"runtime"
 
 	"github.com/zhiyunliu/gel/context"
@@ -33,7 +34,7 @@ func WithHandler(h HandlerFunc) Option {
 func Recovery(opts ...Option) middleware.Middleware {
 	op := options{
 		handler: func(ctx context.Context, err interface{}) error {
-			return ErrUnknownRequest
+			return fmt.Errorf("%w,%+v", ErrUnknownRequest, err)
 		},
 	}
 	for _, o := range opts {

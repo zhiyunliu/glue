@@ -1,4 +1,4 @@
-package grpc
+package http
 
 import (
 	"context"
@@ -12,10 +12,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/zhiyunliu/gel/contrib/xhttp/default/balancer"
+	"github.com/zhiyunliu/gel/contrib/xhttp/http/balancer"
 	"github.com/zhiyunliu/gel/registry"
 	"github.com/zhiyunliu/gel/selector"
-	"github.com/zhiyunliu/gel/selector/filter"
 	"github.com/zhiyunliu/gel/xhttp"
 	"github.com/zhiyunliu/golibs/httputil"
 )
@@ -40,7 +39,7 @@ func NewClient(registrar registry.Registrar, setting *setting, serviceName strin
 	if err != nil {
 		return nil, err
 	}
-
+	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
 	client.selector, err = balancer.NewSelector(client.ctx, registrar, serviceName, setting.Balancer)
 	if err != nil {
 		return nil, err
@@ -59,7 +58,6 @@ func NewClient(registrar registry.Registrar, setting *setting, serviceName strin
 		TLSHandshakeTimeout:   time.Duration(setting.TLSHandshakeTimeout) * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
-	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
 	return client, nil
 }
 
@@ -88,7 +86,8 @@ func (c *Client) Close() {
 
 func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.Options, input []byte) (response xhttp.Body, err error) {
 
-	node, done, err := c.selector.Select(ctx, selector.WithFilter(filter.Version(o.Version)))
+	//node, done, err := c.selector.Select(ctx, selector.WithFilter(filter.Version(o.Version)))
+	node, done, err := c.selector.Select(ctx)
 	if err != nil {
 		return nil, err
 	}

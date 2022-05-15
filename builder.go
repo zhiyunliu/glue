@@ -9,6 +9,7 @@ import (
 	"github.com/zhiyunliu/gel/dlocker"
 	"github.com/zhiyunliu/gel/queue"
 	"github.com/zhiyunliu/gel/xdb"
+	"github.com/zhiyunliu/gel/xhttp"
 	"github.com/zhiyunliu/gel/xrpc"
 )
 
@@ -50,6 +51,7 @@ func registrydefault() error {
 	Registry(cache.NewBuilder())
 	Registry(queue.NewBuilder())
 	Registry(xrpc.NewBuilder())
+	Registry(xhttp.NewBuilder())
 	Registry(dlocker.NewBuilder())
 	return nil
 }

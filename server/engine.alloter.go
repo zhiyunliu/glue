@@ -47,7 +47,7 @@ func (e *AlloterEngine) NoRoute() {
 		actx := e.pool.Get().(*AlloterContext)
 		actx.reset(ctx)
 		actx.opts = e.opts
-		actx.Log().Errorf("No Route for %s", actx.Request().Path().FullPath())
+		actx.Log().Errorf("[%s][%s]No Route for [%s]%s", actx.ServerType(), actx.ServerName(), ctx.Request.GetMethod(), actx.Request().Path().FullPath())
 		actx.Close()
 		e.pool.Put(actx)
 	})

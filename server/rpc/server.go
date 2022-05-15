@@ -170,5 +170,5 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *serv
 }
 
 func (e *Server) Handle(path string, obj interface{}) {
-	e.opts.router.Handle(path, obj, server.MethodGet)
+	e.opts.router.Handle(path, obj, server.MethodPost)
 }

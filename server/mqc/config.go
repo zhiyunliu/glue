@@ -47,8 +47,10 @@ func (t *Task) GetService() string {
 }
 
 func getService(queue string) string {
+	if strings.HasPrefix(queue, "/") {
+		return queue
+	}
 	tmp := queue
 	tmp = strings.ReplaceAll(tmp, ":", "_")
-	tmp = strings.ReplaceAll(tmp, "/", "_")
 	return fmt.Sprintf("/mqc_%s", tmp)
 }
