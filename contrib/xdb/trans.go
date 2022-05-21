@@ -1,6 +1,8 @@
 package xdb
 
 import (
+	"context"
+
 	"github.com/zhiyunliu/gel/contrib/xdb/internal"
 	"github.com/zhiyunliu/gel/contrib/xdb/tpl"
 	"github.com/zhiyunliu/gel/xdb"
@@ -14,7 +16,7 @@ type xTrans struct {
 }
 
 //Query 查询数据
-func (t *xTrans) Query(sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
+func (t *xTrans) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
 	query, args := t.tpl.GetSQLContext(sql, input)
 	data, err := t.tx.Query(query, args...)
 	if err != nil {
@@ -33,7 +35,7 @@ func (t *xTrans) Query(sql string, input map[string]interface{}) (rows xdb.Rows,
 }
 
 //Query 查询数据
-func (db *xTrans) Multi(sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
+func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
 	sqlRows, err := db.tx.Query(query, args...)
 	if err != nil {
@@ -51,8 +53,8 @@ func (db *xTrans) Multi(sql string, input map[string]interface{}) (datasetRows [
 	return
 }
 
-func (t *xTrans) First(sql string, input map[string]interface{}) (data xdb.Row, err error) {
-	rows, err := t.Query(sql, input)
+func (t *xTrans) First(ctx context.Context, sql string, input map[string]interface{}) (data xdb.Row, err error) {
+	rows, err := t.Query(ctx, sql, input)
 	if err != nil {
 		return
 	}
@@ -65,8 +67,8 @@ func (t *xTrans) First(sql string, input map[string]interface{}) (data xdb.Row, 
 }
 
 //Scalar 根据包含@名称占位符的查询语句执行查询语句
-func (t *xTrans) Scalar(sql string, input map[string]interface{}) (result interface{}, err error) {
-	rows, err := t.Query(sql, input)
+func (t *xTrans) Scalar(ctx context.Context, sql string, input map[string]interface{}) (result interface{}, err error) {
+	rows, err := t.Query(ctx, sql, input)
 	if err != nil {
 		return
 	}
@@ -78,7 +80,7 @@ func (t *xTrans) Scalar(sql string, input map[string]interface{}) (result interf
 }
 
 //Execute 根据包含@名称占位符的语句执行查询语句
-func (t *xTrans) Exec(sql string, input map[string]interface{}) (r xdb.Result, err error) {
+func (t *xTrans) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	query, args := t.tpl.GetSQLContext(sql, input)
 	r, err = t.tx.Execute(query, args...)
 	if err != nil {

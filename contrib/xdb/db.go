@@ -1,6 +1,7 @@
 package xdb
 
 import (
+	"context"
 	"runtime"
 	"time"
 
@@ -37,7 +38,7 @@ func NewDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime int)
 }
 
 //Query 查询数据
-func (db *xDB) Query(sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
+func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
 	data, err := db.db.Query(query, args...)
 	if err != nil {
@@ -56,7 +57,7 @@ func (db *xDB) Query(sql string, input map[string]interface{}) (rows xdb.Rows, e
 }
 
 //Multi 查询数据(多个数据集)
-func (db *xDB) Multi(sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
+func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
 	sqlRows, err := db.db.Query(query, args...)
 	if err != nil {
@@ -74,8 +75,8 @@ func (db *xDB) Multi(sql string, input map[string]interface{}) (datasetRows []xd
 	return
 }
 
-func (db *xDB) First(sql string, input map[string]interface{}) (data xdb.Row, err error) {
-	rows, err := db.Query(sql, input)
+func (db *xDB) First(ctx context.Context, sql string, input map[string]interface{}) (data xdb.Row, err error) {
+	rows, err := db.Query(ctx, sql, input)
 	if err != nil {
 		return
 	}
@@ -87,8 +88,8 @@ func (db *xDB) First(sql string, input map[string]interface{}) (data xdb.Row, er
 	return
 }
 
-func (db *xDB) Scalar(sql string, input map[string]interface{}) (data interface{}, err error) {
-	rows, err := db.Query(sql, input)
+func (db *xDB) Scalar(ctx context.Context, sql string, input map[string]interface{}) (data interface{}, err error) {
+	rows, err := db.Query(ctx, sql, input)
 	if err != nil {
 		return
 	}
@@ -100,7 +101,7 @@ func (db *xDB) Scalar(sql string, input map[string]interface{}) (data interface{
 }
 
 //Execute 根据包含@名称占位符的语句执行查询语句
-func (db *xDB) Exec(sql string, input map[string]interface{}) (r xdb.Result, err error) {
+func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
 	r, err = db.db.Exec(query, args...)
 	if err != nil {

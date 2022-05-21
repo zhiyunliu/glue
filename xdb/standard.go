@@ -6,10 +6,11 @@ import (
 )
 
 const DbTypeNode = "dbs"
+const _defaultName = "default"
 
 //StandardDB
 type StandardDB interface {
-	GetDB(name string) (q IDB)
+	GetDB(name ...string) (q IDB)
 }
 
 //StandardDB
@@ -23,9 +24,14 @@ func NewStandardDB(container container.Container) StandardDB {
 }
 
 //GetDB
-func (s *xDB) GetDB(name string) (q IDB) {
-	obj, err := s.container.GetOrCreate(DbTypeNode, name, func(cfg config.Config) (interface{}, error) {
-		dbcfg := cfg.Get(DbTypeNode).Get(name)
+func (s *xDB) GetDB(name ...string) (q IDB) {
+	realName := _defaultName
+	if len(name) > 0 {
+		realName = name[0]
+	}
+
+	obj, err := s.container.GetOrCreate(DbTypeNode, realName, func(cfg config.Config) (interface{}, error) {
+		dbcfg := cfg.Get(DbTypeNode).Get(realName)
 		return newDB(dbcfg)
 	})
 	if err != nil {

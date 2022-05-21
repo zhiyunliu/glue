@@ -1,6 +1,7 @@
 package xdb
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/zhiyunliu/gel/config"
@@ -22,11 +23,11 @@ type ITrans interface {
 
 //Executer 数据库操作对象集合
 type Executer interface {
-	Query(sql string, input map[string]interface{}) (data Rows, err error)
-	Multi(sql string, input map[string]interface{}) (data []Rows, err error)
-	First(sql string, input map[string]interface{}) (data Row, err error)
-	Scalar(sql string, input map[string]interface{}) (data interface{}, err error)
-	Exec(sql string, input map[string]interface{}) (r Result, err error)
+	Query(ctx context.Context, sql string, input map[string]interface{}) (data Rows, err error)
+	Multi(ctx context.Context, sql string, input map[string]interface{}) (data []Rows, err error)
+	First(ctx context.Context, sql string, input map[string]interface{}) (data Row, err error)
+	Scalar(ctx context.Context, sql string, input map[string]interface{}) (data interface{}, err error)
+	Exec(ctx context.Context, sql string, input map[string]interface{}) (r Result, err error)
 	//StoredProc(procName string, input map[string]interface{}) (r Result, err error)
 }
 

@@ -22,7 +22,7 @@ func (d *DBdemo) QueryHandle(ctx context.Context) interface{} {
 	if len(idval) > 0 {
 		sql = `select id,name from new_table t where t.id=@id`
 	}
-	rows, err := dbobj.Query(sql, map[string]interface{}{
+	rows, err := dbobj.Query(ctx.Context(), sql, map[string]interface{}{
 		"id": idval,
 	})
 	if err != nil {
@@ -35,7 +35,7 @@ func (d *DBdemo) QueryHandle(ctx context.Context) interface{} {
 
 func (d *DBdemo) FirstHandle(ctx context.Context) interface{} {
 	dbobj := gel.DB().GetDB("localhost")
-	row, err := dbobj.First("select id,name from new_table t where t.id=@id", map[string]interface{}{
+	row, err := dbobj.First(ctx.Context(), "select id,name from new_table t where t.id=@id", map[string]interface{}{
 		"id": ctx.Request().Query().Get("id"),
 	})
 	if err != nil {
@@ -48,7 +48,7 @@ func (d *DBdemo) FirstHandle(ctx context.Context) interface{} {
 
 func (d *DBdemo) InsertHandle(ctx context.Context) interface{} {
 	dbobj := gel.DB().GetDB("localhost")
-	result, err := dbobj.Exec("insert into new_table(name) values(@name) ", map[string]interface{}{
+	result, err := dbobj.Exec(ctx.Context(), "insert into new_table(name) values(@name) ", map[string]interface{}{
 		"name": fmt.Sprintf("insert:%s:%s", ctx.Request().Query().Get("name"), time.Now().Format("2006-01-02 15:04:05")),
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func (d *DBdemo) InsertHandle(ctx context.Context) interface{} {
 
 func (d *DBdemo) UpdateHandle(ctx context.Context) interface{} {
 	dbobj := gel.DB().GetDB("localhost")
-	result, err := dbobj.Exec("update new_table set name=@name where id=@id ", map[string]interface{}{
+	result, err := dbobj.Exec(ctx.Context(), "update new_table set name=@name where id=@id ", map[string]interface{}{
 		"id":   ctx.Request().Query().Get("id"),
 		"name": fmt.Sprintf("update:%s", time.Now().Format("2006-01-02 15:04:05")),
 	})
@@ -92,7 +92,7 @@ func (d *DBdemo) TransHandle(ctx context.Context) interface{} {
 		return err
 	}
 
-	istResult, err := trans.Exec("insert into new_table(name) values(@name) ", map[string]interface{}{
+	istResult, err := trans.Exec(ctx.Context(), "insert into new_table(name) values(@name) ", map[string]interface{}{
 		"name": "trans insert",
 	})
 
@@ -107,7 +107,7 @@ func (d *DBdemo) TransHandle(ctx context.Context) interface{} {
 		return err
 	}
 
-	result, err := trans.Exec("update new_table set name=@name where id=@id ", map[string]interface{}{
+	result, err := trans.Exec(ctx.Context(), "update new_table set name=@name where id=@id ", map[string]interface{}{
 		"id":   lastId,
 		"name": fmt.Sprintf("update-trans:%s", time.Now().Format("2006-01-02 15:04:05")),
 	})
@@ -131,7 +131,7 @@ func (d *DBdemo) MultiHandle(ctx context.Context) interface{} {
 	dbobj := gel.DB().GetDB("microsql")
 
 	var outArg string
-	result, err := dbobj.Multi(`
+	result, err := dbobj.Multi(ctx.Context(), `
 DECLARE	@return_value int
 
 EXEC	#return_value = [dbo].[test_aaa]
@@ -153,7 +153,7 @@ EXEC	#return_value = [dbo].[test_aaa]
 
 func (d *DBdemo) SpHandle(ctx context.Context) interface{} {
 	dbobj := gel.DB().GetDB("localhost")
-	result, err := dbobj.Exec("update new_table set name=@name where id=@id ", map[string]interface{}{
+	result, err := dbobj.Exec(ctx.Context(), "update new_table set name=@name where id=@id ", map[string]interface{}{
 		"id":   ctx.Request().Query().Get("id"),
 		"name": fmt.Sprintf("update:%s", time.Now().Format("2006-01-02 15:04:05")),
 	})
