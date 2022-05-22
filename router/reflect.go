@@ -9,9 +9,11 @@ import (
 	"github.com/zhiyunliu/gel/middleware"
 )
 
-const Handling = "Handling"
-const Handler = "Handle"
-const Handled = "Handled"
+const (
+	Handling = "Handling"
+	Handler  = "Handle"
+	Handled  = "Handled"
+)
 
 type reflectCallback func(*Group, string, middleware.Handler)
 

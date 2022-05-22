@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/zhiyunliu/gel/config"
@@ -8,15 +9,15 @@ import (
 
 type ICache interface {
 	Name() string
-	Get(key string) (string, error)
-	Set(key string, val interface{}, expire int) error
-	Del(key string) error
-	HashGet(hk, key string) (string, error)
-	HashSet(hk, key string, val string) (bool, error)
-	HashDel(hk, key string) error
-	Increase(key string) (int64, error)
-	Decrease(key string) (int64, error)
-	Expire(key string, expire int) error
+	Get(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, val interface{}, expire int) error
+	Del(ctx context.Context, key string) error
+	HashGet(ctx context.Context, hk, key string) (string, error)
+	HashSet(ctx context.Context, hk, key string, val string) (bool, error)
+	HashDel(ctx context.Context, hk, key string) error
+	Increase(ctx context.Context, key string) (int64, error)
+	Decrease(ctx context.Context, key string) (int64, error)
+	Expire(ctx context.Context, key string, expire int) error
 	GetImpl() interface{}
 }
 

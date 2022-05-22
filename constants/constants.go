@@ -1,3 +1,5 @@
 package constants
 
-const ()
+const (
+	Default = "default"
+)

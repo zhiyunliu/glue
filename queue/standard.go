@@ -6,10 +6,13 @@ import (
 	"github.com/zhiyunliu/golibs/xnet"
 )
 
-const TypeNode = "queues"
+const (
+	TypeNode     = "queues"
+	_defaultName = "default"
+)
 
 type StandardQueue interface {
-	GetQueue(name string) (q IQueue)
+	GetQueue(name ...string) (q IQueue)
 }
 
 //xQueue queue
@@ -23,9 +26,14 @@ func NewStandardQueue(c container.Container) StandardQueue {
 }
 
 //GetQueue GetQueue
-func (s *xQueue) GetQueue(name string) (q IQueue) {
-	obj, err := s.c.GetOrCreate(TypeNode, name, func(cfg config.Config) (interface{}, error) {
-		cfgVal := cfg.Get(TypeNode).Value(name)
+func (s *xQueue) GetQueue(name ...string) (q IQueue) {
+	realName := _defaultName
+	if len(name) > 0 {
+		realName = name[0]
+	}
+
+	obj, err := s.c.GetOrCreate(TypeNode, realName, func(cfg config.Config) (interface{}, error) {
+		cfgVal := cfg.Get(TypeNode).Value(realName)
 		cacheVal := cfgVal.String()
 		//redis://localhost
 		protoType, configName, err := xnet.Parse(cacheVal)

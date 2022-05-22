@@ -6,11 +6,14 @@ import (
 	"github.com/zhiyunliu/golibs/xnet"
 )
 
-const TypeNode = "caches"
+const (
+	TypeNode     = "caches"
+	_defaultName = "default"
+)
 
 //StandardCache cache
 type StandardCache interface {
-	GetCache(name string) (q ICache)
+	GetCache(name ...string) (q ICache)
 }
 
 //StandardCache cache
@@ -24,9 +27,14 @@ func NewStandardCache(c container.Container) StandardCache {
 }
 
 //GetCaches GetCaches
-func (s *xCache) GetCache(name string) (q ICache) {
-	obj, err := s.c.GetOrCreate(TypeNode, name, func(cfg config.Config) (interface{}, error) {
-		cfgVal := cfg.Get(TypeNode).Value(name)
+func (s *xCache) GetCache(name ...string) (q ICache) {
+	realName := _defaultName
+	if len(name) > 0 {
+		realName = name[0]
+	}
+
+	obj, err := s.c.GetOrCreate(TypeNode, realName, func(cfg config.Config) (interface{}, error) {
+		cfgVal := cfg.Get(TypeNode).Value(realName)
 		cacheVal := cfgVal.String()
 		//redis://localhost
 		protoType, configName, err := xnet.Parse(cacheVal)
