@@ -131,8 +131,9 @@ func (c *Client) getTlsConfig() (*tls.Config, error) {
 
 func (c *Client) getProxy() func(*http.Request) (*url.URL, error) {
 	if c.setting.ProxyURL != "" {
+		proxyURL, err := url.Parse(c.setting.ProxyURL)
 		return func(_ *http.Request) (*url.URL, error) {
-			return url.Parse(c.setting.ProxyURL)
+			return proxyURL, err
 		}
 	}
 	return nil

@@ -11,8 +11,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
-
-	"google.golang.org/protobuf/proto"
 )
 
 func setServerSpan(ctx context.Context, span trace.Span, m interface{}) {
@@ -31,9 +29,6 @@ func setServerSpan(ctx context.Context, span trace.Span, m interface{}) {
 
 	remote = ctx.Request().GetClientIP()
 	attrs = append(attrs, peerAttr(remote)...)
-	if p, ok := m.(proto.Message); ok {
-		attrs = append(attrs, attribute.Key("recv_msg.size").Int(proto.Size(p)))
-	}
 	if md, ok := metadata.FromServerContext(ctx.Context()); ok {
 		attrs = append(attrs, semconv.PeerServiceKey.String(md.Get(serviceHeader)))
 	}

@@ -2,6 +2,7 @@ package tracing
 
 import (
 	"context"
+	"time"
 
 	"github.com/zhiyunliu/gel/errors"
 	"go.opentelemetry.io/otel"
@@ -50,7 +51,7 @@ func (t *Tracer) End(ctx context.Context, span trace.Span, m interface{}) {
 	err, _ = m.(error)
 
 	if err != nil {
-		span.RecordError(err)
+		span.RecordError(err, trace.WithTimestamp(time.Now()), trace.WithStackTrace(true))
 		if e := errors.FromError(err); e != nil {
 			span.SetAttributes(attribute.Key("rpc.status_code").Int64(int64(e.Code)))
 		}

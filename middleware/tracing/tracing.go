@@ -58,9 +58,13 @@ func serverByOption(options *options) middleware.Middleware {
 		return func(ctx context.Context) (reply interface{}) {
 			if _, ok := transport.FromServerContext(ctx.Context()); ok {
 				sctx, span := tracer.Start(ctx.Context(), ctx.Request().Path().FullPath(), ctx.Request().Header())
+
+				//sctx = trace.ContextWithSpan(sctx, span)
 				ctx.ResetContext(sctx)
 				setServerSpan(ctx, span, ctx.Request())
-				defer func() { tracer.End(ctx.Context(), span, reply) }()
+				defer func() {
+					tracer.End(ctx.Context(), span, reply)
+				}()
 			}
 			return handler(ctx)
 		}

@@ -7,6 +7,7 @@ import (
 	"github.com/zhiyunliu/gel"
 	"github.com/zhiyunliu/gel/context"
 	"github.com/zhiyunliu/gel/examples/compositeserver/handles"
+	"github.com/zhiyunliu/gel/middleware/tracing"
 	"github.com/zhiyunliu/gel/transport"
 	"github.com/zhiyunliu/gel/xhttp"
 	"github.com/zhiyunliu/gel/xrpc"
@@ -16,9 +17,19 @@ import (
 	"github.com/zhiyunliu/gel/server/mqc"
 	"github.com/zhiyunliu/gel/server/rpc"
 	"github.com/zhiyunliu/golibs/xtypes"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
+var Name = "compositeserver"
+
 func init() {
+
 	srvOpt := gel.Server(
 		apiserver(),
 		mqcserver(),
@@ -28,8 +39,31 @@ func init() {
 	opts = append(opts, srvOpt, gel.LogConcurrency(1))
 }
 
+// Set global trace provider
+func setTracerProvider(url string) error {
+	// Create the Jaeger exporter
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(url)))
+	if err != nil {
+		return err
+	}
+	tp := tracesdk.NewTracerProvider(
+		// Set the sampling rate based on the parent span to 100%
+		tracesdk.WithSampler(tracesdk.ParentBased(tracesdk.TraceIDRatioBased(1.0))),
+		// Always be sure to batch in production.
+		tracesdk.WithBatcher(exp),
+		// Record information about this application in an Resource.
+		tracesdk.WithResource(resource.NewSchemaless(
+			semconv.ServiceNameKey.String(Name),
+			attribute.String("env", "dev"),
+		)),
+	)
+	otel.SetTracerProvider(tp)
+	return nil
+}
+
 func apiserver() transport.Server {
 	apiSrv := api.New("apiserver")
+	apiSrv.Use(tracing.Server(tracing.WithPropagator(otel.GetTextMapPropagator()), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	apiSrv.Handle("/log", handles.NewLogDemo())
 	apiSrv.Handle("/demoapi", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demo")
