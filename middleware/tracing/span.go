@@ -25,10 +25,11 @@ func setServerSpan(ctx context.Context, span trace.Span, m interface{}) {
 	attrs = append(attrs, buildKey(serverType, "method").String(method))
 	attrs = append(attrs, buildKey(serverType, "route").String(route))
 	attrs = append(attrs, buildKey(serverType, "target").String(path))
-	attrs = append(attrs, buildKey(serverType, "system").String(global.AppName+ctx.ServerName())) //todo:获取应用的名称
+	attrs = append(attrs, buildKey(serverType, "system").String(fmt.Sprintf("%s.%s", global.AppName, ctx.ServerName())))
 
 	remote = ctx.Request().GetClientIP()
-	attrs = append(attrs, peerAttr(remote)...)
+	attrs = append(attrs, buildKey(serverType, "client-ip").String(remote))
+	//attrs = append(attrs, peerAttr(remote)...)
 	if md, ok := metadata.FromServerContext(ctx.Context()); ok {
 		attrs = append(attrs, semconv.PeerServiceKey.String(md.Get(serviceHeader)))
 	}

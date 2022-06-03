@@ -1,6 +1,7 @@
 package mqc
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -15,6 +16,7 @@ import (
 
 //processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
+	ctx       context.Context
 	lock      sync.Mutex
 	closeChan chan struct{}
 	queues    cmap.ConcurrentMap
@@ -25,8 +27,9 @@ type processor struct {
 }
 
 //NewProcessor 创建processor
-func newProcessor(proto string, setting config.Config) (p *processor, err error) {
+func newProcessor(ctx context.Context, proto string, setting config.Config) (p *processor, err error) {
 	p = &processor{
+		ctx:       ctx,
 		status:    server.Unstarted,
 		closeChan: make(chan struct{}),
 		queues:    cmap.New(),
@@ -137,6 +140,7 @@ func (s *processor) handleCallback(task *Task) func(queue.IMQCMessage) {
 		if err != nil {
 			panic(err)
 		}
+		req.ctx = s.ctx
 		resp, err := NewResponse(task, m)
 		if err != nil {
 			panic(err)

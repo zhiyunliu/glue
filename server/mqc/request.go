@@ -28,7 +28,6 @@ type Request struct {
 
 //NewRequest 构建任务请求
 func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
-
 	r = &Request{
 
 		IMQCMessage: m,
@@ -44,8 +43,8 @@ func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 	r.body = message.Body()
 	r.ctx = sctx.Background()
 
-	if r.header["Content-Type"] == "" {
-		r.header["Content-Type"] = "application/json"
+	if r.header[constants.ContentTypeName] == "" {
+		r.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
 	}
 
 	return r, nil

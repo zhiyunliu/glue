@@ -1,6 +1,7 @@
 package cron
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -17,6 +18,7 @@ import (
 
 //processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
+	ctx       context.Context
 	lock      sync.Mutex
 	closeChan chan struct{}
 	index     int
@@ -158,7 +160,9 @@ func (s *processor) execute() {
 		if curidx > 0 {
 			jobReq.round.Reduce()
 			return
+
 		}
+		jobReq.ctx = s.ctx
 		go s.handle(jobReq)
 		removeKeyList = append(removeKeyList, key)
 		resetJobList = append(resetJobList, jobReq)

@@ -13,8 +13,20 @@ import (
 type Option func(*options)
 
 type options struct {
+	tracerName     string
 	tracerProvider trace.TracerProvider
 	propagator     propagation.TextMapPropagator
+}
+
+var (
+	_defaultName = "gel.tracer"
+)
+
+// WithTracerName with tracer name.
+func WithTracerName(tracerName string) Option {
+	return func(opts *options) {
+		opts.tracerName = tracerName
+	}
 }
 
 // WithPropagator with tracer propagator.
@@ -35,6 +47,7 @@ func WithTracerProvider(provider trace.TracerProvider) Option {
 // Server ratelimiter middleware
 func Server(opts ...Option) middleware.Middleware {
 	options := &options{
+		tracerName: _defaultName,
 		propagator: propagation.NewCompositeTextMapPropagator(Metadata{}, propagation.Baggage{}, propagation.TraceContext{}),
 	}
 	for _, o := range opts {
@@ -45,6 +58,7 @@ func Server(opts ...Option) middleware.Middleware {
 
 func serverByConfig(cfg *Config) middleware.Middleware {
 	options := &options{
+		tracerName: _defaultName,
 		propagator: propagation.NewCompositeTextMapPropagator(Metadata{}, propagation.Baggage{}, propagation.TraceContext{}),
 	}
 	return serverByOption(options)
@@ -59,7 +73,6 @@ func serverByOption(options *options) middleware.Middleware {
 			if _, ok := transport.FromServerContext(ctx.Context()); ok {
 				sctx, span := tracer.Start(ctx.Context(), ctx.Request().Path().FullPath(), ctx.Request().Header())
 
-				//sctx = trace.ContextWithSpan(sctx, span)
 				ctx.ResetContext(sctx)
 				setServerSpan(ctx, span, ctx.Request())
 				defer func() {

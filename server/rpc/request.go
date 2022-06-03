@@ -2,12 +2,14 @@ package rpc
 
 import (
 	"bytes"
+	"context"
 	sctx "context"
 	"encoding/json"
 	"io"
 
 	"github.com/zhiyunliu/gel/constants"
 	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/grpcproto"
+	"google.golang.org/grpc/peer"
 
 	"github.com/zhiyunliu/gel/contrib/alloter"
 )
@@ -25,7 +27,7 @@ type Request struct {
 }
 
 //NewRequest 构建任务请求
-func NewRequest(rpcReq *grpcproto.Request) (r *Request, err error) {
+func NewRequest(ctx context.Context, rpcReq *grpcproto.Request) (r *Request, err error) {
 
 	r = &Request{
 		rpcReq: rpcReq,
@@ -38,7 +40,7 @@ func NewRequest(rpcReq *grpcproto.Request) (r *Request, err error) {
 	}
 	r.body = cbody(rpcReq.Body)
 
-	r.ctx = sctx.Background()
+	r.ctx = ctx
 
 	return r, nil
 }
@@ -71,11 +73,13 @@ func (m *Request) Body() []byte {
 }
 
 func (m *Request) GetRemoteAddr() string {
+	if p, ok := peer.FromContext(m.ctx); ok {
+		return p.Addr.String()
+	}
 	return m.header[constants.HeaderRemoteHeader]
 }
 
 func (m *Request) Context() sctx.Context {
-
 	return m.ctx
 }
 func (m *Request) WithContext(ctx sctx.Context) alloter.IRequest {

@@ -19,8 +19,8 @@ func (p *ServiceApp) run() (err error) {
 	}
 
 	errChan := make(chan error, 1)
-	p.svcCtx = context.Background()
-	err = p.apprun(p.svcCtx)
+	//p.svcCtx = context.Background()
+	err = p.apprun()
 	if err != nil {
 		errChan <- err
 	}
@@ -32,16 +32,17 @@ func (p *ServiceApp) run() (err error) {
 	}
 }
 
-func (p *ServiceApp) apprun(ctx context.Context) error {
+func (p *ServiceApp) apprun() error {
+	p.svcCtx = context.Background()
 	p.closeWaitGroup.Add(len(p.options.Servers))
 	for _, srv := range p.options.Servers {
 		srv.Config(p.options.Config)
-		err := srv.Start(ctx)
+		err := srv.Start(context.Background())
 		if err != nil {
 			return err
 		}
 	}
-	if err := p.register(ctx); err != nil {
+	if err := p.register(p.svcCtx); err != nil {
 		return err
 	}
 	if err := p.startTraceServer(); err != nil {
@@ -61,12 +62,18 @@ func (p *ServiceApp) startTraceServer() error {
 			return
 		}
 		traceSrv := &http.Server{}
+		done := make(chan struct{})
+		go func() {
+			errChan <- traceSrv.Serve(lsr)
+			close(done)
+		}()
+
 		select {
-		case errChan <- traceSrv.Serve(lsr):
+		case <-done:
 			p.closeWaitGroup.Add(1)
 			return
-		case <-p.svcCtx.Done():
-			return
+		case <-time.After(time.Second):
+			errChan <- nil
 		}
 	}()
 

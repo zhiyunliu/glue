@@ -70,7 +70,11 @@ func (e *Server) Config(cfg config.Config) {
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) error {
-	e.ctx = ctx
+	if e.opts.setting.Config.Status == server.StatusStop {
+		return nil
+	}
+
+	e.ctx = transport.WithServerContext(ctx, e)
 	lsr, err := net.Listen("tcp", e.opts.setting.Config.Addr)
 	if err != nil {
 		return err
@@ -83,7 +87,6 @@ func (e *Server) Start(ctx context.Context) error {
 		grpcOpts = append(grpcOpts, grpc.MaxSendMsgSize(e.opts.setting.Config.MaxSendMsgSize))
 	}
 	e.srv = grpc.NewServer(grpcOpts...)
-
 	e.newProcessor()
 
 	errChan := make(chan error, 1)
@@ -161,7 +164,7 @@ func (e *Server) buildEndpoint() *url.URL {
 
 func (e *Server) newProcessor() {
 	var err error
-	e.processor, err = newProcessor()
+	e.processor, err = newProcessor(e)
 	if err != nil {
 		panic(err)
 	}

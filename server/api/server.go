@@ -66,7 +66,11 @@ func (e *Server) Config(cfg config.Config) {
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) error {
-	e.ctx = ctx
+	if e.opts.setting.Config.Status == server.StatusStop {
+		return nil
+	}
+
+	e.ctx = transport.WithServerContext(ctx, e)
 	e.started = true
 	e.registryEngineRoute()
 

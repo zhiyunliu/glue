@@ -61,7 +61,11 @@ func (e *Server) Config(cfg config.Config) {
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) error {
-	e.ctx = ctx
+	if e.opts.setting.Config.Status == server.StatusStop {
+		return nil
+	}
+
+	e.ctx = transport.WithServerContext(ctx, e)
 	e.newProcessor()
 
 	errChan := make(chan error, 1)
@@ -141,7 +145,7 @@ func (e *Server) newProcessor() {
 	}
 
 	cfg = e.opts.config.Get(fmt.Sprintf("%s.%s", protoType, configName))
-	e.processor, err = newProcessor(protoType, cfg)
+	e.processor, err = newProcessor(e.ctx, protoType, cfg)
 	if err != nil {
 		panic(err)
 	}

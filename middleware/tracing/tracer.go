@@ -26,7 +26,7 @@ func NewTracer(kind trace.SpanKind, op *options) *Tracer {
 		otel.SetTracerProvider(op.tracerProvider)
 	}
 
-	return &Tracer{tracer: otel.Tracer("gel"), kind: kind, opt: op}
+	return &Tracer{tracer: otel.Tracer(op.tracerName), kind: kind, opt: op}
 
 }
 
