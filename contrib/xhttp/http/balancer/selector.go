@@ -15,8 +15,6 @@ type httpSelector struct {
 	registrar   registry.Registrar
 	waitGroup   sync.WaitGroup
 	selector    selector.Selector
-
-	resolveNowChan chan struct{}
 }
 
 func NewSelector(ctx context.Context, registrar registry.Registrar, serviceName, selectorName string) (selector.Selector, error) {
@@ -26,11 +24,10 @@ func NewSelector(ctx context.Context, registrar registry.Registrar, serviceName,
 	}
 
 	rr := &httpSelector{
-		ctx:            ctx,
-		registrar:      registrar,
-		serviceName:    serviceName,
-		waitGroup:      sync.WaitGroup{},
-		resolveNowChan: make(chan struct{}, 1),
+		ctx:         ctx,
+		registrar:   registrar,
+		serviceName: serviceName,
+		waitGroup:   sync.WaitGroup{},
 	}
 	rr.selector = tmpselector
 	rr.waitGroup.Add(1)
@@ -53,10 +50,12 @@ func (r *httpSelector) Close() {
 
 // ResolveNow resolves immediately
 func (r *httpSelector) resolveNow() {
-	select {
-	case r.resolveNowChan <- struct{}{}:
-	default:
+	instances, err := r.registrar.GetService(r.ctx, r.serviceName)
+	if err != nil {
+		log.Errorf("http:registrar.GetService=%s,error:%+v", r.serviceName, err)
+		return
 	}
+	r.Apply(r.buildAddress(instances))
 }
 
 func (r *httpSelector) buildAddress(instances []*registry.ServiceInstance) []selector.Node {
@@ -100,20 +99,5 @@ func (r *httpSelector) watcher() {
 	}
 	go r.watchRegistrar()
 
-	for {
-		select {
-		case <-r.ctx.Done():
-			return
-		case <-r.resolveNowChan:
-
-		}
-		instances, err := r.registrar.GetService(r.ctx, r.serviceName)
-		if err != nil {
-			log.Errorf("http:registrar.GetService=%s,error:%+v", r.serviceName, err)
-			continue
-		}
-
-		addresses := r.buildAddress(instances)
-		r.Apply(addresses)
-	}
+	<-r.ctx.Done()
 }

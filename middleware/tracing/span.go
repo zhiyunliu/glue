@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func setServerSpan(ctx context.Context, span trace.Span, m interface{}) {
+func setSpanAttrs(ctx context.Context, span trace.Span, m interface{}) {
 	attrs := []attribute.KeyValue{}
 	var remote string
 	serverType := ctx.ServerType()

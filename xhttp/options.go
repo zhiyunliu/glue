@@ -2,6 +2,7 @@ package xhttp
 
 import (
 	"github.com/zhiyunliu/gel/constants"
+	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 type RequestOption func(*Options)
@@ -9,7 +10,7 @@ type RequestOption func(*Options)
 type Options struct {
 	Method  string
 	Version string
-	Header  map[string]string
+	Header  xtypes.SMap
 }
 
 func WithMethod(method string) RequestOption {

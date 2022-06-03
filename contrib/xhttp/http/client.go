@@ -13,10 +13,12 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/gel/contrib/xhttp/http/balancer"
+	"github.com/zhiyunliu/gel/middleware/tracing"
 	"github.com/zhiyunliu/gel/registry"
 	"github.com/zhiyunliu/gel/selector"
 	"github.com/zhiyunliu/gel/xhttp"
 	"github.com/zhiyunliu/golibs/httputil"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Client struct {
@@ -26,6 +28,7 @@ type Client struct {
 	selector  selector.Selector
 	ctx       context.Context
 	ctxCancel context.CancelFunc
+	tracer    *tracing.Tracer
 }
 
 //NewClientByConf 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
@@ -35,10 +38,13 @@ func NewClient(registrar registry.Registrar, setting *setting, serviceName strin
 		setting:   setting,
 		client:    &http.Client{},
 	}
+
 	tlsCfg, err := client.getTlsConfig()
 	if err != nil {
 		return nil, err
 	}
+	client.tracer = tracing.NewTracer(trace.SpanKindClient)
+
 	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
 	client.selector, err = balancer.NewSelector(client.ctx, registrar, serviceName, setting.Balancer)
 	if err != nil {
@@ -71,7 +77,16 @@ func (c *Client) RequestByString(ctx context.Context, reqPath *url.URL, input []
 	for _, opt := range opts {
 		opt(o)
 	}
-
+	if c.setting.Trace {
+		ctx, span := c.tracer.Start(ctx, reqPath.Path, o.Header)
+		defer func() {
+			if err != nil {
+				c.tracer.End(ctx, span, err)
+				return
+			}
+			c.tracer.End(ctx, span, res.GetStatus())
+		}()
+	}
 	response, err := c.clientRequest(ctx, reqPath, o, input)
 	if err != nil {
 		return newBodyByError(err), err

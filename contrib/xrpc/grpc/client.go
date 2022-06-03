@@ -9,8 +9,10 @@ import (
 
 	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/balancer"
 	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/gel/middleware/tracing"
 	"github.com/zhiyunliu/gel/registry"
 	"github.com/zhiyunliu/gel/xrpc"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/resolver"
 )
@@ -24,6 +26,7 @@ type Client struct {
 	balancerBuilder resolver.Builder
 	ctx             context.Context
 	ctxCancel       context.CancelFunc
+	tracer          *tracing.Tracer
 }
 
 //NewClient 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
@@ -33,6 +36,8 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 		setting:   setting,
 		reqPath:   reqPath,
 	}
+	client.tracer = tracing.NewTracer(trace.SpanKindClient)
+
 	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
 
 	err := client.connect()
@@ -63,6 +68,16 @@ func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xrpc
 	}
 	for _, opt := range opts {
 		opt(o)
+	}
+	if c.setting.Trace {
+		ctx, span := c.tracer.Start(ctx, c.reqPath.Path, o.Header)
+		defer func() {
+			if err != nil {
+				c.tracer.End(ctx, span, err)
+				return
+			}
+			c.tracer.End(ctx, span, res.GetStatus())
+		}()
 	}
 
 	response, err := c.clientRequest(ctx, o, input)

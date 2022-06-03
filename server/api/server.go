@@ -93,7 +93,7 @@ func (e *Server) Start(ctx context.Context) error {
 		e.srv.RegisterOnShutdown(endHook)
 	}
 	e.srv.BaseContext = func(_ net.Listener) context.Context {
-		return ctx
+		return e.ctx
 	}
 	errChan := make(chan error, 1)
 	log.Infof("API Server [%s] listening on %s%s", e.name, global.LocalIp, e.opts.setting.Config.Addr)

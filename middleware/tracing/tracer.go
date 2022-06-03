@@ -2,7 +2,6 @@ package tracing
 
 import (
 	"context"
-	"time"
 
 	"github.com/zhiyunliu/gel/errors"
 	"go.opentelemetry.io/otel"
@@ -19,8 +18,20 @@ type Tracer struct {
 	opt    *options
 }
 
+func NewTracer(kind trace.SpanKind, opts ...Option) *Tracer {
+	op := &options{
+		SpanKind:   kind,
+		tracerName: _defaultName,
+		propagator: propagation.NewCompositeTextMapPropagator(Metadata{}, propagation.Baggage{}, propagation.TraceContext{}),
+	}
+	for i, cnt := 0, len(opts); i < cnt; i++ {
+		opts[i](op)
+	}
+	return newTracerByOpts(kind, op)
+}
+
 // NewTracer create tracer instance
-func NewTracer(kind trace.SpanKind, op *options) *Tracer {
+func newTracerByOpts(kind trace.SpanKind, op *options) *Tracer {
 
 	if op.tracerProvider != nil {
 		otel.SetTracerProvider(op.tracerProvider)
@@ -47,16 +58,15 @@ func (t *Tracer) Start(ctx context.Context, path string, carrier propagation.Tex
 
 // End finish tracing span
 func (t *Tracer) End(ctx context.Context, span trace.Span, m interface{}) {
-	var err error
-	err, _ = m.(error)
-
-	if err != nil {
-		span.RecordError(err, trace.WithTimestamp(time.Now()), trace.WithStackTrace(true))
-		if e := errors.FromError(err); e != nil {
-			span.SetAttributes(attribute.Key("rpc.status_code").Int64(int64(e.Code)))
+	switch val := m.(type) {
+	case error:
+		if e := errors.FromError(val); e != nil {
+			span.SetAttributes(attribute.Key("status_code").Int64(int64(e.Code)))
 		}
-		span.SetStatus(codes.Error, err.Error())
-	} else {
+		span.SetStatus(codes.Error, val.Error())
+	case int32:
+		span.SetAttributes(attribute.Key("status_code").Int(int(val)))
+	default:
 		span.SetStatus(codes.Ok, "OK")
 	}
 	span.End()

@@ -24,6 +24,7 @@ type Request struct {
 
 //NewRequest 构建请求
 func NewRequest(setting *setting) *Request {
+
 	req := &Request{
 		setting:  setting,
 		requests: cmap.New(),

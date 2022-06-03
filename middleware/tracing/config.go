@@ -1,7 +1,10 @@
 package tracing
 
+import "go.opentelemetry.io/otel/trace"
+
 //	{"provider":"skywalking","propagator":"propagator"}
 type Config struct {
-	Provider   string `json:"provider" yaml:"provider"`
-	Propagator string `json:"propagator" yaml:"propagator"`
+	SpanKind   trace.SpanKind `json:"span_kind" yaml:"span_kind"`
+	Provider   string         `json:"provider" yaml:"provider"`
+	Propagator string         `json:"propagator" yaml:"propagator"`
 }

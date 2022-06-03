@@ -1,11 +1,14 @@
 package xrpc
 
-import "github.com/zhiyunliu/gel/constants"
+import (
+	"github.com/zhiyunliu/gel/constants"
+	"github.com/zhiyunliu/golibs/xtypes"
+)
 
 type RequestOption func(*Options)
 
 type Options struct {
-	Header       map[string]string
+	Header       xtypes.SMap // map[string]string
 	WaitForReady bool
 }
 

@@ -3,6 +3,7 @@ package tracing
 import (
 	"github.com/zhiyunliu/gel/encoding"
 	"github.com/zhiyunliu/gel/middleware"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func NewBuilder() middleware.MiddlewareBuilder {
@@ -18,5 +19,16 @@ func (xBuilder) Name() string {
 func (xBuilder) Build(data middleware.RawMessage) middleware.Middleware {
 	cfg := &Config{}
 	encoding.GetCodec(data.Codec).Unmarshal(data.Data, &cfg)
-	return serverByConfig(cfg)
+	switch cfg.SpanKind {
+	case trace.SpanKindClient:
+		fallthrough
+	case trace.SpanKindProducer:
+		return clientByConfig(cfg)
+	case trace.SpanKindServer:
+		fallthrough
+	case trace.SpanKindConsumer:
+		return serverByConfig(cfg)
+	default:
+		return serverByConfig(cfg)
+	}
 }

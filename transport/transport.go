@@ -47,6 +47,7 @@ func (k Kind) String() string { return string(k) }
 
 type (
 	serverKey struct{}
+	clientKey struct{}
 )
 
 // WithServerContext returns a new Context that carries value.
@@ -57,5 +58,16 @@ func WithServerContext(ctx context.Context, tr Server) context.Context {
 // FromServerContext returns the Transport value stored in ctx, if any.
 func FromServerContext(ctx context.Context) (tr Server, ok bool) {
 	tr, ok = ctx.Value(serverKey{}).(Server)
+	return
+}
+
+// WithClientContext returns a new Context that carries value.
+func WithClientContext(ctx context.Context, tr Server) context.Context {
+	return context.WithValue(ctx, clientKey{}, tr)
+}
+
+// FromClientContext returns the Transport value stored in ctx, if any.
+func FromClientContext(ctx context.Context) (tr Server, ok bool) {
+	tr, ok = ctx.Value(clientKey{}).(Server)
 	return
 }
