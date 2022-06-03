@@ -10,7 +10,6 @@ import (
 	"github.com/zhiyunliu/gel/middleware/tracing"
 	"github.com/zhiyunliu/gel/transport"
 	"github.com/zhiyunliu/gel/xhttp"
-	"github.com/zhiyunliu/gel/xrpc"
 
 	"github.com/zhiyunliu/gel/server/api"
 	"github.com/zhiyunliu/gel/server/cron"
@@ -34,7 +33,7 @@ func init() {
 	srvOpt := gel.Server(
 		apiserver(),
 		mqcserver(),
-		//cronserver(),
+		cronserver(),
 		rpcserver(),
 	)
 	opts = append(opts, srvOpt, gel.LogConcurrency(1))
@@ -70,17 +69,18 @@ func apiserver() transport.Server {
 	apiSrv.Handle("/demoapi", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demo")
 
-		// body, err := gel.Http().GetHttp().Swap(ctx, "http://compositeserver/log/info")
-		// if err != nil {
-		// 	ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
-		// }
-		body, err := gel.RPC().GetRPC().Swap(ctx, "grpc://compositeserver/demorpc", xrpc.WithWaitForReady(false))
+		body, err := gel.Http().GetHttp().Swap(ctx, "http://apiserver/log/info")
 		if err != nil {
-			ctx.Log().Error("gel.RPC().GetRPC().Swap:", err)
+			ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
 		}
+		// body, err := gel.RPC().GetRPC().Swap(ctx, "grpc://compositeserver/demorpc", xrpc.WithWaitForReady(false))
+		// if err != nil {
+		// 	ctx.Log().Error("gel.RPC().GetRPC().Swap:", err)
+		// }
 		ctx.Log().Debug(string(body.GetResult()))
 		ctx.Log().Debug(body.GetHeader())
 		ctx.Log().Debug(body.GetStatus())
+		time.Sleep(time.Second)
 		return xtypes.XMap{
 			"a": 1,
 			"b": 2,
@@ -91,17 +91,17 @@ func apiserver() transport.Server {
 
 func mqcserver() transport.Server {
 	mqcSrv := mqc.New("mqcserver")
-
+	mqcSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	mqcSrv.Handle("/demomqc", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demomqc")
-		body, err := gel.Http().GetHttp().Swap(ctx, "http://compositeserver/demoapi", xhttp.WithMethod(http.MethodPost))
+		body, err := gel.Http().GetHttp().Swap(ctx, "http://apiserver/log/info", xhttp.WithMethod(http.MethodPost))
 		if err != nil {
 			ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
 		}
 		ctx.Log().Debug(string(body.GetResult()))
 		ctx.Log().Debug(body.GetHeader())
 		ctx.Log().Debug(body.GetStatus())
-
+		time.Sleep(time.Second * 2)
 		return xtypes.XMap{
 			"a": 1,
 			"b": 2,
@@ -115,6 +115,7 @@ func rpcserver() transport.Server {
 	rpcSrv := rpc.New("rpcserver")
 	rpcSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	rpcSrv.Handle("/demorpc", func(ctx context.Context) interface{} {
+		time.Sleep(time.Second * 1)
 		ctx.Log().Debug("demorpc")
 		return xtypes.XMap{
 			"a": 1,

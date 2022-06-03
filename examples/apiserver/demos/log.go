@@ -24,5 +24,6 @@ func (d *Logdemo) ConcurrencyHandle(ctx context.Context) interface{} {
 }
 
 func (d *Logdemo) InfoHandle(ctx context.Context) interface{} {
+	ctx.Log().Debugf("Header:%+v", ctx.Request().Header())
 	return xlog.Stats()
 }

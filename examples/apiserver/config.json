@@ -1,6 +1,7 @@
 {
 	"app":{
 		"mode":"release",
+		"trace_addr":":18082",
 		"ip_mask":"192.168",
 		"dependencies":["After=network.target"],
 		"options":{"LimitNOFILE":10240,"MaxOPENFiles":4096}
@@ -40,7 +41,7 @@
 	},
 	"consul":{
 		"default":{
-			"addr":"192.168.1.155:8500",
+			"addr":"localhost:8500",
 			"datacenter":"",
 			"namespace":"",
 			"partition":"",
@@ -49,8 +50,8 @@
 		}
 	},
     "servers":{
-		"api":{
-			"config":{"addr":":8080","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65535},
+		"apiserver":{
+			"config":{"addr":":8082","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65535},
 			"middlewares":[{"name":"jwt","data":{"secret":"123456789","method":"sha256","expire":"3600","excludes":["/log/**","/demo/**"]}}],			
 			"header":{"a":"1","b":"2"}
 		}

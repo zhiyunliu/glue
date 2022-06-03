@@ -11,10 +11,10 @@
 		"microsql":{"proto":"sqlserver","conn":"server=localhost;database=demo;persist security info=false;user id=admin;password=123456;Min Pool Size=10;Max Pool Size=20","max_open":10,"max_idle":10,"life_time":100}
 	},
 	"rpcs":{
-		"default":{"proto":"grpc"}
+		"default":{"proto":"grpc","trace":true}
 	},
 	"xhttp":{
-		"default":{"balancer":"wrr","conn_timeout":10}
+		"default":{"balancer":"wrr","conn_timeout":10,"trace":true}
 	},
 	"caches":{
 		"default":"redis://localhost"
@@ -52,8 +52,8 @@
 			"config":{"addr":":8081","status":"start","read_timeout":10,"connection_timeout":10,"max_recv_size":65535,"max_send_size":65535}
 		},
 		"cronserver":{
-			"config":{"status":"stop","sharding":1},
-			"jobs":[{"cron":"@every 10s","service":"/democron","disable":false}]
+			"config":{"status":"start","sharding":1},
+			"jobs":[{"cron":"@every 10s","immediately":true,"service":"/democron","disable":false}]
 		}	
 
     }
