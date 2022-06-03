@@ -21,6 +21,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
@@ -33,10 +34,11 @@ func init() {
 	srvOpt := gel.Server(
 		apiserver(),
 		mqcserver(),
-		cronserver(),
+		//cronserver(),
 		rpcserver(),
 	)
 	opts = append(opts, srvOpt, gel.LogConcurrency(1))
+	setTracerProvider("http://127.0.0.1:14268/api/traces")
 }
 
 // Set global trace provider
@@ -48,7 +50,7 @@ func setTracerProvider(url string) error {
 	}
 	tp := tracesdk.NewTracerProvider(
 		// Set the sampling rate based on the parent span to 100%
-		tracesdk.WithSampler(tracesdk.ParentBased(tracesdk.TraceIDRatioBased(1.0))),
+		tracesdk.WithSampler(tracesdk.ParentBased(tracesdk.AlwaysSample())),
 		// Always be sure to batch in production.
 		tracesdk.WithBatcher(exp),
 		// Record information about this application in an Resource.
@@ -63,11 +65,15 @@ func setTracerProvider(url string) error {
 
 func apiserver() transport.Server {
 	apiSrv := api.New("apiserver")
-	apiSrv.Use(tracing.Server(tracing.WithPropagator(otel.GetTextMapPropagator()), tracing.WithTracerProvider(otel.GetTracerProvider())))
+	apiSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	apiSrv.Handle("/log", handles.NewLogDemo())
 	apiSrv.Handle("/demoapi", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demo")
 
+		// body, err := gel.Http().GetHttp().Swap(ctx, "http://compositeserver/log/info")
+		// if err != nil {
+		// 	ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
+		// }
 		body, err := gel.RPC().GetRPC().Swap(ctx, "grpc://compositeserver/demorpc", xrpc.WithWaitForReady(false))
 		if err != nil {
 			ctx.Log().Error("gel.RPC().GetRPC().Swap:", err)
@@ -107,7 +113,7 @@ func mqcserver() transport.Server {
 
 func rpcserver() transport.Server {
 	rpcSrv := rpc.New("rpcserver")
-
+	rpcSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	rpcSrv.Handle("/demorpc", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demorpc")
 		return xtypes.XMap{
