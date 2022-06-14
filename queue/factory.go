@@ -44,10 +44,10 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 	return q.q.Push(key, msg)
 }
 
-//Pop 从队列中获取一个消息
-func (q *queue) Pop(key string) (string, error) {
-	return q.q.Pop(key)
-}
+// //Pop 从队列中获取一个消息
+// func (q *queue) Pop(key string) (string, error) {
+// 	return q.q.Pop(key)
+// }
 
 //Count 队列中消息个数
 func (q *queue) Count(key string) (int64, error) {

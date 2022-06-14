@@ -40,7 +40,8 @@ func (r *Redis) HashGet(ctx context.Context, hk, key string) (string, error) {
 
 // HashSet from key
 func (r *Redis) HashSet(ctx context.Context, hk, key string, val string) (bool, error) {
-	return r.client.HSet(hk, key, val).Result()
+	v, err := r.client.HSet(hk, key, val).Result()
+	return v > 0, err
 }
 
 // HashDel delete key in specify redis's hashtable

@@ -55,6 +55,7 @@ func (s *processor) Start() error {
 		return err
 	}
 	_, err := s.Resume()
+	s.consumer.Start()
 	return err
 }
 
@@ -138,16 +139,19 @@ func (s *processor) handleCallback(task *Task) func(queue.IMQCMessage) {
 
 		req, err := NewRequest(task, m)
 		if err != nil {
+			m.Nack(err)
 			panic(err)
 		}
 		req.ctx = s.ctx
 		resp, err := NewResponse(task, m)
 		if err != nil {
+			m.Nack(err)
 			panic(err)
 		}
 
 		err = s.engine.HandleRequest(req, resp)
 		if err != nil {
+			m.Nack(err)
 			panic(err)
 		}
 		resp.Flush()

@@ -126,6 +126,10 @@ func (consumer *Consumer) Unconsume(queue string) {
 	consumer.queues.Remove(queue)
 }
 
+func (consumer *Consumer) Start() {
+
+}
+
 //Close 关闭当前连接
 func (consumer *Consumer) Close() {
 	consumer.once.Do(func() {

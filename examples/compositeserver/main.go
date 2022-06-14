@@ -6,6 +6,7 @@ import (
 	_ "github.com/zhiyunliu/gel/contrib/config/consul"
 	_ "github.com/zhiyunliu/gel/contrib/config/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/queue/redis"
+	_ "github.com/zhiyunliu/gel/contrib/queue/streamredis"
 	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/mysql"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/sqlite"
@@ -18,7 +19,7 @@ import (
 )
 
 var (
-	opts = []gel.Option{}
+	opts = []gel.Option{gel.LogConcurrency(1)}
 )
 
 func main() {

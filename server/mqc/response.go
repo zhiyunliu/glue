@@ -1,6 +1,7 @@
 package mqc
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/zhiyunliu/gel/contrib/alloter"
@@ -73,5 +74,5 @@ func (r *Response) Flush() error {
 	if r.status == _sucessStatus {
 		return r.msg.Ack()
 	}
-	return r.msg.Nack()
+	return r.msg.Nack(fmt.Errorf("Status:%d", r.status))
 }

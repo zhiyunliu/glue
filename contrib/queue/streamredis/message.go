@@ -1,8 +1,7 @@
-package redis
+package streamredis
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/zhiyunliu/gel/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
@@ -11,23 +10,33 @@ import (
 
 //RedisMessage reids消息
 type redisMessage struct {
-	message string
+	message map[string]interface{}
+	err     error
 	obj     *MsgBody
+}
+
+func (m *redisMessage) Error() error {
+	return m.err
 }
 
 //Ack 确定消息
 func (m *redisMessage) Ack() error {
+	m.err = nil
 	return nil
 }
 
 //Nack 取消消息
-func (m *redisMessage) Nack(error) error {
+func (m *redisMessage) Nack(err error) error {
+	m.err = err
 	return nil
 }
 
 //original message
 func (m *redisMessage) Original() string {
-	return m.message
+	if m.obj == nil {
+		m.obj = newMsgBody(m.message)
+	}
+	return m.obj.String()
 }
 
 //GetMessage 获取消息
@@ -44,16 +53,15 @@ type MsgBody struct {
 	BodyMap   xtypes.XMap `json:"body"`
 }
 
-func newMsgBody(msg string) *MsgBody {
-	if !json.Valid(bytesconv.StringToBytes(msg)) {
-		panic(fmt.Errorf("msg data is invalid json format.:%s", msg))
-	}
+func newMsgBody(msg map[string]interface{}) *MsgBody {
+
+	msgBytes, _ := json.Marshal(msg)
 	body := &MsgBody{
-		msg:       msg,
+		msg:       bytesconv.BytesToString(msgBytes),
 		HeaderMap: make(xtypes.SMap),
 		BodyMap:   make(xtypes.XMap),
 	}
-	json.Unmarshal([]byte(msg), body)
+	json.Unmarshal(msgBytes, body)
 	return body
 }
 
