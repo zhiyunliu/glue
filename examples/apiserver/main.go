@@ -11,7 +11,8 @@ import (
 	_ "github.com/zhiyunliu/gel/contrib/queue/redis"
 	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/mysql"
-	_ "github.com/zhiyunliu/gel/contrib/xdb/oracle"
+
+	//_ "github.com/zhiyunliu/gel/contrib/xdb/oracle"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/postgres"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/sqlite"
 	_ "github.com/zhiyunliu/gel/contrib/xdb/sqlserver"

@@ -17,10 +17,11 @@
 		"default":{"balancer":"wrr","conn_timeout":10,"trace":true}
 	},
 	"caches":{
-		"default":"redis://localhost"
+		"default":{"proto":"redis","addr":"redis://localhost"}
 	},
 	"queues":{				 
-		"default":"redis://localhost"
+		"default":{"proto":"redis","addr":"redis://localhost"},
+		"streamredis":{"proto":"streamredis","addr":"redis://localhost"}
 	},
 	"redis":{
 		"localhost":{

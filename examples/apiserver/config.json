@@ -16,10 +16,11 @@
 		"default":{"proto":"grpc"}
 	},
 	"caches":{
-		"default":"redis://localhost"
+		"default":{"proto":"redis","addr":"redis://localhost"}
 	},
 	"queues":{				 
-		"default":"redis://localhost"
+		"default":{"proto":"redis","addr":"redis://localhost"},
+		"streamredis":{"proto":"streamredis","addr":"redis://localhost"}
 	},
 	"redis":{
 		"localhost":{
@@ -51,7 +52,7 @@
 	},
     "servers":{
 		"apiserver":{
-			"config":{"addr":":8082","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65535},
+			"config":{"addr":":8083","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65535},
 			"middlewares":[{"name":"jwt","data":{"secret":"123456789","method":"sha256","expire":"3600","excludes":["/log/**","/demo/**"]}}],			
 			"header":{"a":"1","b":"2"}
 		}
