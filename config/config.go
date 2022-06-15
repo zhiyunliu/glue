@@ -31,6 +31,7 @@ type Config interface {
 	Watch(key string, o Observer) error
 	Close() error
 	Get(key string) Config
+	Root() Config
 }
 
 type config struct {
@@ -63,6 +64,10 @@ func (c *config) Get(key string) Config {
 		rootConfig: c,
 		curkey:     key,
 	}
+}
+
+func (c *config) Root() Config {
+	return c
 }
 
 func (c *config) watch(w Watcher) {

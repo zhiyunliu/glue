@@ -29,6 +29,10 @@ func (l *wrap) Get(key string) Config {
 	}
 }
 
+func (c *wrap) Root() Config {
+	return c.rootConfig
+}
+
 func (c *wrap) Source(sources ...Source) error {
 	return c.rootConfig.Source(sources...)
 }

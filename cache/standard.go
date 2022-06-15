@@ -3,7 +3,6 @@ package cache
 import (
 	"github.com/zhiyunliu/gel/config"
 	"github.com/zhiyunliu/gel/container"
-	"github.com/zhiyunliu/golibs/xnet"
 )
 
 const (
@@ -34,15 +33,11 @@ func (s *xCache) GetCache(name ...string) (q ICache) {
 	}
 
 	obj, err := s.c.GetOrCreate(TypeNode, realName, func(cfg config.Config) (interface{}, error) {
-		cfgVal := cfg.Get(TypeNode).Value(realName)
-		cacheVal := cfgVal.String()
-		//redis://localhost
-		protoType, configName, err := xnet.Parse(cacheVal)
-		if err != nil {
-			return nil, err
-		}
-		cacheCfg := cfg.Get(protoType).Get(configName)
-		return newCache(protoType, cacheCfg)
+		//{"proto":"redis","addr":"redis://localhost"}
+		cfgVal := cfg.Get(TypeNode).Get(realName)
+		protoType := cfgVal.Value("proto").String()
+		return newCache(protoType, cfgVal)
+
 	})
 	if err != nil {
 		panic(err)

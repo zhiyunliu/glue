@@ -13,13 +13,12 @@ import (
 // Producer memcache配置文件
 type Producer struct {
 	client *redis.Client
-	config config.Config
 }
 
 // NewProducerByConfig 根据配置文件创建一个redis连接
 func NewProducer(config config.Config) (m *Producer, err error) {
-	m = &Producer{config: config}
-	m.client, err = redis.NewByConfig(m.config)
+	m = &Producer{}
+	m.client, err = getRedisClient(config)
 	if err != nil {
 		return
 	}
@@ -62,8 +61,8 @@ type producerResolver struct {
 func (s *producerResolver) Name() string {
 	return Proto
 }
-func (s *producerResolver) Resolve(setting config.Config) (queue.IMQP, error) {
-	return NewProducer(setting)
+func (s *producerResolver) Resolve(config config.Config) (queue.IMQP, error) {
+	return NewProducer(config)
 }
 func init() {
 	queue.RegisterProducer(&producerResolver{})

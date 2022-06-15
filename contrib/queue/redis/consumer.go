@@ -57,7 +57,7 @@ func NewConsumer(config config.Config) (consumer *Consumer, err error) {
 
 //Connect  连接服务器
 func (consumer *Consumer) Connect() (err error) {
-	consumer.client, err = redis.NewByConfig(consumer.config)
+	consumer.client, err = getRedisClient(consumer.config)
 	return
 }
 

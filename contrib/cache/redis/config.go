@@ -1,20 +1,10 @@
-package streamredis
+package redis
 
 import (
 	"github.com/zhiyunliu/gel/config"
 	"github.com/zhiyunliu/gel/contrib/redis"
 	"github.com/zhiyunliu/golibs/xnet"
 )
-
-type ProductOptions struct {
-	StreamMaxLength int64 `json:"stream_max_len" yaml:"stream_max_len"`
-}
-
-type ConsumerOptions struct {
-	Concurrency     int `json:"concurrency" yaml:"concurrency"`
-	BufferSize      int `json:"buffer_size" yaml:"buffer_size"`
-	BlockingTimeout int `json:"blocking_timeout" yaml:"blocking_timeout"`
-}
 
 func getRedisClient(config config.Config) (client *redis.Client, err error) {
 	addr := config.Value("addr").String()

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/contrib/redis"
 	"github.com/zhiyunliu/gel/queue"
 
 	redisqueue "github.com/robinjoseph08/redisqueue/v2"
@@ -17,7 +16,6 @@ import (
 
 //Consumer Consumer
 type Consumer struct {
-	//client   *redis.Client
 	queues   cmap.ConcurrentMap
 	consumer *redisqueue.Consumer
 	closeCh  chan struct{}
@@ -41,7 +39,7 @@ func NewConsumer(config config.Config) (consumer *Consumer, err error) {
 
 //Connect  连接服务器
 func (consumer *Consumer) Connect() (err error) {
-	client, err := redis.NewByConfig(consumer.config)
+	client, err := getRedisClient(consumer.config)
 	if err != nil {
 		return
 	}

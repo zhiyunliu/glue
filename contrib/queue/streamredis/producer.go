@@ -11,13 +11,12 @@ import (
 type Producer struct {
 	client   *redis.Client
 	producer *redisqueue.Producer
-	config   config.Config
 }
 
 // NewProducerByConfig 根据配置文件创建一个redis连接
 func NewProducer(config config.Config) (m *Producer, err error) {
-	m = &Producer{config: config}
-	m.client, err = redis.NewByConfig(m.config)
+	m = &Producer{}
+	m.client, err = getRedisClient(config)
 	if err != nil {
 		return
 	}

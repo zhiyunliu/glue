@@ -74,8 +74,8 @@ type redisResolver struct {
 func (s *redisResolver) Name() string {
 	return Proto
 }
-func (s *redisResolver) Resolve(setting config.Config) (cache.ICache, error) {
-	client, err := redis.NewByConfig(setting)
+func (s *redisResolver) Resolve(config config.Config) (cache.ICache, error) {
+	client, err := getRedisClient(config)
 	return &Redis{
 		client: client,
 	}, err

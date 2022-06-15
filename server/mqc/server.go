@@ -134,17 +134,11 @@ func (e *Server) newProcessor() {
 	if err != nil {
 		panic(err)
 	}
-	cfg := e.opts.config.Get(protoType)
-	queueVal := cfg.Value(configName)
-	ptotoCfg := queueVal.String()
+	//{"proto":"redis","addr":"redis://localhost"}
+	cfg := e.opts.config.Get(protoType).Get(configName)
 
-	//redis://localhost
-	protoType, configName, err = xnet.Parse(ptotoCfg)
-	if err != nil {
-		panic(err)
-	}
+	protoType = cfg.Value("proto").String()
 
-	cfg = e.opts.config.Get(fmt.Sprintf("%s.%s", protoType, configName))
 	e.processor, err = newProcessor(e.ctx, protoType, cfg)
 	if err != nil {
 		panic(err)
