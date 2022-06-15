@@ -3,7 +3,7 @@ package demos
 import (
 	"time"
 
-	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/glue/context"
 )
 
 type Orgdemo struct{}

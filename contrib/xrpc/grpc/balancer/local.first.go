@@ -4,7 +4,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/zhiyunliu/gel/global"
+	"github.com/zhiyunliu/glue/global"
 	"google.golang.org/grpc/balancer"
 	"google.golang.org/grpc/balancer/base"
 )

@@ -7,7 +7,7 @@ import (
 
 	"github.com/nacos-group/nacos-sdk-go/clients/config_client"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/glue/config"
 )
 
 type options struct {

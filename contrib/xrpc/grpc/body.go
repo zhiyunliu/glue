@@ -3,8 +3,8 @@ package grpc
 import (
 	"net/http"
 
-	"github.com/zhiyunliu/gel/constants"
-	"github.com/zhiyunliu/gel/xrpc"
+	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 

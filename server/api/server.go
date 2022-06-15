@@ -8,12 +8,12 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/global"
-	"github.com/zhiyunliu/gel/log"
-	"github.com/zhiyunliu/gel/middleware"
-	"github.com/zhiyunliu/gel/server"
-	"github.com/zhiyunliu/gel/transport"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/host"
 )
 

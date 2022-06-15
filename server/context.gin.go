@@ -11,14 +11,14 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/zhiyunliu/gel/constants"
-	"github.com/zhiyunliu/gel/errors"
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
 
 	"github.com/gin-gonic/gin"
-	vctx "github.com/zhiyunliu/gel/context"
+	vctx "github.com/zhiyunliu/glue/context"
 )
 
 type GinContext struct {

@@ -1,7 +1,7 @@
 package xhttp
 
 import (
-	"github.com/zhiyunliu/gel/constants"
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 

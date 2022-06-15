@@ -1,9 +1,9 @@
 package redis
 
 import (
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/contrib/redis"
-	"github.com/zhiyunliu/gel/dlocker"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/contrib/redis"
+	"github.com/zhiyunliu/glue/dlocker"
 )
 
 // Redis cache implement

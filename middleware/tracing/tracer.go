@@ -3,7 +3,7 @@ package tracing
 import (
 	"context"
 
-	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/glue/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"

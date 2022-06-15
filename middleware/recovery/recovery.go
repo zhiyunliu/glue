@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/zhiyunliu/gel/context"
-	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/errors"
 
-	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/glue/middleware"
 )
 
 // ErrUnknownRequest is unknown request error.

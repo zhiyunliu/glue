@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/kardianos/service"
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/log"
 )
 
 //Start Start

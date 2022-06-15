@@ -3,7 +3,7 @@ package cron
 import (
 	"net/http"
 
-	"github.com/zhiyunliu/gel/contrib/alloter"
+	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 

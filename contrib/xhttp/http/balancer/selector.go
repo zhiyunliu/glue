@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/zhiyunliu/gel/log"
-	"github.com/zhiyunliu/gel/registry"
-	"github.com/zhiyunliu/gel/selector"
+	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/registry"
+	"github.com/zhiyunliu/glue/selector"
 )
 
 type httpSelector struct {

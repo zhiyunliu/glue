@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/zhiyunliu/gel/global"
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/xlog"
 )
 

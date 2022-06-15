@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zhiyunliu/gel/context"
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/bytesconv"
 
-	"github.com/zhiyunliu/gel/errors"
-	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/middleware"
 )
 
 // Server is an server logging middleware.

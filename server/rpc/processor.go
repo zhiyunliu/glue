@@ -6,9 +6,9 @@ import (
 
 	"context"
 
-	"github.com/zhiyunliu/gel/contrib/alloter"
-	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/grpcproto"
-	"github.com/zhiyunliu/gel/transport"
+	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 

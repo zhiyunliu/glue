@@ -4,11 +4,11 @@ import (
 	_ "net/http/pprof"
 	"runtime"
 
-	"github.com/zhiyunliu/gel/cli"
-	"github.com/zhiyunliu/gel/compatible"
-	_ "github.com/zhiyunliu/gel/encoding/json"
-	_ "github.com/zhiyunliu/gel/encoding/yaml"
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/cli"
+	"github.com/zhiyunliu/glue/compatible"
+	_ "github.com/zhiyunliu/glue/encoding/json"
+	_ "github.com/zhiyunliu/glue/encoding/yaml"
+	"github.com/zhiyunliu/glue/log"
 )
 
 //MicroApp  微服务应用

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zhiyunliu/gel/compatible"
+	"github.com/zhiyunliu/glue/compatible"
 )
 
 //buildCmdResult  buildCmdResult

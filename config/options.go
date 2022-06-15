@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/zhiyunliu/gel/encoding"
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/encoding"
+	"github.com/zhiyunliu/glue/log"
 )
 
 // Decoder is config decoder.

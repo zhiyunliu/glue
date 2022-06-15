@@ -3,7 +3,7 @@ package streamredis
 import (
 	"encoding/json"
 
-	"github.com/zhiyunliu/gel/queue"
+	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/xtypes"
 )

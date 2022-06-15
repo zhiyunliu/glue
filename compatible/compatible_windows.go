@@ -5,7 +5,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/log"
 )
 
 //CheckPrivileges 检查是否有管理员权限

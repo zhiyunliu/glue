@@ -1,4 +1,4 @@
-module github.com/zhiyunliu/gel
+module github.com/zhiyunliu/glue
 
 go 1.17
 

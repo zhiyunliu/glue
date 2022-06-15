@@ -3,7 +3,7 @@ package context
 import (
 	"context"
 
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/log"
 )
 
 type Context interface {

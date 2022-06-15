@@ -3,8 +3,8 @@ package grpc
 import (
 	"fmt"
 
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/xrpc"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/xrpc"
 	"google.golang.org/grpc/balancer/roundrobin"
 )
 

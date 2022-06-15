@@ -3,7 +3,7 @@ package selector
 import (
 	"context"
 
-	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/glue/errors"
 )
 
 // ErrNoAvailable is no available node.

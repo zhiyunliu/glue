@@ -1,8 +1,8 @@
 package xdb
 
 import (
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/container"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/container"
 )
 
 const DbTypeNode = "dbs"

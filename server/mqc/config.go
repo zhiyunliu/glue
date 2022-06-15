@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zhiyunliu/gel/metadata"
-	"github.com/zhiyunliu/gel/middleware"
-	"github.com/zhiyunliu/gel/server"
+	"github.com/zhiyunliu/glue/metadata"
+	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/server"
 )
 
 /*```

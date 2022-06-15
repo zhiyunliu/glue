@@ -3,10 +3,10 @@ package tracing
 import (
 	sctx "context"
 
-	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/glue/context"
 
-	"github.com/zhiyunliu/gel/middleware"
-	"github.com/zhiyunliu/gel/transport"
+	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/transport"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )

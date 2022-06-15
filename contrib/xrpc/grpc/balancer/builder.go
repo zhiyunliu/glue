@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/zhiyunliu/gel/registry"
+	"github.com/zhiyunliu/glue/registry"
 	"google.golang.org/grpc/resolver"
 )
 

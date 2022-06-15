@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zhiyunliu/gel/errors"
-	"github.com/zhiyunliu/gel/selector"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/selector"
 )
 
 const (

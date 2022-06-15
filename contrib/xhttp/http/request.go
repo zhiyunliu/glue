@@ -8,11 +8,11 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map"
 
-	"github.com/zhiyunliu/gel/constants"
-	"github.com/zhiyunliu/gel/context"
-	"github.com/zhiyunliu/gel/global"
-	"github.com/zhiyunliu/gel/registry"
-	"github.com/zhiyunliu/gel/xhttp"
+	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/registry"
+	"github.com/zhiyunliu/glue/xhttp"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 

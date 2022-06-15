@@ -7,7 +7,7 @@ import (
 
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/glue/config"
 )
 
 type ClientConfig struct {

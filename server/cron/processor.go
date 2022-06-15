@@ -9,9 +9,9 @@ import (
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map"
-	"github.com/zhiyunliu/gel/contrib/alloter"
-	"github.com/zhiyunliu/gel/log"
-	"github.com/zhiyunliu/gel/server"
+	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xstack"
 )

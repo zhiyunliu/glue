@@ -1,12 +1,12 @@
 package gel
 
 import (
-	"github.com/zhiyunliu/gel/cache"
-	"github.com/zhiyunliu/gel/dlocker"
-	"github.com/zhiyunliu/gel/queue"
-	"github.com/zhiyunliu/gel/xdb"
-	"github.com/zhiyunliu/gel/xhttp"
-	"github.com/zhiyunliu/gel/xrpc"
+	"github.com/zhiyunliu/glue/cache"
+	"github.com/zhiyunliu/glue/dlocker"
+	"github.com/zhiyunliu/glue/queue"
+	"github.com/zhiyunliu/glue/xdb"
+	"github.com/zhiyunliu/glue/xhttp"
+	"github.com/zhiyunliu/glue/xrpc"
 )
 
 //DB 获取DB 处理对象

@@ -3,7 +3,7 @@ package text
 import (
 	"fmt"
 
-	"github.com/zhiyunliu/gel/encoding"
+	"github.com/zhiyunliu/glue/encoding"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 

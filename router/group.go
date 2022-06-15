@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/glue/middleware"
 )
 
 /*

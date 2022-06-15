@@ -3,8 +3,8 @@ package http
 import (
 	"net/http"
 
-	"github.com/zhiyunliu/gel/constants"
-	"github.com/zhiyunliu/gel/xhttp"
+	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/xhttp"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 

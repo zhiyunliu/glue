@@ -9,11 +9,11 @@ import (
 	"reflect"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/zhiyunliu/gel/constants"
-	vctx "github.com/zhiyunliu/gel/context"
-	"github.com/zhiyunliu/gel/contrib/alloter"
-	"github.com/zhiyunliu/gel/errors"
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/constants"
+	vctx "github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
 )

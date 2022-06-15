@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	_ "github.com/mattn/go-oci8"
-	"github.com/zhiyunliu/gel/config"
-	contribxdb "github.com/zhiyunliu/gel/contrib/xdb"
-	"github.com/zhiyunliu/gel/contrib/xdb/tpl"
-	"github.com/zhiyunliu/gel/xdb"
+	"github.com/zhiyunliu/glue/config"
+	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
+	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 const Proto = "oracle"

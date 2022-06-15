@@ -7,7 +7,7 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/model"
 	"github.com/nacos-group/nacos-sdk-go/vo"
-	"github.com/zhiyunliu/gel/registry"
+	"github.com/zhiyunliu/glue/registry"
 )
 
 var _ registry.Watcher = (*watcher)(nil)

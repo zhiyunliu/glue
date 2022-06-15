@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zhiyunliu/gel/registry"
-	"github.com/zhiyunliu/gel/selector"
-	"github.com/zhiyunliu/gel/selector/filter"
+	"github.com/zhiyunliu/glue/registry"
+	"github.com/zhiyunliu/glue/selector"
+	"github.com/zhiyunliu/glue/selector/filter"
 )
 
 func TestWrr(t *testing.T) {

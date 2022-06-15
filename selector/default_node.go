@@ -3,7 +3,7 @@ package selector
 import (
 	"strconv"
 
-	"github.com/zhiyunliu/gel/registry"
+	"github.com/zhiyunliu/glue/registry"
 )
 
 // DefaultNode is selector node

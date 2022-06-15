@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/zhiyunliu/gel/constants"
-	"github.com/zhiyunliu/gel/server"
+	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/server"
 
-	"github.com/zhiyunliu/gel/contrib/alloter"
-	"github.com/zhiyunliu/gel/queue"
+	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/glue/queue"
 )
 
 var _ alloter.IRequest = (*Request)(nil)

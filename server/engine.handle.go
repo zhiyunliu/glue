@@ -1,13 +1,13 @@
 package server
 
 import (
-	"github.com/zhiyunliu/gel/context"
-	"github.com/zhiyunliu/gel/router"
+	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/router"
 
-	"github.com/zhiyunliu/gel/errors"
-	"github.com/zhiyunliu/gel/middleware"
-	"github.com/zhiyunliu/gel/middleware/logging"
-	"github.com/zhiyunliu/gel/middleware/recovery"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/middleware/logging"
+	"github.com/zhiyunliu/glue/middleware/recovery"
 )
 
 type AdapterEngine interface {

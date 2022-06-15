@@ -3,11 +3,11 @@ package server
 import (
 	"io"
 
-	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/glue/context"
 
-	"github.com/zhiyunliu/gel/encoding"
-	"github.com/zhiyunliu/gel/encoding/text"
-	"github.com/zhiyunliu/gel/errors"
+	"github.com/zhiyunliu/glue/encoding"
+	"github.com/zhiyunliu/glue/encoding/text"
+	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/golibs/httputil"
 )
 

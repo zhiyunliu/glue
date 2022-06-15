@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zhiyunliu/gel/selector"
-	"github.com/zhiyunliu/gel/selector/node/ewma"
+	"github.com/zhiyunliu/glue/selector"
+	"github.com/zhiyunliu/glue/selector/node/ewma"
 )
 
 const (

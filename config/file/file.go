@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/glue/config"
 )
 
 var _ config.Source = (*file)(nil)

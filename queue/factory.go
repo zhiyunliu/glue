@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/constants"
-	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 

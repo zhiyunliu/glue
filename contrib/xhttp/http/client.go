@@ -12,11 +12,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/zhiyunliu/gel/contrib/xhttp/http/balancer"
-	"github.com/zhiyunliu/gel/middleware/tracing"
-	"github.com/zhiyunliu/gel/registry"
-	"github.com/zhiyunliu/gel/selector"
-	"github.com/zhiyunliu/gel/xhttp"
+	"github.com/zhiyunliu/glue/contrib/xhttp/http/balancer"
+	"github.com/zhiyunliu/glue/middleware/tracing"
+	"github.com/zhiyunliu/glue/registry"
+	"github.com/zhiyunliu/glue/selector"
+	"github.com/zhiyunliu/glue/xhttp"
 	"github.com/zhiyunliu/golibs/httputil"
 	"go.opentelemetry.io/otel/trace"
 )

@@ -1,11 +1,11 @@
 package server
 
 import (
-	"github.com/zhiyunliu/gel/middleware"
-	"github.com/zhiyunliu/gel/middleware/auth/jwt"
-	"github.com/zhiyunliu/gel/middleware/metrics"
-	"github.com/zhiyunliu/gel/middleware/ratelimit"
-	"github.com/zhiyunliu/gel/middleware/tracing"
+	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/middleware/auth/jwt"
+	"github.com/zhiyunliu/glue/middleware/metrics"
+	"github.com/zhiyunliu/glue/middleware/ratelimit"
+	"github.com/zhiyunliu/glue/middleware/tracing"
 )
 
 func init() {

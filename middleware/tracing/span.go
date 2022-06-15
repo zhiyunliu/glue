@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/zhiyunliu/gel/context"
-	"github.com/zhiyunliu/gel/global"
-	"github.com/zhiyunliu/gel/metadata"
+	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/metadata"
 
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"

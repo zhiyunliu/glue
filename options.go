@@ -1,6 +1,6 @@
 package gel
 
-import "github.com/zhiyunliu/gel/cli"
+import "github.com/zhiyunliu/glue/cli"
 
 // Option is an application option.
 type Option = cli.Option

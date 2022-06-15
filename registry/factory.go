@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	cmap "github.com/orcaman/concurrent-map"
-	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/golibs/xnet"
 	"github.com/zhiyunliu/golibs/xsecurity/aes"
 )

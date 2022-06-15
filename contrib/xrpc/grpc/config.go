@@ -1,6 +1,6 @@
 package grpc
 
-import "github.com/zhiyunliu/gel/config"
+import "github.com/zhiyunliu/glue/config"
 
 type setting struct {
 	Name        string        `json:"-"`

@@ -1,6 +1,6 @@
 package random
 
-import "github.com/zhiyunliu/gel/selector"
+import "github.com/zhiyunliu/glue/selector"
 
 type randomResolver struct{}
 

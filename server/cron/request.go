@@ -8,9 +8,9 @@ import (
 	"time"
 
 	cron "github.com/robfig/cron/v3"
-	"github.com/zhiyunliu/gel/constants"
-	"github.com/zhiyunliu/gel/contrib/alloter"
-	"github.com/zhiyunliu/gel/server"
+	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/glue/server"
 )
 
 var _ alloter.IRequest = (*Request)(nil)

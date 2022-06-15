@@ -7,11 +7,11 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/zhiyunliu/gel/constants"
-	"github.com/zhiyunliu/gel/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
 	"google.golang.org/grpc/peer"
 
-	"github.com/zhiyunliu/gel/contrib/alloter"
+	"github.com/zhiyunliu/glue/contrib/alloter"
 )
 
 var _ alloter.IRequest = (*Request)(nil)

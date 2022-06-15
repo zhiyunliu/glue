@@ -1,7 +1,7 @@
 package global
 
 import (
-	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/glue/config"
 )
 
 var (

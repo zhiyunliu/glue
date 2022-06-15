@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/zhiyunliu/gel/xdb"
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 func getError(err error, query string, args []interface{}) error {

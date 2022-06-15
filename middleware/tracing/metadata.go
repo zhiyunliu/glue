@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/zhiyunliu/gel/global"
-	"github.com/zhiyunliu/gel/metadata"
-	"github.com/zhiyunliu/gel/transport"
+	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/metadata"
+	"github.com/zhiyunliu/glue/transport"
 	"go.opentelemetry.io/otel/propagation"
 )
 

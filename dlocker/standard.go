@@ -1,8 +1,8 @@
 package dlocker
 
 import (
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/container"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/container"
 	"github.com/zhiyunliu/golibs/xnet"
 )
 

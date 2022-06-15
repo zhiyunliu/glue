@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/zhiyunliu/gel/context"
-	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/middleware"
 )
 
 const (

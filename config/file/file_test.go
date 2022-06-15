@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zhiyunliu/gel/config"
+	"github.com/zhiyunliu/glue/config"
 )
 
 const (

@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/queue"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/queue"
 
 	redisqueue "github.com/robinjoseph08/redisqueue/v2"
 

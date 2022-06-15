@@ -5,9 +5,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/zhiyunliu/gel/contrib/xdb/internal"
-	"github.com/zhiyunliu/gel/contrib/xdb/tpl"
-	"github.com/zhiyunliu/gel/xdb"
+	"github.com/zhiyunliu/glue/contrib/xdb/internal"
+	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 

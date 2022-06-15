@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/zhiyunliu/gel/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 )
 
 //MssqlContext  模板

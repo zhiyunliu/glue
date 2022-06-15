@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/zhiyunliu/gel/middleware"
-	"github.com/zhiyunliu/gel/server"
+	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/server"
 )
 
 func (e *Server) registryEngineRoute() {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/zhiyunliu/gel/cache"
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/contrib/redis"
+	"github.com/zhiyunliu/glue/cache"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/contrib/redis"
 )
 
 // Redis cache implement

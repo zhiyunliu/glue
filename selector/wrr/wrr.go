@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/zhiyunliu/gel/selector"
-	"github.com/zhiyunliu/gel/selector/node/direct"
+	"github.com/zhiyunliu/glue/selector"
+	"github.com/zhiyunliu/glue/selector/node/direct"
 )
 
 const (

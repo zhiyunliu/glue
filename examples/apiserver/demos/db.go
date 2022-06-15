@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/zhiyunliu/gel"
-	"github.com/zhiyunliu/gel/context"
+	gel "github.com/zhiyunliu/glue"
+	"github.com/zhiyunliu/glue/context"
 )
 
 type DBdemo struct{}

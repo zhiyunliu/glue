@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/log"
 )
 
 var (

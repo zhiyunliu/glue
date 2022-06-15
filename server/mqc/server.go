@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/log"
-	"github.com/zhiyunliu/gel/middleware"
-	"github.com/zhiyunliu/gel/server"
-	"github.com/zhiyunliu/gel/transport"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/xnet"
 )
 

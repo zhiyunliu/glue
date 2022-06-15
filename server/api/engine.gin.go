@@ -3,12 +3,12 @@ package api
 import (
 	"net/http"
 
-	"github.com/zhiyunliu/gel/context"
-	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/middleware"
 
 	"github.com/gin-gonic/gin"
-	"github.com/zhiyunliu/gel/global"
-	"github.com/zhiyunliu/gel/server"
+	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/server"
 )
 
 func (e *Server) registryEngineRoute() {

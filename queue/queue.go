@@ -1,6 +1,6 @@
 package queue
 
-import "github.com/zhiyunliu/gel/context"
+import "github.com/zhiyunliu/glue/context"
 
 //IQueue 消息队列
 type IQueue interface {

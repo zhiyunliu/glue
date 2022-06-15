@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
-	"github.com/zhiyunliu/gel/compatible"
+	"github.com/zhiyunliu/glue/compatible"
 )
 
 func init() {

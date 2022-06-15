@@ -3,10 +3,10 @@ package demos
 import (
 	"strconv"
 
-	"github.com/zhiyunliu/gel"
-	"github.com/zhiyunliu/gel/context"
-	_ "github.com/zhiyunliu/gel/contrib/xrpc/grpc"
-	"github.com/zhiyunliu/gel/xrpc"
+	gel "github.com/zhiyunliu/glue"
+	"github.com/zhiyunliu/glue/context"
+	_ "github.com/zhiyunliu/glue/contrib/xrpc/grpc"
+	"github.com/zhiyunliu/glue/xrpc"
 )
 
 type GrpcDemo struct{}

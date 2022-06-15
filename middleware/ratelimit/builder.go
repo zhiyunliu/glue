@@ -1,8 +1,8 @@
 package ratelimit
 
 import (
-	"github.com/zhiyunliu/gel/encoding"
-	"github.com/zhiyunliu/gel/middleware"
+	"github.com/zhiyunliu/glue/encoding"
+	"github.com/zhiyunliu/glue/middleware"
 )
 
 func NewBuilder() middleware.MiddlewareBuilder {

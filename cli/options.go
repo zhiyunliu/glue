@@ -4,10 +4,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/log"
-	"github.com/zhiyunliu/gel/registry"
-	"github.com/zhiyunliu/gel/transport"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/registry"
+	"github.com/zhiyunliu/glue/transport"
 )
 
 type Options struct {

@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/zhiyunliu/gel/selector"
+	"github.com/zhiyunliu/glue/selector"
 )
 
 const (

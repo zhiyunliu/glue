@@ -1,8 +1,8 @@
 package cron
 
 import (
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/server"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/server"
 )
 
 // Option 参数设置类型

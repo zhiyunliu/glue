@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 
 	rds "github.com/go-redis/redis"
-	"github.com/zhiyunliu/gel/config"
-	"github.com/zhiyunliu/gel/contrib/redis"
-	"github.com/zhiyunliu/gel/queue"
+	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/contrib/redis"
+	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 

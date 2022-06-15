@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/zhiyunliu/gel"
-	_ "github.com/zhiyunliu/gel/contrib/config/nacos"
-	_ "github.com/zhiyunliu/gel/contrib/queue/redis"
-	_ "github.com/zhiyunliu/gel/contrib/registry/consul"
-	_ "github.com/zhiyunliu/gel/contrib/registry/nacos"
+	gel "github.com/zhiyunliu/glue"
+	_ "github.com/zhiyunliu/glue/contrib/config/nacos"
+	_ "github.com/zhiyunliu/glue/contrib/queue/redis"
+	_ "github.com/zhiyunliu/glue/contrib/registry/consul"
+	_ "github.com/zhiyunliu/glue/contrib/registry/nacos"
 
-	"github.com/zhiyunliu/gel/examples/rpcserver/demos"
-	"github.com/zhiyunliu/gel/server/rpc"
+	"github.com/zhiyunliu/glue/examples/rpcserver/demos"
+	"github.com/zhiyunliu/glue/server/rpc"
 )
 
 func main() {

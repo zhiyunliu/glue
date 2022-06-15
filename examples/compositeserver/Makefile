@@ -4,7 +4,7 @@ APP ?= mqcserver
 ARCH     ?= $(shell go env GOARCH)
 BUILD_DATE = $(shell date +'%Y-%m-%dT%H:%M:%SZ')
 COMMIT    = $(shell git rev-parse --short HEAD)
-ROOT ?= github.com/zhiyunliu/gel
+ROOT ?= github.com/zhiyunliu/glue
 
 
 .PHONY: all

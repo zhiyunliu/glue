@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zhiyunliu/gel/log"
+	"github.com/zhiyunliu/glue/log"
 )
 
 var (

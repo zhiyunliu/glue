@@ -3,7 +3,7 @@ package demos
 import (
 	"strconv"
 
-	"github.com/zhiyunliu/gel/context"
+	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/golibs/xlog"
 )
 
