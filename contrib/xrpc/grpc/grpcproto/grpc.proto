@@ -1,0 +1,24 @@
+syntax = "proto3";
+package grpcproto;
+
+option go_package ="./grpcproto";   
+
+
+message Request{  
+    string service=1; //服务名称
+    string method=2;  //请求方法,GET
+    map<string, string> header=3; //请求头信息map[string]string
+    bytes body=4; //请求参数 json
+   
+}
+message Response{
+    int32 status=1; //状态码
+    map<string, string> header=2; //返回头信息，map[string]string
+    bytes result=3; //返回结果，default=json,according to content-type
+}
+
+
+service GRPC{
+    rpc Process(Request)returns(Response){}
+}
+

@@ -13,3 +13,23 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+*.log
+!*.go
+
+examples/mqc/mqc
+examples/cron/cron
+examples/api/api
+
+examples/mqcserver/mqcserver
+examples/cronserver/cronserver
+examples/apiserver/apiserver
+examples/rpcserver/rpcserver
+.vscode/launch.json
+
+examples/apiserver/cache
+examples/mqcserver/cache
+examples/cronserver/cache
+examples/rpcserver/cache
+examples/conf/*
+
+.vscode
