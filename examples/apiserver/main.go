@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	gel "github.com/zhiyunliu/glue"
+	"github.com/zhiyunliu/glue"
 	"github.com/zhiyunliu/glue/context"
 	_ "github.com/zhiyunliu/glue/contrib/cache/redis"
 	_ "github.com/zhiyunliu/glue/contrib/config/consul"
@@ -94,6 +94,6 @@ func main() {
 	//apiSrv.Use(tracing.Server(tracing.WithTracerProvider(provider)))
 	apiSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 
-	app := gel.NewApp(gel.Server(apiSrv), gel.LogConcurrency(1))
+	app := glue.NewApp(glue.Server(apiSrv), glue.LogConcurrency(1))
 	app.Start()
 }

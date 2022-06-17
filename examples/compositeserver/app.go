@@ -132,7 +132,7 @@ func cronserver() transport.Server {
 	cronSrv.Handle("/democron", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("democron")
 
-		gel.Queue().GetQueue("default").Send(ctx, "xx.xx.xx", map[string]interface{}{
+		gel.Queue().GetQueue("default").Send(ctx.Context(), "xx.xx.xx", map[string]interface{}{
 			"a": time.Now().Unix(),
 		})
 
