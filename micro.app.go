@@ -1,4 +1,4 @@
-package gel
+package glue
 
 import (
 	_ "net/http/pprof"

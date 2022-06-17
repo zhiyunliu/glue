@@ -11,18 +11,17 @@ git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch examp
 		"encrypt":"1234567890123456",
 		"mode":"debug",
 		"ip_mask":"192.168",
-        "graceful_shutdown_timeout":15,
 		"dependencies":["After=network.target"],
 		"options":{"LimitNOFILE":10240,"MaxOPENFiles":4096}
 	},
 	"registry":"nacos://aliyun",
  	"config":"nacos://aliyun",
 	"caches":{
-		"redisxxx":"redis://redis1",
-		"redisyyy":"redis://redis1",
+		"redisxxx":{"proto":"redis","addr":"redis://redis1"},
+		"redisyyy":{"proto":"redis","addr":"redis://redis1"},
 	},
 	"queues":{
-		"redisxxx":"redis://redis1"
+		"redisxxx":{"proto":"redis","addr":"redis://redis1"}
 	},
 	"rpcs":{
 		"default":{"proto":"grpc","balancer":"round_robin","conn_timeout":10}
@@ -45,24 +44,18 @@ git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch examp
 	"servers":{
 		"apiserver":{
 			"config":{"addr":":8080","status":"start/stop","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65525},
-			"middlewares":[{
-				"auth":{"proto":"jwt","jwt":{},"exclude":["/**"]}
-			}],			
 			"header":{},
 		},
 		"rpcserver":{
 			"config":{"addr":":8081","status":"start/stop","read_timeout":10,"connection_timeout":10,"read_buffer_size":32,"write_buffer_size":32, "max_recv_size":65535,"max_send_size":65535},
-			"middlewares":[{},{}],
 			"header":{},
 		},
 		"mqcserver":{
 			"config":{"addr":"queues://redisxxx","status":"start/stop"},
-			"middlewares":[{},{}],
 			"tasks":[{"queue":"xx.xx.xx","service":"/xx/bb/cc","disable":true},{"queue":"yy.yy.yy","service":"/xx/bb/yy"}],
 		},
 		"cronserver":{
 			"config":{"status":"start/stop","sharding":1},
-			"middlewares":[{},{}],
 			"jobs":[{"cron":"* 15 2 * * ? *","service":"/xx/bb/cc","disable":false},{"cron":"* 15 2 * * ? *","service":"/xx/bb/yy"}],
 		}		
 	}

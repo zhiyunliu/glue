@@ -1,4 +1,4 @@
-package gel
+package glue
 
 import "github.com/zhiyunliu/glue/cli"
 
