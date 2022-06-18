@@ -97,6 +97,7 @@ func main() {
 //配置文件 config.json
 
 {
+
 	"registry":"nacos://aliyun",	
 	"rpcs":{
 		"default":{}	
