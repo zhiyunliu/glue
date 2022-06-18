@@ -10,39 +10,39 @@ import (
 )
 
 //DB 获取DB 处理对象
-func DB() xdb.StandardDB {
+func DB(name ...string) xdb.IDB {
 	obj := getStandardInstance(xdb.DbTypeNode)
-	return obj.(xdb.StandardDB)
+	return obj.(xdb.StandardDB).GetDB(name...)
 }
 
 //Cache 获取Cache 处理对象
-func Cache() cache.StandardCache {
+func Cache(name ...string) cache.ICache {
 	obj := getStandardInstance(cache.TypeNode)
-	return obj.(cache.StandardCache)
+	return obj.(cache.StandardCache).GetCache(name...)
 }
 
 //Queue 获取Queue 处理对象
-func Queue() queue.StandardQueue {
+func Queue(name ...string) queue.IQueue {
 	obj := getStandardInstance(queue.TypeNode)
-	return obj.(queue.StandardQueue)
+	return obj.(queue.StandardQueue).GetQueue(name...)
 }
 
 //RPC 获取RPC 处理对象
-func RPC() xrpc.StandardRPC {
+func RPC(name ...string) xrpc.Client {
 	obj := getStandardInstance(xrpc.TypeNode)
-	return obj.(xrpc.StandardRPC)
+	return obj.(xrpc.StandardRPC).GetRPC(name...)
 }
 
 //Http 获取Http处理对象
-func Http() xhttp.StandardHttp {
+func Http(name ...string) xhttp.Client {
 	obj := getStandardInstance(xhttp.TypeNode)
-	return obj.(xhttp.StandardHttp)
+	return obj.(xhttp.StandardHttp).GetHttp(name...)
 }
 
 //DLocker 获取DLocker 处理对象
-func DLocker() dlocker.DLockerBuilder {
+func DLocker(key string) dlocker.DLocker {
 	obj := getStandardInstance(dlocker.TypeNode)
-	return obj.(dlocker.DLockerBuilder)
+	return obj.(dlocker.StandardLocker).GetDLocker().Build(key)
 }
 
 //暂时没考虑用泛型
