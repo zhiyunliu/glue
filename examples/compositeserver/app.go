@@ -69,7 +69,7 @@ func apiserver() transport.Server {
 	apiSrv.Handle("/demoapi", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demo")
 
-		body, err := gel.Http().GetHttp().Swap(ctx, "http://apiserver/log/info")
+		body, err := gel.Http().Swap(ctx, "http://apiserver/log/info")
 		if err != nil {
 			ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
 		}
@@ -94,7 +94,7 @@ func mqcserver() transport.Server {
 	mqcSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	mqcSrv.Handle("/demomqc", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demomqc")
-		body, err := gel.Http().GetHttp().Swap(ctx, "http://apiserver/log/info", xhttp.WithMethod(http.MethodPost))
+		body, err := gel.Http().Swap(ctx, "http://apiserver/log/info", xhttp.WithMethod(http.MethodPost))
 		if err != nil {
 			ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
 		}
@@ -132,7 +132,7 @@ func cronserver() transport.Server {
 	cronSrv.Handle("/democron", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("democron")
 
-		gel.Queue().GetQueue("default").Send(ctx.Context(), "xx.xx.xx", map[string]interface{}{
+		gel.Queue("default").Send(ctx.Context(), "xx.xx.xx", map[string]interface{}{
 			"a": time.Now().Unix(),
 		})
 

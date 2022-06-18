@@ -7,8 +7,8 @@
 		"options":{"LimitNOFILE":10240,"MaxOPENFiles":4096}
 	},
 	"registry":"nacos://default",	
- 
-	"dbs":{
+	"dlocker":"redis://localhost",
+ 	"dbs":{
 		"localhost":{"proto":"mysql","conn":"root:123456@tcp(localhost)/demo?charset=utf8","max_open":10,"max_idle":10,"life_time":100},
 		"microsql":{"proto":"sqlserver","conn":"server=localhost;database=demo;persist security info=false;user id=admin;password=123456;Min Pool Size=10;Max Pool Size=20","max_open":10,"max_idle":10,"life_time":100}
 	},
@@ -25,7 +25,7 @@
 	"redis":{
 		"localhost":{
 			"addrs":["localhost:6379"],
-			"db":0,
+			"db":1,
 			"dial_timeout":10,
 			"read_timeout":10,
 			"write_timeout":10,
@@ -53,7 +53,7 @@
     "servers":{
 		"apiserver":{
 			"config":{"addr":":8083","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65535},
-			"middlewares":[{"name":"jwt","data":{"secret":"123456789","method":"sha256","expire":"3600","excludes":["/log/**","/demo/**"]}}],			
+			"middlewares":[{"name":"jwt","data":{"secret":"123456789","method":"sha256","expire":"3600","excludes":["/log/**","/demo/**","/dlock/**"]}}],			
 			"header":{"a":"1","b":"2"}
 		}
     }

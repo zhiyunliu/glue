@@ -19,11 +19,9 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
-	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 
 	"github.com/zhiyunliu/glue/middleware/ratelimit"
-	"github.com/zhiyunliu/glue/middleware/tracing"
 
 	_ "github.com/zhiyunliu/glue/contrib/dlocker/redis"
 
@@ -88,11 +86,12 @@ func main() {
 	apiSrv.Handle("/queue", demos.NewQueue())
 	apiSrv.Handle("/log", demos.NewLogDemo())
 	apiSrv.Handle("/rpc", demos.NewGrpcDemo())
+	apiSrv.Handle("/dlock", demos.NewDLock())
 
 	//apiSrv.Use(jwt.Server(jwt.WithSecret("123456")))
 	apiSrv.Use(ratelimit.Server())
 	//apiSrv.Use(tracing.Server(tracing.WithTracerProvider(provider)))
-	apiSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
+	//apiSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 
 	app := glue.NewApp(glue.Server(apiSrv), glue.LogConcurrency(1))
 	app.Start()
