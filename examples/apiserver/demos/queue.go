@@ -15,7 +15,7 @@ func (d *Queuedemo) GetHandle(ctx context.Context) interface{} {
 	ctx.Log().Debug("Queuedemo.get")
 	queueObj := gel.Queue().GetQueue("default")
 
-	err := queueObj.Send(ctx, "key", map[string]interface{}{
+	err := queueObj.Send(ctx.Context(), "key", map[string]interface{}{
 		"a": "1",
 		"b": "2",
 	})

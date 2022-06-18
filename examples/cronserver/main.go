@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	cronSrv := cron.New("")
+	cronSrv := cron.New("cronserver")
 
 	cronSrv.Handle("/demo", &demos.Fulldemo{})
 

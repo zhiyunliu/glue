@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"context"
+
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/constants"
-	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -27,16 +27,11 @@ func newQueue(proto string, cfg config.Config) (IQueue, error) {
 
 //Send 发送消息
 func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
-
-	reqid := ctx.Header(constants.HeaderRequestId)
-
 	if msg, ok := value.(Message); ok {
-		header := msg.Header()
-		header[constants.HeaderRequestId] = reqid
 		return q.q.Push(key, msg)
 	}
 
-	msg, err := newMsgWrap(reqid, value)
+	msg, err := newMsgWrap("", value)
 	if err != nil {
 		return fmt.Errorf("queue.Send:%s,Error:%w", key, err)
 	}
@@ -61,6 +56,7 @@ func (q *queue) Close() error {
 type msgWrap struct {
 	HeaderMap xtypes.SMap `json:"header"`
 	BodyMap   xtypes.XMap `json:"body"`
+	hasProced bool        `json:"-"`
 	reqid     string      `json:"-"`
 	bytes     []byte      `json:"-"`
 }
@@ -81,20 +77,23 @@ func newMsgWrap(reqid string, obj interface{}) (msg Message, err error) {
 }
 
 func (w *msgWrap) Header() map[string]string {
-	if w.HeaderMap == nil {
-		w.HeaderMap = map[string]string{
-			constants.HeaderRequestId: w.reqid,
-		}
-	}
+	w.adapterMsg()
 	return w.HeaderMap
 }
 func (w *msgWrap) Body() map[string]interface{} {
-	if w.BodyMap == nil {
-		w.BodyMap = map[string]interface{}{}
-		json.Unmarshal(w.bytes, &w.BodyMap)
-	}
+	w.adapterMsg()
 	return w.BodyMap
 
+}
+
+func (w *msgWrap) adapterMsg() {
+	if w.hasProced {
+		return
+	}
+	w.HeaderMap = map[string]string{}
+	w.BodyMap = map[string]interface{}{}
+	w.hasProced = true
+	json.Unmarshal(w.bytes, &w.BodyMap)
 }
 
 func (w *msgWrap) String() string {
