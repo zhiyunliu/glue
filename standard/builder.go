@@ -5,9 +5,12 @@ import (
 	"sync"
 
 	"github.com/zhiyunliu/glue/cache"
+	"github.com/zhiyunliu/glue/circuitbreaker"
 	"github.com/zhiyunliu/glue/container"
 	"github.com/zhiyunliu/glue/dlocker"
 	"github.com/zhiyunliu/glue/metrics"
+	"github.com/zhiyunliu/glue/ratelimit"
+
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/glue/xhttp"
@@ -54,5 +57,7 @@ func registrydefault() error {
 	Registry(xhttp.NewBuilder())
 	Registry(dlocker.NewBuilder())
 	Registry(metrics.NewBuilder())
+	Registry(ratelimit.NewBuilder())
+	Registry(circuitbreaker.NewBuilder())
 	return nil
 }

@@ -5,8 +5,8 @@ package circuitbreaker
 import (
 	"github.com/zhiyunliu/glue/context"
 
-	"github.com/go-kratos/aegis/circuitbreaker"
-	"github.com/go-kratos/aegis/circuitbreaker/sre"
+	"github.com/zhiyunliu/glue/circuitbreaker"
+	"github.com/zhiyunliu/glue/circuitbreaker/sre"
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/golibs/group"
@@ -43,7 +43,6 @@ func Client(opts ...Option) middleware.Middleware {
 	}
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
-			orgCtx := ctx.Context()
 
 			path := ctx.Request().Path().GetURL().Path
 			breaker := opt.group.Get(path).(circuitbreaker.CircuitBreaker)

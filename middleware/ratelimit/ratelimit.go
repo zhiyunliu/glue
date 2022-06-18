@@ -2,9 +2,11 @@ package ratelimit
 
 import (
 	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/standard"
 
-	"github.com/go-kratos/aegis/ratelimit"
-	"github.com/go-kratos/aegis/ratelimit/bbr"
+	"github.com/zhiyunliu/glue/ratelimit"
+	"github.com/zhiyunliu/glue/ratelimit/bbr"
+
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/middleware"
 )
@@ -39,8 +41,11 @@ func Server(opts ...Option) middleware.Middleware {
 }
 
 func serverByConfig(cfg *Config) middleware.Middleware {
+	std := standard.GetInstance(ratelimit.TypeNode).(ratelimit.Standard)
+	provider := std.GetProvider(cfg.Limiter)
+
 	options := &options{
-		limiter: bbr.NewLimiter(),
+		limiter: provider.Limiter(),
 	}
 	return serverByOption(options)
 }
