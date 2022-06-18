@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/standard"
 
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/metrics"
@@ -14,25 +15,31 @@ import (
 // Option is metrics option.
 type Option func(*options)
 
-// WithRequests with requests counter.
-func WithRequests(c metrics.Counter) Option {
+// WithCounter with requests counter.
+func WithCounter(c metrics.Counter) Option {
 	return func(o *options) {
-		o.requests = c
+		o.counter = c
 	}
 }
 
-// WithSeconds with seconds histogram.
-func WithSeconds(c metrics.Observer) Option {
+// WithObserver
+func WithObserver(c metrics.Observer) Option {
 	return func(o *options) {
-		o.seconds = c
+		o.observer = c
+	}
+}
+
+// WithGauge
+func WithGauge(c metrics.Gauge) Option {
+	return func(o *options) {
+		o.gauge = c
 	}
 }
 
 type options struct {
-	// counter: <client/server>_requests_code_total{kind, operation, code, reason}
-	requests metrics.Counter
-	// histogram: <client/server>_requests_seconds_bucket{kind, operation}
-	seconds metrics.Observer
+	counter  metrics.Counter
+	observer metrics.Observer
+	gauge    metrics.Gauge
 }
 
 func Server(opts ...Option) middleware.Middleware {
@@ -44,9 +51,16 @@ func Server(opts ...Option) middleware.Middleware {
 }
 
 func serverByConfig(cfg *Config) middleware.Middleware {
-	op := options{}
+	op := &options{}
 
-	return serverByOptions(&op)
+	stdMetric := standard.GetInstance(metrics.TypeNode).(metrics.StandardMetric)
+	provider := stdMetric.GetProvider(cfg.Proto)
+
+	op.counter = provider.Counter()
+	op.observer = provider.Observer()
+	op.gauge = provider.Gauge()
+
+	return serverByOptions(op)
 }
 
 // Server is middleware server-side metrics.
@@ -71,11 +85,11 @@ func serverByOptions(op *options) middleware.Middleware {
 			if se := errors.FromError(err); se != nil {
 				code = int(se.Code)
 			}
-			if op.requests != nil {
-				op.requests.With(kind, operation, strconv.Itoa(code), reason).Inc()
+			if op.counter != nil {
+				op.counter.With(kind, operation, strconv.Itoa(code), reason).Inc()
 			}
-			if op.seconds != nil {
-				op.seconds.With(kind, operation).Observe(time.Since(startTime).Seconds())
+			if op.observer != nil {
+				op.observer.With(kind, operation).Observe(time.Since(startTime).Seconds())
 			}
 			return reply
 		}
