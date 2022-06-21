@@ -59,6 +59,7 @@ func Verify(tokenVal, secret string) (map[string]interface{}, error) {
 	return nil, ErrUnSupportSigningMethod
 }
 
+//timeout 秒
 func Sign(signingMethod string, secret string, data map[string]interface{}, timeout int64) (string, error) {
 	expireAt := time.Now().Unix() + timeout
 	if timeout == 0 {

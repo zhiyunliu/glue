@@ -77,12 +77,14 @@ func serverByOptions(opts *options) middleware.Middleware {
 			if isMatch {
 				//是排除路径，不进行jwt检查
 				reply = handler(ctx)
-
 				token, ok := gluejwt.FromContext(ctx.Context())
 				if !ok {
 					return reply
 				}
-				writeAuth(ctx, opts, token)
+				err := writeAuth(ctx, opts, token)
+				if err != nil {
+					return err
+				}
 				return reply
 			}
 
