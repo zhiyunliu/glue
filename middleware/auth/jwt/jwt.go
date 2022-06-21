@@ -3,41 +3,15 @@ package jwt
 import (
 	"fmt"
 	"strings"
-	"time"
-
-	sysctx "context"
 
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/golibs/xpath"
 
 	"github.com/golang-jwt/jwt/v4"
 
-	"github.com/zhiyunliu/glue/errors"
+	gluejwt "github.com/zhiyunliu/glue/auth/jwt"
+
 	"github.com/zhiyunliu/glue/middleware"
-)
-
-type authKey struct{}
-
-const (
-
-	// bearerWord the bearer key word for authorization
-	bearerWord string = "Bearer"
-
-	// authorizationKey holds the key used to store the JWT Token in the request tokenHeader.
-	authorizationKey string = "Authorization"
-)
-
-var (
-	ErrMissingJwtToken        = errors.Unauthorized("JWT token is missing")
-	ErrMissingKeyFunc         = errors.Unauthorized("secret is missing")
-	ErrTokenInvalid           = errors.Unauthorized("Token is invalid")
-	ErrTokenExpired           = errors.Unauthorized("JWT token has expired")
-	ErrTokenParseFail         = errors.Unauthorized("Fail to parse JWT token ")
-	ErrUnSupportSigningMethod = errors.Unauthorized("Wrong signing method")
-	ErrWrongContext           = errors.Unauthorized("Wrong context for middleware")
-	ErrNeedTokenProvider      = errors.Unauthorized("Token provider is missing")
-	ErrSignToken              = errors.Unauthorized("Can not sign token.Is the key correct?")
-	ErrGetKey                 = errors.Unauthorized("Can not get key while signing token")
 )
 
 // Option is jwt option.
@@ -103,98 +77,44 @@ func serverByOptions(opts *options) middleware.Middleware {
 			if isMatch {
 				//是排除路径，不进行jwt检查
 				reply = handler(ctx)
-				if tmpdata, ok := ctx.Meta()["jwt_data"]; ok {
-					if data, ok := tmpdata.(map[string]interface{}); ok {
-						write(ctx, opts, data)
-					}
+				token, ok := gluejwt.FromContext(ctx.Context())
+				if !ok {
+					return reply
+				}
+				err := writeAuth(ctx, opts, token)
+				if err != nil {
+					return err
 				}
 				return reply
 			}
 
 			if keyFunc == "" {
-				return ErrMissingKeyFunc
+				return gluejwt.ErrMissingKeyFunc
 			}
-			authVal := ctx.Header(authorizationKey)
+			authVal := ctx.Header(gluejwt.AuthorizationKey)
 
 			auths := strings.SplitN(authVal, " ", 2)
-			if len(auths) != 2 || !strings.EqualFold(auths[0], bearerWord) {
-				return ErrMissingJwtToken
+			if len(auths) != 2 || !strings.EqualFold(auths[0], gluejwt.BearerWord) {
+				return gluejwt.ErrMissingJwtToken
 			}
 			jwtToken := auths[1]
-			tokenData, err := Verify(jwtToken, opts.Secret)
+			tokenData, err := gluejwt.Verify(jwtToken, opts.Secret)
 			if err != nil {
 				return err
 			}
-			ctx = NewContext(ctx, tokenData)
+			nctx := gluejwt.NewContext(ctx.Context(), tokenData)
+			ctx.ResetContext(nctx)
 			return handler(ctx)
 		}
 
 	}
 }
 
-// NewContext put auth info into context
-func NewContext(ctx context.Context, info map[string]interface{}) context.Context {
-	nctx := sysctx.WithValue(ctx.Context(), authKey{}, info)
-	ctx.ResetContext(nctx)
-	return ctx
-}
-
-// FromContext extract auth info from context
-func FromContext(ctx context.Context) (token map[string]interface{}, ok bool) {
-	token, ok = ctx.Context().Value(authKey{}).(map[string]interface{})
-	return
-}
-
-func Verify(tokenVal, secret string) (map[string]interface{}, error) {
-	tokenInfo, err := jwt.Parse(tokenVal, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
-	})
-	if err != nil {
-		if ve, ok := err.(*jwt.ValidationError); ok {
-			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-				return nil, ErrTokenInvalid
-			} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-				return nil, ErrTokenExpired
-			} else {
-				return nil, ErrTokenParseFail
-			}
-		}
-		return nil, errors.Unauthorized(err.Error())
-	}
-	if !tokenInfo.Valid {
-		return nil, ErrTokenInvalid
-	}
-
-	if claims, ok := tokenInfo.Claims.(jwt.MapClaims); ok {
-		return claims["data"].(map[string]interface{}), nil
-	}
-
-	return nil, ErrUnSupportSigningMethod
-}
-
-func Sign(signingMethod string, secret string, data map[string]interface{}, timeout int64) (string, error) {
-	expireAt := time.Now().Unix() + timeout
-	if timeout == 0 {
-		expireAt = 0
-	}
-	claims := &jwt.MapClaims{
-		"exp":  expireAt,
-		"data": data,
-	}
-	method := jwt.GetSigningMethod(signingMethod)
-	token := jwt.NewWithClaims(method, claims)
-	return token.SignedString([]byte(secret))
-}
-
-func write(ctx context.Context, opts *options, data map[string]interface{}) error {
-	tokenVal, err := Sign(opts.signingMethod.Alg(), opts.Secret, data, int64(opts.Expire))
+func writeAuth(ctx context.Context, opts *options, data map[string]interface{}) error {
+	tokenVal, err := gluejwt.Sign(opts.signingMethod.Alg(), opts.Secret, data, int64(opts.Expire))
 	if err != nil {
 		return err
 	}
-	ctx.Response().Header(authorizationKey, fmt.Sprintf("%s %s", bearerWord, tokenVal))
+	ctx.Response().Header(gluejwt.AuthorizationKey, fmt.Sprintf("%s %s", gluejwt.BearerWord, tokenVal))
 	return nil
-}
-
-func Write(ctx context.Context, data map[string]interface{}) {
-	ctx.Meta()["jwt_data"] = data
 }

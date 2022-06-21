@@ -16,7 +16,7 @@ func NewDb() *DBdemo {
 }
 
 func (d *DBdemo) QueryHandle(ctx context.Context) interface{} {
-	dbobj := gel.DB().GetDB("localhost")
+	dbobj := gel.DB("localhost")
 	idval := ctx.Request().Query().Get("id")
 	sql := `select id,name from new_table t`
 	if len(idval) > 0 {
@@ -34,7 +34,7 @@ func (d *DBdemo) QueryHandle(ctx context.Context) interface{} {
 }
 
 func (d *DBdemo) FirstHandle(ctx context.Context) interface{} {
-	dbobj := gel.DB().GetDB("localhost")
+	dbobj := gel.DB("localhost")
 	row, err := dbobj.First(ctx.Context(), "select id,name from new_table t where t.id=@id", map[string]interface{}{
 		"id": ctx.Request().Query().Get("id"),
 	})
@@ -47,7 +47,7 @@ func (d *DBdemo) FirstHandle(ctx context.Context) interface{} {
 }
 
 func (d *DBdemo) InsertHandle(ctx context.Context) interface{} {
-	dbobj := gel.DB().GetDB("localhost")
+	dbobj := gel.DB("localhost")
 	result, err := dbobj.Exec(ctx.Context(), "insert into new_table(name) values(@name) ", map[string]interface{}{
 		"name": fmt.Sprintf("insert:%s:%s", ctx.Request().Query().Get("name"), time.Now().Format("2006-01-02 15:04:05")),
 	})
@@ -66,7 +66,7 @@ func (d *DBdemo) InsertHandle(ctx context.Context) interface{} {
 }
 
 func (d *DBdemo) UpdateHandle(ctx context.Context) interface{} {
-	dbobj := gel.DB().GetDB("localhost")
+	dbobj := gel.DB("localhost")
 	result, err := dbobj.Exec(ctx.Context(), "update new_table set name=@name where id=@id ", map[string]interface{}{
 		"id":   ctx.Request().Query().Get("id"),
 		"name": fmt.Sprintf("update:%s", time.Now().Format("2006-01-02 15:04:05")),
@@ -85,7 +85,7 @@ func (d *DBdemo) UpdateHandle(ctx context.Context) interface{} {
 }
 
 func (d *DBdemo) TransHandle(ctx context.Context) interface{} {
-	dbobj := gel.DB().GetDB("localhost")
+	dbobj := gel.DB("localhost")
 
 	trans, err := dbobj.Begin()
 	if err != nil {
@@ -128,7 +128,7 @@ func (d *DBdemo) TransHandle(ctx context.Context) interface{} {
 }
 
 func (d *DBdemo) MultiHandle(ctx context.Context) interface{} {
-	dbobj := gel.DB().GetDB("microsql")
+	dbobj := gel.DB("microsql")
 
 	var outArg string
 	result, err := dbobj.Multi(ctx.Context(), `
@@ -152,7 +152,7 @@ EXEC	#return_value = [dbo].[test_aaa]
 }
 
 func (d *DBdemo) SpHandle(ctx context.Context) interface{} {
-	dbobj := gel.DB().GetDB("localhost")
+	dbobj := gel.DB("localhost")
 	result, err := dbobj.Exec(ctx.Context(), "update new_table set name=@name where id=@id ", map[string]interface{}{
 		"id":   ctx.Request().Query().Get("id"),
 		"name": fmt.Sprintf("update:%s", time.Now().Format("2006-01-02 15:04:05")),

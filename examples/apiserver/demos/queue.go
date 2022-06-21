@@ -13,7 +13,7 @@ func NewQueue() *Queuedemo {
 
 func (d *Queuedemo) GetHandle(ctx context.Context) interface{} {
 	ctx.Log().Debug("Queuedemo.get")
-	queueObj := gel.Queue().GetQueue("default")
+	queueObj := gel.Queue("default")
 
 	err := queueObj.Send(ctx.Context(), "key", map[string]interface{}{
 		"a": "1",

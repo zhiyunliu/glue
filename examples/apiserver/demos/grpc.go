@@ -20,7 +20,7 @@ func (d *GrpcDemo) RequestHandle(ctx context.Context) interface{} {
 	wfr := ctx.Request().Query().Get("wfr")
 	wfrv, _ := strconv.ParseBool(wfr)
 
-	client := gel.RPC().GetRPC("default")
+	client := gel.RPC("default")
 	body, err := client.Request(ctx.Context(), "grpc://rpcserver/demo", map[string]interface{}{
 		"body-a": "1",
 		"body-b": 2,
@@ -42,7 +42,7 @@ func (d *GrpcDemo) RequestHandle(ctx context.Context) interface{} {
 }
 
 func (d *GrpcDemo) SwapHandle(ctx context.Context) interface{} {
-	client := gel.RPC().GetRPC("")
+	client := gel.RPC("")
 	body, err := client.Swap(ctx, "grpc://rpcserver/demo", xrpc.WithXRequestID("aaa"))
 	if err != nil {
 		ctx.Log().Error(err)

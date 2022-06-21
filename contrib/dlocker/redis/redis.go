@@ -40,6 +40,9 @@ func (s *redisResolver) Name() string {
 }
 func (s *redisResolver) Resolve(setting config.Config) (dlocker.DLockerBuilder, error) {
 	client, err := redis.NewByConfig(setting)
+	if err != nil {
+		return nil, err
+	}
 	return &Redis{
 		client: client,
 	}, err

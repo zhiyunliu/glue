@@ -20,7 +20,7 @@ end`
 else
     return 0
 end`
-	leaseCommand = `redis.call("EXPIRE", KEYS[1], ARGV[1]`
+	leaseCommand = `return redis.call("EXPIRE", KEYS[1], ARGV[1])`
 
 	randomLen = 16
 	// 默认超时时间，防止死锁
@@ -47,20 +47,22 @@ func NewLock(client *Redis, key string) *Lock {
 }
 
 // Acquire acquires the lock.
+// 单位：秒
 // 加锁
 func (rl *Lock) Acquire(expire int) (bool, error) {
 	if expire <= 0 {
 		return false, fmt.Errorf("expire 参数必须大于0")
 	}
+	expire = expire*1000 + tolerance //换算成毫秒
 	// 获取过期时间
 	// 默认锁过期时间为500ms，防止死锁
 	resp, err := rl.client.Eval(lockCommand, []string{rl.key}, []string{
-		rl.rndVal, strconv.Itoa(expire + tolerance),
+		rl.rndVal, strconv.Itoa(expire),
 	})
 	if err == goredis.Nil {
 		return false, nil
 	} else if err != nil {
-		return false, fmt.Errorf("Error on acquiring lock for %s, %s", rl.key, err.Error())
+		return false, fmt.Errorf("error on acquiring lock for %s, %s", rl.key, err.Error())
 	} else if resp == nil {
 		return false, nil
 	}
@@ -88,6 +90,8 @@ func (rl *Lock) Release() (bool, error) {
 	return reply == 1, nil
 }
 
+// 单位：秒
+// 续约
 func (rl *Lock) Renewal(expire int) error {
 	resp, err := rl.client.Eval(leaseCommand, []string{rl.key}, []string{strconv.Itoa(expire)})
 	if err != nil {

@@ -1,12 +1,16 @@
-package glue
+package standard
 
 import (
 	"fmt"
 	"sync"
 
 	"github.com/zhiyunliu/glue/cache"
+	"github.com/zhiyunliu/glue/circuitbreaker"
 	"github.com/zhiyunliu/glue/container"
 	"github.com/zhiyunliu/glue/dlocker"
+	"github.com/zhiyunliu/glue/metrics"
+	"github.com/zhiyunliu/glue/ratelimit"
+
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/glue/xhttp"
@@ -15,8 +19,7 @@ import (
 
 var (
 	contanier = container.NewContainer()
-
-	lock sync.Mutex
+	lock      sync.Mutex
 )
 
 var _ = registrydefault()
@@ -27,7 +30,7 @@ func Registry(builder container.StandardBuilder) {
 	builderMap.Store(builder.Name(), builder)
 }
 
-func getStandardInstance(name string) interface{} {
+func GetInstance(name string) interface{} {
 	instanceName := fmt.Sprintf("instance_%s", name)
 	if obj, ok := builderMap.Load(instanceName); ok {
 		return obj
@@ -53,5 +56,8 @@ func registrydefault() error {
 	Registry(xrpc.NewBuilder())
 	Registry(xhttp.NewBuilder())
 	Registry(dlocker.NewBuilder())
+	Registry(metrics.NewBuilder())
+	Registry(ratelimit.NewBuilder())
+	Registry(circuitbreaker.NewBuilder())
 	return nil
 }

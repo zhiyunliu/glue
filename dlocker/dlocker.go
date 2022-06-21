@@ -7,8 +7,10 @@ import (
 )
 
 type DLocker interface {
+	//expire 秒
 	Acquire(expire int) (bool, error)
 	Release() (bool, error)
+	//expire 秒
 	Renewal(expire int) error
 }
 

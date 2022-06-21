@@ -10,28 +10,27 @@ const TypeNode = "dlocker"
 
 //StandardLocker cache
 type StandardLocker interface {
-	GetDLocker(name string) (q DLocker)
+	GetDLocker() (q DLockerBuilder)
 }
 
-//StandardLocker cache
+//StandardLocker lock
 type xLocker struct {
 	c container.Container
 }
 
-//NewStandardLocker 创建cache
+//NewStandardLocker 创建 lock
 func NewStandardLocker(c container.Container) StandardLocker {
 	return &xLocker{c: c}
 }
 
 //GetDLocker GetDLocker
-func (s *xLocker) GetDLocker(name string) (q DLocker) {
-	obj, err := s.c.GetOrCreate(TypeNode, name, func(cfg config.Config) (interface{}, error) {
-		cfgVal := cfg.Get(TypeNode).Value(name)
-		cacheVal := cfgVal.String()
+func (s *xLocker) GetDLocker() (q DLockerBuilder) {
+	obj, err := s.c.GetOrCreate(TypeNode, TypeNode, func(cfg config.Config) (interface{}, error) {
+		cfgVal := cfg.Value(TypeNode).String()
 		//redis://localhost
-		protoType, configName, err := xnet.Parse(cacheVal)
+		protoType, configName, err := xnet.Parse(cfgVal)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		cacheCfg := cfg.Get(protoType).Get(configName)
 		return newXLocker(protoType, cacheCfg)
@@ -39,7 +38,7 @@ func (s *xLocker) GetDLocker(name string) (q DLocker) {
 	if err != nil {
 		panic(err)
 	}
-	return obj.(DLocker)
+	return obj.(DLockerBuilder)
 }
 
 type xBuilder struct{}
