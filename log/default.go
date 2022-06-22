@@ -9,18 +9,27 @@ import (
 
 var (
 	DefaultLogger  Logger
-	DefaultBuilder Builder
+	defaultBuilder Builder
 	logpool        sync.Pool
 )
 
 func init() {
-	DefaultBuilder = &defaultBuilder{}
-	DefaultLogger = DefaultBuilder.Build(xlog.WithName("default"), xlog.WithSid(session.Create()))
+	defaultBuilder = &defaultBuilderWrap{}
+	SetBuilder(defaultBuilder)
 	logpool = sync.Pool{
 		New: func() interface{} {
 			return &wraper{}
 		},
 	}
+}
+
+//设置日志的builder
+func SetBuilder(builder Builder) {
+	if builder == nil {
+		return
+	}
+	defaultBuilder = builder
+	DefaultLogger = defaultBuilder.Build(xlog.WithName("default"), xlog.WithSid(session.Create()))
 }
 
 type wraper struct {
@@ -134,13 +143,11 @@ func Panicf(template string, args ...interface{}) {
 }
 
 func New(opts ...Option) Logger {
-	lw := logpool.Get().(*wraper)
-	lw.xloger = DefaultBuilder.Build(opts...)
-	return lw
+	return defaultBuilder.Build(opts...)
 }
 
 func Close() {
-	xlog.Close()
+	defaultBuilder.Close()
 }
 
 func Concurrency(cnt int) {

@@ -6,13 +6,19 @@ import (
 
 type Builder interface {
 	Build(...Option) Logger
+	Close()
 }
 
-type defaultBuilder struct {
+type defaultBuilderWrap struct {
 }
 
-func (b *defaultBuilder) Build(opts ...Option) Logger {
+func (b *defaultBuilderWrap) Build(opts ...Option) Logger {
+
 	return &wraper{
 		xloger: xlog.New(opts...),
 	}
+}
+
+func (b *defaultBuilderWrap) Close() {
+	xlog.Close()
 }
