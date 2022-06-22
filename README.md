@@ -12,7 +12,7 @@
 
 # 配置介绍
 
-[config 样例](https://github.com/zhiyunliu/glue/blob/main/config.md)
+[config 样例](./docs/config.md)
 
 ```tree
 
@@ -51,7 +51,7 @@
 ## API 接口服务
     底层使用了GIN 框架作为http(s)服务的基础，在此基础上进行了服务注册，中间件的包装处理。默认注入recover ,log 两个中间件
 
-## RPC RPC调用服务
+## RPC 远程调用服务
     通过定义通用的proto传输协议 ,将RPC调用的数据统一格式传输。传输的消息格式默认提供grpc格式，可以根据自己需要自行实现传输消息格式
 
 ## MQC 消息队列服务
