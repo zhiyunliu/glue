@@ -1,17 +1,27 @@
 package log
 
 import (
+	"sync"
+
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xlog"
 )
 
+var (
+	DefaultLogger  Logger
+	DefaultBuilder Builder
+	logpool        sync.Pool
+)
+
 func init() {
-	DefaultLogger = &wraper{
-		xloger: xlog.New(xlog.WithName("default"), xlog.WithSid(session.Create())),
+	DefaultBuilder = &defaultBuilder{}
+	DefaultLogger = DefaultBuilder.Build(xlog.WithName("default"), xlog.WithSid(session.Create()))
+	logpool = sync.Pool{
+		New: func() interface{} {
+			return &wraper{}
+		},
 	}
 }
-
-var DefaultLogger Logger
 
 type wraper struct {
 	xloger xlog.Logger
@@ -23,6 +33,7 @@ func (l *wraper) Name() string {
 
 func (l *wraper) Close() {
 	l.xloger.Close()
+	logpool.Put(l)
 }
 
 func (l *wraper) Log(level Level, args ...interface{}) {
@@ -123,9 +134,9 @@ func Panicf(template string, args ...interface{}) {
 }
 
 func New(opts ...Option) Logger {
-	return &wraper{
-		xloger: xlog.GetLogger(opts...),
-	}
+	lw := logpool.Get().(*wraper)
+	lw.xloger = DefaultBuilder.Build(opts...)
+	return lw
 }
 
 func Close() {
