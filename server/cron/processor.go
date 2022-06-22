@@ -33,6 +33,7 @@ type processor struct {
 //NewProcessor 创建processor
 func newProcessor() (p *processor, err error) {
 	p = &processor{
+		index:     -1,
 		interval:  time.Second,
 		status:    server.Unstarted,
 		closeChan: make(chan struct{}),
@@ -116,6 +117,10 @@ func (s *processor) Close() error {
 }
 
 func (s *processor) getOffset(now time.Time, next time.Time) (pos int, circle int) {
+	//立即执行
+	if now == next {
+		return 0, 0
+	}
 	secs := next.Sub(now).Seconds() //剩余时间
 	delaySeconds := int(math.Ceil(secs))
 	circle = int(delaySeconds) / len(s.slots)
