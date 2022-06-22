@@ -96,15 +96,15 @@ func (m *Request) WithContext(ctx sctx.Context) alloter.IRequest {
 func (m *Request) NextTime(t time.Time) time.Time {
 	if m.job.IsImmediately() && !m.executed {
 		m.executed = true
-		return time.Now()
+		return t
 	}
 	return m.schedule.Next(t)
 }
 func (m *Request) reset() {
 	m.ctx = sctx.Background()
 	m.header = make(map[string]string)
-	if m.header["Content-Type"] == "" {
-		m.header["Content-Type"] = "application/json"
+	if m.header[constants.ContentTypeName] == "" {
+		m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
 	}
 }
 
