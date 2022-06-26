@@ -357,11 +357,11 @@ func (d *Fulldemo) NotRunHandle(ctx context.Context) interface{} {
 ```golang 
 
   		//缓存使用
-		cacheObj := glue.Cache().GetCache("cachename") //cachename 对应config.json 文件中节点：caches/cachename
+		cacheObj := glue.Cache("cachename") //cachename 对应config.json 文件中节点：caches/cachename
 		cacheObj.Set(ctx.Context(), "name", "value", -1)
 
 		//消息队列的使用
-		queObj := glue.Queue().GetQueue("queuename")  //queuename 对应config.json 文件中节点：queues/queuename
+		queObj := glue.Queue("queuename")  //queuename 对应config.json 文件中节点：queues/queuename
 		queObj.Send(ctx.Context(), "queuekey", queue.MsgItem{})
 
 		//分布式锁的使用
@@ -371,11 +371,11 @@ func (d *Fulldemo) NotRunHandle(ctx context.Context) interface{} {
 		dlock.Renewal(5)              //续期 5秒
 
 		//http对象使用
-		httpObj := glue.Http().GetHttp("httpname") //httpname 对应config.json 文件中节点：xhttp/httpname
+		httpObj := glue.Http("httpname") //httpname 对应config.json 文件中节点：xhttp/httpname
 		httpResp, err := httpObj.Request(ctx.Context(), "xhttp://servername/a/b/c", map[string]string{})
 
 		//rpc对象使用
-		rpcObj := glue.RPC().GetRPC("rpcname") //rpcname 对应config.json 文件中节点：rpcs/rpcname
+		rpcObj := glue.RPC("rpcname") //rpcname 对应config.json 文件中节点：rpcs/rpcname
 		rpcResp, err := rpcObj.Request(ctx.Context(), "grpc://servername/apipath", map[string]string{})  
 
 ```
