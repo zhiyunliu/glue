@@ -5,6 +5,7 @@ import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
 	"github.com/zhiyunliu/glue/queue"
+	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 // Producer memcache配置文件
@@ -40,8 +41,8 @@ func NewProducer(config config.Config) (m *Producer, err error) {
 // Push 向存于 key 的列表的尾部插入所有指定的值
 func (c *Producer) Push(key string, msg queue.Message) error {
 	vals := map[string]interface{}{
-		"header": msg.Header(),
-		"body":   msg.Body(),
+		"header": xtypes.SMap(msg.Header()),
+		"body":   xtypes.XMap(msg.Body()),
 	}
 	//RPush(key, bytesconv.BytesToString(bytes)).Result()
 	return c.producer.Enqueue(&redisqueue.Message{Stream: key, Values: vals})

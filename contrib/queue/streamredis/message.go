@@ -48,20 +48,21 @@ func (m *redisMessage) GetMessage() queue.Message {
 }
 
 type MsgBody struct {
-	msg       string      `json:"-"`
+	msg       []byte      `json:"-"`
 	HeaderMap xtypes.SMap `json:"header"`
 	BodyMap   xtypes.XMap `json:"body"`
 }
 
 func newMsgBody(msg map[string]interface{}) *MsgBody {
-
-	msgBytes, _ := json.Marshal(msg)
 	body := &MsgBody{
-		msg:       bytesconv.BytesToString(msgBytes),
 		HeaderMap: make(xtypes.SMap),
 		BodyMap:   make(xtypes.XMap),
 	}
-	json.Unmarshal(msgBytes, body)
+	json.Unmarshal([]byte(msg["header"].(string)), &body.HeaderMap)
+	json.Unmarshal([]byte(msg["body"].(string)), &body.BodyMap)
+
+	body.msg, _ = json.Marshal(body)
+
 	return body
 }
 
@@ -73,5 +74,5 @@ func (m *MsgBody) Body() map[string]interface{} {
 }
 
 func (m *MsgBody) String() string {
-	return m.msg
+	return bytesconv.BytesToString(m.msg)
 }

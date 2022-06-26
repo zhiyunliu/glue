@@ -96,7 +96,7 @@ func (consumer *Consumer) Unconsume(queue string) {
 }
 
 func (consumer *Consumer) Start() {
-	consumer.consumer.Run()
+	go consumer.consumer.Run()
 }
 
 //Close 关闭当前连接

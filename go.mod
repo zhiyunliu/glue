@@ -24,7 +24,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/robinjoseph08/redisqueue/v2 v2.1.0
 	github.com/urfave/cli v1.22.5
-	github.com/zhiyunliu/golibs v0.0.0-20220622081453-71b966d7b5a3
+	github.com/zhiyunliu/golibs v0.0.0-20220626023831-2598f3b444de
 	go.opentelemetry.io/otel v1.7.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.7.0
 	go.opentelemetry.io/otel/sdk v1.7.0
@@ -113,3 +113,5 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+//replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
