@@ -117,6 +117,7 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, metho
 		log.Error(fmt.Errorf("存在相同路径注册:%s", absolutePath))
 		return
 	}
+	svcGroup.BasePath = group.basePath
 	group.ServiceGroups[relativePath] = svcGroup
 }
 
