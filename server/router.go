@@ -106,7 +106,7 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, metho
 		mths[i] = string(methods[i])
 	}
 
-	svcGroup, err := router.ReflectHandle(relativePath, handler, mths...)
+	svcGroup, err := router.ReflectHandle(group.basePath, relativePath, handler, mths...)
 	if err != nil {
 		log.Error(err)
 		return
@@ -117,7 +117,6 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, metho
 		log.Error(fmt.Errorf("存在相同路径注册:%s", absolutePath))
 		return
 	}
-	svcGroup.BasePath = group.basePath
 	group.ServiceGroups[relativePath] = svcGroup
 }
 
