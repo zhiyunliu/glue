@@ -73,8 +73,10 @@ func (group *RouterGroup) Use(middlewares ...middleware.Middleware) *RouterGroup
 // For example, all the routes that use a common middleware for authorization could be grouped.
 func (group *RouterGroup) Group(relativePath string, middlewares ...middleware.Middleware) *RouterGroup {
 	child := &RouterGroup{
-		middlewares: group.combineHandlers(middlewares...),
-		basePath:    group.calculateAbsolutePath(relativePath),
+		middlewares:   group.combineHandlers(middlewares...),
+		basePath:      group.calculateAbsolutePath(relativePath),
+		ServiceGroups: make(map[string]*router.Group),
+		Children:      make(map[string]*RouterGroup),
 	}
 	group.Children[relativePath] = child
 	return child
