@@ -87,7 +87,7 @@ func (g *Group) GetChild(name string) *Group {
 	}
 
 	child = &Group{
-		rootPath: fmt.Sprint(g.rootPath, g.Path),
+		rootPath: g.GetReallyPath(),
 		Path:     name,
 		methods:  g.methods,
 		Services: make(map[string]*Unit),
@@ -176,5 +176,5 @@ func (g *Group) IsValid() error {
 	return nil
 }
 func (g *Group) GetReallyPath() string {
-	return fmt.Sprint(g.rootPath, g.Path)
+	return fmt.Sprint("/", strings.Trim(g.rootPath, "/"), "/", strings.Trim(g.Path, "/"))
 }
