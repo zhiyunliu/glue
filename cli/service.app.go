@@ -115,19 +115,19 @@ func (p *ServiceApp) Endpoint() []string {
 
 func (app *ServiceApp) initApp() error {
 
-	if app.options.initFile == "" {
-		return fmt.Errorf("-f 为必须参数")
+	if app.options.configFile == "" {
+		return fmt.Errorf("configFile必须参数")
 	}
-	if !xfile.Exists(app.options.initFile) {
+	if !xfile.Exists(app.options.configFile) {
 		global.Mode = string(app.options.setting.Mode)
 		global.LocalIp = xnet.GetLocalIP(app.options.setting.IpMask)
-		return nil
+		return fmt.Errorf("config file [%s] 不存在", app.options.configFile)
 	}
 
-	app.options.Config = config.New(config.WithSource(file.NewSource(app.options.initFile)))
+	app.options.Config = config.New(config.WithSource(file.NewSource(app.options.configFile)))
 	err := app.options.Config.Load()
 	if err != nil {
-		return fmt.Errorf("config.Load:%s,Error:%+v", app.options.initFile, err)
+		return fmt.Errorf("config.Load:%s,Error:%+v", app.options.configFile, err)
 	}
 	log.Info("serviceApp load appSetting")
 	if err = app.loadAppSetting(); err != nil {

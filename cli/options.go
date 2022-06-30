@@ -21,8 +21,8 @@ type Options struct {
 	StopTimeout      time.Duration
 	Servers          []transport.Server
 
-	setting  *appSetting
-	initFile string
+	setting    *appSetting
+	configFile string
 }
 
 //Option 配置选项
