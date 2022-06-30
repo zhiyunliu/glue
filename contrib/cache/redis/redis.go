@@ -63,6 +63,12 @@ func (r *Redis) Expire(ctx context.Context, key string, expire int) error {
 	return r.client.Expire(key, time.Duration(expire)*time.Second).Err()
 }
 
+//Exists
+func (r *Redis) Exists(ctx context.Context, key string) (bool, error) {
+	v, err := r.client.Exists(key).Result()
+	return v > 0, err
+}
+
 // GetImpl 暴露原生client
 func (r *Redis) GetImpl() interface{} {
 	return r.client
