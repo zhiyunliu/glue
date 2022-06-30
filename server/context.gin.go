@@ -5,14 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/zhiyunliu/glue/constants"
-	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
@@ -77,15 +74,6 @@ func (ctx *GinContext) Bind(obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	val = val.Elem()
-	// we only accept structs
-	if val.Kind() == reflect.Struct {
-		//验证数据格式
-		if _, err := govalidator.ValidateStruct(obj); err != nil {
-			return errors.New(http.StatusNotAcceptable, fmt.Sprintf("输入参数有误:%v", err))
-		}
-	}
-
 	if chr, ok := obj.(IChecker); ok {
 		return chr.Check()
 	}

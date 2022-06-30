@@ -3,7 +3,6 @@ module github.com/zhiyunliu/glue
 go 1.17
 
 require (
-	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/gin-gonic/gin v1.7.7
@@ -24,7 +23,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/robinjoseph08/redisqueue/v2 v2.1.0
 	github.com/urfave/cli v1.22.5
-	github.com/zhiyunliu/golibs v0.0.0-20220626023831-2598f3b444de
+	github.com/zhiyunliu/golibs v0.1.0
 	go.opentelemetry.io/otel v1.7.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.7.0
 	go.opentelemetry.io/otel/sdk v1.7.0
