@@ -2,10 +2,13 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/zhiyunliu/glue/config"
 )
+
+var Nil = errors.New("Nil")
 
 type ICache interface {
 	Name() string
