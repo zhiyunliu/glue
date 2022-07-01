@@ -107,9 +107,9 @@ func (p *ServiceApp) Metadata() map[string]string {
 	return p.options.Metadata
 }
 
-func (p *ServiceApp) Endpoint() []string {
+func (p *ServiceApp) Endpoint() []registry.ServerItem {
 	if p.instance == nil {
-		return []string{}
+		return []registry.ServerItem{}
 	}
 	return p.instance.Endpoints
 }
@@ -192,15 +192,15 @@ func (app *ServiceApp) loadConfig() error {
 }
 
 func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
-	endpoints := make([]string, 0)
-	for _, e := range app.options.Endpoints {
-		endpoints = append(endpoints, e.String())
-	}
+	endpoints := make([]registry.ServerItem, 0)
 	if len(endpoints) == 0 {
 		for _, srv := range app.options.Servers {
 			if r, ok := srv.(transport.Endpointer); ok {
 				e := r.Endpoint()
-				endpoints = append(endpoints, e.String())
+				endpoints = append(endpoints, registry.ServerItem{
+					ServiceName: r.ServiceName(),
+					EndpointURL: e.String(),
+				})
 			}
 		}
 	}

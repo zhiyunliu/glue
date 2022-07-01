@@ -38,11 +38,6 @@ func Metadata(md map[string]string) Option {
 	return func(o *Options) { o.Metadata = md }
 }
 
-// Endpoint with service endpoint.
-func Endpoint(endpoints ...*url.URL) Option {
-	return func(o *Options) { o.Endpoints = endpoints }
-}
-
 // Server with transport servers.
 func Server(srv ...transport.Server) Option {
 	return func(o *Options) { o.Servers = srv }

@@ -54,8 +54,8 @@ func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) err
 	if si.Name == "" {
 		return fmt.Errorf("nacos: serviceInstance.name can not be empty")
 	}
-	for _, endpoint := range si.Endpoints {
-		u, err := url.Parse(endpoint)
+	for _, item := range si.Endpoints {
+		u, err := url.Parse(item.EndpointURL)
 		if err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) err
 		var rmd map[string]string
 		if si.Metadata == nil {
 			rmd = map[string]string{
-				"kind":    u.Scheme,
+				"scheme":  u.Scheme,
 				"version": si.Version,
 			}
 		} else {
@@ -78,13 +78,13 @@ func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) err
 			for k, v := range si.Metadata {
 				rmd[k] = v
 			}
-			rmd["kind"] = u.Scheme
+			rmd["scheme"] = u.Scheme
 			rmd["version"] = si.Version
 		}
 		_, e := r.cli.RegisterInstance(vo.RegisterInstanceParam{
 			Ip:          host,
 			Port:        uint64(p),
-			ServiceName: si.Name + "." + u.Scheme,
+			ServiceName: item.ServiceName,
 			Weight:      r.opts.Weight,
 			Enable:      true,
 			Healthy:     true,
@@ -94,7 +94,7 @@ func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) err
 			GroupName:   r.opts.Group,
 		})
 		if e != nil {
-			return fmt.Errorf("RegisterInstance err %v,%v", e, endpoint)
+			return fmt.Errorf("RegisterInstance err %v,%v", e, item.EndpointURL)
 		}
 
 	}
@@ -106,8 +106,8 @@ func (r *Registry) Deregister(_ context.Context, service *registry.ServiceInstan
 	if service == nil {
 		return nil
 	}
-	for _, endpoint := range service.Endpoints {
-		u, err := url.Parse(endpoint)
+	for _, item := range service.Endpoints {
+		u, err := url.Parse(item.EndpointURL)
 		if err != nil {
 			return err
 		}
@@ -122,7 +122,7 @@ func (r *Registry) Deregister(_ context.Context, service *registry.ServiceInstan
 		if _, err = r.cli.DeregisterInstance(vo.DeregisterInstanceParam{
 			Ip:          host,
 			Port:        uint64(p),
-			ServiceName: service.Name + "." + u.Scheme,
+			ServiceName: item.ServiceName,
 			GroupName:   r.opts.Group,
 			Cluster:     r.opts.Cluster,
 			Ephemeral:   true,
@@ -151,13 +151,18 @@ func (r *Registry) GetService(_ context.Context, serviceName string) ([]*registr
 	}
 	items := make([]*registry.ServiceInstance, 0, len(res))
 	for _, in := range res {
-		kind := in.Metadata["kind"]
+		scheme := in.Metadata["scheme"]
 		items = append(items, &registry.ServiceInstance{
-			ID:        in.InstanceId,
-			Name:      in.ServiceName,
-			Version:   in.Metadata["version"],
-			Metadata:  in.Metadata,
-			Endpoints: []string{fmt.Sprintf("%s://%s:%d", kind, in.Ip, in.Port)},
+			ID:       in.InstanceId,
+			Name:     in.ServiceName,
+			Version:  in.Metadata["version"],
+			Metadata: in.Metadata,
+			Endpoints: []registry.ServerItem{
+				{
+					ServiceName: serviceName,
+					EndpointURL: fmt.Sprintf("%s://%s:%d", scheme, in.Ip, in.Port),
+				},
+			},
 		})
 	}
 	return items, nil

@@ -12,14 +12,15 @@ import (
 type Option func(*options)
 
 type options struct {
-	setting *Setting
-	config  config.Config
-	handler http.Handler
-	router  *server.RouterGroup
-	static  map[string]Static
-	decReq  server.DecodeRequestFunc
-	encResp server.EncodeResponseFunc
-	encErr  server.EncodeErrorFunc
+	serviceName string
+	setting     *Setting
+	config      config.Config
+	handler     http.Handler
+	router      *server.RouterGroup
+	static      map[string]Static
+	decReq      server.DecodeRequestFunc
+	encResp     server.EncodeResponseFunc
+	encErr      server.EncodeErrorFunc
 
 	startedHooks []server.Hook
 	endHooks     []server.Hook
@@ -64,5 +65,12 @@ func WithStartedHook(f server.Hook) Option {
 func WithConfig(config config.Config) Option {
 	return func(o *options) {
 		o.config = config
+	}
+}
+
+// WithServiceName 设置服务名称
+func WithServiceName(serviceName string) Option {
+	return func(o *options) {
+		o.serviceName = serviceName
 	}
 }

@@ -41,9 +41,9 @@ func (n *DefaultNode) Metadata() map[string]string {
 }
 
 // NewNode new node
-func NewNode(addr string, ins *registry.ServiceInstance) Node {
+func NewNode(item registry.ServerItem, ins *registry.ServiceInstance) Node {
 	n := &DefaultNode{
-		addr: addr,
+		addr: item.EndpointURL,
 	}
 	if ins != nil {
 		n.name = ins.Name

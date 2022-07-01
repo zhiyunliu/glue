@@ -3,12 +3,10 @@ package logging
 import (
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/log"
-	"github.com/zhiyunliu/golibs/bytesconv"
 
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/middleware"
@@ -41,7 +39,7 @@ func Server(logger log.Logger) middleware.Middleware {
 			if level == log.LevelError {
 				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), stack)
 			} else {
-				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractResp(reply))
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s ", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String())
 			}
 			return
 		}
@@ -50,15 +48,16 @@ func Server(logger log.Logger) middleware.Middleware {
 
 // extractArgs returns the string of the req
 func extractReq(req context.Request) string {
-	result := make([]string, 2)
+	//result := make([]string, 2)
 	if len(req.Query().Values()) > 0 {
-		result[0] = req.Query().String()
+		return req.Query().String()
 	}
-	if req.Body().Len() > 0 {
-		result[1] = bytesconv.BytesToString(req.Body().Bytes())
-	}
+	return ""
+	// if req.Body().Len() > 0 {
+	// 	result[1] = bytesconv.BytesToString(req.Body().Bytes())
+	// }
 
-	return strings.Join(result, " ")
+	//return strings.Join(result, " ")
 }
 
 func extractResp(resp interface{}) string {

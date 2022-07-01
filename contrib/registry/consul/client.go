@@ -51,12 +51,15 @@ func defaultResolver(_ context.Context, entries []*api.ServiceEntry) []*registry
 				version = ss[1]
 			}
 		}
-		endpoints := make([]string, 0)
+		endpoints := []registry.ServerItem{}
 		for scheme, addr := range entry.Service.TaggedAddresses {
 			if scheme == "lan_ipv4" || scheme == "wan_ipv4" || scheme == "lan_ipv6" || scheme == "wan_ipv6" {
 				continue
 			}
-			endpoints = append(endpoints, addr.Address)
+			endpoints = append(endpoints, registry.ServerItem{
+				ServiceName: entry.Service.Service,
+				EndpointURL: addr.Address,
+			})
 		}
 		services = append(services, &registry.ServiceInstance{
 			ID:        entry.Service.ID,
@@ -91,8 +94,8 @@ func (c *Client) Service(ctx context.Context, service string, index uint64, pass
 func (c *Client) Register(_ context.Context, svc *registry.ServiceInstance, enableHealthCheck bool) error {
 	addresses := make(map[string]api.ServiceAddress)
 	checkAddresses := make([]string, 0, len(svc.Endpoints))
-	for _, endpoint := range svc.Endpoints {
-		raw, err := url.Parse(endpoint)
+	for _, item := range svc.Endpoints {
+		raw, err := url.Parse(item.EndpointURL)
 		if err != nil {
 			return err
 		}
@@ -100,7 +103,7 @@ func (c *Client) Register(_ context.Context, svc *registry.ServiceInstance, enab
 		port, _ := strconv.ParseUint(raw.Port(), 10, 16)
 
 		checkAddresses = append(checkAddresses, net.JoinHostPort(addr, strconv.FormatUint(port, 10)))
-		addresses[raw.Scheme] = api.ServiceAddress{Address: endpoint, Port: int(port)}
+		addresses[raw.Scheme] = api.ServiceAddress{Address: item.EndpointURL, Port: int(port)}
 	}
 	asr := &api.AgentServiceRegistration{
 		ID:              svc.ID,
