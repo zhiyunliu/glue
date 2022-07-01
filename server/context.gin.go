@@ -87,6 +87,7 @@ func (ctx *GinContext) Header(key string) string {
 func (ctx *GinContext) Request() vctx.Request {
 	if ctx.greq.closed {
 		ctx.greq.closed = false
+		ctx.greq.vctx = ctx
 		ctx.greq.gctx = ctx.Gctx
 	}
 	return ctx.greq
@@ -136,6 +137,7 @@ func (ctx *GinContext) GetImpl() interface{} {
 
 type ginRequest struct {
 	gctx    *gin.Context
+	vctx    *GinContext
 	gheader xtypes.SMap
 	gpath   *gpath
 	gquery  *gquery
@@ -189,6 +191,7 @@ func (r *ginRequest) Query() vctx.Query {
 func (r *ginRequest) Body() vctx.Body {
 	if r.gbody.closed {
 		r.gbody.gctx = r.gctx
+		r.gbody.vctx = r.vctx
 		r.gbody.closed = false
 	}
 	return r.gbody
@@ -196,6 +199,7 @@ func (r *ginRequest) Body() vctx.Body {
 func (q *ginRequest) Close() {
 	q.closed = true
 	q.gctx = nil
+	q.vctx = nil
 	q.gheader = nil
 	q.gpath.Close()
 	q.gquery.Close()
@@ -274,6 +278,7 @@ func (q *gquery) Close() {
 //-gbody---------------------------------
 type gbody struct {
 	gctx      *gin.Context
+	vctx      *GinContext
 	hasRead   bool
 	bodyBytes []byte
 	reader    *bytes.Reader
@@ -281,6 +286,7 @@ type gbody struct {
 }
 
 func (q *gbody) Scan(obj interface{}) error {
+	//return q.vctx.opts.RequestDecoder(q.vctx, obj)
 	return q.gctx.Bind(obj)
 }
 
@@ -317,6 +323,7 @@ func (q *gbody) loadBody() (err error) {
 		}
 		q.reader = bytes.NewReader(q.bodyBytes)
 		q.gctx.Request.Body.Close()
+		q.gctx.Request.Body = ioutil.NopCloser(q.reader)
 	}
 	return nil
 }
