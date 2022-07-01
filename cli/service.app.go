@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -123,9 +124,11 @@ func (app *ServiceApp) initApp() error {
 		global.LocalIp = xnet.GetLocalIP(app.options.setting.IpMask)
 		return fmt.Errorf("config file [%s] 不存在", app.options.configFile)
 	}
+	content, err := ioutil.ReadFile(app.options.configFile)
+	log.Info("configFile.content", string(content), err)
 
 	app.options.Config = config.New(config.WithSource(file.NewSource(app.options.configFile)))
-	err := app.options.Config.Load()
+	err = app.options.Config.Load()
 	if err != nil {
 		return fmt.Errorf("config.Load:%s,Error:%+v", app.options.configFile, err)
 	}

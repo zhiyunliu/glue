@@ -35,10 +35,10 @@ func New(opts ...Option) *App {
 		RegistrarTimeout: 10 * time.Second,
 		StopTimeout:      10 * time.Second,
 		setting: &appSetting{
-			TraceAddr: _defaultTraceAddr,
-			Mode:      _defaultAppmode,
-			IpMask:    _defaultIpMask,
-			Options:   make(map[string]interface{}),
+			//TraceAddr: _defaultTraceAddr,
+			Mode:    _defaultAppmode,
+			IpMask:  _defaultIpMask,
+			Options: make(map[string]interface{}),
 		},
 	}}
 	for _, opt := range opts {

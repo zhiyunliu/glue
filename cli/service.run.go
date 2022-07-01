@@ -52,6 +52,11 @@ func (p *ServiceApp) apprun() error {
 }
 
 func (p *ServiceApp) startTraceServer() error {
+	if p.options.setting.TraceAddr == "" {
+		log.Infof("pprof trace addr not set")
+		return nil
+	}
+
 	errChan := make(chan error, 1)
 	go func() {
 		log.Infof("pprof trace addr %s%s", global.LocalIp, p.options.setting.TraceAddr)
