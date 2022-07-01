@@ -105,7 +105,8 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, placeholder func() string) (string, []string, []interface{}) {
 	word, _ := regexp.Compile(`[@|#|&|\|]\{\w+[\.]?\w+\}`)
 	item := &ReplaceItem{
-		NameCache: map[string]string{},
+		NameCache:   map[string]string{},
+		Placeholder: placeholder,
 	}
 	//@变量, 将数据放入params中
 	sql := word.ReplaceAllStringFunc(tpl, func(s string) string {
