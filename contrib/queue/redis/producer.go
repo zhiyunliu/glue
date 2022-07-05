@@ -3,7 +3,7 @@ package redis
 import (
 	"encoding/json"
 
-	rds "github.com/go-redis/redis"
+	rds "github.com/go-redis/redis/v7"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
 	"github.com/zhiyunliu/glue/queue"

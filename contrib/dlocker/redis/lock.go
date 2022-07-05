@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	goredis "github.com/go-redis/redis"
+	goredis "github.com/go-redis/redis/v7"
 	"github.com/zhiyunliu/golibs/xrandom"
 )
 
