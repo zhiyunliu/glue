@@ -19,7 +19,7 @@ func (s *mysqlResolver) Name() string {
 	return Proto
 }
 
-func (s *mysqlResolver) Resolve(setting config.Config) (xdb.IDB, error) {
+func (s *mysqlResolver) Resolve(setting config.Config) (interface{}, error) {
 	cfg := &contribxdb.Config{}
 	err := setting.Scan(cfg)
 	if err != nil {

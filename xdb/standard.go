@@ -11,6 +11,7 @@ const _defaultName = "default"
 //StandardDB
 type StandardDB interface {
 	GetDB(name ...string) (q IDB)
+	GetImpl(name ...string) interface{}
 }
 
 //StandardDB
@@ -23,8 +24,7 @@ func NewStandardDB(container container.Container) StandardDB {
 	return &xDB{container: container}
 }
 
-//GetDB
-func (s *xDB) GetDB(name ...string) (q IDB) {
+func (s *xDB) GetImpl(name ...string) interface{} {
 	realName := _defaultName
 	if len(name) > 0 {
 		realName = name[0]
@@ -37,6 +37,12 @@ func (s *xDB) GetDB(name ...string) (q IDB) {
 	if err != nil {
 		panic(err)
 	}
+	return obj
+}
+
+//GetDB
+func (s *xDB) GetDB(name ...string) (q IDB) {
+	obj := s.GetImpl(name...)
 	return obj.(IDB)
 }
 

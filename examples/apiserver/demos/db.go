@@ -134,9 +134,9 @@ func (d *DBdemo) MultiHandle(ctx context.Context) interface{} {
 	result, err := dbobj.Multi(ctx.Context(), `
 DECLARE	@return_value int
 
-EXEC	#return_value = [dbo].[test_aaa]
-	@id = #id,
-	@name = #name OUTPUT
+EXEC @return_value = [dbo].[test_aaa]
+	@id = @{id},
+	@name = @{name} OUTPUT
 
 	`, map[string]interface{}{
 		"id":   ctx.Request().Query().Get("id"),

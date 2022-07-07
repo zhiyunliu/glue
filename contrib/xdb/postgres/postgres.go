@@ -19,7 +19,7 @@ func (s *postgresResolver) Name() string {
 	return Proto
 }
 
-func (s *postgresResolver) Resolve(setting config.Config) (xdb.IDB, error) {
+func (s *postgresResolver) Resolve(setting config.Config) (interface{}, error) {
 	cfg := &contribxdb.Config{}
 	err := setting.Scan(cfg)
 	if err != nil {

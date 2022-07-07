@@ -60,7 +60,7 @@ func setTracerProvider(url string) error {
 func main() {
 	setTracerProvider("http://127.0.0.1:14268/api/traces")
 
-	apiSrv := api.New("apiserver")
+	apiSrv := api.New("apiserver", api.WithServiceName("xxxx"))
 	//mqcSrv := mqc.New("bb")
 
 	apiSrv.Handle("/demo", func(ctx context.Context) interface{} {

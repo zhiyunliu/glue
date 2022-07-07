@@ -19,7 +19,7 @@ func (s *oracleResolver) Name() string {
 	return Proto
 }
 
-func (s *oracleResolver) Resolve(setting config.Config) (xdb.IDB, error) {
+func (s *oracleResolver) Resolve(setting config.Config) (interface{}, error) {
 	cfg := &contribxdb.Config{}
 	err := setting.Scan(cfg)
 	if err != nil {

@@ -17,9 +17,22 @@ func (d *demo) DetailHandle(ctx context.Context) interface{} {
 	}
 }
 
+type body struct {
+	Seq string `json:"seq"`
+}
+
 func main() {
 
-	apiSrv := api.New("apiserver")
+	apiSrv := api.New("apiserver", api.WithServiceName("demo"))
+	apiSrv.Handle("/demo/origin", func(ctx context.Context) interface{} {
+		ver := ctx.Request().Query().Get("ver")
+		b := &body{}
+		ctx.Bind(b)
+		return map[string]interface{}{
+			"v": ver,
+			"b": b.Seq,
+		}
+	})
 	apiSrv.Handle("/demo/struct", &demo{})
 	apiSrv.Handle("/demo", func(ctx context.Context) interface{} {
 		return map[string]interface{}{
