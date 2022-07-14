@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"net/url"
 	"time"
 
@@ -20,6 +21,7 @@ type Options struct {
 	RegistrarTimeout time.Duration
 	StopTimeout      time.Duration
 	Servers          []transport.Server
+	StartedHooks     []func(ctx context.Context) error
 
 	setting    *appSetting
 	configFile string
@@ -82,6 +84,13 @@ func ServiceDependencies(dependencies ...string) Option {
 func LogConcurrency(concurrency int) Option {
 	return func(o *Options) {
 		log.Concurrency(concurrency)
+	}
+}
+
+// StartedHook
+func StartedHook(hook func(context.Context) error) Option {
+	return func(o *Options) {
+		o.StartedHooks = append(o.StartedHooks, hook)
 	}
 }
 

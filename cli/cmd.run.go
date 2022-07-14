@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
+	"github.com/zhiyunliu/golibs/xlog"
 )
 
 func init() {
@@ -23,6 +24,11 @@ func init() {
 
 //doRun 服务启动
 func doRun(c *cli.Context) (err error) {
+
+	if c.Bool("nostd") {
+		xlog.RemoveAppender(xlog.Stdout)
+	}
+
 	srv, err := getService(c, os.Args[2:]...)
 	if err != nil {
 		return err

@@ -33,4 +33,5 @@ var (
 	ServiceDependencies = cli.ServiceDependencies
 	ServiceOption       = cli.ServiceOption
 	LogConcurrency      = cli.LogConcurrency
+	StartedHook         = cli.StartedHook
 )
