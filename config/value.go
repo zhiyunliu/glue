@@ -29,10 +29,15 @@ type Value interface {
 	Scan(interface{}) error
 	Load() interface{}
 	Store(interface{})
+	Exists() bool
 }
 
 type atomicValue struct {
 	atomic.Value
+}
+
+func (v *atomicValue) Exists() bool {
+	return true
 }
 
 func (v *atomicValue) Bool() (bool, error) {
@@ -152,3 +157,4 @@ func (v emptyValue) Load() interface{}                { return nil }
 func (v emptyValue) Store(interface{})                {}
 func (v emptyValue) Slice() ([]Value, error)          { return nil, v.err }
 func (v emptyValue) Map() (map[string]Value, error)   { return nil, v.err }
+func (v emptyValue) Exists() bool                     { return false }

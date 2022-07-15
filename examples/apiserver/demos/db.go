@@ -16,12 +16,10 @@ func NewDb() *DBdemo {
 }
 
 func (d *DBdemo) QueryHandle(ctx context.Context) interface{} {
-	dbobj := gel.DB("localhost")
+	dbobj := gel.DB("microsql")
 	idval := ctx.Request().Query().Get("id")
-	sql := `select id,name from new_table t`
-	if len(idval) > 0 {
-		sql = `select id,name from new_table t where t.id=@id`
-	}
+	sql := `select 1 a, 2 b`
+
 	rows, err := dbobj.Query(ctx.Context(), sql, map[string]interface{}{
 		"id": idval,
 	})

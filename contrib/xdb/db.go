@@ -19,6 +19,10 @@ type xDB struct {
 
 //NewDB 创建DB实例
 func NewDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime int) (obj xdb.IDB, err error) {
+	conn, err = DecryptConn(conn)
+	if err != nil {
+		return
+	}
 	if maxOpen <= 0 {
 		maxOpen = runtime.NumCPU() * 10
 	}

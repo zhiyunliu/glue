@@ -1,5 +1,6 @@
 {
 	"app":{
+		"BASE_SECRET_ENV_NAME":"DB_SECRET_KEY",
 		"mode":"release",
 		"trace_addr":":18082",
 		"ip_mask":"192.168",
@@ -10,7 +11,7 @@
 	"dlocker":"redis://localhost",
  	"dbs":{
 		"localhost":{"proto":"mysql","conn":"root:123456@tcp(localhost)/demo?charset=utf8","max_open":10,"max_idle":10,"life_time":100},
-		"microsql":{"proto":"sqlserver","conn":"server=localhost;database=demo;persist security info=false;user id=admin;password=123456;Min Pool Size=10;Max Pool Size=20","max_open":10,"max_idle":10,"life_time":100}
+		"microsql":{"proto":"sqlserver","conn":"encrypt://1NEEJabhJBQQmcP3dGI6MJ5GmTSO0N+BjqEFzh84oU42Wg3W4bsTcsw0dyIpLs2STboxDE3p5UA9rrjw82WTDflX8ksnDVoIJTMC5sgrwAccR243mMsLroi+BVDNGpiKMkcS6hNXAMLai13J3D1PfOxby4UpLijODm1TqWoA+40NFq44rJxj7ei2qBVLfsuN","max_open":20,"max_idle":20,"life_time":600}
 	},
 	"rpcs":{
 		"default":{"proto":"grpc"}
@@ -53,7 +54,7 @@
     "servers":{
 		"apiserver":{
 			"config":{"addr":":8083","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65535},
-			"middlewares":[{"name":"jwt","data":{"secret":"123456789","method":"sha256","expire":"3600","excludes":["/log/**","/demo/**","/dlock/**"]}}],			
+			"middlewares":[{"name":"jwt","data":{"secret":"123456789","method":"sha256","expire":"3600","excludes":["/db/**","/log/**","/demo/**","/dlock/**"]}}],			
 			"header":{"a":"1","b":"2"}
 		}
     }
