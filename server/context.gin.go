@@ -109,7 +109,7 @@ func (ctx *GinContext) Log() log.Logger {
 				xreqId = session.Create()
 				ctx.Gctx.Header(constants.HeaderRequestId, xreqId)
 			}
-			logger = log.New(log.WithName("gin"), log.WithSid(xreqId))
+			logger = log.New(log.WithName("gin"), log.WithSid(xreqId), log.WithSrvType(ctx.opts.SrvType))
 			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
 		}
 		ctx.logger = logger

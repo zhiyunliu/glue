@@ -111,7 +111,7 @@ func (ctx *AlloterContext) Log() log.Logger {
 				xreqId = session.Create()
 				ctx.Actx.Header(constants.HeaderRequestId, xreqId)
 			}
-			logger = log.New(log.WithName("alloter"), log.WithSid(xreqId))
+			logger = log.New(log.WithName("alloter"), log.WithSid(xreqId), log.WithSrvType(ctx.opts.SrvType))
 			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
 		}
 		ctx.logger = logger

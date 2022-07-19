@@ -2,7 +2,7 @@ module github.com/zhiyunliu/glue
 
 go 1.17
 
-require github.com/zhiyunliu/golibs v0.1.6
+require github.com/zhiyunliu/golibs v0.1.10
 
 require (
 	github.com/denisenkom/go-mssqldb v0.12.0
