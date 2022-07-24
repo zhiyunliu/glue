@@ -2,7 +2,10 @@ module github.com/zhiyunliu/glue
 
 go 1.17
 
-require github.com/zhiyunliu/golibs v0.1.10
+require (
+	github.com/zhiyunliu/golibs v0.1.10
+	github.com/zhiyunliu/redisqueue/v2 v2.1.1
+)
 
 require (
 	github.com/denisenkom/go-mssqldb v0.12.0
@@ -22,7 +25,6 @@ require (
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/robinjoseph08/redisqueue/v2 v2.1.0
 	github.com/urfave/cli v1.22.5
 	go.opentelemetry.io/otel v1.7.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.7.0
@@ -114,3 +116,4 @@ require (
 )
 
 //replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
+//replace github.com/zhiyunliu/redisqueue/v2 => ../../../github.com/zhiyunliu/redisqueue

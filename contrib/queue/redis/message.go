@@ -15,6 +15,10 @@ type redisMessage struct {
 	obj     *MsgBody
 }
 
+func (m *redisMessage) RetryCount() int64 {
+	return 0
+}
+
 //Ack 确定消息
 func (m *redisMessage) Ack() error {
 	return nil

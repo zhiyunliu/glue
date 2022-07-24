@@ -17,6 +17,7 @@ type IQueue interface {
 
 //IMQCMessage  队列消息
 type IMQCMessage interface {
+	RetryCount() int64
 	Ack() error
 	Nack(error) error
 	Original() string
