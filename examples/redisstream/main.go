@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/zhiyunliu/glue"
+	_ "github.com/zhiyunliu/glue/contrib/queue/redis"
 	_ "github.com/zhiyunliu/glue/contrib/queue/streamredis"
 	"github.com/zhiyunliu/glue/examples/redisstream/demos"
 	"github.com/zhiyunliu/glue/server/api"
