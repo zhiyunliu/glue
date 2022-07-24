@@ -11,6 +11,7 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/golibs/session"
 )
 
 var _ alloter.IRequest = (*Request)(nil)
@@ -26,6 +27,8 @@ type Request struct {
 	header   map[string]string
 	body     cbody //map[string]string
 	executed bool
+	session  string
+	canProc  bool
 }
 
 //NewRequest 构建任务请求
@@ -100,8 +103,19 @@ func (m *Request) NextTime(t time.Time) time.Time {
 	}
 	return m.schedule.Next(t)
 }
+
+func (m *Request) CanProc() bool {
+	if m.canProc {
+		m.canProc = false
+		return true
+	}
+	return false
+}
+
 func (m *Request) reset() {
-	m.ctx = sctx.Background()
+	m.canProc = true
+	m.session = session.Create()
+	//m.ctx = sctx.Background()
 	m.header = make(map[string]string)
 	if m.header[constants.ContentTypeName] == "" {
 		m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON

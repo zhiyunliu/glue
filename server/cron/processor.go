@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	sctx "context"
 	"errors"
 	"fmt"
 	"math"
@@ -12,7 +13,6 @@ import (
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/server"
-	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xstack"
 )
 
@@ -95,7 +95,7 @@ func (s *processor) reset(req *Request) (err error) {
 	}
 	offset, round := s.getOffset(now, nextTime)
 	req.round.Update(round)
-	s.slots[offset].Set(session.Create(), req)
+	s.slots[offset].Set(req.session, req)
 	return
 }
 
@@ -137,7 +137,7 @@ func (s *processor) handle(req *Request) {
 			log.Panicf("cron.handle.Cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
 		}
 	}()
-
+	req.ctx = sctx.Background()
 	resp, err := NewResponse(req.job)
 	if err != nil {
 		panic(err)
@@ -148,6 +148,7 @@ func (s *processor) handle(req *Request) {
 		panic(err)
 	}
 	resp.Flush()
+	s.reset(req)
 }
 
 func (s *processor) execute() {
@@ -156,28 +157,21 @@ func (s *processor) execute() {
 	s.index = (s.index + 1) % len(s.slots)
 	current := s.slots[s.index]
 
-	removeKeyList := []string{}
 	resetJobList := []*Request{}
 
 	current.IterCb(func(key string, value interface{}) {
 		jobReq := value.(*Request)
-		curidx := jobReq.round.Current()
-		if curidx > 0 {
-			jobReq.round.Reduce()
+		if !jobReq.round.CanProc() {
 			return
-
 		}
-		jobReq.ctx = s.ctx
-		go s.handle(jobReq)
-		removeKeyList = append(removeKeyList, key)
+		if jobReq.CanProc() {
+			go s.handle(jobReq)
+		}
+
 		resetJobList = append(resetJobList, jobReq)
 	})
 
-	for _, key := range removeKeyList {
-		current.Remove(key)
-	}
-
 	for _, jobReq := range resetJobList {
-		s.reset(jobReq)
+		current.Remove(jobReq.session)
 	}
 }

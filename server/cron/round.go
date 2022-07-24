@@ -26,6 +26,14 @@ type Round struct {
 	round int
 }
 
+func (m *Round) CanProc() bool {
+	if m.round > 0 {
+		m.round--
+		return false
+	}
+	return true
+}
+
 //Reduce 减少任务等待轮数
 func (m *Round) Reduce() {
 	m.round--
