@@ -1,11 +1,10 @@
 {
 	"app":{
 		"mode":"release",
-		"trace_addr":":18083",
 		"ip_mask":"192.168"
 	},
 	"queues":{				 
- 		"streamredis":{"proto":"streamredis","addr":"redis://0181","stream_max_len":100,"concurrency":1,"buffer_size":100,"blocking_timeout":1}
+ 		"streamredis":{"proto":"streamredis","addr":"redis://0181","stream_max_len":100,"concurrency":100,"buffer_size":100,"blocking_timeout":1}
 	},
 	"redis":{
 		"0181":{
@@ -19,7 +18,7 @@
 	},
     "servers":{
 		"apiserver":{
-			"config":{"addr":":8083","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65535},
+			"config":{"addr":":8084","status":"start","read_timeout":10,"write_timeout":10,"read_header_timeout":10,"max_header_bytes":65535},
 			"middlewares":[{"name":"jwt","data":{"secret":"123456789","method":"sha256","expire":"3600","excludes":["/log/**","/demo/**","/dlock/**","/queue/**"]}}],			
 			"header":{"a":"1","b":"2"}
 		},

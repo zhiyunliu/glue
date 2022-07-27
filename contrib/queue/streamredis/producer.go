@@ -1,11 +1,11 @@
 package streamredis
 
 import (
-	redisqueue "github.com/robinjoseph08/redisqueue/v2"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/xtypes"
+	redisqueue "github.com/zhiyunliu/redisqueue/v2"
 )
 
 // Producer memcache配置文件

@@ -1,6 +1,10 @@
 package cron
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/zhiyunliu/glue/metadata"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/server"
@@ -36,7 +40,22 @@ type Job struct {
 }
 
 func (t *Job) GetKey() string {
-	return md5.Str(t.Cron + t.Service)
+
+	mks := make([]string, len(t.Meta))
+	i := 0
+	for k := range t.Meta {
+		mks[i] = k
+	}
+	sort.Strings(mks)
+	for i := range mks {
+		k := mks[i]
+		if t.Meta[k] == "" {
+			continue
+		}
+		mks[i] = fmt.Sprintf("k:%s,v:%s", k, t.Meta[k])
+	}
+	tmpKey := fmt.Sprintf("c:%s,s:%s,m:%s", t.Cron, t.Service, strings.Join(mks, ","))
+	return md5.Str(tmpKey)
 }
 
 func (t *Job) GetService() string {

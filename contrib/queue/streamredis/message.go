@@ -10,13 +10,18 @@ import (
 
 //RedisMessage reids消息
 type redisMessage struct {
-	message map[string]interface{}
-	err     error
-	obj     *MsgBody
+	retryCount int64
+	message    map[string]interface{}
+	err        error
+	obj        *MsgBody
 }
 
 func (m *redisMessage) Error() error {
 	return m.err
+}
+
+func (m *redisMessage) RetryCount() int64 {
+	return m.retryCount
 }
 
 //Ack 确定消息

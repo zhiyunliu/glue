@@ -1,27 +1,14 @@
 {
 	"app":{
 		"mode":"release",
-		"ip_mask":"192.168",
-        "graceful_shutdown_timeout":15,
-		"dependencies":["After=network.target"],
-		"options":{"LimitNOFILE":10240,"MaxOPENFiles":4096}
+		"ip_mask":"192.168"
 	},
-	"registry":"nacos://aliyun",	
-	"config":"nacos://aliyun",
 	"queues":{
 		"default":"redis://localhost"		
 	},
-	"nacos":{
-		"aliyun":{
-			"encrypt":false,
-			"client":{"namespace_id":"1cd02f66-fd24-4202-8009-32ffb0a3ac7e"},
-			"server":[{"ipaddr":"192.168.0.120","port":8848}],
-			"options":{"prefix":"api","group":"charge","cluster":"grey","weight":100}
-		}
-	},
 	"redis":{
 		"localhost":{
-			"addrs":["192.168.0.120:6379"],
+			"addrs":["192.168.0.181:6379"],
 			"db":0,
 			"dial_timeout":10,
 			"read_timeout":10,
@@ -30,15 +17,26 @@
 		}
 	},
     "servers":{
-		"cron":{
+		"cronserver":{
 			"config":{"status":"start","sharding":1},
-			"middlewares":[],
 			"jobs":[
-				{"cron":"@every 10s","service":"/demo/notrun","disable":true},
+				{"cron":"@every 1s","service":"/demo/notrun","disable":false},
+				{"cron":"@every 1s","service":"/demo"},
+				{"cron":"@every 2s","service":"/demo"},
+				{"cron":"@every 3s","service":"/demo"},
+				{"cron":"@every 4s","service":"/demo"},
 				{"cron":"@every 5s","service":"/demo"},
-				{"cron":"@every 10s","service":"/demo","meta":{"a":"1","b":"2","c":"3"}},
-				{"cron":"@every 15s","service":"/demo/nonebody"},
-				{"cron":"@every 2s","service":"/demo/nonebody","immediately":true,"meta":{"immediately":"true"}}
+				{"cron":"@every 6s","service":"/demo"},
+				{"cron":"@every 7s","service":"/demo"},
+				{"cron":"@every 8s","service":"/demo"},
+				{"cron":"@every 9s","service":"/demo"},
+				{"cron":"@every 10s","service":"/demo"},
+				{"cron":"@every 11s","service":"/demo"},
+				{"cron":"@every 12s","service":"/demo"},
+				{"cron":"@every 13s","service":"/demo"},
+				{"cron":"@every 14s","service":"/demo","meta":{"a":"1","b":"2","c":"3"}},
+				{"cron":"@every 15s","service":"/demo/nonebody2"},
+				{"cron":"@every 1s","service":"/demo/nonebody","immediately":true,"meta":{"immediately":"true"}}
 			]
 		}
     }

@@ -9,7 +9,7 @@ import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/queue"
 
-	redisqueue "github.com/robinjoseph08/redisqueue/v2"
+	redisqueue "github.com/zhiyunliu/redisqueue/v2"
 
 	cmap "github.com/orcaman/concurrent-map"
 )
@@ -50,7 +50,9 @@ func (consumer *Consumer) Connect() (err error) {
 	}
 
 	opts := &redisqueue.ConsumerOptions{
-		RedisClient: client.UniversalClient,
+		RedisClient:       client.UniversalClient,
+		VisibilityTimeout: 30 * time.Second,
+		ReclaimInterval:   5 * time.Second,
 	}
 	if copts.Concurrency > 0 {
 		opts.Concurrency = copts.Concurrency
@@ -61,12 +63,27 @@ func (consumer *Consumer) Connect() (err error) {
 	if copts.BlockingTimeout > 0 {
 		opts.BlockingTimeout = time.Duration(copts.BlockingTimeout) * time.Second
 	}
+	if copts.VisibilityTimeout > 0 {
+		opts.VisibilityTimeout = time.Duration(copts.VisibilityTimeout) * time.Second
+	}
+	if copts.ReclaimInterval > 0 {
+		opts.ReclaimInterval = time.Duration(copts.ReclaimInterval) * time.Second
+	}
 
 	consumer.consumer, err = redisqueue.NewConsumerWithOptions(opts)
 	if err != nil {
 		return
 	}
-
+	go func() {
+		for {
+			select {
+			case <-consumer.closeCh:
+				return
+			case <-consumer.consumer.Errors:
+				continue
+			}
+		}
+	}()
 	return
 }
 
@@ -82,8 +99,9 @@ func (consumer *Consumer) Consume(queue string, callback queue.ConsumeCallback) 
 	success := consumer.queues.SetIfAbsent(queue, item)
 	if success {
 		consumer.consumer.Register(queue, func(m *redisqueue.Message) error {
-			msg := &redisMessage{message: m.Values}
+			msg := &redisMessage{message: m.Values, retryCount: m.RetryCount}
 			callback(msg)
+
 			return msg.Error()
 		})
 	}
