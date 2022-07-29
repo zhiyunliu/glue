@@ -1,6 +1,3 @@
-//go:build grom.mysql
-// +build grom.mysql
-
 package xgorm
 
 import (
@@ -8,35 +5,43 @@ import (
 
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
+	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 	"gorm.io/driver/mysql"
 )
 
-const Proto = "grom.mysql"
+const mysqlProto = "grom.mysql"
 
 func init() {
-	xdb.Register(&mssqlResolver{})
-	callbackCache[Proto] = mysql.Open
+	xdb.Register(&mysqlResolver{})
+	tpl.Register(tpl.NewFixed(mysqlProto, "?"))
+	callbackCache[mysqlProto] = mysql.Open
+
 }
 
-type mssqlResolver struct {
+type mysqlResolver struct {
 }
 
-func (s *mssqlResolver) Name() string {
-	return Proto
+func (s *mysqlResolver) Name() string {
+	return mysqlProto
 }
 
-func (s *mssqlResolver) Resolve(setting config.Config) (interface{}, error) {
+func (s *mysqlResolver) Resolve(setting config.Config) (interface{}, error) {
 	cfg := &contribxdb.Config{}
 	err := setting.Scan(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	gromDB, err := buildGormDB(Proto, cfg)
+	gromDB, err := buildGormDB(mysqlProto, cfg)
+	if err != nil {
+		return nil, err
+	}
+	tpl, err := tpl.GetDBTemplate(mysqlProto)
 	if err != nil {
 		return nil, err
 	}
 	return &dbWrap{
+		tpl:    tpl,
 		gromDB: gromDB,
 	}, nil
 }

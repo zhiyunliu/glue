@@ -38,14 +38,17 @@ func buildGormDB(driverName string, cfg *contribxdb.Config) (db *gorm.DB, err er
 	if cfg.LifeTime <= 0 {
 		cfg.LifeTime = 600 //10分钟
 	}
+	if cfg.LongQueryTime <= 0 {
+		cfg.LongQueryTime = 500
+	}
 
 	w := log.New(xlog.DefaultLogger, "\r\n", log.LstdFlags)
 	var newLogger = logger.New(
 		w,
 		logger.Config{
-			SlowThreshold: time.Duration(cfg.LongQueryTime) * time.Second, // 慢 SQL 阈值
-			LogLevel:      logger.Info,                                    // Log level
-			Colorful:      true,                                           // 开启彩色打印
+			SlowThreshold: time.Duration(cfg.LongQueryTime) * time.Millisecond, // 慢 SQL 阈值
+			LogLevel:      logger.Info,                                         // Log level
+			Colorful:      true,                                                // 开启彩色打印
 		},
 	)
 

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/internal"
+	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
-	"github.com/zhiyunliu/golibs/xtypes"
 	"gorm.io/gorm"
 )
 
@@ -13,12 +13,14 @@ var _ xdb.IDB = &dbWrap{}
 
 type dbWrap struct {
 	gromDB *gorm.DB
+	tpl    tpl.SQLTemplate
 }
 
 func (d *dbWrap) Begin() (xdb.ITrans, error) {
 	txdb := d.gromDB.Begin()
 	return &transWrap{
 		gromDB: txdb,
+		tpl:    d.tpl,
 	}, nil
 }
 
@@ -29,27 +31,32 @@ func (d *dbWrap) GetImpl() interface{} {
 	return d.gromDB
 }
 func (d *dbWrap) Query(ctx context.Context, sql string, input map[string]interface{}) (data xdb.Rows, err error) {
-	data = make(xtypes.XMaps, 0)
-	err = d.gromDB.Raw(sql, input).Scan(&data).Error
+	query, args := d.tpl.GetSQLContext(sql, input)
+	rows, err := d.gromDB.Raw(query, args...).Rows()
+	if err != nil {
+		err = internal.GetError(err, query, args)
+		return
+	}
+	data, err = internal.ResolveRows(rows)
 	return
 
 }
 func (d *dbWrap) Multi(ctx context.Context, sql string, input map[string]interface{}) (data []xdb.Rows, err error) {
-	rows, err := d.gromDB.Raw(sql, input).Rows()
+	query, args := d.tpl.GetSQLContext(sql, input)
+	rows, err := d.gromDB.Raw(query, args...).Rows()
 	if err != nil {
-		err = internal.GetError(err, sql, []interface{}{input})
+		err = internal.GetError(err, query, args)
 		return
 	}
 	data, err = internal.ResolveMultiRows(rows)
 	return
 }
 func (d *dbWrap) First(ctx context.Context, sql string, input map[string]interface{}) (data xdb.Row, err error) {
-	data = make(xtypes.XMap)
-	err = d.gromDB.Raw(sql, input).First(&data).Error
+	rows, err := d.Query(ctx, sql, input)
 	if err != nil {
-		err = internal.GetError(err, sql, []interface{}{input})
 		return
 	}
+	data = rows.Get(0)
 	return
 }
 func (d *dbWrap) Scalar(ctx context.Context, sql string, input map[string]interface{}) (data interface{}, err error) {
@@ -65,9 +72,12 @@ func (d *dbWrap) Scalar(ctx context.Context, sql string, input map[string]interf
 	return
 }
 func (d *dbWrap) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
-	tmpDb := d.gromDB.Exec(sql, input)
+	query, args := d.tpl.GetSQLContext(sql, input)
+
+	tmpDb := d.gromDB.Exec(query, args...)
 	err = tmpDb.Error
 	if err != nil {
+		err = internal.GetError(err, query, args)
 		return
 	}
 	return &sqlResult{

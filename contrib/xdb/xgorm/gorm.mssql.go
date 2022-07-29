@@ -1,6 +1,3 @@
-//go:build grom.mssql
-// +build grom.mssql
-
 package xgorm
 
 import (
@@ -8,22 +5,24 @@ import (
 
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
+	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 	"gorm.io/driver/sqlserver"
 )
 
-const Proto = "grom.mssql"
+const mssqlProto = "grom.mssql"
 
 func init() {
 	xdb.Register(&mssqlResolver{})
-	callbackCache[Proto] = sqlserver.Open
+	tpl.Register(tpl.NewFixed(mssqlProto, "?"))
+	callbackCache[mssqlProto] = sqlserver.Open
 }
 
 type mssqlResolver struct {
 }
 
 func (s *mssqlResolver) Name() string {
-	return Proto
+	return mssqlProto
 }
 
 func (s *mssqlResolver) Resolve(setting config.Config) (interface{}, error) {
@@ -32,11 +31,16 @@ func (s *mssqlResolver) Resolve(setting config.Config) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	gromDB, err := buildGormDB(Proto, cfg)
+	gromDB, err := buildGormDB(mssqlProto, cfg)
+	if err != nil {
+		return nil, err
+	}
+	tpl, err := tpl.GetDBTemplate(mssqlProto)
 	if err != nil {
 		return nil, err
 	}
 	return &dbWrap{
+		tpl:    tpl,
 		gromDB: gromDB,
 	}, nil
 }

@@ -1,6 +1,3 @@
-//go:build grom.postgres
-// +build grom.postgres
-
 package xgorm
 
 import (
@@ -8,35 +5,42 @@ import (
 
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
+	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 	"gorm.io/driver/postgres"
 )
 
-const Proto = "grom.postgres"
+const postgresProto = "grom.postgres"
 
 func init() {
-	xdb.Register(&mssqlResolver{})
-	callbackCache[Proto] = postgres.Open
+	xdb.Register(&postgresResolver{})
+	tpl.Register(tpl.NewFixed(postgresProto, "$"))
+	callbackCache[postgresProto] = postgres.Open
 }
 
-type mssqlResolver struct {
+type postgresResolver struct {
 }
 
-func (s *mssqlResolver) Name() string {
-	return Proto
+func (s *postgresResolver) Name() string {
+	return postgresProto
 }
 
-func (s *mssqlResolver) Resolve(setting config.Config) (interface{}, error) {
+func (s *postgresResolver) Resolve(setting config.Config) (interface{}, error) {
 	cfg := &contribxdb.Config{}
 	err := setting.Scan(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	gromDB, err := buildGormDB(Proto, cfg)
+	gromDB, err := buildGormDB(postgresProto, cfg)
+	if err != nil {
+		return nil, err
+	}
+	tpl, err := tpl.GetDBTemplate(postgresProto)
 	if err != nil {
 		return nil, err
 	}
 	return &dbWrap{
+		tpl:    tpl,
 		gromDB: gromDB,
 	}, nil
 }
