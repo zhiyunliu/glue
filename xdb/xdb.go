@@ -12,6 +12,7 @@ type IDB interface {
 	Executer
 	Begin() (ITrans, error)
 	Close() error
+	GetImpl() interface{}
 }
 
 //ITrans 数据库事务接口

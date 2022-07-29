@@ -1,4 +1,4 @@
-package xdb
+package internal
 
 import (
 	"database/sql"
@@ -9,11 +9,11 @@ import (
 	"github.com/zhiyunliu/glue/xdb"
 )
 
-func getError(err error, query string, args []interface{}) error {
+func GetError(err error, query string, args []interface{}) error {
 	return fmt.Errorf("%w(sql:%s,args:%+v)", err, query, args)
 }
 
-func resolveRows(rows *sql.Rows) (dataRows xdb.Rows, err error) {
+func ResolveRows(rows *sql.Rows) (dataRows xdb.Rows, err error) {
 	dataRows = xdb.NewRows()
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
@@ -31,10 +31,10 @@ func resolveRows(rows *sql.Rows) (dataRows xdb.Rows, err error) {
 	return
 }
 
-func resolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
+func ResolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
 	var setRows xdb.Rows
 	for {
-		setRows, err = resolveRows(rows)
+		setRows, err = ResolveRows(rows)
 		if err != nil {
 			return
 		}

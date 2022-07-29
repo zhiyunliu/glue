@@ -20,16 +20,16 @@ func (t *xTrans) Query(ctx context.Context, sql string, input map[string]interfa
 	query, args := t.tpl.GetSQLContext(sql, input)
 	data, err := t.tx.Query(query, args...)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	defer func() {
 		if data != nil {
 			data.Close()
 		}
 	}()
-	rows, err = resolveRows(data)
+	rows, err = internal.ResolveRows(data)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	return
 }
@@ -39,16 +39,16 @@ func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interf
 	query, args := db.tpl.GetSQLContext(sql, input)
 	sqlRows, err := db.tx.Query(query, args...)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	defer func() {
 		if sqlRows != nil {
 			sqlRows.Close()
 		}
 	}()
-	datasetRows, err = resolveMultiRows(sqlRows)
+	datasetRows, err = internal.ResolveMultiRows(sqlRows)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	return
 }
@@ -84,7 +84,7 @@ func (t *xTrans) Exec(ctx context.Context, sql string, input map[string]interfac
 	query, args := t.tpl.GetSQLContext(sql, input)
 	r, err = t.tx.Execute(query, args...)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	return
 }

@@ -98,8 +98,14 @@ func (l *wraper) Fatal(args ...interface{}) {
 func (l *wraper) Warnf(format string, args ...interface{}) {
 	l.Logf(LevelWarn, format, args...)
 }
+
 func (l *wraper) Warn(args ...interface{}) {
 	l.Log(LevelWarn, args...)
+}
+
+func (l *wraper) Write(p []byte) (n int, err error) {
+	l.Log(LevelWarn, string(p))
+	return len(p), nil
 }
 
 func Debug(args ...interface{}) {

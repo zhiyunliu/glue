@@ -24,5 +24,6 @@ type Logger interface {
 	Warn(v ...interface{})
 	Warnf(format string, v ...interface{})
 
+	Write(p []byte) (n int, err error)
 	Close()
 }
