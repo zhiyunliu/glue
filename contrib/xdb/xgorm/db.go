@@ -74,13 +74,13 @@ func (d *dbWrap) Scalar(ctx context.Context, sql string, input map[string]interf
 func (d *dbWrap) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	query, args := d.tpl.GetSQLContext(sql, input)
 
-	tmpDb := d.gromDB.Exec(query, args...)
-	err = tmpDb.Error
+	db := d.gromDB
+
+	result, err := db.Statement.ConnPool.ExecContext(db.Statement.Context, query, args...)
 	if err != nil {
 		err = internal.GetError(err, query, args)
 		return
 	}
-	return &sqlResult{
-		rowsAffected: tmpDb.RowsAffected,
-	}, err
+	r = result
+	return
 }
