@@ -3,6 +3,7 @@ package cron
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
@@ -46,6 +47,15 @@ func (e *Server) Name() string {
 		e.name = e.Type()
 	}
 	return e.name
+}
+
+//ServiceName 服务名称
+func (s *Server) ServiceName() string {
+	return s.opts.serviceName
+}
+
+func (e *Server) Endpoint() *url.URL {
+	return transport.NewEndpoint("cron", global.LocalIp)
 }
 
 func (e *Server) Type() string {
