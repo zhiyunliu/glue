@@ -66,6 +66,7 @@ func (e *Server) Config(cfg config.Config) {
 	}
 	e.Options(WithConfig(cfg))
 	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
+	e.opts.setting.Config.Addr = server.GetAvaliableAddr(e.opts.setting.Config.Addr)
 }
 
 // Start 开始
