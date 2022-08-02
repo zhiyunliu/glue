@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/kardianos/service"
@@ -196,6 +197,9 @@ func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
 	if len(endpoints) == 0 {
 		for _, srv := range app.options.Servers {
 			if r, ok := srv.(transport.Endpointer); ok {
+				if strings.EqualFold(r.ServiceName(), "") {
+					continue
+				}
 				e := r.Endpoint()
 				endpoints = append(endpoints, registry.ServerItem{
 					ServiceName: r.ServiceName(),
