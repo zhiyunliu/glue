@@ -29,6 +29,9 @@ func (p *ServiceApp) run() (err error) {
 
 func (p *ServiceApp) apprun() error {
 	p.svcCtx = context.Background()
+	if err := p.startingHooks(p.svcCtx); err != nil {
+		return err
+	}
 	p.closeWaitGroup.Add(len(p.options.Servers))
 	for _, srv := range p.options.Servers {
 		srv.Config(p.options.Config)
@@ -126,6 +129,16 @@ func (p *ServiceApp) deregister(ctx context.Context) error {
 	log.Infof("serviceApp close:%s unload registrar-%s", p.cliCtx.App.Name, p.options.Registrar.Name())
 	if err := p.options.Registrar.Deregister(ctx, p.instance); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (p *ServiceApp) startingHooks(ctx context.Context) error {
+	hooks := p.options.StartingHooks
+	for i := range hooks {
+		if err := hooks[i](ctx); err != nil {
+			return err
+		}
 	}
 	return nil
 }

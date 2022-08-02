@@ -21,6 +21,7 @@ type Options struct {
 	RegistrarTimeout time.Duration
 	StopTimeout      time.Duration
 	Servers          []transport.Server
+	StartingHooks    []func(ctx context.Context) error
 	StartedHooks     []func(ctx context.Context) error
 
 	setting    *appSetting
@@ -84,6 +85,13 @@ func ServiceDependencies(dependencies ...string) Option {
 func LogConcurrency(concurrency int) Option {
 	return func(o *Options) {
 		log.Concurrency(concurrency)
+	}
+}
+
+// StartingHook
+func StartingHook(hook func(context.Context) error) Option {
+	return func(o *Options) {
+		o.StartingHooks = append(o.StartingHooks, hook)
 	}
 }
 
