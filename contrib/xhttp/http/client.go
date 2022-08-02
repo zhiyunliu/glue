@@ -32,7 +32,7 @@ type Client struct {
 }
 
 //NewClientByConf 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
-func NewClient(registrar registry.Registrar, setting *setting, serviceName string) (*Client, error) {
+func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL) (*Client, error) {
 	client := &Client{
 		registrar: registrar,
 		setting:   setting,
@@ -44,9 +44,9 @@ func NewClient(registrar registry.Registrar, setting *setting, serviceName strin
 		return nil, err
 	}
 	client.tracer = tracing.NewTracer(trace.SpanKindClient)
-
 	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
-	client.selector, err = balancer.NewSelector(client.ctx, registrar, serviceName, setting.Balancer)
+
+	client.selector, err = balancer.NewSelector(client.ctx, registrar, reqPath, setting.Balancer)
 	if err != nil {
 		return nil, err
 	}

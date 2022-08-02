@@ -68,6 +68,26 @@ func apiserver() transport.Server {
 	apiSrv := api.New("apiserver", api.WithServiceName("apiserver"))
 	apiSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	apiSrv.Handle("/log", handles.NewLogDemo())
+	apiSrv.Handle("/xxx", func(ctx context.Context) interface{} {
+		body, err := gel.Http().Swap(ctx, "http://192.168.1.155:8080/demoapi", xhttp.WithMethod(http.MethodPost))
+		if err != nil {
+			ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
+		}
+		ctx.Log().Debug(string(body.GetResult()))
+		ctx.Log().Debug(body.GetHeader())
+		ctx.Log().Debug(body.GetStatus())
+		return string(body.GetResult())
+	})
+	apiSrv.Handle("/yyy", func(ctx context.Context) interface{} {
+		body, err := gel.Http().Swap(ctx, "xhttp://apiserver/demoapi", xhttp.WithMethod(http.MethodPost))
+		if err != nil {
+			ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
+		}
+		ctx.Log().Debug(string(body.GetResult()))
+		ctx.Log().Debug(body.GetHeader())
+		ctx.Log().Debug(body.GetStatus())
+		return string(body.GetResult())
+	})
 	apiSrv.Handle("/demoapi", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demo")
 
@@ -96,7 +116,7 @@ func mqcserver() transport.Server {
 	mqcSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	mqcSrv.Handle("/demomqc", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demomqc")
-		body, err := gel.Http().Swap(ctx, "http://apiserver/demoapi", xhttp.WithMethod(http.MethodPost))
+		body, err := gel.Http().Swap(ctx, "xhttp://apiserver/demoapi", xhttp.WithMethod(http.MethodPost))
 		if err != nil {
 			ctx.Log().Error("gel.Http().GetHttp().Swap:", err)
 		}
