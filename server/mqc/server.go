@@ -59,7 +59,7 @@ func (s *Server) ServiceName() string {
 }
 
 func (e *Server) Endpoint() *url.URL {
-	return transport.NewEndpoint("mqc", global.LocalIp)
+	return transport.NewEndpoint("mqc", fmt.Sprintf("%s:%d", global.LocalIp, 1987))
 }
 
 func (e *Server) Config(cfg config.Config) {

@@ -55,7 +55,7 @@ func (s *Server) ServiceName() string {
 }
 
 func (e *Server) Endpoint() *url.URL {
-	return transport.NewEndpoint("cron", global.LocalIp)
+	return transport.NewEndpoint("cron", fmt.Sprintf("%s:%d", global.LocalIp, 1987))
 }
 
 func (e *Server) Type() string {
