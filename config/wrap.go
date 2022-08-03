@@ -17,7 +17,7 @@ func (l *wrap) Value(key string) Value {
 	return l.rootConfig.Value(fmt.Sprintf("%s.%s", l.curkey, key))
 }
 func (l *wrap) Watch(key string, o Observer) error {
-	return nil
+	return l.rootConfig.Watch(fmt.Sprintf("%s.%s", l.curkey, key), o)
 }
 func (l *wrap) Close() error {
 	return nil
