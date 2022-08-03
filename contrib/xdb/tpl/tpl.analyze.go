@@ -147,7 +147,7 @@ func GetPropName(fullKey string) (propName string) {
 
 //处理替换符合
 func handleRelaceSymbols(tpl string, input map[string]interface{}) (string, bool) {
-	word, _ := regexp.Compile(`$\{\w+[\.]?\w+\}`)
+	word, _ := regexp.Compile(`\$\{\w+[\.]?\w+\}`)
 	item := &ReplaceItem{
 		NameCache: map[string]string{},
 	}
