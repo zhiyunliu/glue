@@ -116,7 +116,11 @@ func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.O
 	}
 	httpOpts = append(httpOpts, httputil.WithClient(c.client))
 
-	return httputil.Request(o.Method, fmt.Sprintf("%s%s", node.Address(), reqPath.Path), input, httpOpts...)
+	queryParam := ""
+	if reqPath.RawQuery != "" {
+		queryParam = "?" + reqPath.RawQuery
+	}
+	return httputil.Request(o.Method, fmt.Sprintf("%s%s%s", node.Address(), reqPath.Path, queryParam), input, httpOpts...)
 }
 
 func (c *Client) getTlsConfig() (*tls.Config, error) {
