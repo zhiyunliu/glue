@@ -152,6 +152,9 @@ func (r *Registry) GetService(_ context.Context, serviceName string) ([]*registr
 	items := make([]*registry.ServiceInstance, 0, len(res))
 	for _, in := range res {
 		scheme := in.Metadata["scheme"]
+		if scheme == "" {
+			scheme = "http"
+		}
 		items = append(items, &registry.ServiceInstance{
 			ID:       in.InstanceId,
 			Name:     in.ServiceName,

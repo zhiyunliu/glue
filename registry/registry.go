@@ -43,5 +43,5 @@ type ServiceInstance struct {
 
 type ServerItem struct {
 	ServiceName string
-	EndpointURL string
+	EndpointURL string //scheme://host:port/path
 }
