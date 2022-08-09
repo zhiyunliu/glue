@@ -42,7 +42,7 @@ type body struct {
 
 func main() {
 	rand.Seed(time.Now().UnixMilli())
-	apiSrv := api.New("apiserver", api.WithServiceName("demo"))
+	apiSrv := api.New("apiserver", api.WithServiceName("demo"), api.Log(log.WithRequest(), log.Excludes("/demo")))
 	apiSrv.Handle("/demo/origin", func(ctx context.Context) interface{} {
 		slp := rand.Intn(6)
 		time.Sleep(time.Second * time.Duration(slp))
@@ -67,6 +67,9 @@ func main() {
 		xx := &XX{}
 		global.Config.Scan(xx)
 		log.Debugf("XX:%+v", xx)
+		return nil
+	}), glue.StartingHook(func(ctx sctx.Context) error {
+		log.Debug("global.Config.start:", global.Config)
 		return nil
 	}))
 	app.Start()
