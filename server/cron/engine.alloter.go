@@ -19,6 +19,6 @@ func (e *Server) registryEngineRoute() {
 		e.opts.router.Use(middleware.Resolve(&m))
 	}
 
-	server.RegistryEngineRoute(adapterEngine, e.opts.router)
+	server.RegistryEngineRoute(adapterEngine, e.opts.router, e.opts.logOpts)
 
 }

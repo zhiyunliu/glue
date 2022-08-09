@@ -2,6 +2,7 @@ package mqc
 
 import (
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/server"
 )
 
@@ -11,6 +12,7 @@ type Option func(*options)
 type options struct {
 	serviceName string
 	setting     *Setting
+	logOpts     *log.Options
 	router      *server.RouterGroup
 	config      config.Config
 	decReq      server.DecodeRequestFunc
@@ -29,6 +31,7 @@ func setDefaultOption() options {
 				Addr:   "queues://default",
 			},
 		},
+		logOpts: &log.Options{},
 		decReq:  server.DefaultRequestDecoder,
 		encResp: server.DefaultResponseEncoder,
 		encErr:  server.DefaultErrorEncoder,

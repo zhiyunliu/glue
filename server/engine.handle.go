@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/router"
 
 	"github.com/zhiyunliu/glue/errors"
@@ -18,9 +19,9 @@ type AdapterEngine interface {
 }
 type HandlerFunc func(context.Context)
 
-func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup) {
+func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup, logOpt *log.Options) {
 	defaultMiddlewares := []middleware.Middleware{
-		logging.Server(nil),
+		logging.Server(logOpt),
 		recovery.Recovery(),
 	}
 	engine.NoMethod()

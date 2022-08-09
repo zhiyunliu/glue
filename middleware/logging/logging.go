@@ -14,7 +14,8 @@ import (
 )
 
 // Server is an server logging middleware.
-func Server(logger log.Logger) middleware.Middleware {
+func Server(opts *log.Options) middleware.Middleware {
+
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			var (
@@ -24,7 +25,7 @@ func Server(logger log.Logger) middleware.Middleware {
 			)
 			startTime := time.Now()
 
-			ctx.Log().Infof("%s.req %s %s from:%s %s", kind, ctx.Request().GetMethod(), fullPath, ctx.Request().GetClientIP(), extractReq(ctx.Request()))
+			ctx.Log().Infof("%s.req %s %s from:%s %s", kind, ctx.Request().GetMethod(), fullPath, ctx.Request().GetClientIP(), extractReq(opts, ctx.Request()))
 
 			reply = handler(ctx)
 			var err error
@@ -38,9 +39,9 @@ func Server(logger log.Logger) middleware.Middleware {
 
 			level, errInfo := extractError(err)
 			if level == log.LevelError {
-				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractBody(ctx.Request()), errInfo)
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractResp(opts, ctx.Request(), reply), errInfo)
 			} else {
-				ctx.Log().Logf(level, "%s.resp %s %s %d %s ", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String())
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractResp(opts, ctx.Request(), reply))
 			}
 			return
 		}
@@ -48,27 +49,34 @@ func Server(logger log.Logger) middleware.Middleware {
 }
 
 // extractArgs returns the string of the req
-func extractReq(req context.Request) string {
-	//result := make([]string, 2)
+func extractReq(opts *log.Options, req context.Request) string {
+	res := ""
 	if len(req.Query().Values()) > 0 {
-		return req.Query().String()
+		res = req.Query().String()
 	}
-	return ""
+	if opts.WithRequest && !opts.IsExclude(req.Path().FullPath()) {
+		res += "|"
+		res += extractBody(opts, req)
+	}
+	return res
 }
 
 // extractArgs returns the string of the req
-func extractBody(req context.Request) string {
+func extractBody(opts *log.Options, req context.Request) string {
 	if req.Body().Len() > 0 {
 		return bytesconv.BytesToString(req.Body().Bytes())
 	}
 	return ""
 }
 
-func extractResp(resp interface{}) string {
-	if stringer, ok := resp.(fmt.Stringer); ok {
-		return stringer.String()
+func extractResp(opts *log.Options, req context.Request, resp interface{}) string {
+	if opts.WithResponse && !opts.IsExclude(req.Path().FullPath()) {
+		if stringer, ok := resp.(fmt.Stringer); ok {
+			return stringer.String()
+		}
+		return fmt.Sprintf("%+v", resp)
 	}
-	return fmt.Sprintf("%+v", resp)
+	return ""
 }
 
 // extractError returns the string of the error

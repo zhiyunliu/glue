@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/server"
 )
 
@@ -14,6 +15,7 @@ type Option func(*options)
 type options struct {
 	serviceName string
 	setting     *Setting
+	logOpts     *log.Options
 	config      config.Config
 	handler     http.Handler
 	router      *server.RouterGroup
@@ -38,6 +40,7 @@ func setDefaultOption() *options {
 				MaxHeaderBytes:    math.MaxInt,
 			},
 		},
+		logOpts:      &log.Options{},
 		static:       make(map[string]Static),
 		startedHooks: make([]server.Hook, 0),
 		endHooks:     make([]server.Hook, 0),
@@ -72,5 +75,14 @@ func WithConfig(config config.Config) Option {
 func WithServiceName(serviceName string) Option {
 	return func(o *options) {
 		o.serviceName = serviceName
+	}
+}
+
+// Log 设置日志配置
+func Log(opts ...log.ServerOption) Option {
+	return func(o *options) {
+		for i := range opts {
+			opts[i](o.logOpts)
+		}
 	}
 }
