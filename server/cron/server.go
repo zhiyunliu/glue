@@ -78,7 +78,10 @@ func (e *Server) Start(ctx context.Context) error {
 	}
 
 	e.ctx = transport.WithServerContext(ctx, e)
-	e.newProcessor()
+	err := e.newProcessor()
+	if err != nil {
+		return err
+	}
 
 	errChan := make(chan error, 1)
 	log.Infof("CRON Server [%s] listening on %s", e.name, global.LocalIp)
@@ -98,7 +101,7 @@ func (e *Server) Start(ctx context.Context) error {
 			errChan <- nil
 		}
 	}()
-	err := <-errChan
+	err = <-errChan
 	if err != nil {
 		log.Errorf("CRON Server [%s] start error: %s", e.name, err.Error())
 		return err
@@ -144,18 +147,19 @@ func (e *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (e *Server) newProcessor() {
+func (e *Server) newProcessor() error {
 	var err error
-	e.processor, err = newProcessor()
+	e.processor, err = newProcessor(e.opts.config)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	err = e.processor.Add(e.opts.setting.Jobs...)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	e.registryEngineRoute()
+	return nil
 }
 
 func (e *Server) Use(middlewares ...middleware.Middleware) {

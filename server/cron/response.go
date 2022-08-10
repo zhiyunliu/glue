@@ -23,13 +23,13 @@ type Response struct {
 }
 
 //NewRequest 构建任务请求
-func NewResponse(job *Job) (r *Response, err error) {
+func NewResponse() (r *Response) {
 	r = &Response{
 		header: make(xtypes.SMap),
 		size:   noWritten,
 		status: defaultStatus,
 	}
-	return r, nil
+	return r
 }
 
 func (r *Response) Status() int {

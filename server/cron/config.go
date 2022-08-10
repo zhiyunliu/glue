@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
+	cron "github.com/robfig/cron/v3"
 	"github.com/zhiyunliu/glue/metadata"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/server"
@@ -32,35 +34,53 @@ type Config struct {
 }
 
 type Job struct {
-	Cron        string            `json:"cron"`
-	Service     string            `json:"service"`
-	Disable     bool              `json:"disable"`
-	Immediately bool              `json:"immediately"`
-	Meta        metadata.Metadata `json:"meta,omitempty"`
+	Cron                string            `json:"cron"`
+	Service             string            `json:"service"`
+	Disable             bool              `json:"disable"`
+	Immediately         bool              `json:"immediately"`
+	Monopoly            bool              `json:"monopoly"`
+	Meta                metadata.Metadata `json:"meta,omitempty"`
+	schedule            cron.Schedule     `json:"-"`
+	immediatelyExecuted bool              `json:"-"`
 }
 
 func (t *Job) GetKey() string {
-
-	mks := make([]string, len(t.Meta))
-	i := 0
+	mks := make([]string, 0)
 	for k := range t.Meta {
-		mks[i] = k
+		if t.Meta[k] == "" {
+			continue
+		}
+		mks = append(mks, k)
 	}
 	sort.Strings(mks)
 	for i := range mks {
 		k := mks[i]
-		if t.Meta[k] == "" {
-			continue
-		}
 		mks[i] = fmt.Sprintf("k:%s,v:%s", k, t.Meta[k])
 	}
 	tmpKey := fmt.Sprintf("c:%s,s:%s,m:%s", t.Cron, t.Service, strings.Join(mks, ","))
 	return md5.Str(tmpKey)
 }
 
+//服务地址
 func (t *Job) GetService() string {
 	return t.Service
 }
+
+//是否立即执行
 func (t *Job) IsImmediately() bool {
 	return t.Immediately
+}
+
+//是否独占
+func (t *Job) IsMonopoly() bool {
+	return t.Monopoly
+}
+
+//NextTime 下次执行时间
+func (m *Job) NextTime(t time.Time) time.Time {
+	if m.IsImmediately() && !m.immediatelyExecuted {
+		m.immediatelyExecuted = true
+		return t
+	}
+	return m.schedule.Next(t)
 }

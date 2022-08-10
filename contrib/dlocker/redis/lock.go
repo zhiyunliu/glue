@@ -3,6 +3,7 @@ package redis
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	goredis "github.com/go-redis/redis/v7"
 	"github.com/zhiyunliu/golibs/xrandom"
@@ -68,7 +69,7 @@ func (rl *Lock) Acquire(expire int) (bool, error) {
 	}
 
 	reply, ok := resp.(string)
-	if ok && reply == "OK" {
+	if ok && strings.EqualFold(reply, "OK") {
 		return true, nil
 	}
 	return false, nil
