@@ -6,9 +6,10 @@
 	"queues":{
 		"default":"redis://localhost"		
 	},
+ 	"dlocker": "redis://localhost",
 	"redis":{
 		"localhost":{
-			"addrs":["192.168.0.181:6379"],
+			"addrs":["localhost:6379"],
 			"db":0,
 			"dial_timeout":10,
 			"read_timeout":10,
@@ -20,6 +21,8 @@
 		"cronserver":{
 			"config":{"status":"start","sharding":1},
 			"jobs":[
+				{"cron":"@every 15s","service":"/demo/nonebody2","monopoly":true},
+				{"cron":"@every 10s","service":"/demo/nonebody","immediately":true,"monopoly":true,"meta":{"immediately":"true"}},
 				{"cron":"@every 1s","service":"/demo/notrun","disable":false},
 				{"cron":"@every 1s","service":"/demo"},
 				{"cron":"@every 2s","service":"/demo"},
@@ -37,7 +40,7 @@
 				{"cron":"@every 14s","service":"/demo","meta":{"a":"1","b":"2","c":"3"}},
 				{"cron":"@every 15s","service":"/demo/nonebody2"},
 				{"cron":"@every 1s","service":"/demo/nonebody","immediately":true,"meta":{"immediately":"true"}}
-			]
+				]
 		}
     }
 }
