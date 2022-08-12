@@ -337,10 +337,11 @@ func (q *gbody) Close() {
 
 //gresponse --------------------------------
 type ginResponse struct {
-	vctx      *GinContext
-	gctx      *gin.Context
-	hasWrited bool
-	closed    bool
+	vctx       *GinContext
+	gctx       *gin.Context
+	writebytes []byte
+	hasWrited  bool
+	closed     bool
 }
 
 func (q *ginResponse) Status(statusCode int) {
@@ -369,12 +370,22 @@ func (q *ginResponse) Write(obj interface{}) error {
 
 func (q *ginResponse) WriteBytes(bytes []byte) error {
 	_, err := q.gctx.Writer.Write(bytes)
+	q.writebytes = bytes
 	return err
+}
+
+func (q *ginResponse) ContentType() string {
+	return q.gctx.Writer.Header().Get(constants.ContentTypeName)
+}
+
+func (q *ginResponse) ResponseBytes() []byte {
+	return q.writebytes
 }
 
 func (q *ginResponse) Close() {
 	q.vctx = nil
 	q.gctx = nil
+	q.writebytes = nil
 	q.hasWrited = false
 	q.closed = true
 }

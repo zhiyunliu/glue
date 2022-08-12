@@ -19,6 +19,12 @@ func getFlags(cfg *Options) (flags []cli.Flag) {
 			Usage:       `-配置文件`,
 			Value:       "config.json",
 		},
+		cli.StringFlag{
+			Name:        "log,L",
+			Destination: &cfg.logPath,
+			Usage:       `-配置文件`,
+			Value:       "log",
+		},
 	)
 
 	return flags

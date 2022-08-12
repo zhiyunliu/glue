@@ -26,6 +26,7 @@ type Options struct {
 
 	setting    *appSetting
 	configFile string
+	logPath    string
 }
 
 //Option 配置选项

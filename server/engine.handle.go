@@ -1,13 +1,16 @@
 package server
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/router"
+	"github.com/zhiyunliu/golibs/bytesconv"
 
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/middleware/logging"
 	"github.com/zhiyunliu/glue/middleware/recovery"
 )
 
@@ -21,15 +24,15 @@ type HandlerFunc func(context.Context)
 
 func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup, logOpt *log.Options) {
 	defaultMiddlewares := []middleware.Middleware{
-		logging.Server(logOpt),
+		//logging.Server(logOpt),
 		recovery.Recovery(),
 	}
 	engine.NoMethod()
 	engine.NoRoute()
-	execRegistry(engine, router, defaultMiddlewares)
+	execRegistry(engine, router, logOpt, defaultMiddlewares)
 }
 
-func execRegistry(engine AdapterEngine, group *RouterGroup, defaultMiddlewares []middleware.Middleware) {
+func execRegistry(engine AdapterEngine, group *RouterGroup, logOpt *log.Options, defaultMiddlewares []middleware.Middleware) {
 
 	groups := group.ServiceGroups
 	gmlen := len(group.middlewares)
@@ -41,23 +44,48 @@ func execRegistry(engine AdapterEngine, group *RouterGroup, defaultMiddlewares [
 	}
 
 	for _, v := range groups {
-		procHandler(engine, v, mls...)
+		procHandler(engine, v, logOpt, mls...)
 	}
 
 	for i := range group.Children {
-		execRegistry(engine, group.Children[i], defaultMiddlewares)
+		execRegistry(engine, group.Children[i], logOpt, defaultMiddlewares)
 	}
 }
 
-func procHandler(engine AdapterEngine, group *router.Group, middlewares ...middleware.Middleware) {
+func procHandler(engine AdapterEngine, group *router.Group, opts *log.Options, middlewares ...middleware.Middleware) {
 	for method, v := range group.Services {
 		engine.Handle(method, group.GetReallyPath(), func(ctx context.Context) {
+			var (
+				code     int    = http.StatusOK
+				kind            = ctx.ServerType()
+				fullPath string = ctx.Request().Path().FullPath()
+			)
+			startTime := time.Now()
+
+			ctx.Log().Infof("%s.req %s %s from:%s %s", kind, ctx.Request().GetMethod(), fullPath, ctx.Request().GetClientIP(), extractReq(opts, ctx.Request()))
+
 			resp := middleware.Chain(middlewares...)(engineHandler(group, v))(ctx)
 			engine.Write(ctx, resp)
+			var err error
+			if rerr, ok := resp.(error); ok {
+				err = rerr
+			}
+
+			if se := errors.FromError(err); se != nil {
+				code = se.Code
+			}
+
+			level, errInfo := extractError(err)
+			if level == log.LevelError {
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractResp(opts, ctx), errInfo)
+			} else {
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractResp(opts, ctx))
+			}
+
 		})
 	}
 	for i := range group.Children {
-		procHandler(engine, group.Children[i], middlewares...)
+		procHandler(engine, group.Children[i], opts, middlewares...)
 	}
 }
 
@@ -93,4 +121,40 @@ func engineHandler(group *router.Group, unit *router.Unit) middleware.Handler {
 		}
 		return handleResp
 	}
+}
+
+// extractArgs returns the string of the req
+func extractReq(opts *log.Options, req context.Request) string {
+	res := ""
+	if len(req.Query().Values()) > 0 {
+		res = req.Query().String()
+	}
+	if opts.WithRequest && !opts.IsExclude(req.Path().FullPath()) {
+		res += "|"
+		res += extractBody(opts, req)
+	}
+	return res
+}
+
+// extractArgs returns the string of the req
+func extractBody(opts *log.Options, req context.Request) string {
+	if req.Body().Len() > 0 {
+		return bytesconv.BytesToString(req.Body().Bytes())
+	}
+	return ""
+}
+
+func extractResp(opts *log.Options, ctx context.Context) string {
+	if opts.WithResponse && !opts.IsExclude(ctx.Request().Path().FullPath()) {
+		return bytesconv.BytesToString(ctx.Response().ResponseBytes())
+	}
+	return ""
+}
+
+// extractError returns the string of the error
+func extractError(err error) (log.Level, string) {
+	if err != nil {
+		return log.LevelError, err.Error()
+	}
+	return log.LevelInfo, ""
 }

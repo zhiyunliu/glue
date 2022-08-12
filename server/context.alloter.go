@@ -331,10 +331,11 @@ func (q *abody) Close() {
 
 //gresponse --------------------------------
 type alloterResponse struct {
-	vctx      *AlloterContext
-	actx      *alloter.Context
-	hasWrited bool
-	closed    bool
+	vctx       *AlloterContext
+	actx       *alloter.Context
+	writebytes []byte
+	hasWrited  bool
+	closed     bool
 }
 
 func (q *alloterResponse) Status(statusCode int) {
@@ -363,11 +364,22 @@ func (q *alloterResponse) Write(obj interface{}) error {
 
 func (q *alloterResponse) WriteBytes(bytes []byte) error {
 	_, err := q.actx.Writer.Write(bytes)
+	q.writebytes = bytes
 	return err
 }
+
+func (q *alloterResponse) ContentType() string {
+	return q.actx.Writer.Header().Get(constants.ContentTypeName)
+}
+
+func (q *alloterResponse) ResponseBytes() []byte {
+	return q.writebytes
+}
+
 func (q *alloterResponse) Close() {
 	q.vctx = nil
 	q.actx = nil
+	q.writebytes = nil
 	q.hasWrited = false
 	q.closed = true
 }

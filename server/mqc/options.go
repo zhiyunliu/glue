@@ -53,3 +53,12 @@ func WithServiceName(serviceName string) Option {
 		o.serviceName = serviceName
 	}
 }
+
+// Log 设置日志配置
+func Log(opts ...log.ServerOption) Option {
+	return func(o *options) {
+		for i := range opts {
+			opts[i](o.logOpts)
+		}
+	}
+}
