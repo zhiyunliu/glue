@@ -1,1 +1,1 @@
-{"status":false,"layouts":[{"type":"file","level":"","path":"../logs/%date/%level/%hh.log","layout":"[%time][%l][%session][%idx] %content"},{"type":"stdout","level":"","layout":"[%time][%l][%session][%idx] %content"}]}
+{"enable":true,"layout":{"file":{"level":"i","path":"../log/%date/%level/%hh.log","content":"[%time][%l][%session][%idx] %content"},"stdout":{"level":"i","content":"[%time][%l][%session][%idx] %content"}}}
