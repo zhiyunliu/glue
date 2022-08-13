@@ -384,17 +384,38 @@ func (d *Fulldemo) NotRunHandle(ctx context.Context) interface{} {
 
     系统启动会检查 ../conf 是否存在logger.json 配置文件。如果不存在则以默认方式创建一个配置文件
 
-```json
 
+```json
 {
-    "status":false,
-    "layouts":[
-        {"type":"file","level":"","path":"../logs/%date/%level/%hh.log","layout":"[%time][%l][%session][%idx] %content"},
-        {"type":"stdout","level":"","layout":"[%time][%l][%session][%idx] %content"}
-    ]
+	"enable":true,
+	"layout":{
+		"file":{
+			"level":"info",
+			"path":"../log/%ndate/%level/%hh.log",
+			"content":"[%time][%l][%session][%idx] %content"
+		},
+		"stdout":{
+			"level":"info",
+			"content":"[%time][%l][%session][%idx] %content"
+		}
+	}
 }
 
 ```
+```js
+levels = [
+	"debug",
+	"info",
+	"warn",
+	"error",
+	"panic",
+	"fatal",
+	"all",
+	"off"
+]
+```
+
+
 ```golang
 
 func main() {
