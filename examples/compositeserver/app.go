@@ -8,6 +8,7 @@ import (
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/examples/compositeserver/handles"
 	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware/tracing"
 	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/glue/xhttp"
@@ -65,7 +66,7 @@ func setTracerProvider(url string) error {
 }
 
 func apiserver() transport.Server {
-	apiSrv := api.New("apiserver", api.WithServiceName("apiserver"))
+	apiSrv := api.New("apiserver", api.WithServiceName("apiserver"), api.Log(log.WithRequest(), log.WithResponse()))
 	apiSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	apiSrv.Handle("/log", handles.NewLogDemo())
 	apiSrv.Handle("/xxx", func(ctx context.Context) interface{} {
@@ -112,7 +113,7 @@ func apiserver() transport.Server {
 }
 
 func mqcserver() transport.Server {
-	mqcSrv := mqc.New("mqcserver")
+	mqcSrv := mqc.New("mqcserver", mqc.Log(log.WithRequest(), log.WithResponse()))
 	mqcSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	mqcSrv.Handle("/demomqc", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("demomqc")
@@ -134,7 +135,7 @@ func mqcserver() transport.Server {
 }
 
 func rpcserver() transport.Server {
-	rpcSrv := rpc.New("rpcserver", rpc.WithServiceName("rpcserver"))
+	rpcSrv := rpc.New("rpcserver", rpc.WithServiceName("rpcserver"), rpc.Log(log.WithRequest(), log.WithResponse()))
 	rpcSrv.Use(tracing.Server(tracing.WithPropagator(propagation.TraceContext{}), tracing.WithTracerProvider(otel.GetTracerProvider())))
 	rpcSrv.Handle("/demorpc", func(ctx context.Context) interface{} {
 		time.Sleep(time.Second * 1)
@@ -149,7 +150,7 @@ func rpcserver() transport.Server {
 }
 
 func cronserver() transport.Server {
-	cronSrv := cron.New("cronserver")
+	cronSrv := cron.New("cronserver", cron.Log(log.WithRequest(), log.WithResponse()))
 
 	cronSrv.Handle("/democron", func(ctx context.Context) interface{} {
 		ctx.Log().Debug("democron")

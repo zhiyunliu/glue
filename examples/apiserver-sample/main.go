@@ -17,6 +17,7 @@ import (
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/server/api"
+	"github.com/zhiyunliu/golibs/xlog"
 
 	//_ "github.com/zhiyunliu/glue/contrib/xdb/oracle"
 	_ "github.com/zhiyunliu/glue/contrib/dlocker/redis"
@@ -42,7 +43,7 @@ type body struct {
 
 func main() {
 	rand.Seed(time.Now().UnixMilli())
-	apiSrv := api.New("apiserver", api.WithServiceName("demo"), api.Log(log.WithRequest(), log.Excludes("/demo")))
+	apiSrv := api.New("apiserver", api.WithServiceName("demo"), api.Log(log.WithRequest(), log.WithResponse()))
 	apiSrv.Handle("/demo/origin", func(ctx context.Context) interface{} {
 		slp := rand.Intn(6)
 		time.Sleep(time.Second * time.Duration(slp))
@@ -60,6 +61,9 @@ func main() {
 		return map[string]interface{}{
 			"a": "1",
 		}
+	})
+	apiSrv.Handle("/log", func(ctx context.Context) interface{} {
+		return xlog.Stats()
 	})
 
 	app := glue.NewApp(glue.Server(apiSrv), glue.StartedHook(func(ctx sctx.Context) error {
