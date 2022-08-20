@@ -2,13 +2,11 @@ package glue
 
 import (
 	_ "net/http/pprof"
-	"runtime"
 
 	"github.com/zhiyunliu/glue/cli"
 	"github.com/zhiyunliu/glue/compatible"
 	_ "github.com/zhiyunliu/glue/encoding/json"
 	_ "github.com/zhiyunliu/glue/encoding/yaml"
-	"github.com/zhiyunliu/glue/log"
 )
 
 //MicroApp  微服务应用
@@ -19,7 +17,6 @@ type MicroApp struct {
 
 //NewApp 创建微服务应用
 func NewApp(opts ...Option) (m *MicroApp) {
-	log.Concurrency(runtime.NumCPU() * 5)
 	m = &MicroApp{opts: opts}
 	m.cliApp = cli.New(opts...)
 	return m

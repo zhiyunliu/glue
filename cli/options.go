@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/transport"
 )
@@ -24,9 +23,10 @@ type Options struct {
 	StartingHooks    []func(ctx context.Context) error
 	StartedHooks     []func(ctx context.Context) error
 
-	setting    *appSetting
-	configFile string
-	logPath    string
+	logConcurrency int
+	setting        *appSetting
+	configFile     string
+	logPath        string
 }
 
 //Option 配置选项
@@ -85,7 +85,7 @@ func ServiceDependencies(dependencies ...string) Option {
 // ServiceDependencies
 func LogConcurrency(concurrency int) Option {
 	return func(o *Options) {
-		log.Concurrency(concurrency)
+		o.logConcurrency = concurrency
 	}
 }
 
