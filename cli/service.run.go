@@ -86,7 +86,10 @@ func (p *ServiceApp) startTraceServer() error {
 
 	select {
 	case err := <-errChan:
-		return fmt.Errorf("trace server Serve error:%+v", err)
+		if err != nil {
+			return fmt.Errorf("trace server Serve error:%+v", err)
+		}
+		return nil
 	case <-time.After(time.Second):
 		return nil
 	}
