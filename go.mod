@@ -3,7 +3,7 @@ module github.com/zhiyunliu/glue
 go 1.17
 
 require (
-	github.com/zhiyunliu/golibs v0.1.13
+	github.com/zhiyunliu/golibs v0.1.14-0.20220821034505-765dacd0ef1d
 	github.com/zhiyunliu/redisqueue/v2 v2.1.1
 )
 
@@ -27,8 +27,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/urfave/cli v1.22.5
 	go.opentelemetry.io/otel v1.7.0
-	go.opentelemetry.io/otel/exporters/jaeger v1.7.0
-	go.opentelemetry.io/otel/sdk v1.7.0
 	go.opentelemetry.io/otel/trace v1.7.0
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.26.0
