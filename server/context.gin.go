@@ -286,8 +286,7 @@ type gbody struct {
 }
 
 func (q *gbody) Scan(obj interface{}) error {
-	//return q.vctx.opts.RequestDecoder(q.vctx, obj)
-	return q.gctx.Bind(obj)
+	return q.gctx.ShouldBind(obj)
 }
 
 func (q *gbody) Read(p []byte) (n int, err error) {
