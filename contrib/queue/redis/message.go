@@ -3,6 +3,7 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
@@ -44,6 +45,7 @@ func (m *redisMessage) GetMessage() queue.Message {
 
 type MsgBody struct {
 	msg       string      `json:"-"`
+	QueueKey  string      `json:"queuekey"`
 	HeaderMap xtypes.SMap `json:"header"`
 	BodyMap   xtypes.XMap `json:"body"`
 }
@@ -57,7 +59,9 @@ func newMsgBody(msg string) *MsgBody {
 		HeaderMap: make(xtypes.SMap),
 		BodyMap:   make(xtypes.XMap),
 	}
-	json.Unmarshal([]byte(msg), body)
+	decoder := json.NewDecoder(strings.NewReader(msg))
+	decoder.UseNumber()
+	decoder.Decode(body)
 	return body
 }
 

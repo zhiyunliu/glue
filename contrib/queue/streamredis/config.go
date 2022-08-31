@@ -7,7 +7,10 @@ import (
 )
 
 type ProductOptions struct {
-	StreamMaxLength int64 `json:"stream_max_len" yaml:"stream_max_len"` //消息队列长度
+	DelayQueueName  string `json:"delay_queue_name" yaml:"delay_queue_name"`
+	StreamMaxLength int64  `json:"stream_max_len" yaml:"stream_max_len"` //消息队列长度
+	RangeSeconds    int    `json:"range_seconds" yaml:"range_seconds"`
+	DelayInterval   int    `json:"delay_interval" yaml:"delay_interval"`
 }
 
 type ConsumerOptions struct {
