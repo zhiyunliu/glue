@@ -51,6 +51,9 @@ func (consumer *Consumer) Connect() (err error) {
 
 	opts := &redisqueue.ConsumerOptions{
 		RedisClient:       client.UniversalClient,
+		Concurrency:       100,
+		BufferSize:        1000,
+		BlockingTimeout:   1 * time.Second,
 		VisibilityTimeout: 30 * time.Second,
 		ReclaimInterval:   5 * time.Second,
 	}

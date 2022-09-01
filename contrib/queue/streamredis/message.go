@@ -2,6 +2,7 @@ package streamredis
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
@@ -63,11 +64,27 @@ func newMsgBody(msg map[string]interface{}) *MsgBody {
 		HeaderMap: make(xtypes.SMap),
 		BodyMap:   make(xtypes.XMap),
 	}
-	json.Unmarshal([]byte(msg["header"].(string)), &body.HeaderMap)
-	json.Unmarshal([]byte(msg["body"].(string)), &body.BodyMap)
+	switch val := msg["header"].(type) {
+	case string:
+		json.Unmarshal([]byte(val), &body.HeaderMap)
+	case map[string]interface{}:
+		for k, v := range val {
+			body.HeaderMap[k] = fmt.Sprint(v)
+		}
+	default:
+
+	}
+
+	switch val := msg["body"].(type) {
+	case string:
+		json.Unmarshal([]byte(val), &body.BodyMap)
+	case map[string]interface{}:
+		body.BodyMap.Merge(val)
+	default:
+
+	}
 
 	body.msg, _ = json.Marshal(body)
-
 	return body
 }
 

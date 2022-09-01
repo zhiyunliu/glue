@@ -112,8 +112,8 @@ func (c *Producer) delayQueue() {
 		select {
 		case <-c.closeChan:
 			return
-		case <-ticker.C:
-			c.procDelayQueue(0)
+		case now := <-ticker.C:
+			c.procDelayQueue(now.Unix())
 		}
 	}
 }

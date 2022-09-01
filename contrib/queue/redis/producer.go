@@ -41,6 +41,7 @@ func NewProducer(config config.Config) (m *Producer, err error) {
 	if err != nil {
 		return
 	}
+	go m.delayQueue()
 	return
 }
 
@@ -106,8 +107,8 @@ func (c *Producer) delayQueue() {
 		select {
 		case <-c.closeChan:
 			return
-		case <-ticker.C:
-			c.procDelayQueue(0)
+		case now := <-ticker.C:
+			c.procDelayQueue(now.Unix())
 		}
 	}
 }
