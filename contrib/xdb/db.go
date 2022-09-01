@@ -19,6 +19,10 @@ type xDB struct {
 
 //NewDB 创建DB实例
 func NewDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime int) (obj xdb.IDB, err error) {
+	conn, err = DecryptConn(conn)
+	if err != nil {
+		return
+	}
 	if maxOpen <= 0 {
 		maxOpen = runtime.NumCPU() * 10
 	}
@@ -36,22 +40,25 @@ func NewDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime int)
 	dbobj.db, err = internal.NewSysDB(proto, conn, maxOpen, maxIdle, time.Duration(maxLifeTime)*time.Second)
 	return dbobj, err
 }
+func (db *xDB) GetImpl() interface{} {
+	return db.db
+}
 
 //Query 查询数据
 func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
 	data, err := db.db.Query(query, args...)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	defer func() {
 		if data != nil {
 			data.Close()
 		}
 	}()
-	rows, err = resolveRows(data)
+	rows, err = internal.ResolveRows(data)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	return
 }
@@ -61,16 +68,16 @@ func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface
 	query, args := db.tpl.GetSQLContext(sql, input)
 	sqlRows, err := db.db.Query(query, args...)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	defer func() {
 		if sqlRows != nil {
 			sqlRows.Close()
 		}
 	}()
-	datasetRows, err = resolveMultiRows(sqlRows)
+	datasetRows, err = internal.ResolveMultiRows(sqlRows)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	return
 }
@@ -105,7 +112,7 @@ func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{
 	query, args := db.tpl.GetSQLContext(sql, input)
 	r, err = db.db.Exec(query, args...)
 	if err != nil {
-		return nil, getError(err, query, args)
+		return nil, internal.GetError(err, query, args)
 	}
 	return
 }

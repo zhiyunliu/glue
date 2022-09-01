@@ -4,15 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
 	"reflect"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/zhiyunliu/glue/constants"
 	vctx "github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/contrib/alloter"
-	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
@@ -81,15 +78,6 @@ func (ctx *AlloterContext) Bind(obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	val = val.Elem()
-	// we only accept structs
-	if val.Kind() == reflect.Struct {
-		//验证数据格式
-		if _, err := govalidator.ValidateStruct(obj); err != nil {
-			return errors.New(http.StatusNotAcceptable, fmt.Sprintf("输入参数有误:%v", err))
-		}
-	}
-
 	if chr, ok := obj.(IChecker); ok {
 		return chr.Check()
 	}
@@ -123,7 +111,7 @@ func (ctx *AlloterContext) Log() log.Logger {
 				xreqId = session.Create()
 				ctx.Actx.Header(constants.HeaderRequestId, xreqId)
 			}
-			logger = log.New(log.WithName("alloter"), log.WithSid(xreqId))
+			logger = log.New(log.WithName("alloter"), log.WithSid(xreqId), log.WithSrvType(ctx.opts.SrvType))
 			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
 		}
 		ctx.logger = logger
@@ -343,10 +331,11 @@ func (q *abody) Close() {
 
 //gresponse --------------------------------
 type alloterResponse struct {
-	vctx      *AlloterContext
-	actx      *alloter.Context
-	hasWrited bool
-	closed    bool
+	vctx       *AlloterContext
+	actx       *alloter.Context
+	writebytes []byte
+	hasWrited  bool
+	closed     bool
 }
 
 func (q *alloterResponse) Status(statusCode int) {
@@ -375,11 +364,22 @@ func (q *alloterResponse) Write(obj interface{}) error {
 
 func (q *alloterResponse) WriteBytes(bytes []byte) error {
 	_, err := q.actx.Writer.Write(bytes)
+	q.writebytes = bytes
 	return err
 }
+
+func (q *alloterResponse) ContentType() string {
+	return q.actx.Writer.Header().Get(constants.ContentTypeName)
+}
+
+func (q *alloterResponse) ResponseBytes() []byte {
+	return q.writebytes
+}
+
 func (q *alloterResponse) Close() {
 	q.vctx = nil
 	q.actx = nil
+	q.writebytes = nil
 	q.hasWrited = false
 	q.closed = true
 }

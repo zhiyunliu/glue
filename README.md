@@ -12,7 +12,7 @@
 
 # 配置介绍
 
-[config 样例](https://github.com/zhiyunliu/glue/blob/main/config.md)
+[config 样例](./docs/config.md)
 
 ```tree
 
@@ -51,7 +51,7 @@
 ## API 接口服务
     底层使用了GIN 框架作为http(s)服务的基础，在此基础上进行了服务注册，中间件的包装处理。默认注入recover ,log 两个中间件
 
-## RPC RPC调用服务
+## RPC 远程调用服务
     通过定义通用的proto传输协议 ,将RPC调用的数据统一格式传输。传输的消息格式默认提供grpc格式，可以根据自己需要自行实现传输消息格式
 
 ## MQC 消息队列服务
@@ -357,11 +357,11 @@ func (d *Fulldemo) NotRunHandle(ctx context.Context) interface{} {
 ```golang 
 
   		//缓存使用
-		cacheObj := glue.Cache().GetCache("cachename") //cachename 对应config.json 文件中节点：caches/cachename
+		cacheObj := glue.Cache("cachename") //cachename 对应config.json 文件中节点：caches/cachename
 		cacheObj.Set(ctx.Context(), "name", "value", -1)
 
 		//消息队列的使用
-		queObj := glue.Queue().GetQueue("queuename")  //queuename 对应config.json 文件中节点：queues/queuename
+		queObj := glue.Queue("queuename")  //queuename 对应config.json 文件中节点：queues/queuename
 		queObj.Send(ctx.Context(), "queuekey", queue.MsgItem{})
 
 		//分布式锁的使用
@@ -371,11 +371,11 @@ func (d *Fulldemo) NotRunHandle(ctx context.Context) interface{} {
 		dlock.Renewal(5)              //续期 5秒
 
 		//http对象使用
-		httpObj := glue.Http().GetHttp("httpname") //httpname 对应config.json 文件中节点：xhttp/httpname
+		httpObj := glue.Http("httpname") //httpname 对应config.json 文件中节点：xhttp/httpname
 		httpResp, err := httpObj.Request(ctx.Context(), "xhttp://servername/a/b/c", map[string]string{})
 
 		//rpc对象使用
-		rpcObj := glue.RPC().GetRPC("rpcname") //rpcname 对应config.json 文件中节点：rpcs/rpcname
+		rpcObj := glue.RPC("rpcname") //rpcname 对应config.json 文件中节点：rpcs/rpcname
 		rpcResp, err := rpcObj.Request(ctx.Context(), "grpc://servername/apipath", map[string]string{})  
 
 ```
@@ -384,17 +384,38 @@ func (d *Fulldemo) NotRunHandle(ctx context.Context) interface{} {
 
     系统启动会检查 ../conf 是否存在logger.json 配置文件。如果不存在则以默认方式创建一个配置文件
 
-```json
 
+```json
 {
-    "status":false,
-    "layouts":[
-        {"type":"file","level":"","path":"../logs/%date/%level/%hh.log","layout":"[%time][%l][%session][%idx] %content"},
-        {"type":"stdout","level":"","layout":"[%time][%l][%session][%idx] %content"}
-    ]
+	"enable":true,
+	"layout":{
+		"file":{
+			"level":"info",
+			"path":"../log/%ndate/%level/%hh.log",
+			"content":"[%time][%l][%session][%idx] %content"
+		},
+		"stdout":{
+			"level":"info",
+			"content":"[%time][%l][%session][%idx] %content"
+		}
+	}
 }
 
 ```
+```js
+levels = [
+	"debug",
+	"info",
+	"warn",
+	"error",
+	"panic",
+	"fatal",
+	"all",
+	"off"
+]
+```
+
+
 ```golang
 
 func main() {

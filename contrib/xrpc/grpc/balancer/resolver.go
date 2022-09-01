@@ -68,7 +68,7 @@ func (r *registrarResolver) buildAddress(instances []*registry.ServiceInstance) 
 	for _, v := range instances {
 		for _, ep := range v.Endpoints {
 			// ep=grpc://172.16.0.128:7080
-			epv, _ := url.Parse(ep)
+			epv, _ := url.Parse(ep.EndpointURL)
 
 			a := resolver.Address{
 				Addr:       epv.Host,

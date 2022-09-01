@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	rds "github.com/go-redis/redis"
+	rds "github.com/go-redis/redis/v7"
 
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"

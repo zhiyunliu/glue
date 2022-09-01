@@ -10,6 +10,7 @@
 	},
 	"registry":"nacos://aliyun",
  	"config":"nacos://aliyun",
+	"dlocker":"redis://redis1",
 	"caches":{
 		"redisxxx":{"proto":"redis","addr":"redis://redis1"},
 		"redisyyy":{"proto":"redis","addr":"redis://redis1"},
@@ -50,7 +51,7 @@
 		},
 		"cronserver":{
 			"config":{"status":"start/stop","sharding":1},
-			"jobs":[{"cron":"* 15 2 * * ? *","service":"/xx/bb/cc","disable":false},{"cron":"* 15 2 * * ? *","service":"/xx/bb/yy"}],
+			"jobs":[{"cron":"* 15 2 * * ? *","service":"/xx/bb/cc","immediately":true,"monopoly":true,"disable":false},{"cron":"* 15 2 * * ? *","service":"/xx/bb/yy"}],
 		}		
 	}
 }

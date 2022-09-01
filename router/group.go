@@ -50,12 +50,12 @@ group.service={}
 */
 
 type Group struct {
+	rootPath string
 	Path     string //原始注册服务路径
 	Handling middleware.Handler
 	Handled  middleware.Handler
 	Children map[string]*Group
 	Services map[string]*Unit
-	parent   *Group
 	methods  []string
 }
 
@@ -67,11 +67,12 @@ type Unit struct {
 	Group    *Group
 }
 
-func newGroup(path string, methods ...string) *Group {
+func newGroup(rootPath, path string, methods ...string) *Group {
 	if len(methods) == 0 {
 		methods = []string{http.MethodGet, http.MethodPost}
 	}
 	return &Group{
+		rootPath: rootPath,
 		Path:     path,
 		methods:  methods,
 		Services: make(map[string]*Unit),
@@ -86,8 +87,8 @@ func (g *Group) GetChild(name string) *Group {
 	}
 
 	child = &Group{
+		rootPath: g.GetReallyPath(),
 		Path:     name,
-		parent:   g,
 		methods:  g.methods,
 		Services: make(map[string]*Unit),
 		Children: make(map[string]*Group, 0),
@@ -175,8 +176,5 @@ func (g *Group) IsValid() error {
 	return nil
 }
 func (g *Group) GetReallyPath() string {
-	if g.parent != nil {
-		return fmt.Sprintf("%s/%s", g.parent.GetReallyPath(), g.Path)
-	}
-	return g.Path
+	return fmt.Sprint("/", strings.Trim(g.rootPath, "/"), "/", strings.Trim(g.Path, "/"))
 }

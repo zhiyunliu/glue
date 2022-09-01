@@ -10,7 +10,7 @@ import (
 	"github.com/zhiyunliu/glue/xhttp"
 )
 
-const Proto = "http"
+const Proto = "xhttp"
 
 type httpResolver struct {
 }

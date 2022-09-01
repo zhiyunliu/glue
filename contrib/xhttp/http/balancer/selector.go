@@ -2,6 +2,9 @@ package balancer
 
 import (
 	"context"
+	"fmt"
+	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/zhiyunliu/glue/log"
@@ -17,7 +20,7 @@ type httpSelector struct {
 	selector    selector.Selector
 }
 
-func NewSelector(ctx context.Context, registrar registry.Registrar, serviceName, selectorName string) (selector.Selector, error) {
+func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url.URL, selectorName string) (selector.Selector, error) {
 	tmpselector, err := selector.GetSelector(selectorName)
 	if err != nil {
 		return nil, err
@@ -26,13 +29,18 @@ func NewSelector(ctx context.Context, registrar registry.Registrar, serviceName,
 	rr := &httpSelector{
 		ctx:         ctx,
 		registrar:   registrar,
-		serviceName: serviceName,
+		serviceName: reqPath.Host,
 		waitGroup:   sync.WaitGroup{},
 	}
 	rr.selector = tmpselector
-	rr.waitGroup.Add(1)
-	go rr.watcher()
-	rr.resolveNow()
+	if strings.EqualFold(reqPath.Scheme, "xhttp") {
+		rr.waitGroup.Add(1)
+		go rr.watcher()
+		rr.resolveNow()
+	} else {
+		rr.Apply(rr.buildAddress(reqPath))
+	}
+
 	return rr, nil
 }
 
@@ -55,10 +63,19 @@ func (r *httpSelector) resolveNow() {
 		log.Errorf("http:registrar.GetService=%s,error:%+v", r.serviceName, err)
 		return
 	}
-	r.Apply(r.buildAddress(instances))
+	r.Apply(r.buildServiceNode(instances))
 }
 
-func (r *httpSelector) buildAddress(instances []*registry.ServiceInstance) []selector.Node {
+func (r *httpSelector) buildAddress(reqPath *url.URL) []selector.Node {
+	var addresses = make([]selector.Node, 0, 1)
+	addresses = append(addresses, &node{
+		addr:        fmt.Sprintf("%s://%s", reqPath.Scheme, reqPath.Host),
+		serviceName: reqPath.Scheme,
+	})
+	return addresses
+}
+
+func (r *httpSelector) buildServiceNode(instances []*registry.ServiceInstance) []selector.Node {
 
 	var addresses = make([]selector.Node, 0, len(instances))
 	for _, v := range instances {
@@ -85,7 +102,7 @@ func (r *httpSelector) watchRegistrar() {
 				log.Errorf("http:registrar.Next=%s,error:%+v", r.serviceName, err)
 				continue
 			}
-			addresses := r.buildAddress(instances)
+			addresses := r.buildServiceNode(instances)
 			r.Apply(addresses)
 		}
 	}

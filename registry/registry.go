@@ -1,6 +1,8 @@
 package registry
 
-import "context"
+import (
+	"context"
+)
 
 // Registrar is service registrar.
 type Registrar interface {
@@ -36,5 +38,10 @@ type ServiceInstance struct {
 	Version  string            `json:"version"`
 	Metadata map[string]string `json:"metadata"`
 	//http://localhost:8000
-	Endpoints []string `json:"endpoints"`
+	Endpoints []ServerItem `json:"endpoints"`
+}
+
+type ServerItem struct {
+	ServiceName string
+	EndpointURL string //scheme://host:port/path
 }

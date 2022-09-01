@@ -1,11 +1,11 @@
 package cli
 
 import (
+	"context"
 	"net/url"
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/transport"
 )
@@ -20,9 +20,13 @@ type Options struct {
 	RegistrarTimeout time.Duration
 	StopTimeout      time.Duration
 	Servers          []transport.Server
+	StartingHooks    []func(ctx context.Context) error
+	StartedHooks     []func(ctx context.Context) error
 
-	setting  *appSetting
-	initFile string
+	logConcurrency int
+	setting        *appSetting
+	configFile     string
+	logPath        string
 }
 
 //Option 配置选项
@@ -36,11 +40,6 @@ func ID(id string) Option {
 // Metadata with service metadata.
 func Metadata(md map[string]string) Option {
 	return func(o *Options) { o.Metadata = md }
-}
-
-// Endpoint with service endpoint.
-func Endpoint(endpoints ...*url.URL) Option {
-	return func(o *Options) { o.Endpoints = endpoints }
 }
 
 // Server with transport servers.
@@ -86,7 +85,21 @@ func ServiceDependencies(dependencies ...string) Option {
 // ServiceDependencies
 func LogConcurrency(concurrency int) Option {
 	return func(o *Options) {
-		log.Concurrency(concurrency)
+		o.logConcurrency = concurrency
+	}
+}
+
+// StartingHook
+func StartingHook(hook func(context.Context) error) Option {
+	return func(o *Options) {
+		o.StartingHooks = append(o.StartingHooks, hook)
+	}
+}
+
+// StartedHook
+func StartedHook(hook func(context.Context) error) Option {
+	return func(o *Options) {
+		o.StartedHooks = append(o.StartedHooks, hook)
 	}
 }
 

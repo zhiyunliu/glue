@@ -47,7 +47,9 @@ func (s *xRPC) GetRPC(name ...string) (c Client) {
 	if len(name) > 0 {
 		realName = name[0]
 	}
-
+	if realName == "" {
+		realName = _defaultName
+	}
 	obj, err := s.container.GetOrCreate(TypeNode, realName, func(cfg config.Config) (interface{}, error) {
 		dbcfg := cfg.Get(TypeNode).Get(realName)
 		return newXRPC(realName, dbcfg)

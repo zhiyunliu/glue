@@ -14,7 +14,7 @@ import (
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/transport"
-	"github.com/zhiyunliu/golibs/host"
+	"github.com/zhiyunliu/golibs/xnet"
 )
 
 type Server struct {
@@ -62,6 +62,7 @@ func (e *Server) Config(cfg config.Config) {
 	}
 	e.Options(WithConfig(cfg))
 	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
+	e.opts.setting.Config.Addr = server.GetAvaliableAddr(e.opts.setting.Config.Addr)
 }
 
 // Start 开始
@@ -142,6 +143,11 @@ func (e *Server) Stop(ctx context.Context) error {
 	return err
 }
 
+//ServiceName 服务名称
+func (s *Server) ServiceName() string {
+	return s.opts.serviceName
+}
+
 //   http://127.0.0.1:8000
 func (s *Server) Endpoint() *url.URL {
 	if s.endpoint == nil {
@@ -156,11 +162,14 @@ func (e *Server) Attempt() bool {
 }
 
 func (e *Server) buildEndpoint() *url.URL {
-	addr, err := host.Extract(e.opts.setting.Config.Addr)
+	host, port, err := xnet.ExtractHostPort(e.opts.setting.Config.Addr)
 	if err != nil {
 		panic(fmt.Errorf("API Server Addr:%s 配置错误", e.opts.setting.Config.Addr))
 	}
-	return transport.NewEndpoint("http", addr)
+	if host == "" {
+		host = global.LocalIp
+	}
+	return transport.NewEndpoint("http", fmt.Sprintf("%s:%d", host, port))
 }
 
 func (e *Server) Use(middlewares ...middleware.Middleware) {

@@ -6,7 +6,6 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/golibs/xnet"
-	"github.com/zhiyunliu/golibs/xsecurity/aes"
 )
 
 var _cache cmap.ConcurrentMap
@@ -57,18 +56,7 @@ func GetRegistrar(cfg config.Config) (Registrar, error) {
 			return fmt.Errorf("registrar不支持的Proto类型[%s]", protoName)
 		}
 		regCfg := cfg.Get(protoName).Get(configName)
-		bval, err := regCfg.Value("encrypt").Bool()
-		if err != nil {
-			return fmt.Errorf("registrar:%s://%s.encrypt 配置有误：%w", protoName, configName, err)
-		}
-		if bval {
-			edval := regCfg.Value("data").String()
-			plainText, err := aes.Decrypt(edval, cfg.Value("app.encrypt").String(), "cbc/pkcs8")
-			if err != nil {
-				return fmt.Errorf("registrar: 解密失败：%w Data:%s", err, edval)
-			}
-			regCfg = config.New(config.WithSource(config.NewStrSource(plainText)))
-		}
+
 		tmpv, err := factory.Create(regCfg)
 		if err != nil {
 			return err

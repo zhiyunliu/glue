@@ -26,7 +26,6 @@ var ID = cli.ID
 // var Version = cli.Version
 var (
 	Metadata            = cli.Metadata
-	Endpoint            = cli.Endpoint
 	Server              = cli.Server
 	AppMode             = cli.WithAppMode
 	IpMask              = cli.IpMask
@@ -34,4 +33,6 @@ var (
 	ServiceDependencies = cli.ServiceDependencies
 	ServiceOption       = cli.ServiceOption
 	LogConcurrency      = cli.LogConcurrency
+	StartingHook        = cli.StartingHook
+	StartedHook         = cli.StartedHook
 )

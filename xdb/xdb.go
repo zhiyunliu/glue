@@ -12,6 +12,7 @@ type IDB interface {
 	Executer
 	Begin() (ITrans, error)
 	Close() error
+	GetImpl() interface{}
 }
 
 //ITrans 数据库事务接口
@@ -32,15 +33,15 @@ type Executer interface {
 }
 
 //dbResover 定义配置文件转换方法
-type dbResover interface {
+type Resover interface {
 	Name() string
-	Resolve(setting config.Config) (IDB, error)
+	Resolve(setting config.Config) (interface{}, error)
 }
 
-var dbResolvers = make(map[string]dbResover)
+var dbResolvers = make(map[string]Resover)
 
 //Register 注册配置文件适配器
-func Register(resolver dbResover) {
+func Register(resolver Resover) {
 	proto := resolver.Name()
 	if _, ok := dbResolvers[proto]; ok {
 		panic(fmt.Errorf("db: 不能重复注册:%s", proto))
@@ -54,7 +55,7 @@ func Deregister(name string) {
 }
 
 //newDB 根据适配器名称及参数返回配置处理器
-func newDB(setting config.Config) (IDB, error) {
+func newDB(setting config.Config) (interface{}, error) {
 	val := setting.Value("proto")
 	proto := val.String()
 	resolver, ok := dbResolvers[proto]

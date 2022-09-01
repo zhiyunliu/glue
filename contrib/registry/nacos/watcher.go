@@ -37,7 +37,10 @@ func newWatcher(ctx context.Context, cli naming_client.INamingClient, serviceNam
 		Clusters:    clusters,
 		GroupName:   groupName,
 		SubscribeCallback: func(services []model.SubscribeService, err error) {
-			w.watchChan <- struct{}{}
+			select {
+			case w.watchChan <- struct{}{}:
+			default:
+			}
 		},
 	})
 	return w, e
@@ -59,13 +62,21 @@ func (w *watcher) Next() ([]*registry.ServiceInstance, error) {
 	}
 	items := make([]*registry.ServiceInstance, 0, len(res.Hosts))
 	for _, in := range res.Hosts {
-		kind := in.Metadata["kind"]
+		scheme := in.Metadata["scheme"]
+		if scheme == "" {
+			scheme = "http"
+		}
 		items = append(items, &registry.ServiceInstance{
-			ID:        in.InstanceId,
-			Name:      res.Name,
-			Version:   in.Metadata["version"],
-			Metadata:  in.Metadata,
-			Endpoints: []string{fmt.Sprintf("%s://%s:%d", kind, in.Ip, in.Port)},
+			ID:       in.InstanceId,
+			Name:     res.Name,
+			Version:  in.Metadata["version"],
+			Metadata: in.Metadata,
+			Endpoints: []registry.ServerItem{
+				{
+					ServiceName: res.Name,
+					EndpointURL: fmt.Sprintf("%s://%s:%d", scheme, in.Ip, in.Port),
+				},
+			},
 		})
 	}
 	return items, nil

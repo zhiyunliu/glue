@@ -38,6 +38,18 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 
 	return q.q.Push(key, msg)
 }
+func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error {
+	if msg, ok := value.(Message); ok {
+		return q.q.Push(key, msg)
+	}
+
+	msg, err := newMsgWrap("", value)
+	if err != nil {
+		return fmt.Errorf("queue.Send:%s,Error:%w", key, err)
+	}
+
+	return q.q.DelayPush(key, msg, delaySeconds)
+}
 
 // //Pop 从队列中获取一个消息
 // func (q *queue) Pop(key string) (string, error) {

@@ -18,6 +18,7 @@ type Server interface {
 
 // Endpointer is registry endpoint.
 type Endpointer interface {
+	ServiceName() string
 	Endpoint() *url.URL
 }
 

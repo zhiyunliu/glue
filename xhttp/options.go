@@ -7,6 +7,12 @@ import (
 
 type RequestOption func(*Options)
 
+var (
+	ContentTypeApplicationJSON = constants.ContentTypeApplicationJSON
+	ContentTypeTextPlain       = constants.ContentTypeTextPlain
+	ContentTypeUrlencoded      = constants.ContentTypeUrlencoded
+)
+
 type Options struct {
 	Method  string
 	Version string

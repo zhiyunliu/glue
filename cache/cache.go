@@ -2,10 +2,13 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/zhiyunliu/glue/config"
 )
+
+var Nil = errors.New("Nil")
 
 type ICache interface {
 	Name() string
@@ -18,6 +21,7 @@ type ICache interface {
 	Increase(ctx context.Context, key string) (int64, error)
 	Decrease(ctx context.Context, key string) (int64, error)
 	Expire(ctx context.Context, key string, expire int) error
+	Exists(ctx context.Context, key string) (bool, error)
 	GetImpl() interface{}
 }
 

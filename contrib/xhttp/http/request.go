@@ -103,7 +103,7 @@ func (r *Request) getClient(pathVal *url.URL) *Client {
 			panic(err)
 		}
 		reqPath := newValue.(*url.URL)
-		client, err := NewClient(registrar, r.setting, fmt.Sprintf("%s.%s", reqPath.Host, reqPath.Scheme))
+		client, err := NewClient(registrar, r.setting, reqPath)
 		if err != nil {
 			panic(err)
 		}

@@ -34,17 +34,18 @@ func New(opts ...Option) *App {
 	app := &App{options: &Options{
 		RegistrarTimeout: 10 * time.Second,
 		StopTimeout:      10 * time.Second,
+		logConcurrency:   runtime.NumCPU(),
 		setting: &appSetting{
-			TraceAddr: _defaultTraceAddr,
-			Mode:      _defaultAppmode,
-			IpMask:    _defaultIpMask,
-			Options:   make(map[string]interface{}),
+			//TraceAddr: _defaultTraceAddr,
+			Mode:    _defaultAppmode,
+			IpMask:  _defaultIpMask,
+			Options: make(map[string]interface{}),
 		},
 	}}
 	for _, opt := range opts {
 		opt(app.options)
 	}
-
+	log.Concurrency(app.options.logConcurrency)
 	fileName := xfile.GetNameWithoutExt(os.Args[0])
 	if global.AppName == "" {
 		global.AppName = fileName

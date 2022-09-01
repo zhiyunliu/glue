@@ -5,12 +5,12 @@ import (
 	sctx "context"
 	"encoding/json"
 	"io"
-	"time"
 
-	cron "github.com/robfig/cron/v3"
+	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/golibs/session"
 )
 
 var _ alloter.IRequest = (*Request)(nil)
@@ -19,13 +19,14 @@ var _ alloter.IRequest = (*Request)(nil)
 type Request struct {
 	ctx      sctx.Context
 	job      *Job
-	schedule cron.Schedule
 	round    *Round
 	method   string
 	params   map[string]string
 	header   map[string]string
 	body     cbody //map[string]string
 	executed bool
+	session  string
+	canProc  bool
 }
 
 //NewRequest 构建任务请求
@@ -40,7 +41,6 @@ func NewRequest(job *Job) (r *Request, err error) {
 
 	r.reset()
 	r.body = make(cbody)
-	r.schedule, err = cron.ParseStandard(job.Cron)
 	if err != nil {
 		return r, err
 	}
@@ -92,20 +92,44 @@ func (m *Request) WithContext(ctx sctx.Context) alloter.IRequest {
 	return m
 }
 
-//NextTime 下次执行时间
-func (m *Request) NextTime(t time.Time) time.Time {
-	if m.job.IsImmediately() && !m.executed {
-		m.executed = true
-		return t
+func (m *Request) CanProc() bool {
+	if m.canProc {
+		m.canProc = false
+		return true
 	}
-	return m.schedule.Next(t)
+	return false
 }
+
 func (m *Request) reset() {
-	m.ctx = sctx.Background()
+	m.canProc = true
+	m.session = session.Create()
+	//m.ctx = sctx.Background()
 	m.header = make(map[string]string)
 	if m.header[constants.ContentTypeName] == "" {
 		m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
 	}
+}
+
+func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (bool, error) {
+	//本身不是独占
+	if !m.job.IsMonopoly() {
+		return false, nil
+	}
+
+	val, ok := monopolyJobs.Get(m.job.GetKey())
+	//独占列表不存在（只存在close的短暂时间）
+	if !ok {
+		return true, nil
+	}
+	mjob := val.(*monopolyJob)
+	isSuc, err := mjob.Acquire()
+	if err != nil {
+		return true, err
+	}
+	if isSuc {
+		return false, nil
+	}
+	return true, nil
 }
 
 type Body interface {

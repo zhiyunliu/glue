@@ -7,6 +7,8 @@ import (
 	"github.com/zhiyunliu/glue/config"
 )
 
+var Nil = redis.Nil
+
 //Client redis客户端
 type Client struct {
 	redis.UniversalClient

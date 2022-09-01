@@ -3,8 +3,10 @@ package mqc
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/server"
@@ -49,6 +51,15 @@ func (e *Server) Name() string {
 
 func (e *Server) Type() string {
 	return Type
+}
+
+//ServiceName 服务名称
+func (s *Server) ServiceName() string {
+	return s.opts.serviceName
+}
+
+func (e *Server) Endpoint() *url.URL {
+	return transport.NewEndpoint("mqc", fmt.Sprintf("%s:%d", global.LocalIp, 1987))
 }
 
 func (e *Server) Config(cfg config.Config) {

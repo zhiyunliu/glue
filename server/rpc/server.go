@@ -15,7 +15,7 @@ import (
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/transport"
-	"github.com/zhiyunliu/golibs/host"
+	"github.com/zhiyunliu/golibs/xnet"
 	"google.golang.org/grpc"
 )
 
@@ -66,6 +66,7 @@ func (e *Server) Config(cfg config.Config) {
 	}
 	e.Options(WithConfig(cfg))
 	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
+	e.opts.setting.Config.Addr = server.GetAvaliableAddr(e.opts.setting.Config.Addr)
 }
 
 // Start 开始
@@ -146,6 +147,11 @@ func (e *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
+//ServiceName 服务名称
+func (s *Server) ServiceName() string {
+	return s.opts.serviceName
+}
+
 func (e *Server) Endpoint() *url.URL {
 	if e.endpoint == nil {
 		e.endpoint = e.buildEndpoint()
@@ -155,11 +161,14 @@ func (e *Server) Endpoint() *url.URL {
 }
 
 func (e *Server) buildEndpoint() *url.URL {
-	addr, err := host.Extract(e.opts.setting.Config.Addr)
+	host, port, err := xnet.ExtractHostPort(e.opts.setting.Config.Addr)
 	if err != nil {
 		panic(fmt.Errorf("RPC Server Addr:%s 配置错误", e.opts.setting.Config.Addr))
 	}
-	return transport.NewEndpoint("grpc", addr)
+	if host == "" {
+		host = global.LocalIp
+	}
+	return transport.NewEndpoint("grpc", fmt.Sprintf("%s:%d", host, port))
 }
 
 func (e *Server) newProcessor() {

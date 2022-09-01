@@ -32,14 +32,14 @@ var funcCallback = map[string]reflectCallback{
 var suffixList = []string{Handling, Handler, Handled}
 
 //反射获取对象的Handle 方法
-func ReflectHandle(path string, obj interface{}, method ...string) (*Group, error) {
+func ReflectHandle(rootPath, path string, obj interface{}, method ...string) (*Group, error) {
 	//检查参数
 	if path == "" || obj == nil {
 		return nil, fmt.Errorf("注册对象路径和对象不能为空.Path:%s,Obj:%+v", path, obj)
 	}
 
 	//输入参数为函数
-	group := newGroup(path, method...)
+	group := newGroup(rootPath, path, method...)
 	if sfunc, ok := getIsValidFunc(obj); ok {
 		group.AddHandle("", sfunc)
 		return group, nil

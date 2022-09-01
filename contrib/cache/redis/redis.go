@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	rds "github.com/go-redis/redis/v7"
 	"github.com/zhiyunliu/glue/cache"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
@@ -20,33 +21,56 @@ func (r *Redis) Name() string {
 
 // Get from key
 func (r *Redis) Get(ctx context.Context, key string) (string, error) {
-	return r.client.Get(key).Result()
+	v, err := r.client.Get(key).Result()
+	if err == rds.Nil {
+		return "", cache.Nil
+	}
+	return v, err
 }
 
 // Set value with key and expire time
 func (r *Redis) Set(ctx context.Context, key string, val interface{}, expire int) error {
-	return r.client.Set(key, val, time.Duration(expire)*time.Second).Err()
+	err := r.client.Set(key, val, time.Duration(expire)*time.Second).Err()
+	if err == rds.Nil {
+		return cache.Nil
+	}
+	return err
 }
 
 // Del delete key in redis
 func (r *Redis) Del(ctx context.Context, key string) error {
-	return r.client.Del(key).Err()
+	err := r.client.Del(key).Err()
+	if err == rds.Nil {
+		return cache.Nil
+	}
+	return err
 }
 
 // HashGet from key
 func (r *Redis) HashGet(ctx context.Context, hk, key string) (string, error) {
-	return r.client.HGet(hk, key).Result()
+	v, err := r.client.HGet(hk, key).Result()
+	if err == rds.Nil {
+		return "", cache.Nil
+	}
+	return v, err
 }
 
 // HashSet from key
 func (r *Redis) HashSet(ctx context.Context, hk, key string, val string) (bool, error) {
 	v, err := r.client.HSet(hk, key, val).Result()
+	if err == rds.Nil {
+		return v > 0, cache.Nil
+	}
 	return v > 0, err
 }
 
 // HashDel delete key in specify redis's hashtable
 func (r *Redis) HashDel(ctx context.Context, hk, key string) error {
-	return r.client.HDel(hk, key).Err()
+	err := r.client.HDel(hk, key).Err()
+	if err == rds.Nil {
+		return cache.Nil
+	}
+	return err
 }
 
 // Increase
@@ -60,7 +84,20 @@ func (r *Redis) Decrease(ctx context.Context, key string) (int64, error) {
 
 // Set ttl
 func (r *Redis) Expire(ctx context.Context, key string, expire int) error {
-	return r.client.Expire(key, time.Duration(expire)*time.Second).Err()
+	err := r.client.Expire(key, time.Duration(expire)*time.Second).Err()
+	if err == rds.Nil {
+		return cache.Nil
+	}
+	return err
+}
+
+//Exists
+func (r *Redis) Exists(ctx context.Context, key string) (bool, error) {
+	v, err := r.client.Exists(key).Result()
+	if err == rds.Nil {
+		return v > 0, cache.Nil
+	}
+	return v > 0, err
 }
 
 // GetImpl 暴露原生client

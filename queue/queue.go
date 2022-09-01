@@ -11,12 +11,13 @@ import (
 //IQueue 消息队列
 type IQueue interface {
 	Send(ctx context.Context, key string, value interface{}) error
-	//Pop(key string) (string, error)
+	DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error
 	Count(key string) (int64, error)
 }
 
 //IMQCMessage  队列消息
 type IMQCMessage interface {
+	RetryCount() int64
 	Ack() error
 	Nack(error) error
 	Original() string
@@ -43,7 +44,7 @@ type IMQC interface {
 //IMQP 消息生产
 type IMQP interface {
 	Push(key string, value Message) error
-	//Pop(key string) (string, error)
+	DelayPush(key string, value Message, delaySeconds int64) error
 	Count(key string) (int64, error)
 	Close() error
 }

@@ -2,6 +2,7 @@ package streamredis
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
@@ -10,13 +11,18 @@ import (
 
 //RedisMessage reids消息
 type redisMessage struct {
-	message map[string]interface{}
-	err     error
-	obj     *MsgBody
+	retryCount int64
+	message    map[string]interface{}
+	err        error
+	obj        *MsgBody
 }
 
 func (m *redisMessage) Error() error {
 	return m.err
+}
+
+func (m *redisMessage) RetryCount() int64 {
+	return m.retryCount
 }
 
 //Ack 确定消息
@@ -48,20 +54,37 @@ func (m *redisMessage) GetMessage() queue.Message {
 }
 
 type MsgBody struct {
-	msg       string      `json:"-"`
+	msg       []byte      `json:"-"`
 	HeaderMap xtypes.SMap `json:"header"`
 	BodyMap   xtypes.XMap `json:"body"`
 }
 
 func newMsgBody(msg map[string]interface{}) *MsgBody {
-
-	msgBytes, _ := json.Marshal(msg)
 	body := &MsgBody{
-		msg:       bytesconv.BytesToString(msgBytes),
 		HeaderMap: make(xtypes.SMap),
 		BodyMap:   make(xtypes.XMap),
 	}
-	json.Unmarshal(msgBytes, body)
+	switch val := msg["header"].(type) {
+	case string:
+		json.Unmarshal([]byte(val), &body.HeaderMap)
+	case map[string]interface{}:
+		for k, v := range val {
+			body.HeaderMap[k] = fmt.Sprint(v)
+		}
+	default:
+
+	}
+
+	switch val := msg["body"].(type) {
+	case string:
+		json.Unmarshal([]byte(val), &body.BodyMap)
+	case map[string]interface{}:
+		body.BodyMap.Merge(val)
+	default:
+
+	}
+
+	body.msg, _ = json.Marshal(body)
 	return body
 }
 
@@ -73,5 +96,5 @@ func (m *MsgBody) Body() map[string]interface{} {
 }
 
 func (m *MsgBody) String() string {
-	return m.msg
+	return bytesconv.BytesToString(m.msg)
 }

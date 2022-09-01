@@ -5,6 +5,7 @@ import (
 	sctx "context"
 	"encoding/json"
 	"io"
+	"strconv"
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/server"
@@ -29,7 +30,6 @@ type Request struct {
 //NewRequest 构建任务请求
 func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 	r = &Request{
-
 		IMQCMessage: m,
 		task:        task,
 		method:      server.MethodGet,
@@ -42,6 +42,7 @@ func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 	r.header = message.Header()
 	r.body = message.Body()
 	r.ctx = sctx.Background()
+	r.header["retry_count"] = strconv.FormatInt(m.RetryCount(), 10)
 
 	if r.header[constants.ContentTypeName] == "" {
 		r.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON

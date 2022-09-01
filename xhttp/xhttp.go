@@ -33,7 +33,7 @@ func newXhttp(name string, setting config.Config) (Client, error) {
 	val := setting.Value("proto")
 	proto := val.String()
 	if proto == "" {
-		proto = "http"
+		proto = "xhttp"
 	}
 	resolver, ok := _resolvers[proto]
 	if !ok {

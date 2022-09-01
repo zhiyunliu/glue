@@ -19,7 +19,7 @@ func (s *sqlserverResolver) Name() string {
 	return Proto
 }
 
-func (s *sqlserverResolver) Resolve(setting config.Config) (xdb.IDB, error) {
+func (s *sqlserverResolver) Resolve(setting config.Config) (interface{}, error) {
 	cfg := &contribxdb.Config{}
 	err := setting.Scan(cfg)
 	if err != nil {

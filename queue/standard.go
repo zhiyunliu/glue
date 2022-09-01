@@ -30,6 +30,9 @@ func (s *xQueue) GetQueue(name ...string) (q IQueue) {
 	if len(name) > 0 {
 		realName = name[0]
 	}
+	if realName == "" {
+		realName = _defaultName
+	}
 
 	obj, err := s.c.GetOrCreate(TypeNode, realName, func(cfg config.Config) (interface{}, error) {
 		//{"proto":"redis","addr":"redis://localhost"}

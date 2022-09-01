@@ -1,17 +1,36 @@
 package log
 
 import (
+	"sync"
+
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xlog"
 )
 
+var (
+	DefaultLogger  Logger
+	defaultBuilder Builder
+	logpool        sync.Pool
+)
+
 func init() {
-	DefaultLogger = &wraper{
-		xloger: xlog.New(xlog.WithName("default"), xlog.WithSid(session.Create())),
+	defaultBuilder = &defaultBuilderWrap{}
+	SetBuilder(defaultBuilder)
+	logpool = sync.Pool{
+		New: func() interface{} {
+			return &wraper{}
+		},
 	}
 }
 
-var DefaultLogger Logger
+//设置日志的builder
+func SetBuilder(builder Builder) {
+	if builder == nil {
+		return
+	}
+	defaultBuilder = builder
+	DefaultLogger = defaultBuilder.Build(xlog.WithName("default"), xlog.WithSid(session.Create()))
+}
 
 type wraper struct {
 	xloger xlog.Logger
@@ -23,6 +42,7 @@ func (l *wraper) Name() string {
 
 func (l *wraper) Close() {
 	l.xloger.Close()
+	logpool.Put(l)
 }
 
 func (l *wraper) Log(level Level, args ...interface{}) {
@@ -78,8 +98,14 @@ func (l *wraper) Fatal(args ...interface{}) {
 func (l *wraper) Warnf(format string, args ...interface{}) {
 	l.Logf(LevelWarn, format, args...)
 }
+
 func (l *wraper) Warn(args ...interface{}) {
 	l.Log(LevelWarn, args...)
+}
+
+func (l *wraper) Write(p []byte) (n int, err error) {
+	l.Log(LevelWarn, string(p))
+	return len(p), nil
 }
 
 func Debug(args ...interface{}) {
@@ -123,13 +149,11 @@ func Panicf(template string, args ...interface{}) {
 }
 
 func New(opts ...Option) Logger {
-	return &wraper{
-		xloger: xlog.GetLogger(opts...),
-	}
+	return defaultBuilder.Build(opts...)
 }
 
 func Close() {
-	xlog.Close()
+	defaultBuilder.Close()
 }
 
 func Concurrency(cnt int) {

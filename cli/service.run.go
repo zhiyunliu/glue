@@ -9,14 +9,9 @@ import (
 
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
-	"github.com/zhiyunliu/golibs/xlog"
 )
 
 func (p *ServiceApp) run() (err error) {
-
-	if p.cliCtx.Bool("nostd") {
-		xlog.RemoveAppender(xlog.Stdout)
-	}
 
 	errChan := make(chan error, 1)
 	//p.svcCtx = context.Background()
@@ -34,6 +29,9 @@ func (p *ServiceApp) run() (err error) {
 
 func (p *ServiceApp) apprun() error {
 	p.svcCtx = context.Background()
+	if err := p.startingHooks(p.svcCtx); err != nil {
+		return err
+	}
 	p.closeWaitGroup.Add(len(p.options.Servers))
 	for _, srv := range p.options.Servers {
 		srv.Config(p.options.Config)
@@ -48,10 +46,19 @@ func (p *ServiceApp) apprun() error {
 	if err := p.startTraceServer(); err != nil {
 		return err
 	}
+	if err := p.startedHooks(p.svcCtx); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (p *ServiceApp) startTraceServer() error {
+	if p.options.setting.TraceAddr == "" {
+		log.Infof("pprof trace addr not set")
+		return nil
+	}
+
 	errChan := make(chan error, 1)
 	go func() {
 		log.Infof("pprof trace addr %s%s", global.LocalIp, p.options.setting.TraceAddr)
@@ -79,7 +86,10 @@ func (p *ServiceApp) startTraceServer() error {
 
 	select {
 	case err := <-errChan:
-		return fmt.Errorf("trace server Serve error:%+v", err)
+		if err != nil {
+			return fmt.Errorf("trace server Serve error:%+v", err)
+		}
+		return nil
 	case <-time.After(time.Second):
 		return nil
 	}
@@ -122,6 +132,26 @@ func (p *ServiceApp) deregister(ctx context.Context) error {
 	log.Infof("serviceApp close:%s unload registrar-%s", p.cliCtx.App.Name, p.options.Registrar.Name())
 	if err := p.options.Registrar.Deregister(ctx, p.instance); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (p *ServiceApp) startingHooks(ctx context.Context) error {
+	hooks := p.options.StartingHooks
+	for i := range hooks {
+		if err := hooks[i](ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *ServiceApp) startedHooks(ctx context.Context) error {
+	hooks := p.options.StartedHooks
+	for i := range hooks {
+		if err := hooks[i](ctx); err != nil {
+			return err
+		}
 	}
 	return nil
 }

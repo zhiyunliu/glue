@@ -43,5 +43,5 @@ func (e *Server) registryEngineRoute() {
 			engine.Static(s.RouterPath, s.FilePath)
 		}
 	}
-	server.RegistryEngineRoute(adapterEngine, e.opts.router)
+	server.RegistryEngineRoute(adapterEngine, e.opts.router, e.opts.logOpts)
 }

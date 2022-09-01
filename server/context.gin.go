@@ -5,14 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/zhiyunliu/glue/constants"
-	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
@@ -77,15 +74,6 @@ func (ctx *GinContext) Bind(obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	val = val.Elem()
-	// we only accept structs
-	if val.Kind() == reflect.Struct {
-		//验证数据格式
-		if _, err := govalidator.ValidateStruct(obj); err != nil {
-			return errors.New(http.StatusNotAcceptable, fmt.Sprintf("输入参数有误:%v", err))
-		}
-	}
-
 	if chr, ok := obj.(IChecker); ok {
 		return chr.Check()
 	}
@@ -99,6 +87,7 @@ func (ctx *GinContext) Header(key string) string {
 func (ctx *GinContext) Request() vctx.Request {
 	if ctx.greq.closed {
 		ctx.greq.closed = false
+		ctx.greq.vctx = ctx
 		ctx.greq.gctx = ctx.Gctx
 	}
 	return ctx.greq
@@ -120,7 +109,7 @@ func (ctx *GinContext) Log() log.Logger {
 				xreqId = session.Create()
 				ctx.Gctx.Header(constants.HeaderRequestId, xreqId)
 			}
-			logger = log.New(log.WithName("gin"), log.WithSid(xreqId))
+			logger = log.New(log.WithName("gin"), log.WithSid(xreqId), log.WithSrvType(ctx.opts.SrvType))
 			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
 		}
 		ctx.logger = logger
@@ -148,6 +137,7 @@ func (ctx *GinContext) GetImpl() interface{} {
 
 type ginRequest struct {
 	gctx    *gin.Context
+	vctx    *GinContext
 	gheader xtypes.SMap
 	gpath   *gpath
 	gquery  *gquery
@@ -201,6 +191,7 @@ func (r *ginRequest) Query() vctx.Query {
 func (r *ginRequest) Body() vctx.Body {
 	if r.gbody.closed {
 		r.gbody.gctx = r.gctx
+		r.gbody.vctx = r.vctx
 		r.gbody.closed = false
 	}
 	return r.gbody
@@ -208,6 +199,7 @@ func (r *ginRequest) Body() vctx.Body {
 func (q *ginRequest) Close() {
 	q.closed = true
 	q.gctx = nil
+	q.vctx = nil
 	q.gheader = nil
 	q.gpath.Close()
 	q.gquery.Close()
@@ -286,6 +278,7 @@ func (q *gquery) Close() {
 //-gbody---------------------------------
 type gbody struct {
 	gctx      *gin.Context
+	vctx      *GinContext
 	hasRead   bool
 	bodyBytes []byte
 	reader    *bytes.Reader
@@ -293,7 +286,7 @@ type gbody struct {
 }
 
 func (q *gbody) Scan(obj interface{}) error {
-	return q.gctx.Bind(obj)
+	return q.gctx.ShouldBind(obj)
 }
 
 func (q *gbody) Read(p []byte) (n int, err error) {
@@ -329,6 +322,7 @@ func (q *gbody) loadBody() (err error) {
 		}
 		q.reader = bytes.NewReader(q.bodyBytes)
 		q.gctx.Request.Body.Close()
+		q.gctx.Request.Body = ioutil.NopCloser(q.reader)
 	}
 	return nil
 }
@@ -342,10 +336,11 @@ func (q *gbody) Close() {
 
 //gresponse --------------------------------
 type ginResponse struct {
-	vctx      *GinContext
-	gctx      *gin.Context
-	hasWrited bool
-	closed    bool
+	vctx       *GinContext
+	gctx       *gin.Context
+	writebytes []byte
+	hasWrited  bool
+	closed     bool
 }
 
 func (q *ginResponse) Status(statusCode int) {
@@ -374,12 +369,22 @@ func (q *ginResponse) Write(obj interface{}) error {
 
 func (q *ginResponse) WriteBytes(bytes []byte) error {
 	_, err := q.gctx.Writer.Write(bytes)
+	q.writebytes = bytes
 	return err
+}
+
+func (q *ginResponse) ContentType() string {
+	return q.gctx.Writer.Header().Get(constants.ContentTypeName)
+}
+
+func (q *ginResponse) ResponseBytes() []byte {
+	return q.writebytes
 }
 
 func (q *ginResponse) Close() {
 	q.vctx = nil
 	q.gctx = nil
+	q.writebytes = nil
 	q.hasWrited = false
 	q.closed = true
 }
