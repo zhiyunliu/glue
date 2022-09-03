@@ -46,16 +46,14 @@ func ResolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
 }
 
 func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
-	if len(columnTypes) > 0 {
-		for idx, columnType := range columnTypes {
-			if columnType.ScanType() != nil {
-				values[idx] = reflect.New(reflect.PtrTo(columnType.ScanType())).Interface()
-			} else {
-				values[idx] = new(interface{})
+	for idx, columnType := range columnTypes {
+		if columnType.ScanType() != nil {
+			t, ok := getDbType(columnType.DatabaseTypeName())
+			if !ok {
+				t = columnType.ScanType()
 			}
-		}
-	} else {
-		for idx := range columnTypes {
+			values[idx] = reflect.New(reflect.PtrTo(t)).Interface()
+		} else {
 			values[idx] = new(interface{})
 		}
 	}
