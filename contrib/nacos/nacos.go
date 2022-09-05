@@ -6,9 +6,25 @@ import (
 	"fmt"
 
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 	"github.com/zhiyunliu/glue/config"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
+
+func init() {
+	logger.InitLogger(logger.Config{
+		Level:     "error",
+		LogDir:    "../log",
+		LogStdout: false,
+		LogRollingConfig: &lumberjack.Logger{
+			Filename:   "nacos.log",
+			MaxAge:     7 * 24,
+			MaxBackups: 2,
+			Compress:   true,
+		},
+	})
+}
 
 type ClientConfig struct {
 	TimeoutMs            uint64 `json:"timeoutms,omitempty"`               // timeout for requesting Nacos server, default value is 10000ms

@@ -107,7 +107,8 @@ func (c *Client) connect() (err error) {
 	c.conn, err = grpc.DialContext(ctx,
 		c.reqPath.String(),
 		grpc.WithInsecure(),
-		grpc.WithBalancerName(c.setting.Balancer),
+		grpc.WithDefaultServiceConfig(string(c.setting.ServerConfig)),
+		//grpc.WithBalancerName(c.setting.Balancer),
 		grpc.WithResolvers(c.balancerBuilder),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor(Snappy)),
 	)

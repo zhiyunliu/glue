@@ -4,11 +4,9 @@ import (
 	"fmt"
 
 	"github.com/nacos-group/nacos-sdk-go/clients"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/nacos"
 	"github.com/zhiyunliu/glue/global"
-	"github.com/zhiyunliu/glue/log"
 )
 
 const _name = "nacos"
@@ -44,7 +42,5 @@ func (f *nacosFactory) Create(cfg config.Config) (config.Source, error) {
 }
 
 func init() {
-	logger.SetLogger(log.DefaultLogger)
-
 	config.Register(&nacosFactory{})
 }

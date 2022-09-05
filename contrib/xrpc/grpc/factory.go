@@ -5,7 +5,6 @@ import (
 
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/xrpc"
-	"google.golang.org/grpc/balancer/roundrobin"
 )
 
 const Proto = "grpc"
@@ -19,9 +18,9 @@ func (s *grpcResolver) Name() string {
 
 func (s *grpcResolver) Resolve(name string, cfg config.Config) (xrpc.Client, error) {
 	setval := &setting{
-		Name:        name,
-		Balancer:    roundrobin.Name,
-		ConnTimeout: 10,
+		Name:         name,
+		ServerConfig: []byte("{}"), //Balancer:    roundrobin.Name,
+		ConnTimeout:  10,
 	}
 	err := cfg.Scan(setval)
 	if err != nil {
