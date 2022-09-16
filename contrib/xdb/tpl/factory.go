@@ -11,12 +11,20 @@ var (
 	tpls map[string]SQLTemplate
 )
 
+const (
+	ParamPattern = `[@]\{\w+[\.]?\w+\}`
+	AndPattern   = `[&]\{\w+[\.]?\w+\}`
+	OrPattern    = `[\|]\{\w+[\.]?\w+\}`
+)
+
 //Template 模板上下文
 type SQLTemplate interface {
 	Name() string
 	Placeholder() Placeholder
 	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []interface{})
 	AnalyzeTPL(tpl string, input map[string]interface{}) (sql string, names []string, values []interface{})
+	HandleAndSymbols(tpl string, input map[string]interface{}) (sql string, values []interface{}, exists bool)
+	HandleOrSymbols(tpl string, input map[string]interface{}) (sql string, values []interface{}, exists bool)
 }
 
 func init() {
@@ -24,7 +32,7 @@ func init() {
 }
 func Register(tpl SQLTemplate) {
 	if _, ok := tpls[tpl.Name()]; ok {
-		log.Warnf("%s 注册北覆盖", tpl.Name())
+		log.Warnf("%s 注册被覆盖", tpl.Name())
 	}
 	tpls[tpl.Name()] = tpl
 }

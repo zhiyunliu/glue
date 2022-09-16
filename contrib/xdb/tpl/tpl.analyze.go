@@ -13,9 +13,12 @@ type SymbolCallback func(map[string]interface{}, string, *ReplaceItem) string
 type Symbols map[string]SymbolCallback
 type Placeholder func() string
 type cacheItem struct {
-	sql        string
-	hasReplace bool
-	names      []string
+	sql           string
+	names         []string
+	hasReplace    bool
+	hasDynamicAnd bool
+	hasDynamicOr  bool
+	Placeholder   Placeholder
 }
 
 type ReplaceItem struct {
@@ -76,6 +79,15 @@ func (item cacheItem) build(input map[string]interface{}) (sql string, values []
 	if item.hasReplace {
 		sql, _ = handleRelaceSymbols(item.sql, input)
 	}
+	var vals []interface{}
+	if item.hasDynamicAnd {
+		sql, vals, _ = handleAndSymbols(item.sql, input, item.Placeholder)
+		values = append(values, vals...)
+	}
+	if item.hasDynamicOr {
+		sql, vals, _ = handleOrSymbols(item.sql, input, item.Placeholder)
+		values = append(values, vals...)
+	}
 	return sql, values
 }
 
@@ -90,11 +102,21 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 	if !ok {
 		sql, names, values := template.AnalyzeTPL(tpl, input)
 		temp := &cacheItem{
-			sql:   sql,
-			names: names,
+			sql:         sql,
+			names:       names,
+			Placeholder: template.Placeholder(),
 		}
 		sql, hasReplace := handleRelaceSymbols(sql, input)
 		temp.hasReplace = hasReplace
+
+		sql, vals, hasAnd := template.HandleAndSymbols(sql, input)
+		temp.hasDynamicAnd = hasAnd
+		values = append(values, vals...)
+
+		sql, vals, hasOr := template.HandleOrSymbols(sql, input)
+		temp.hasDynamicOr = hasOr
+		values = append(values, vals...)
+
 		tplcache.Store(hashVal, temp)
 		return sql, values
 	}
@@ -103,7 +125,7 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 }
 
 func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, placeholder func() string) (string, []string, []interface{}) {
-	word, _ := regexp.Compile(`[@|#|&|\|]\{\w+[\.]?\w+\}`)
+	word, _ := regexp.Compile(ParamPattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
 		Placeholder: placeholder,
@@ -143,29 +165,4 @@ func GetPropName(fullKey string) (propName string) {
 		propName = strings.Split(fullKey, ".")[1]
 	}
 	return propName
-}
-
-//处理替换符合
-func handleRelaceSymbols(tpl string, input map[string]interface{}) (string, bool) {
-	word, _ := regexp.Compile(`\$\{\w+[\.]?\w+\}`)
-	item := &ReplaceItem{
-		NameCache: map[string]string{},
-	}
-	hasReplace := false
-	sql := word.ReplaceAllStringFunc(tpl, func(s string) string {
-		hasReplace = true
-		fullKey := s[2 : len(s)-1]
-		return replaceSymbols(input, fullKey, item)
-	})
-
-	return sql, hasReplace
-}
-
-func replaceSymbols(input map[string]interface{}, fullKey string, item *ReplaceItem) string {
-	propName := GetPropName(fullKey)
-	value := input[propName]
-	if !IsNil(value) {
-		return fmt.Sprintf("%v", value)
-	}
-	return ""
 }
