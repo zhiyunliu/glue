@@ -12,9 +12,10 @@ var (
 )
 
 const (
-	ParamPattern = `[@]\{\w+[\.]?\w+\}`
-	AndPattern   = `[&]\{\w+[\.]?\w+\}`
-	OrPattern    = `[\|]\{\w+[\.]?\w+\}`
+	ParamPattern   = `[@]\{\w+[\.]?\w+\}`
+	AndPattern     = `[&]\{\w+[\.]?\w+\}`
+	OrPattern      = `[\|]\{\w+[\.]?\w+\}`
+	ReplacePattern = `\$\{\w+[\.]?\w+\}`
 )
 
 //Template 模板上下文

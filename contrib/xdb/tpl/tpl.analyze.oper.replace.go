@@ -7,7 +7,7 @@ import (
 
 //处理替换符合
 func handleRelaceSymbols(tpl string, input map[string]interface{}) (string, bool) {
-	word, _ := regexp.Compile(`\$\{\w+[\.]?\w+\}`)
+	word := regexp.MustCompile(ReplacePattern)
 	item := &ReplaceItem{
 		NameCache: map[string]string{},
 	}

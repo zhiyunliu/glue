@@ -18,7 +18,7 @@ type cacheItem struct {
 	hasReplace    bool
 	hasDynamicAnd bool
 	hasDynamicOr  bool
-	Placeholder   Placeholder
+	SQLTemplate   SQLTemplate
 }
 
 type ReplaceItem struct {
@@ -81,11 +81,11 @@ func (item cacheItem) build(input map[string]interface{}) (sql string, values []
 	}
 	var vals []interface{}
 	if item.hasDynamicAnd {
-		sql, vals, _ = handleAndSymbols(item.sql, input, item.Placeholder)
+		sql, vals, _ = item.SQLTemplate.HandleAndSymbols(sql, input)
 		values = append(values, vals...)
 	}
 	if item.hasDynamicOr {
-		sql, vals, _ = handleOrSymbols(item.sql, input, item.Placeholder)
+		sql, vals, _ = item.SQLTemplate.HandleOrSymbols(sql, input)
 		values = append(values, vals...)
 	}
 	return sql, values
@@ -104,7 +104,7 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 		temp := &cacheItem{
 			sql:         sql,
 			names:       names,
-			Placeholder: template.Placeholder(),
+			SQLTemplate: template,
 		}
 		sql, hasReplace := handleRelaceSymbols(sql, input)
 		temp.hasReplace = hasReplace

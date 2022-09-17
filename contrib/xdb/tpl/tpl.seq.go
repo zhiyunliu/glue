@@ -52,6 +52,8 @@ func (ctx *SeqContext) HandleAndSymbols(template string, input map[string]interf
 	exists = false
 	//变量, 将数据放入params中
 	sql = word.ReplaceAllStringFunc(template, func(s string) string {
+		exists = true
+
 		symbol := s[:1]
 		fullKey := s[2 : len(s)-1]
 		callback, ok := symbols[symbol]
@@ -61,7 +63,7 @@ func (ctx *SeqContext) HandleAndSymbols(template string, input map[string]interf
 		return callback(input, fullKey, item)
 	})
 
-	return sql, item.Values, len(item.Values) > 0
+	return sql, item.Values, exists
 }
 
 func (ctx *SeqContext) HandleOrSymbols(template string, input map[string]interface{}) (sql string, values []interface{}, exists bool) {
@@ -74,6 +76,7 @@ func (ctx *SeqContext) HandleOrSymbols(template string, input map[string]interfa
 	exists = false
 	//变量, 将数据放入params中
 	sql = word.ReplaceAllStringFunc(template, func(s string) string {
+		exists = true
 		symbol := s[:1]
 		fullKey := s[2 : len(s)-1]
 		callback, ok := symbols[symbol]
@@ -83,5 +86,5 @@ func (ctx *SeqContext) HandleOrSymbols(template string, input map[string]interfa
 		return callback(input, fullKey, item)
 	})
 
-	return sql, item.Values, len(item.Values) > 0
+	return sql, item.Values, exists
 }

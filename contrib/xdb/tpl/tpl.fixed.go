@@ -66,6 +66,7 @@ func (ctx *FixedContext) HandleOrSymbols(template string, input map[string]inter
 	exists = false
 	//变量, 将数据放入params中
 	sql = word.ReplaceAllStringFunc(template, func(s string) string {
+		exists = true
 		symbol := s[:1]
 		fullKey := s[2 : len(s)-1]
 		callback, ok := symbols[symbol]
@@ -75,5 +76,5 @@ func (ctx *FixedContext) HandleOrSymbols(template string, input map[string]inter
 		return callback(input, fullKey, item)
 	})
 
-	return sql, item.Values, len(item.Values) > 0
+	return sql, item.Values, exists
 }
