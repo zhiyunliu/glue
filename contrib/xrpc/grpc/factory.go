@@ -1,10 +1,12 @@
 package grpc
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/xrpc"
+	"google.golang.org/grpc/balancer/roundrobin"
 )
 
 const Proto = "grpc"
@@ -18,13 +20,20 @@ func (s *grpcResolver) Name() string {
 
 func (s *grpcResolver) Resolve(name string, cfg config.Config) (xrpc.Client, error) {
 	setval := &setting{
-		Name:         name,
-		ServerConfig: []byte("{}"), //Balancer:    roundrobin.Name,
-		ConnTimeout:  10,
+		Name:        name,
+		Balancer:    roundrobin.Name,
+		ConnTimeout: 10,
 	}
 	err := cfg.Scan(setval)
 	if err != nil {
 		return nil, fmt.Errorf("读取grpc配置:%w", err)
+	}
+	if setval.Balancer == "" && len(setval.ServerConfig) == 0 {
+		return nil, fmt.Errorf("grpc配置错误,必须指定Balancer/ServerConfig")
+	}
+
+	if len(setval.ServerConfig) == 0 {
+		setval.ServerConfig = json.RawMessage(fmt.Sprintf(`{"LoadBalancingPolicy":"%s"}`, setval.Balancer))
 	}
 	return NewRequest(setval), nil
 }
