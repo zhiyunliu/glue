@@ -12,6 +12,23 @@ type SeqContext struct {
 	symbols Symbols
 }
 
+type seqPlaceHolder struct {
+	ctx *SeqContext
+	idx int
+}
+
+func (ph *seqPlaceHolder) Get() string {
+	ph.idx++
+	return fmt.Sprint(ph.ctx.prefix, ph.idx)
+}
+
+func (ph *seqPlaceHolder) Clone() Placeholder {
+	return &seqPlaceHolder{
+		idx: ph.idx,
+		ctx: ph.ctx,
+	}
+}
+
 func NewSeq(name, prefix string) SQLTemplate {
 	return &FixedContext{
 		name:    name,
@@ -26,27 +43,22 @@ func (ctx SeqContext) Name() string {
 
 //GetSQLContext 获取查询串
 func (ctx *SeqContext) GetSQLContext(tpl string, input map[string]interface{}) (sql string, args []interface{}) {
-	return AnalyzeTPLFromCache(ctx, tpl, input)
+	return AnalyzeTPLFromCache(ctx, tpl, input, ctx.Placeholder())
 }
 
 func (ctx *SeqContext) Placeholder() Placeholder {
-	index := 0
-	f := func() string {
-		index++
-		return fmt.Sprint(ctx.prefix, index)
-	}
-	return f
+	return &seqPlaceHolder{ctx: ctx, idx: 0}
 }
 
-func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}) (sql string, names []string, values []interface{}) {
-	return DefaultAnalyze(ctx.symbols, tpl, input, ctx.Placeholder())
+func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, names []string, values []interface{}) {
+	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
 }
 
-func (ctx *SeqContext) HandleAndSymbols(template string, input map[string]interface{}) (sql string, values []interface{}, exists bool) {
+func (ctx *SeqContext) HandleAndSymbols(template string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool) {
 	word, _ := regexp.Compile(AndPattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
-		Placeholder: ctx.Placeholder(),
+		Placeholder: ph,
 	}
 	symbols := ctx.symbols
 	exists = false
@@ -66,11 +78,11 @@ func (ctx *SeqContext) HandleAndSymbols(template string, input map[string]interf
 	return sql, item.Values, exists
 }
 
-func (ctx *SeqContext) HandleOrSymbols(template string, input map[string]interface{}) (sql string, values []interface{}, exists bool) {
+func (ctx *SeqContext) HandleOrSymbols(template string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool) {
 	word := regexp.MustCompile(OrPattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
-		Placeholder: ctx.Placeholder(),
+		Placeholder: ph,
 	}
 	symbols := ctx.symbols
 	exists = false

@@ -15,6 +15,23 @@ type MssqlContext struct {
 	symbols tpl.Symbols
 }
 
+type mssqlPlaceHolder struct {
+	ctx *MssqlContext
+	idx int
+}
+
+func (ph *mssqlPlaceHolder) Get() string {
+	ph.idx++
+	return fmt.Sprint(ph.ctx.prefix, ph.idx)
+}
+
+func (ph *mssqlPlaceHolder) Clone() tpl.Placeholder {
+	return &mssqlPlaceHolder{
+		idx: ph.idx,
+		ctx: ph.ctx,
+	}
+}
+
 func New(name, prefix string) tpl.SQLTemplate {
 	return &MssqlContext{
 		name:    name,
@@ -29,20 +46,15 @@ func (ctx *MssqlContext) Name() string {
 
 //GetSQLContext 获取查询串
 func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interface{}) (query string, args []interface{}) {
-	return tpl.AnalyzeTPLFromCache(ctx, template, input)
+	return tpl.AnalyzeTPLFromCache(ctx, template, input, ctx.Placeholder())
 }
 
 func (ctx *MssqlContext) Placeholder() tpl.Placeholder {
-	index := 0
-	f := func() string {
-		index++
-		return fmt.Sprint(ctx.prefix, index)
-	}
-	return f
+	return &mssqlPlaceHolder{ctx: ctx, idx: 0}
 }
 
-func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}) (string, []string, []interface{}) {
-	return tpl.DefaultAnalyze(ctx.symbols, template, input, ctx.Placeholder())
+func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph tpl.Placeholder) (string, []string, []interface{}) {
+	return tpl.DefaultAnalyze(ctx.symbols, template, input, ph)
 }
 
 func getPlaceHolder(value interface{}, placeholder tpl.Placeholder) string {
@@ -52,7 +64,7 @@ func getPlaceHolder(value interface{}, placeholder tpl.Placeholder) string {
 	if arg, ok := value.(*sql.NamedArg); ok {
 		return "@" + arg.Name
 	}
-	return placeholder()
+	return placeholder.Get()
 }
 
 func newMssqlSymbols() tpl.Symbols {
@@ -81,7 +93,7 @@ func newMssqlSymbols() tpl.Symbols {
 		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
-			return fmt.Sprintf("and %s=%s", fullKey, item.Placeholder())
+			return fmt.Sprintf("and %s=%s", fullKey, item.Placeholder.Get())
 		}
 		return ""
 	}
@@ -91,18 +103,18 @@ func newMssqlSymbols() tpl.Symbols {
 		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
-			return fmt.Sprintf("or %s=%s", fullKey, item.Placeholder())
+			return fmt.Sprintf("or %s=%s", fullKey, item.Placeholder.Get())
 		}
 		return ""
 	}
 	return symbols
 }
 
-func (ctx *MssqlContext) HandleAndSymbols(template string, input map[string]interface{}) (sql string, values []interface{}, exists bool) {
+func (ctx *MssqlContext) HandleAndSymbols(template string, input map[string]interface{}, ph tpl.Placeholder) (sql string, values []interface{}, exists bool) {
 	word := regexp.MustCompile(tpl.AndPattern)
 	item := &tpl.ReplaceItem{
 		NameCache:   map[string]string{},
-		Placeholder: ctx.Placeholder(),
+		Placeholder: ph,
 	}
 	symbols := ctx.symbols
 	exists = false
@@ -121,11 +133,11 @@ func (ctx *MssqlContext) HandleAndSymbols(template string, input map[string]inte
 	return sql, item.Values, exists
 }
 
-func (ctx *MssqlContext) HandleOrSymbols(template string, input map[string]interface{}) (sql string, values []interface{}, exists bool) {
+func (ctx *MssqlContext) HandleOrSymbols(template string, input map[string]interface{}, ph tpl.Placeholder) (sql string, values []interface{}, exists bool) {
 	word := regexp.MustCompile(tpl.OrPattern)
 	item := &tpl.ReplaceItem{
 		NameCache:   map[string]string{},
-		Placeholder: ctx.Placeholder(),
+		Placeholder: ph,
 	}
 	symbols := ctx.symbols
 	exists = false

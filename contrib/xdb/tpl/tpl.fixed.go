@@ -9,6 +9,20 @@ type FixedContext struct {
 	symbols Symbols
 }
 
+type fixedPlaceHolder struct {
+	ctx *FixedContext
+}
+
+func (ph *fixedPlaceHolder) Get() string {
+	return ph.ctx.prefix
+}
+
+func (ph *fixedPlaceHolder) Clone() Placeholder {
+	return &fixedPlaceHolder{
+		ctx: ph.ctx,
+	}
+}
+
 func NewFixed(name, prefix string) SQLTemplate {
 	return &FixedContext{
 		name:    name,
@@ -23,22 +37,22 @@ func (ctx FixedContext) Name() string {
 
 //GetSQLContext 获取查询串
 func (ctx *FixedContext) GetSQLContext(tpl string, input map[string]interface{}) (query string, args []interface{}) {
-	return AnalyzeTPLFromCache(ctx, tpl, input)
+	return AnalyzeTPLFromCache(ctx, tpl, input, ctx.Placeholder())
 }
 
 func (ctx *FixedContext) Placeholder() Placeholder {
-	return func() string { return ctx.prefix }
+	return &fixedPlaceHolder{ctx: ctx}
 }
 
-func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}) (sql string, names []string, values []interface{}) {
-	return DefaultAnalyze(ctx.symbols, tpl, input, ctx.Placeholder())
+func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, names []string, values []interface{}) {
+	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
 }
 
-func (ctx *FixedContext) HandleAndSymbols(template string, input map[string]interface{}) (sql string, values []interface{}, exists bool) {
+func (ctx *FixedContext) HandleAndSymbols(template string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool) {
 	word, _ := regexp.Compile(AndPattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
-		Placeholder: ctx.Placeholder(),
+		Placeholder: ph,
 	}
 	symbols := ctx.symbols
 	exists = false
@@ -56,11 +70,11 @@ func (ctx *FixedContext) HandleAndSymbols(template string, input map[string]inte
 	return sql, item.Values, len(item.Values) > 0
 }
 
-func (ctx *FixedContext) HandleOrSymbols(template string, input map[string]interface{}) (sql string, values []interface{}, exists bool) {
+func (ctx *FixedContext) HandleOrSymbols(template string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool) {
 	word, _ := regexp.Compile(OrPattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
-		Placeholder: ctx.Placeholder(),
+		Placeholder: ph,
 	}
 	symbols := ctx.symbols
 	exists = false

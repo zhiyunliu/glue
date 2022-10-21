@@ -23,9 +23,9 @@ type SQLTemplate interface {
 	Name() string
 	Placeholder() Placeholder
 	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []interface{})
-	AnalyzeTPL(tpl string, input map[string]interface{}) (sql string, names []string, values []interface{})
-	HandleAndSymbols(tpl string, input map[string]interface{}) (sql string, values []interface{}, exists bool)
-	HandleOrSymbols(tpl string, input map[string]interface{}) (sql string, values []interface{}, exists bool)
+	AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, names []string, values []interface{})
+	HandleAndSymbols(tpl string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool)
+	HandleOrSymbols(tpl string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool)
 }
 
 func init() {

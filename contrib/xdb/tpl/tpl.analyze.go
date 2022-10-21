@@ -11,13 +11,18 @@ import (
 
 type SymbolCallback func(map[string]interface{}, string, *ReplaceItem) string
 type Symbols map[string]SymbolCallback
-type Placeholder func() string
+type Placeholder interface {
+	Get() string
+	Clone() Placeholder
+}
+
 type cacheItem struct {
 	sql           string
 	names         []string
 	hasReplace    bool
 	hasDynamicAnd bool
 	hasDynamicOr  bool
+	ph            Placeholder
 	SQLTemplate   SQLTemplate
 }
 
@@ -44,7 +49,7 @@ func init() {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, "")
 		}
-		return item.Placeholder()
+		return item.Placeholder.Get()
 	}
 
 	defaultSymbols["&"] = func(input map[string]interface{}, fullKey string, item *ReplaceItem) string {
@@ -53,7 +58,7 @@ func init() {
 		if !IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
-			return fmt.Sprintf(" and %s=%s", fullKey, item.Placeholder())
+			return fmt.Sprintf(" and %s=%s", fullKey, item.Placeholder.Get())
 		}
 		return ""
 	}
@@ -63,11 +68,15 @@ func init() {
 		if !IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
-			return fmt.Sprintf(" or %s=%s", fullKey, item.Placeholder())
+			return fmt.Sprintf(" or %s=%s", fullKey, item.Placeholder.Get())
 		}
 		return ""
 	}
 
+}
+
+func (item cacheItem) ClonePlaceHolder() Placeholder {
+	return item.ph.Clone()
 }
 
 func (item cacheItem) build(input map[string]interface{}) (sql string, values []interface{}) {
@@ -75,17 +84,18 @@ func (item cacheItem) build(input map[string]interface{}) (sql string, values []
 	for i := range item.names {
 		values[i] = input[item.names[i]]
 	}
+	ph := item.ClonePlaceHolder()
 	sql = item.sql
 	if item.hasReplace {
 		sql, _ = handleRelaceSymbols(item.sql, input)
 	}
 	var vals []interface{}
 	if item.hasDynamicAnd {
-		sql, vals, _ = item.SQLTemplate.HandleAndSymbols(sql, input)
+		sql, vals, _ = item.SQLTemplate.HandleAndSymbols(sql, input, ph)
 		values = append(values, vals...)
 	}
 	if item.hasDynamicOr {
-		sql, vals, _ = item.SQLTemplate.HandleOrSymbols(sql, input)
+		sql, vals, _ = item.SQLTemplate.HandleOrSymbols(sql, input, ph)
 		values = append(values, vals...)
 	}
 	return sql, values
@@ -96,24 +106,25 @@ func (item cacheItem) build(input map[string]interface{}) (sql string, values []
 //$表达式，检查值，值为空时返加"",否则直接替换字符
 //&条件表达式，检查值，值为空时返加"",否则返回: and name=value
 //|条件表达式，检查值，值为空时返回"", 否则返回: or name=value
-func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}) (sql string, values []interface{}) {
+func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}) {
 	hashVal := md5.Str(template.Name() + tpl)
 	tplval, ok := tplcache.Load(hashVal)
 	if !ok {
-		sql, names, values := template.AnalyzeTPL(tpl, input)
+		sql, names, values := template.AnalyzeTPL(tpl, input, ph)
 		temp := &cacheItem{
 			sql:         sql,
 			names:       names,
 			SQLTemplate: template,
+			ph:          ph.Clone(),
 		}
 		sql, hasReplace := handleRelaceSymbols(sql, input)
 		temp.hasReplace = hasReplace
 
-		sql, vals, hasAnd := template.HandleAndSymbols(sql, input)
+		sql, vals, hasAnd := template.HandleAndSymbols(sql, input, ph)
 		temp.hasDynamicAnd = hasAnd
 		values = append(values, vals...)
 
-		sql, vals, hasOr := template.HandleOrSymbols(sql, input)
+		sql, vals, hasOr := template.HandleOrSymbols(sql, input, ph)
 		temp.hasDynamicOr = hasOr
 		values = append(values, vals...)
 
@@ -124,7 +135,7 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 	return item.build(input)
 }
 
-func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, placeholder func() string) (string, []string, []interface{}) {
+func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, placeholder Placeholder) (string, []string, []interface{}) {
 	word, _ := regexp.Compile(ParamPattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
