@@ -9,16 +9,18 @@ type Config struct {
 	LifeTime      int    `json:"life_time" valid:"required" label:"单个连接时长(秒)"`
 	ShowQueryLog  bool   `json:"show_query_log"  label:"开启慢查询日志"`
 	LongQueryTime int    `json:"long_query_time"  label:"慢查询阈值(秒)"`
+	Debug         bool   `json:"debug" label:"调试模式"`
 }
 
 //New 构建DB连接信息
 func New(proto string, conn string, opts ...Option) *Config {
 	db := &Config{
-		Proto:    proto,
-		Conn:     conn,
-		MaxOpen:  10,
-		MaxIdle:  10,
-		LifeTime: 600,
+		Proto:         proto,
+		Conn:          conn,
+		MaxOpen:       10,
+		MaxIdle:       10,
+		LifeTime:      600,
+		LongQueryTime: 5,
 	}
 	for _, opt := range opts {
 		opt(db)

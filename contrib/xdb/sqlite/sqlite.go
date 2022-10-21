@@ -25,7 +25,7 @@ func (s *sqliteResolver) Resolve(setting config.Config) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	return contribxdb.NewDB(Proto, cfg.Conn, cfg.MaxOpen, cfg.MaxIdle, cfg.LifeTime)
+	return contribxdb.NewDB(Proto, cfg)
 }
 func init() {
 	xdb.Register(&sqliteResolver{})

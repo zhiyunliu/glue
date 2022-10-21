@@ -13,12 +13,18 @@ import (
 
 //DB 数据库操作类
 type xDB struct {
+	cfg *Config
 	db  internal.ISysDB
 	tpl tpl.SQLTemplate
 }
 
 //NewDB 创建DB实例
-func NewDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime int) (obj xdb.IDB, err error) {
+func NewDB(proto string, cfg *Config) (obj xdb.IDB, err error) {
+	conn := cfg.Conn
+	maxOpen := cfg.MaxOpen
+	maxIdle := cfg.MaxIdle
+	maxLifeTime := cfg.LifeTime
+
 	conn, err = DecryptConn(conn)
 	if err != nil {
 		return
@@ -32,7 +38,9 @@ func NewDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime int)
 	if maxLifeTime <= 0 {
 		maxLifeTime = 600 //10分钟
 	}
-	dbobj := &xDB{}
+	dbobj := &xDB{
+		cfg: cfg,
+	}
 	dbobj.tpl, err = tpl.GetDBTemplate(proto)
 	if err != nil {
 		return
@@ -47,6 +55,7 @@ func (db *xDB) GetImpl() interface{} {
 //Query 查询数据
 func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
+	debugPrint(ctx, db.cfg, query, args...)
 	data, err := db.db.Query(query, args...)
 	if err != nil {
 		return nil, internal.GetError(err, query, args)
@@ -66,6 +75,7 @@ func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface
 //Multi 查询数据(多个数据集)
 func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
+	debugPrint(ctx, db.cfg, query, args...)
 	sqlRows, err := db.db.Query(query, args...)
 	if err != nil {
 		return nil, internal.GetError(err, query, args)
@@ -110,6 +120,7 @@ func (db *xDB) Scalar(ctx context.Context, sql string, input map[string]interfac
 //Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	query, args := db.tpl.GetSQLContext(sql, input)
+	debugPrint(ctx, db.cfg, query, args...)
 	r, err = db.db.Exec(query, args...)
 	if err != nil {
 		return nil, internal.GetError(err, query, args)
@@ -119,7 +130,9 @@ func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{
 
 //Begin 创建事务
 func (db *xDB) Begin() (t xdb.ITrans, err error) {
-	tt := &xTrans{}
+	tt := &xTrans{
+		cfg: db.cfg,
+	}
 	tt.tx, err = db.db.Begin()
 	if err != nil {
 		return
