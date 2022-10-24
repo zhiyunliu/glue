@@ -2,6 +2,7 @@ package tpl
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"sync"
@@ -167,7 +168,17 @@ func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, p
 }
 
 func IsNil(input interface{}) bool {
-	return input == nil || fmt.Sprintf("%v", input) == ""
+	if input == nil {
+		return true
+	}
+	if fmt.Sprintf("%v", input) == "" {
+		return true
+	}
+	rv := reflect.ValueOf(input)
+	if rv.Kind() == reflect.Ptr {
+		return rv.IsNil()
+	}
+	return false
 }
 
 func GetPropName(fullKey string) (propName string) {
