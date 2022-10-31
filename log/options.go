@@ -47,6 +47,6 @@ func WithResponse() ServerOption {
 func Excludes(excludes ...string) ServerOption {
 	return func(opt *Options) {
 		opt.Excludes = excludes
-		opt.pathMatcher = xpath.NewMatch(excludes...)
+		opt.pathMatcher = xpath.NewMatch(excludes, xpath.WithCache(false))
 	}
 }
