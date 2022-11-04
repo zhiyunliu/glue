@@ -39,7 +39,7 @@ type Lock struct {
 }
 
 // NewLock returns a Lock.
-func NewLock(client *Redis, key string) *Lock {
+func newLock(client *Redis, key string) *Lock {
 	return &Lock{
 		client: client,
 		key:    key,

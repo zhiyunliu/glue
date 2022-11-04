@@ -73,6 +73,24 @@ func (r *Redis) HashDel(ctx context.Context, hk, key string) error {
 	return err
 }
 
+func (r *Redis) HashMGet(ctx context.Context, hk string, key ...string) (map[string]interface{}, error) {
+	vals, err := r.client.HMGet(hk, key...).Result()
+	result := make(map[string]interface{}, len(vals))
+	if len(vals) > 0 {
+		for i := range key {
+			result[key[i]] = vals[i]
+		}
+	}
+	return result, err
+}
+func (r *Redis) HashSetAll(ctx context.Context, hk string, val map[string]interface{}) (bool, error) {
+	return r.client.HMSet(hk, val).Result()
+}
+
+func (r *Redis) HashExists(ctx context.Context, hk, key string) (bool, error) {
+	return r.client.HExists(hk, key).Result()
+}
+
 // Increase
 func (r *Redis) Increase(ctx context.Context, key string) (int64, error) {
 	return r.client.Incr(key).Result()

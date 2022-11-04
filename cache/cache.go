@@ -18,6 +18,9 @@ type ICache interface {
 	HashGet(ctx context.Context, hk, key string) (string, error)
 	HashSet(ctx context.Context, hk, key string, val string) (bool, error)
 	HashDel(ctx context.Context, hk, key string) error
+	HashMGet(ctx context.Context, hk string, key ...string) (map[string]interface{}, error)
+	HashSetAll(ctx context.Context, hk string, val map[string]interface{}) (bool, error)
+	HashExists(ctx context.Context, hk, key string) (bool, error)
 	Increase(ctx context.Context, key string) (int64, error)
 	Decrease(ctx context.Context, key string) (int64, error)
 	Expire(ctx context.Context, key string, expire int) error
