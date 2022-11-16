@@ -5,6 +5,10 @@ import (
 	"github.com/zhiyunliu/glue/container"
 )
 
+var (
+	DateFormat = "2006-01-02 15:04:05"
+)
+
 const DbTypeNode = "dbs"
 const _defaultName = "default"
 

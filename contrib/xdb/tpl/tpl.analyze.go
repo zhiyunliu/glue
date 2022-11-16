@@ -10,7 +10,7 @@ import (
 	"github.com/zhiyunliu/golibs/xsecurity/md5"
 )
 
-type SymbolCallback func(map[string]interface{}, string, *ReplaceItem) string
+type SymbolCallback func(DBParam, string, *ReplaceItem) string
 type Symbols map[string]SymbolCallback
 type Placeholder interface {
 	Get() string
@@ -40,9 +40,9 @@ var defaultSymbols Symbols
 
 func init() {
 	defaultSymbols = make(Symbols)
-	defaultSymbols["@"] = func(input map[string]interface{}, fullKey string, item *ReplaceItem) string {
+	defaultSymbols["@"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
 		propName := GetPropName(fullKey)
-		value := input[propName]
+		value := input.Get(propName)
 		if !IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
@@ -53,9 +53,9 @@ func init() {
 		return item.Placeholder.Get()
 	}
 
-	defaultSymbols["&"] = func(input map[string]interface{}, fullKey string, item *ReplaceItem) string {
+	defaultSymbols["&"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
 		propName := GetPropName(fullKey)
-		value := input[propName]
+		value := input.Get(propName)
 		if !IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
@@ -63,9 +63,9 @@ func init() {
 		}
 		return ""
 	}
-	defaultSymbols["|"] = func(input map[string]interface{}, fullKey string, item *ReplaceItem) string {
+	defaultSymbols["|"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
 		propName := GetPropName(fullKey)
-		value := input[propName]
+		value := input.Get(propName)
 		if !IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
@@ -80,10 +80,10 @@ func (item cacheItem) ClonePlaceHolder() Placeholder {
 	return item.ph.Clone()
 }
 
-func (item cacheItem) build(input map[string]interface{}) (sql string, values []interface{}) {
+func (item cacheItem) build(input DBParam) (sql string, values []interface{}) {
 	values = make([]interface{}, len(item.names))
 	for i := range item.names {
-		values[i] = input[item.names[i]]
+		values[i] = input.Get(item.names[i])
 	}
 	ph := item.ClonePlaceHolder()
 	sql = item.sql

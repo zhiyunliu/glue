@@ -22,7 +22,7 @@ func (db *xTrans) Query(ctx context.Context, sql string, input map[string]interf
 	debugPrint(ctx, db.cfg, query, args...)
 	data, err := db.tx.Query(query, args...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	defer func() {
 		if data != nil {
@@ -31,7 +31,7 @@ func (db *xTrans) Query(ctx context.Context, sql string, input map[string]interf
 	}()
 	rows, err = internal.ResolveRows(data)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	return
 }
@@ -43,7 +43,7 @@ func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interf
 
 	sqlRows, err := db.tx.Query(query, args...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	defer func() {
 		if sqlRows != nil {
@@ -52,7 +52,7 @@ func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interf
 	}()
 	datasetRows, err = internal.ResolveMultiRows(sqlRows)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	return
 }
@@ -89,7 +89,7 @@ func (db *xTrans) Exec(ctx context.Context, sql string, input map[string]interfa
 	debugPrint(ctx, db.cfg, query, args...)
 	r, err = db.tx.Execute(query, args...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	return
 }

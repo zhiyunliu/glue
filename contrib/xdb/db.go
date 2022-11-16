@@ -58,7 +58,7 @@ func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface
 	debugPrint(ctx, db.cfg, query, args...)
 	data, err := db.db.Query(query, args...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	defer func() {
 		if data != nil {
@@ -67,7 +67,7 @@ func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface
 	}()
 	rows, err = internal.ResolveRows(data)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	return
 }
@@ -78,7 +78,7 @@ func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface
 	debugPrint(ctx, db.cfg, query, args...)
 	sqlRows, err := db.db.Query(query, args...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	defer func() {
 		if sqlRows != nil {
@@ -87,7 +87,7 @@ func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface
 	}()
 	datasetRows, err = internal.ResolveMultiRows(sqlRows)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	return
 }
@@ -123,7 +123,7 @@ func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{
 	debugPrint(ctx, db.cfg, query, args...)
 	r, err = db.db.Exec(query, args...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, args...)
 	}
 	return
 }

@@ -70,12 +70,12 @@ func getPlaceHolder(value interface{}, placeholder tpl.Placeholder) string {
 func newMssqlSymbols() tpl.Symbols {
 
 	symbols := make(tpl.Symbols)
-	symbols["@"] = func(input map[string]interface{}, fullKey string, item *tpl.ReplaceItem) string {
+	symbols["@"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
 		propName := tpl.GetPropName(fullKey)
 		if ph, ok := item.NameCache[fullKey]; ok {
 			return ph
 		}
-		value := input[propName]
+		value := input.Get(propName)
 		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
@@ -87,9 +87,9 @@ func newMssqlSymbols() tpl.Symbols {
 		return item.NameCache[fullKey]
 	}
 
-	symbols["&"] = func(input map[string]interface{}, fullKey string, item *tpl.ReplaceItem) string {
+	symbols["&"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
 		propName := tpl.GetPropName(fullKey)
-		value := input[propName]
+		value := input.Get(propName)
 		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
@@ -97,9 +97,9 @@ func newMssqlSymbols() tpl.Symbols {
 		}
 		return ""
 	}
-	symbols["|"] = func(input map[string]interface{}, fullKey string, item *tpl.ReplaceItem) string {
+	symbols["|"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
 		propName := tpl.GetPropName(fullKey)
-		value := input[propName]
+		value := input.Get(propName)
 		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)

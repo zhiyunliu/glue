@@ -29,7 +29,7 @@ func (d *transWrap) Query(ctx context.Context, sql string, input map[string]inte
 	query, args := d.tpl.GetSQLContext(sql, input)
 	rows, err := d.gromDB.Raw(query, args...).Rows()
 	if err != nil {
-		err = internal.GetError(err, query, args)
+		err = internal.GetError(err, query, args...)
 		return
 	}
 	data, err = internal.ResolveRows(rows)
@@ -40,7 +40,7 @@ func (d *transWrap) Multi(ctx context.Context, sql string, input map[string]inte
 	query, args := d.tpl.GetSQLContext(sql, input)
 	rows, err := d.gromDB.Raw(query, args...).Rows()
 	if err != nil {
-		err = internal.GetError(err, query, args)
+		err = internal.GetError(err, query, args...)
 		return
 	}
 	data, err = internal.ResolveMultiRows(rows)
@@ -72,7 +72,7 @@ func (d *transWrap) Exec(ctx context.Context, sql string, input map[string]inter
 	tmpDb := d.gromDB.Exec(query, args...)
 	err = tmpDb.Error
 	if err != nil {
-		err = internal.GetError(err, query, args)
+		err = internal.GetError(err, query, args...)
 		return
 	}
 	return &sqlResult{
