@@ -15,6 +15,7 @@ var (
 
 func init() {
 	defaultBuilder = &defaultBuilderWrap{}
+	Register(defaultBuilder)
 	SetBuilder(defaultBuilder)
 	logpool = sync.Pool{
 		New: func() interface{} {

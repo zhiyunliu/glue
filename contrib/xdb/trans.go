@@ -2,6 +2,7 @@ package xdb
 
 import (
 	"context"
+	"time"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/internal"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
@@ -18,6 +19,7 @@ type xTrans struct {
 
 //Query 查询数据
 func (db *xTrans) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
+	start := time.Now()
 	query, args := db.tpl.GetSQLContext(sql, input)
 	debugPrint(ctx, db.cfg, query, args...)
 	data, err := db.tx.Query(query, args...)
@@ -33,11 +35,14 @@ func (db *xTrans) Query(ctx context.Context, sql string, input map[string]interf
 	if err != nil {
 		return nil, internal.GetError(err, query, args...)
 	}
+	printSlowQuery(db.cfg, time.Since(start), query, args...)
 	return
 }
 
 //Query 查询数据
 func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
+	start := time.Now()
+
 	query, args := db.tpl.GetSQLContext(sql, input)
 	debugPrint(ctx, db.cfg, query, args...)
 
@@ -54,6 +59,7 @@ func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interf
 	if err != nil {
 		return nil, internal.GetError(err, query, args...)
 	}
+	printSlowQuery(db.cfg, time.Since(start), query, args...)
 	return
 }
 
@@ -85,12 +91,14 @@ func (t *xTrans) Scalar(ctx context.Context, sql string, input map[string]interf
 
 //Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xTrans) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
+	start := time.Now()
 	query, args := db.tpl.GetSQLContext(sql, input)
 	debugPrint(ctx, db.cfg, query, args...)
 	r, err = db.tx.Execute(query, args...)
 	if err != nil {
 		return nil, internal.GetError(err, query, args...)
 	}
+	printSlowQuery(db.cfg, time.Since(start), query, args...)
 	return
 }
 
