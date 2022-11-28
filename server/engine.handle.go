@@ -48,7 +48,7 @@ func execRegistry(engine AdapterEngine, group *RouterGroup, logOpt *log.Options,
 	}
 
 	for i := range group.Children {
-		execRegistry(engine, group.Children[i], logOpt, defaultMiddlewares)
+		execRegistry(engine, group.Children[i], logOpt, mls)
 	}
 }
 
