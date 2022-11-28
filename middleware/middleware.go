@@ -1,7 +1,7 @@
 package middleware
 
 type MiddlewareBuilder interface {
-	Build(data RawMessage) Middleware
+	Build(data *Config) Middleware
 	Name() string
 }
 
@@ -29,5 +29,5 @@ func Resolve(m *Config) Middleware {
 	if !ok {
 		return nil
 	}
-	return xm.Build(m.Data)
+	return xm.Build(m)
 }

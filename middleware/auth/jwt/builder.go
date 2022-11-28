@@ -15,10 +15,10 @@ type xBuilder struct {
 func (xBuilder) Name() string {
 	return "jwt"
 }
-func (xBuilder) Build(data middleware.RawMessage) middleware.Middleware {
+func (xBuilder) Build(cfg *middleware.Config) middleware.Middleware {
+	data := cfg.Data
+	authCfg := &Config{}
+	encoding.GetCodec(data.Codec).Unmarshal(data.Data, &authCfg)
 
-	cfg := &Config{}
-	encoding.GetCodec(data.Codec).Unmarshal(data.Data, &cfg)
-
-	return serverByConfig(cfg)
+	return serverByConfig(authCfg)
 }

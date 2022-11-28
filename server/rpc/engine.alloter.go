@@ -1,6 +1,9 @@
 package rpc
 
 import (
+	"net/http"
+
+	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/server"
 )
@@ -14,6 +17,10 @@ func (e *Server) registryEngineRoute() {
 		server.WithErrorEncoder(e.opts.encErr),
 		server.WithRequestDecoder(e.opts.decReq),
 		server.WithResponseEncoder(e.opts.encResp))
+
+	engine.Handle(http.MethodGet, "/healthcheck", func(ctx *alloter.Context) {
+		ctx.AbortWithStatus(http.StatusOK)
+	})
 
 	for _, m := range e.opts.setting.Middlewares {
 		e.opts.router.Use(middleware.Resolve(&m))
