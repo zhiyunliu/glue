@@ -3,7 +3,7 @@ package sqlserver
 import (
 	"fmt"
 
-	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/microsoft/go-mssqldb"
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"

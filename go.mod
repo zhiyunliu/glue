@@ -3,12 +3,11 @@ module github.com/zhiyunliu/glue
 go 1.17
 
 require (
-	github.com/zhiyunliu/golibs v0.1.19
+	github.com/zhiyunliu/golibs v0.1.21
 	github.com/zhiyunliu/redisqueue/v2 v2.1.2
 )
 
 require (
-	github.com/denisenkom/go-mssqldb v0.12.2
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-kratos/aegis v0.1.3
@@ -21,6 +20,7 @@ require (
 	github.com/lib/pq v1.10.6
 	github.com/mattn/go-oci8 v0.1.1
 	github.com/mattn/go-sqlite3 v1.14.15
+	github.com/microsoft/go-mssqldb v0.19.0
 	github.com/nacos-group/nacos-sdk-go v1.1.2
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/prometheus/client_golang v1.13.0
@@ -40,6 +40,7 @@ require (
 )
 
 require (
+	github.com/denisenkom/go-mssqldb v0.12.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
