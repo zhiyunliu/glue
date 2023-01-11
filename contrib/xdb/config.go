@@ -1,8 +1,10 @@
 package xdb
 
 import (
+	"reflect"
 	"time"
 
+	"github.com/zhiyunliu/glue/contrib/xdb/internal"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
@@ -77,4 +79,9 @@ func WithLoggerName(name string) Option {
 	return func(a *Config) {
 		a.LoggerName = name
 	}
+}
+
+//注册自定义类型转换
+func RegisterDbType(dbType string, reflectType reflect.Type) error {
+	return internal.RegisterDbType(dbType, reflectType)
 }
