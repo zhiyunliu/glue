@@ -1,7 +1,6 @@
 package api
 
 import (
-	"math"
 	"net/http"
 
 	"github.com/zhiyunliu/glue/config"
@@ -34,10 +33,10 @@ func setDefaultOption() *options {
 			Config: Config{
 				Addr:              ":8080",
 				Status:            server.StatusStart,
-				ReadTimeout:       10,
-				WriteTimeout:      10,
-				ReadHeaderTimeout: 10,
-				MaxHeaderBytes:    math.MaxInt,
+				ReadTimeout:       15,
+				WriteTimeout:      15,
+				ReadHeaderTimeout: 15,
+				MaxHeaderBytes:    http.DefaultMaxHeaderBytes,
 			},
 		},
 		logOpts:      &log.Options{},
