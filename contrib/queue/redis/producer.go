@@ -17,6 +17,10 @@ import (
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
+const (
+	DELAY_QUEUE_NAME = "glue:delayqueue:list"
+)
+
 // Producer memcache配置文件
 type Producer struct {
 	opts      *ProductOptions
@@ -33,7 +37,7 @@ func NewProducer(config config.Config) (m *Producer, err error) {
 		return
 	}
 	m.opts = &ProductOptions{
-		DelayQueueName: "glue:delayqueue:list",
+		DelayQueueName: DELAY_QUEUE_NAME,
 		RangeSeconds:   1800,
 		DelayInterval:  5,
 	}
