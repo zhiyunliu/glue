@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nacos-group/nacos-sdk-go/clients"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/nacos"
 	"github.com/zhiyunliu/glue/global"
@@ -36,7 +37,9 @@ func (f *nacosFactory) Create(cfg config.Config) (config.Source, error) {
 	if err != nil {
 		return nil, fmt.Errorf("nacos options error:%+v", err)
 	}
-
+	if opts.Group == "" {
+		opts.Group = constant.DEFAULT_GROUP
+	}
 	return NewConfigSource(configClient, opts), nil
 
 }
