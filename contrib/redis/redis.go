@@ -42,6 +42,7 @@ func newRedis(opts *options) (r *Client, err error) {
 
 	ropts := &redis.UniversalOptions{
 		Addrs:        r.opts.Addrs,
+		Username:     r.opts.Username,
 		Password:     r.opts.Password,
 		DB:           int(r.opts.DbIndex),
 		DialTimeout:  time.Duration(r.opts.DialTimeout) * time.Second,
