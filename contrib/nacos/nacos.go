@@ -37,6 +37,7 @@ type ClientConfig struct {
 	SecretKey            string `json:"secret_key,omitempty"`              // the SecretKey for kms
 	CacheDir             string `json:"cache_dir,omitempty"`               // the directory for persist nacos service info,default value is current path
 	UpdateCacheWhenEmpty bool   `json:"update_cache_when_empty,omitempty"` // update cache when get empty service instance from server
+	NotLoadCacheAtStart  bool   `json:"not_load_cache_atstart"`            // not to load persistent nacos service info in CacheDir at start time
 	Username             string `json:"username,omitempty"`                // the username for nacos auth
 	Password             string `json:"password,omitempty"`                // the password for nacos auth
 	LogDir               string `json:"log_dir,omitempty"`                 // the directory for log, default is current path
