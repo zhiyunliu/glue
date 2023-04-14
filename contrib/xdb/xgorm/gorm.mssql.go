@@ -10,19 +10,25 @@ import (
 	"gorm.io/driver/sqlserver"
 )
 
-const mssqlProto = "grom.mssql"
-
 func init() {
-	xdb.Register(&mssqlResolver{})
-	tpl.Register(tpl.NewFixed(mssqlProto, "?"))
-	callbackCache[mssqlProto] = sqlserver.Open
+
+	resolver := &mssqlResolver{Proto: "grom.mssql"}
+	xdb.Register(resolver)
+	tpl.Register(tpl.NewFixed(resolver.Proto, "?"))
+	callbackCache[resolver.Proto] = sqlserver.Open
+
+	rresolver := &mssqlResolver{Proto: "gorm.mssql"}
+	xdb.Register(rresolver)
+	tpl.Register(tpl.NewFixed(rresolver.Proto, "?"))
+	callbackCache[rresolver.Proto] = sqlserver.Open
 }
 
 type mssqlResolver struct {
+	Proto string
 }
 
 func (s *mssqlResolver) Name() string {
-	return mssqlProto
+	return s.Proto
 }
 
 func (s *mssqlResolver) Resolve(setting config.Config) (interface{}, error) {
@@ -31,11 +37,11 @@ func (s *mssqlResolver) Resolve(setting config.Config) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	gromDB, err := buildGormDB(mssqlProto, cfg)
+	gromDB, err := buildGormDB(s.Proto, cfg)
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := tpl.GetDBTemplate(mssqlProto)
+	tpl, err := tpl.GetDBTemplate(s.Proto)
 	if err != nil {
 		return nil, err
 	}

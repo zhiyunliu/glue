@@ -11,19 +11,25 @@ import (
 	"gorm.io/driver/sqlite"
 )
 
-const sqliteProto = "grom.sqlite"
-
 func init() {
-	xdb.Register(&sqliteResolver{})
-	tpl.Register(tpl.NewFixed(sqliteProto, "?"))
-	callbackCache[sqliteProto] = sqlite.Open
+
+	resolver := &sqliteResolver{Proto: "grom.sqlite"}
+	xdb.Register(resolver)
+	tpl.Register(tpl.NewFixed(resolver.Proto, "?"))
+	callbackCache[resolver.Proto] = sqlite.Open
+
+	rresolver := &sqliteResolver{Proto: "gorm.sqlite"}
+	xdb.Register(rresolver)
+	tpl.Register(tpl.NewFixed(rresolver.Proto, "?"))
+	callbackCache[rresolver.Proto] = sqlite.Open
 }
 
 type sqliteResolver struct {
+	Proto string
 }
 
 func (s *sqliteResolver) Name() string {
-	return sqliteProto
+	return s.Proto
 }
 
 func (s *sqliteResolver) Resolve(setting config.Config) (interface{}, error) {
@@ -32,11 +38,11 @@ func (s *sqliteResolver) Resolve(setting config.Config) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	gromDB, err := buildGormDB(sqliteProto, cfg)
+	gromDB, err := buildGormDB(s.Proto, cfg)
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := tpl.GetDBTemplate(sqliteProto)
+	tpl, err := tpl.GetDBTemplate(s.Proto)
 	if err != nil {
 		return nil, err
 	}
