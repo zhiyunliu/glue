@@ -30,5 +30,5 @@ func (s *sqlserverResolver) Resolve(setting config.Config) (interface{}, error) 
 
 func init() {
 	xdb.Register(&sqlserverResolver{})
-	tpl.Register(New(Proto, "@p"))
+	tpl.Register(New(Proto, "p_"))
 }

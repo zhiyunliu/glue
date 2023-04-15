@@ -12,7 +12,7 @@ require (
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-kratos/aegis v0.1.3
 	github.com/go-redis/redis/v7 v7.4.1
-	github.com/go-sql-driver/mysql v1.6.0
+	github.com/go-sql-driver/mysql v1.7.0
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/hashicorp/consul/api v1.14.0
 	github.com/imdario/mergo v0.3.13

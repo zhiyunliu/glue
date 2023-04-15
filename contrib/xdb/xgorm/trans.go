@@ -27,9 +27,11 @@ func (d *transWrap) Commit() (err error) {
 
 func (d *transWrap) Query(ctx context.Context, sql string, input map[string]interface{}) (data xdb.Rows, err error) {
 	query, args := d.tpl.GetSQLContext(sql, input)
-	rows, err := d.gromDB.Raw(query, args...).Rows()
+	execArgs := tpl.TransArgs(args)
+
+	rows, err := d.gromDB.Raw(query, execArgs...).Rows()
 	if err != nil {
-		err = internal.GetError(err, query, args...)
+		err = internal.GetError(err, query, execArgs...)
 		return
 	}
 	data, err = internal.ResolveRows(rows)
@@ -38,9 +40,11 @@ func (d *transWrap) Query(ctx context.Context, sql string, input map[string]inte
 }
 func (d *transWrap) Multi(ctx context.Context, sql string, input map[string]interface{}) (data []xdb.Rows, err error) {
 	query, args := d.tpl.GetSQLContext(sql, input)
-	rows, err := d.gromDB.Raw(query, args...).Rows()
+	execArgs := tpl.TransArgs(args)
+
+	rows, err := d.gromDB.Raw(query, execArgs...).Rows()
 	if err != nil {
-		err = internal.GetError(err, query, args...)
+		err = internal.GetError(err, query, execArgs...)
 		return
 	}
 	data, err = internal.ResolveMultiRows(rows)
@@ -68,11 +72,12 @@ func (d *transWrap) Scalar(ctx context.Context, sql string, input map[string]int
 }
 func (d *transWrap) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	query, args := d.tpl.GetSQLContext(sql, input)
+	execArgs := tpl.TransArgs(args)
 
-	tmpDb := d.gromDB.Exec(query, args...)
+	tmpDb := d.gromDB.Exec(query, execArgs...)
 	err = tmpDb.Error
 	if err != nil {
-		err = internal.GetError(err, query, args...)
+		err = internal.GetError(err, query, execArgs...)
 		return
 	}
 	return &sqlResult{

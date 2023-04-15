@@ -1,11 +1,12 @@
 package tpl
 
 import (
+	"database/sql"
 	"fmt"
 	"regexp"
 )
 
-//SeqContext 参数化时使用@+参数名作为占位符的SQL数据库如:oracle,sql server
+// SeqContext 参数化时使用@+参数名作为占位符的SQL数据库如:oracle,sql server
 type SeqContext struct {
 	name    string
 	prefix  string
@@ -17,9 +18,11 @@ type seqPlaceHolder struct {
 	idx int
 }
 
-func (ph *seqPlaceHolder) Get() string {
+func (ph *seqPlaceHolder) Get(propName string) (argName, phName string) {
 	ph.idx++
-	return fmt.Sprint(ph.ctx.prefix, ph.idx)
+	phName = fmt.Sprint(ph.ctx.prefix, ph.idx)
+	argName = "p_" + propName
+	return
 }
 
 func (ph *seqPlaceHolder) Clone() Placeholder {
@@ -30,7 +33,7 @@ func (ph *seqPlaceHolder) Clone() Placeholder {
 }
 
 func NewSeq(name, prefix string) SQLTemplate {
-	return &FixedContext{
+	return &SeqContext{
 		name:    name,
 		prefix:  prefix,
 		symbols: defaultSymbols,
@@ -41,8 +44,8 @@ func (ctx SeqContext) Name() string {
 	return ctx.name
 }
 
-//GetSQLContext 获取查询串
-func (ctx *SeqContext) GetSQLContext(tpl string, input map[string]interface{}) (sql string, args []interface{}) {
+// GetSQLContext 获取查询串
+func (ctx *SeqContext) GetSQLContext(tpl string, input map[string]interface{}) (sql string, args []sql.NamedArg) {
 	return AnalyzeTPLFromCache(ctx, tpl, input, ctx.Placeholder())
 }
 
@@ -50,16 +53,13 @@ func (ctx *SeqContext) Placeholder() Placeholder {
 	return &seqPlaceHolder{ctx: ctx, idx: 0}
 }
 
-func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, names []string, values []interface{}) {
+func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem) {
 	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
 }
 
-func (ctx *SeqContext) HandleAndSymbols(template string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool) {
+func (ctx *SeqContext) HandleAndSymbols(template string, rspitem *ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool) {
 	word, _ := regexp.Compile(AndPattern)
-	item := &ReplaceItem{
-		NameCache:   map[string]string{},
-		Placeholder: ph,
-	}
+	item := rspitem.Clone()
 	symbols := ctx.symbols
 	exists = false
 	//变量, 将数据放入params中
@@ -78,12 +78,9 @@ func (ctx *SeqContext) HandleAndSymbols(template string, input map[string]interf
 	return sql, item.Values, exists
 }
 
-func (ctx *SeqContext) HandleOrSymbols(template string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool) {
+func (ctx *SeqContext) HandleOrSymbols(template string, rspitem *ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool) {
 	word := regexp.MustCompile(OrPattern)
-	item := &ReplaceItem{
-		NameCache:   map[string]string{},
-		Placeholder: ph,
-	}
+	item := rspitem.Clone()
 	symbols := ctx.symbols
 	exists = false
 	//变量, 将数据放入params中

@@ -11,14 +11,14 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
-//DB 数据库操作类
+// DB 数据库操作类
 type xDB struct {
 	cfg *Config
 	db  internal.ISysDB
 	tpl tpl.SQLTemplate
 }
 
-//NewDB 创建DB实例
+// NewDB 创建DB实例
 func NewDB(proto string, cfg *Config) (obj xdb.IDB, err error) {
 	conn := cfg.Conn
 	maxOpen := cfg.MaxOpen
@@ -65,15 +65,17 @@ func (db *xDB) GetImpl() interface{} {
 	return db.db
 }
 
-//Query 查询数据
+// Query 查询数据
 func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
 	start := time.Now()
 
 	query, args := db.tpl.GetSQLContext(sql, input)
-	debugPrint(ctx, db.cfg, query, args...)
-	data, err := db.db.Query(query, args...)
+	execArgs := tpl.TransArgs(args)
+
+	debugPrint(ctx, db.cfg, query, execArgs...)
+	data, err := db.db.Query(query, execArgs...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args...)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
 	defer func() {
 		if data != nil {
@@ -82,22 +84,24 @@ func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface
 	}()
 	rows, err = internal.ResolveRows(data)
 	if err != nil {
-		return nil, internal.GetError(err, query, args...)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, args...)
+	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
 
 	return
 }
 
-//Multi 查询数据(多个数据集)
+// Multi 查询数据(多个数据集)
 func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
 	start := time.Now()
 
 	query, args := db.tpl.GetSQLContext(sql, input)
-	debugPrint(ctx, db.cfg, query, args...)
-	sqlRows, err := db.db.Query(query, args...)
+	execArgs := tpl.TransArgs(args)
+
+	debugPrint(ctx, db.cfg, query, execArgs...)
+	sqlRows, err := db.db.Query(query, execArgs...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args...)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
 	defer func() {
 		if sqlRows != nil {
@@ -106,9 +110,9 @@ func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface
 	}()
 	datasetRows, err = internal.ResolveMultiRows(sqlRows)
 	if err != nil {
-		return nil, internal.GetError(err, query, args...)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, args...)
+	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
 
 	return
 }
@@ -138,22 +142,24 @@ func (db *xDB) Scalar(ctx context.Context, sql string, input map[string]interfac
 	return
 }
 
-//Execute 根据包含@名称占位符的语句执行查询语句
+// Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	start := time.Now()
 
 	query, args := db.tpl.GetSQLContext(sql, input)
-	debugPrint(ctx, db.cfg, query, args...)
-	r, err = db.db.Exec(query, args...)
+	execArgs := tpl.TransArgs(args)
+
+	debugPrint(ctx, db.cfg, query, execArgs...)
+	r, err = db.db.Exec(query, execArgs...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args...)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, args...)
+	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
 
 	return
 }
 
-//Begin 创建事务
+// Begin 创建事务
 func (db *xDB) Begin() (t xdb.ITrans, err error) {
 	tt := &xTrans{
 		cfg: db.cfg,
@@ -166,7 +172,7 @@ func (db *xDB) Begin() (t xdb.ITrans, err error) {
 	return tt, nil
 }
 
-//Close  关闭当前数据库连接
+// Close  关闭当前数据库连接
 func (db *xDB) Close() error {
 	return db.db.Close()
 }

@@ -5,11 +5,12 @@ import (
 	"regexp"
 )
 
-//处理替换符合
-func handleRelaceSymbols(tpl string, input map[string]interface{}) (string, bool) {
+// 处理替换符合
+func handleRelaceSymbols(tpl string, input map[string]interface{}, ph Placeholder) (string, bool) {
 	word := regexp.MustCompile(ReplacePattern)
 	item := &ReplaceItem{
-		NameCache: map[string]string{},
+		NameCache:   map[string]string{},
+		Placeholder: ph,
 	}
 	hasReplace := false
 	sql := word.ReplaceAllStringFunc(tpl, func(s string) string {
@@ -23,9 +24,9 @@ func handleRelaceSymbols(tpl string, input map[string]interface{}) (string, bool
 
 func replaceSymbols(input DBParam, fullKey string, item *ReplaceItem) string {
 	propName := GetPropName(fullKey)
-	value := input.Get(propName)
+	_, value := input.Get(propName, item.Placeholder)
 	if !IsNil(value) {
-		return fmt.Sprintf("%v", value)
+		return fmt.Sprintf("%v", value.Value)
 	}
 	return ""
 }

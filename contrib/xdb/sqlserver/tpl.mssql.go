@@ -8,7 +8,7 @@ import (
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 )
 
-//MssqlContext  模板
+// MssqlContext  模板
 type MssqlContext struct {
 	name    string
 	prefix  string
@@ -17,17 +17,16 @@ type MssqlContext struct {
 
 type mssqlPlaceHolder struct {
 	ctx *MssqlContext
-	idx int
 }
 
-func (ph *mssqlPlaceHolder) Get() string {
-	ph.idx++
-	return fmt.Sprint(ph.ctx.prefix, ph.idx)
+func (ph *mssqlPlaceHolder) Get(propName string) (argName, phName string) {
+	argName = fmt.Sprint(ph.ctx.prefix, propName)
+	phName = "@" + argName
+	return
 }
 
 func (ph *mssqlPlaceHolder) Clone() tpl.Placeholder {
 	return &mssqlPlaceHolder{
-		idx: ph.idx,
 		ctx: ph.ctx,
 	}
 }
@@ -44,78 +43,22 @@ func (ctx *MssqlContext) Name() string {
 	return ctx.name
 }
 
-//GetSQLContext 获取查询串
-func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interface{}) (query string, args []interface{}) {
+// GetSQLContext 获取查询串
+func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interface{}) (query string, args []sql.NamedArg) {
 	return tpl.AnalyzeTPLFromCache(ctx, template, input, ctx.Placeholder())
 }
 
 func (ctx *MssqlContext) Placeholder() tpl.Placeholder {
-	return &mssqlPlaceHolder{ctx: ctx, idx: 0}
+	return &mssqlPlaceHolder{ctx: ctx}
 }
 
-func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph tpl.Placeholder) (string, []string, []interface{}) {
+func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph tpl.Placeholder) (string, *tpl.ReplaceItem) {
 	return tpl.DefaultAnalyze(ctx.symbols, template, input, ph)
 }
 
-func getPlaceHolder(value interface{}, placeholder tpl.Placeholder) string {
-	if arg, ok := value.(sql.NamedArg); ok {
-		return "@" + arg.Name
-	}
-	if arg, ok := value.(*sql.NamedArg); ok {
-		return "@" + arg.Name
-	}
-	return placeholder.Get()
-}
-
-func newMssqlSymbols() tpl.Symbols {
-
-	symbols := make(tpl.Symbols)
-	symbols["@"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
-		propName := tpl.GetPropName(fullKey)
-		if ph, ok := item.NameCache[fullKey]; ok {
-			return ph
-		}
-		value := input.Get(propName)
-		if !tpl.IsNil(value) {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, value)
-		} else {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, "")
-		}
-		item.NameCache[fullKey] = getPlaceHolder(value, item.Placeholder)
-		return item.NameCache[fullKey]
-	}
-
-	symbols["&"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
-		propName := tpl.GetPropName(fullKey)
-		value := input.Get(propName)
-		if !tpl.IsNil(value) {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, value)
-			return fmt.Sprintf("and %s=%s", fullKey, item.Placeholder.Get())
-		}
-		return ""
-	}
-	symbols["|"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
-		propName := tpl.GetPropName(fullKey)
-		value := input.Get(propName)
-		if !tpl.IsNil(value) {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, value)
-			return fmt.Sprintf("or %s=%s", fullKey, item.Placeholder.Get())
-		}
-		return ""
-	}
-	return symbols
-}
-
-func (ctx *MssqlContext) HandleAndSymbols(template string, input map[string]interface{}, ph tpl.Placeholder) (sql string, values []interface{}, exists bool) {
+func (ctx *MssqlContext) HandleAndSymbols(template string, rpsitem *tpl.ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool) {
 	word := regexp.MustCompile(tpl.AndPattern)
-	item := &tpl.ReplaceItem{
-		NameCache:   map[string]string{},
-		Placeholder: ph,
-	}
+	item := rpsitem.Clone()
 	symbols := ctx.symbols
 	exists = false
 	//变量, 将数据放入params中
@@ -133,12 +76,9 @@ func (ctx *MssqlContext) HandleAndSymbols(template string, input map[string]inte
 	return sql, item.Values, exists
 }
 
-func (ctx *MssqlContext) HandleOrSymbols(template string, input map[string]interface{}, ph tpl.Placeholder) (sql string, values []interface{}, exists bool) {
+func (ctx *MssqlContext) HandleOrSymbols(template string, rpsitem *tpl.ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool) {
 	word := regexp.MustCompile(tpl.OrPattern)
-	item := &tpl.ReplaceItem{
-		NameCache:   map[string]string{},
-		Placeholder: ph,
-	}
+	item := rpsitem.Clone()
 	symbols := ctx.symbols
 	exists = false
 	//变量, 将数据放入params中

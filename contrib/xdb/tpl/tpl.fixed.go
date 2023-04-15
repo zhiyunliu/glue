@@ -1,8 +1,11 @@
 package tpl
 
-import "regexp"
+import (
+	"database/sql"
+	"regexp"
+)
 
-//FixedContext  模板
+// FixedContext  模板
 type FixedContext struct {
 	name    string
 	prefix  string
@@ -13,8 +16,10 @@ type fixedPlaceHolder struct {
 	ctx *FixedContext
 }
 
-func (ph *fixedPlaceHolder) Get() string {
-	return ph.ctx.prefix
+func (ph *fixedPlaceHolder) Get(propName string) (argName, phName string) {
+	phName = ph.ctx.prefix
+	argName = propName
+	return
 }
 
 func (ph *fixedPlaceHolder) Clone() Placeholder {
@@ -35,8 +40,8 @@ func (ctx FixedContext) Name() string {
 	return ctx.name
 }
 
-//GetSQLContext 获取查询串
-func (ctx *FixedContext) GetSQLContext(tpl string, input map[string]interface{}) (query string, args []interface{}) {
+// GetSQLContext 获取查询串
+func (ctx *FixedContext) GetSQLContext(tpl string, input map[string]interface{}) (query string, args []sql.NamedArg) {
 	return AnalyzeTPLFromCache(ctx, tpl, input, ctx.Placeholder())
 }
 
@@ -44,16 +49,13 @@ func (ctx *FixedContext) Placeholder() Placeholder {
 	return &fixedPlaceHolder{ctx: ctx}
 }
 
-func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, names []string, values []interface{}) {
+func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem) {
 	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
 }
 
-func (ctx *FixedContext) HandleAndSymbols(template string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool) {
+func (ctx *FixedContext) HandleAndSymbols(template string, rpsitem *ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool) {
 	word, _ := regexp.Compile(AndPattern)
-	item := &ReplaceItem{
-		NameCache:   map[string]string{},
-		Placeholder: ph,
-	}
+	item := rpsitem.Clone()
 	symbols := ctx.symbols
 	exists = false
 	//变量, 将数据放入params中
@@ -70,12 +72,9 @@ func (ctx *FixedContext) HandleAndSymbols(template string, input map[string]inte
 	return sql, item.Values, len(item.Values) > 0
 }
 
-func (ctx *FixedContext) HandleOrSymbols(template string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}, exists bool) {
+func (ctx *FixedContext) HandleOrSymbols(template string, rpsitem *ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool) {
 	word, _ := regexp.Compile(OrPattern)
-	item := &ReplaceItem{
-		NameCache:   map[string]string{},
-		Placeholder: ph,
-	}
+	item := rpsitem.Clone()
 	symbols := ctx.symbols
 	exists = false
 	//变量, 将数据放入params中

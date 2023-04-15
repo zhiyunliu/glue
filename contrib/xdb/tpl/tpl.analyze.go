@@ -1,6 +1,7 @@
 package tpl
 
 import (
+	"database/sql"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -13,119 +14,43 @@ import (
 type SymbolCallback func(DBParam, string, *ReplaceItem) string
 type Symbols map[string]SymbolCallback
 type Placeholder interface {
-	Get() string
+	Get(propName string) (argName string, phName string)
 	Clone() Placeholder
-}
-
-type cacheItem struct {
-	sql           string
-	names         []string
-	hasReplace    bool
-	hasDynamicAnd bool
-	hasDynamicOr  bool
-	ph            Placeholder
-	SQLTemplate   SQLTemplate
-}
-
-type ReplaceItem struct {
-	Names       []string
-	Values      []interface{}
-	NameCache   map[string]string
-	Placeholder Placeholder
 }
 
 var tplcache sync.Map
 
-var defaultSymbols Symbols
-
-func init() {
-	defaultSymbols = make(Symbols)
-	defaultSymbols["@"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
-		propName := GetPropName(fullKey)
-		value := input.Get(propName)
-		if !IsNil(value) {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, value)
-		} else {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, "")
-		}
-		return item.Placeholder.Get()
-	}
-
-	defaultSymbols["&"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
-		propName := GetPropName(fullKey)
-		value := input.Get(propName)
-		if !IsNil(value) {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, value)
-			return fmt.Sprintf(" and %s=%s", fullKey, item.Placeholder.Get())
-		}
-		return ""
-	}
-	defaultSymbols["|"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
-		propName := GetPropName(fullKey)
-		value := input.Get(propName)
-		if !IsNil(value) {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, value)
-			return fmt.Sprintf(" or %s=%s", fullKey, item.Placeholder.Get())
-		}
-		return ""
-	}
-
-}
-
-func (item cacheItem) ClonePlaceHolder() Placeholder {
-	return item.ph.Clone()
-}
-
-func (item cacheItem) build(input DBParam) (sql string, values []interface{}) {
-	values = make([]interface{}, len(item.names))
-	for i := range item.names {
-		values[i] = input.Get(item.names[i])
-	}
-	ph := item.ClonePlaceHolder()
-	sql = item.sql
-	if item.hasReplace {
-		sql, _ = handleRelaceSymbols(item.sql, input)
-	}
-	var vals []interface{}
-	if item.hasDynamicAnd {
-		sql, vals, _ = item.SQLTemplate.HandleAndSymbols(sql, input, ph)
-		values = append(values, vals...)
-	}
-	if item.hasDynamicOr {
-		sql, vals, _ = item.SQLTemplate.HandleOrSymbols(sql, input, ph)
-		values = append(values, vals...)
-	}
-	return sql, values
-}
-
-//AnalyzeTPLFromCache 从缓存中获取已解析的SQL语句
-//@表达式，替换为参数化字符如: :1,:2,:3
-//$表达式，检查值，值为空时返加"",否则直接替换字符
-//&条件表达式，检查值，值为空时返加"",否则返回: and name=value
-//|条件表达式，检查值，值为空时返回"", 否则返回: or name=value
-func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}, ph Placeholder) (sql string, values []interface{}) {
+// AnalyzeTPLFromCache 从缓存中获取已解析的SQL语句
+// @表达式，替换为参数化字符如: :1,:2,:3
+// $表达式，检查值，值为空时返加"",否则直接替换字符
+// &条件表达式，检查值，值为空时返加"",否则返回: and name=value
+// |条件表达式，检查值，值为空时返回"", 否则返回: or name=value
+func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}, ph Placeholder) (sql string, values []sql.NamedArg) {
 	hashVal := md5.Str(template.Name() + tpl)
 	tplval, ok := tplcache.Load(hashVal)
 	if !ok {
-		sql, names, values := template.AnalyzeTPL(tpl, input, ph)
+		sql, rpsitem := template.AnalyzeTPL(tpl, input, ph)
 		temp := &cacheItem{
 			sql:         sql,
-			names:       names,
+			names:       rpsitem.Names,
 			SQLTemplate: template,
 			ph:          ph.Clone(),
 		}
-		sql, hasReplace := handleRelaceSymbols(sql, input)
+		values = rpsitem.Values
+
+		temp.nameCache = map[string]string{}
+		for k := range rpsitem.NameCache {
+			temp.nameCache[k] = rpsitem.NameCache[k]
+		}
+
+		sql, hasReplace := handleRelaceSymbols(sql, input, ph)
 		temp.hasReplace = hasReplace
 
-		sql, vals, hasAnd := template.HandleAndSymbols(sql, input, ph)
+		sql, vals, hasAnd := template.HandleAndSymbols(sql, rpsitem, input)
 		temp.hasDynamicAnd = hasAnd
 		values = append(values, vals...)
 
-		sql, vals, hasOr := template.HandleOrSymbols(sql, input, ph)
+		sql, vals, hasOr := template.HandleOrSymbols(sql, rpsitem, input)
 		temp.hasDynamicOr = hasOr
 		values = append(values, vals...)
 
@@ -136,7 +61,7 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 	return item.build(input)
 }
 
-func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, placeholder Placeholder) (string, []string, []interface{}) {
+func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, placeholder Placeholder) (string, *ReplaceItem) {
 	word, _ := regexp.Compile(ParamPattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
@@ -146,13 +71,13 @@ func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, p
 	sql := word.ReplaceAllStringFunc(tpl, func(s string) string {
 		/*
 			@{aaaa}
-			${bbb}
+			@{t.aaaa}
+			${cc}
 			${c.cc}
 			&{ddd}
-			~{asdfasdf}
-			&{t.asdfasdf}
-			#{aaaa.b}
-			|{aaaa.b}
+			&{t.ddd}
+			|{aaaa}
+			|{t.aaaa}
 		*/
 		symbol := s[:1]
 		fullKey := s[2 : len(s)-1]
@@ -164,7 +89,7 @@ func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, p
 		return callback(input, fullKey, item)
 	})
 
-	return sql, item.Names, item.Values
+	return sql, item
 }
 
 func IsNil(input interface{}) bool {

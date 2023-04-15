@@ -8,6 +8,13 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
+type paramGetCase struct {
+	name     string
+	key      string
+	wantVal  interface{}
+	wantName string
+}
+
 func TestDBParam_Get(t *testing.T) {
 
 	var datetime interface{} = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -28,11 +35,7 @@ func TestDBParam_Get(t *testing.T) {
 		"array2":   []string{"1", "2", "3"},
 	}
 
-	tests := []struct {
-		name    string
-		key     string
-		wantVal interface{}
-	}{
+	tests := []paramGetCase{
 		// {name: "1.", key: "int", wantVal: 1},
 		// {name: "2.", key: "string", wantVal: "string"},
 		// {name: "3.", key: "datetime", wantVal: "2023-01-01 00:00:00"},
@@ -47,10 +50,26 @@ func TestDBParam_Get(t *testing.T) {
 		{name: "11.", key: "array", wantVal: "1,2,3"},
 		{name: "12.", key: "array2", wantVal: "'1','2','3'"},
 	}
+
+	phList := []Placeholder{
+		&fixedPlaceHolder{ctx: &FixedContext{name: "mysql", prefix: "?"}},
+		&seqPlaceHolder{ctx: &SeqContext{name: "oracle", prefix: ":"}},
+	}
+
+	for _, ph := range phList {
+		callParamGet(t, tests, val, ph)
+	}
+}
+
+func callParamGet(t *testing.T, tests []paramGetCase, val DBParam, ph Placeholder) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotVal := val.Get(tt.key); !reflect.DeepEqual(gotVal, tt.wantVal) {
-				t.Errorf("DBParam.Get() = %v, want %v", gotVal, tt.wantVal)
+			argName, gotVal := val.Get(tt.key, ph)
+			if !reflect.DeepEqual(gotVal, tt.wantVal) {
+				t.Errorf("case %s DBParam.Get() = %v, want %v", tt.name, gotVal, tt.wantVal)
+			}
+			if argName != tt.wantName {
+				t.Errorf("case %s DBParam.Get() = %v, wantName %v", tt.name, argName, tt.wantName)
 			}
 		})
 	}
