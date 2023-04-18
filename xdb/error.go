@@ -13,10 +13,10 @@ type xDBError struct {
 	args       []interface{}
 }
 
-func NewError(err error, sql string, args []interface{}) error {
+func NewError(err error, execSql string, args []interface{}) error {
 	return &xDBError{
 		innerError: err,
-		sql:        sql,
+		sql:        execSql,
 		args:       args,
 	}
 }

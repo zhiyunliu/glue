@@ -24,9 +24,9 @@ func handleRelaceSymbols(tpl string, input map[string]interface{}, ph Placeholde
 
 func replaceSymbols(input DBParam, fullKey string, item *ReplaceItem) string {
 	propName := GetPropName(fullKey)
-	_, value := input.Get(propName, item.Placeholder)
+	value := input.GetVal(propName)
 	if !IsNil(value) {
-		return fmt.Sprintf("%v", value.Value)
+		return fmt.Sprintf("%v", value)
 	}
 	return ""
 }

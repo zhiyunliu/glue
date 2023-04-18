@@ -12,15 +12,28 @@ import (
 
 type DBParam map[string]interface{}
 
-func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal sql.NamedArg) {
+func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interface{}) {
+	val := p.GetVal(name)
+	argName, phName := ph.Get(name)
+	if tmpv, ok := val.(sql.NamedArg); ok {
+		argVal = tmpv
+		return
+	}
+	argVal = ph.BuildArgVal(argName, val)
+	return
+}
 
-	val := p[name]
+func (p DBParam) GetVal(name string) (val interface{}) {
+	val, ok := p[name]
+	if !ok {
+		return nil
+	}
 	switch t := val.(type) {
 	case sql.NamedArg:
-		argVal = t
+		val = t
 		return
 	case *sql.NamedArg:
-		argVal = *t
+		val = *t
 		return
 	case driver.Valuer:
 		val, _ = t.Value()
@@ -39,8 +52,6 @@ func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal sql.Nam
 	case driver.Value:
 		val = t
 	}
-	argName, phName := ph.Get(name)
-	argVal = sql.NamedArg{Name: argName, Value: val}
 	return
 }
 

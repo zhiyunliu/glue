@@ -1,7 +1,6 @@
 package tpl
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 
@@ -13,20 +12,27 @@ var (
 )
 
 const (
-	ParamPattern   = `[@]\{\w*[\.]?\w+\}`
-	AndPattern     = `[&]\{\w*[\.]?\w+\}`
-	OrPattern      = `[\|]\{\w*[\.]?\w+\}`
+	TotalPattern = `[@]\{\w*[\.]?\w+\}|[&]\{\w*[\.]?\w+\}|[\|]\{\w*[\.]?\w+\}`
+	// ParamPattern   = `[@]\{\w*[\.]?\w+\}`
+	// AndPattern     = `[&]\{\w*[\.]?\w+\}`
+	// OrPattern      = `[\|]\{\w*[\.]?\w+\}`
 	ReplacePattern = `\$\{\w*[\.]?\w+\}`
 )
+
+type SymbolCallback func(DBParam, string, *ReplaceItem) string
+type Symbols map[string]SymbolCallback
+type Placeholder interface {
+	Get(propName string) (argName string, phName string)
+	BuildArgVal(argName string, val interface{}) interface{}
+	Clone() Placeholder
+}
 
 // Template 模板上下文
 type SQLTemplate interface {
 	Name() string
 	Placeholder() Placeholder
-	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []sql.NamedArg)
+	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any)
 	AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem)
-	HandleAndSymbols(tpl string, rpsitem *ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool)
-	HandleOrSymbols(tpl string, rpsitem *ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool)
 }
 
 func init() {

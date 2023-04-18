@@ -1,7 +1,5 @@
 package tpl
 
-import "database/sql"
-
 type cacheItem struct {
 	sql           string
 	names         []string
@@ -15,9 +13,11 @@ type cacheItem struct {
 
 type ReplaceItem struct {
 	Names       []string
-	Values      []sql.NamedArg
+	Values      []interface{}
 	NameCache   map[string]string
 	Placeholder Placeholder
+	HasAndOper  bool
+	HasOrOper   bool
 }
 
 func (p *ReplaceItem) Clone() *ReplaceItem {
@@ -27,12 +27,16 @@ func (p *ReplaceItem) Clone() *ReplaceItem {
 	}
 }
 
+func (p *ReplaceItem) CanCache() bool {
+	return !(p.HasAndOper || p.HasOrOper)
+}
+
 func (item cacheItem) ClonePlaceHolder() Placeholder {
 	return item.ph.Clone()
 }
 
-func (item cacheItem) build(input DBParam) (execSql string, values []sql.NamedArg) {
-	values = make([]sql.NamedArg, len(item.names))
+func (item cacheItem) build(input DBParam) (execSql string, values []interface{}) {
+	values = make([]interface{}, len(item.names))
 	ph := item.ClonePlaceHolder()
 	for i := range item.names {
 		_, values[i] = input.Get(item.names[i], ph)
@@ -50,14 +54,6 @@ func (item cacheItem) build(input DBParam) (execSql string, values []sql.NamedAr
 	if item.hasReplace {
 		execSql, _ = handleRelaceSymbols(item.sql, input, ph)
 	}
-	var vals []sql.NamedArg
-	if item.hasDynamicAnd {
-		execSql, vals, _ = item.SQLTemplate.HandleAndSymbols(execSql, rspitem, input)
-		values = append(values, vals...)
-	}
-	if item.hasDynamicOr {
-		execSql, vals, _ = item.SQLTemplate.HandleOrSymbols(execSql, rspitem, input)
-		values = append(values, vals...)
-	}
+
 	return execSql, values
 }

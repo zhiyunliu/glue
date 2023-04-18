@@ -3,7 +3,6 @@ package sqlserver
 import (
 	"database/sql"
 	"fmt"
-	"regexp"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 )
@@ -25,6 +24,14 @@ func (ph *mssqlPlaceHolder) Get(propName string) (argName, phName string) {
 	return
 }
 
+func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val interface{}) interface{} {
+	if arg, ok := val.(sql.NamedArg); ok {
+		return arg
+	}
+	return sql.NamedArg{Name: argName, Value: val}
+
+}
+
 func (ph *mssqlPlaceHolder) Clone() tpl.Placeholder {
 	return &mssqlPlaceHolder{
 		ctx: ph.ctx,
@@ -44,7 +51,7 @@ func (ctx *MssqlContext) Name() string {
 }
 
 // GetSQLContext 获取查询串
-func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interface{}) (query string, args []sql.NamedArg) {
+func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interface{}) (query string, args []any) {
 	return tpl.AnalyzeTPLFromCache(ctx, template, input, ctx.Placeholder())
 }
 
@@ -54,44 +61,4 @@ func (ctx *MssqlContext) Placeholder() tpl.Placeholder {
 
 func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph tpl.Placeholder) (string, *tpl.ReplaceItem) {
 	return tpl.DefaultAnalyze(ctx.symbols, template, input, ph)
-}
-
-func (ctx *MssqlContext) HandleAndSymbols(template string, rpsitem *tpl.ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool) {
-	word := regexp.MustCompile(tpl.AndPattern)
-	item := rpsitem.Clone()
-	symbols := ctx.symbols
-	exists = false
-	//变量, 将数据放入params中
-	sql = word.ReplaceAllStringFunc(template, func(s string) string {
-		exists = true
-		symbol := s[:1]
-		fullKey := s[2 : len(s)-1]
-		callback, ok := symbols[symbol]
-		if !ok {
-			return s
-		}
-		return callback(input, fullKey, item)
-	})
-
-	return sql, item.Values, exists
-}
-
-func (ctx *MssqlContext) HandleOrSymbols(template string, rpsitem *tpl.ReplaceItem, input map[string]interface{}) (sql string, values []sql.NamedArg, exists bool) {
-	word := regexp.MustCompile(tpl.OrPattern)
-	item := rpsitem.Clone()
-	symbols := ctx.symbols
-	exists = false
-	//变量, 将数据放入params中
-	sql = word.ReplaceAllStringFunc(template, func(s string) string {
-		exists = true
-		symbol := s[:1]
-		fullKey := s[2 : len(s)-1]
-		callback, ok := symbols[symbol]
-		if !ok {
-			return s
-		}
-		return callback(input, fullKey, item)
-	})
-
-	return sql, item.Values, exists
 }

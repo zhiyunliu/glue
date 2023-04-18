@@ -20,8 +20,7 @@ type xTrans struct {
 // Query 查询数据
 func (db *xTrans) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
 	start := time.Now()
-	query, args := db.tpl.GetSQLContext(sql, input)
-	execArgs := tpl.TransArgs(args)
+	query, execArgs := db.tpl.GetSQLContext(sql, input)
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
 	data, err := db.tx.Query(query, execArgs...)
@@ -45,8 +44,7 @@ func (db *xTrans) Query(ctx context.Context, sql string, input map[string]interf
 func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
 	start := time.Now()
 
-	query, args := db.tpl.GetSQLContext(sql, input)
-	execArgs := tpl.TransArgs(args)
+	query, execArgs := db.tpl.GetSQLContext(sql, input)
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
 
@@ -96,9 +94,7 @@ func (t *xTrans) Scalar(ctx context.Context, sql string, input map[string]interf
 // Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xTrans) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	start := time.Now()
-	query, args := db.tpl.GetSQLContext(sql, input)
-
-	execArgs := tpl.TransArgs(args)
+	query, execArgs := db.tpl.GetSQLContext(sql, input)
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
 	r, err = db.tx.Execute(query, execArgs...)

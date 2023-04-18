@@ -28,7 +28,7 @@ func newMssqlSymbols() tpl.Symbols {
 			return fmt.Sprintf("and %s=%s ", fullKey, ph)
 		}
 		argName, value := input.Get(propName, item.Placeholder)
-		if !tpl.IsNil(value.Value) {
+		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
 			item.NameCache[propName] = argName
@@ -42,7 +42,7 @@ func newMssqlSymbols() tpl.Symbols {
 			return fmt.Sprintf("or %s=%s ", fullKey, ph)
 		}
 		argName, value := input.Get(propName, item.Placeholder)
-		if !tpl.IsNil(value.Value) {
+		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
 			item.NameCache[propName] = argName

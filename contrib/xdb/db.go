@@ -69,8 +69,7 @@ func (db *xDB) GetImpl() interface{} {
 func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
 	start := time.Now()
 
-	query, args := db.tpl.GetSQLContext(sql, input)
-	execArgs := tpl.TransArgs(args)
+	query, execArgs := db.tpl.GetSQLContext(sql, input)
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
 	data, err := db.db.Query(query, execArgs...)
@@ -95,8 +94,7 @@ func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface
 func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
 	start := time.Now()
 
-	query, args := db.tpl.GetSQLContext(sql, input)
-	execArgs := tpl.TransArgs(args)
+	query, execArgs := db.tpl.GetSQLContext(sql, input)
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
 	sqlRows, err := db.db.Query(query, execArgs...)
@@ -146,8 +144,7 @@ func (db *xDB) Scalar(ctx context.Context, sql string, input map[string]interfac
 func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
 	start := time.Now()
 
-	query, args := db.tpl.GetSQLContext(sql, input)
-	execArgs := tpl.TransArgs(args)
+	query, execArgs := db.tpl.GetSQLContext(sql, input)
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
 	r, err = db.db.Exec(query, execArgs...)
