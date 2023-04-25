@@ -10,20 +10,26 @@ import (
 	"gorm.io/driver/mysql"
 )
 
-const mysqlProto = "grom.mysql"
-
 func init() {
-	xdb.Register(&mysqlResolver{})
-	tpl.Register(tpl.NewFixed(mysqlProto, "?"))
-	callbackCache[mysqlProto] = mysql.Open
+
+	resolver := &mysqlResolver{Proto: "grom.mysql"}
+	xdb.Register(resolver)
+	tpl.Register(tpl.NewFixed(resolver.Proto, "?"))
+	callbackCache[resolver.Proto] = mysql.Open
+
+	rresolver := &mysqlResolver{Proto: "gorm.mysql"}
+	xdb.Register(rresolver)
+	tpl.Register(tpl.NewFixed(rresolver.Proto, "?"))
+	callbackCache[rresolver.Proto] = mysql.Open
 
 }
 
 type mysqlResolver struct {
+	Proto string
 }
 
 func (s *mysqlResolver) Name() string {
-	return mysqlProto
+	return s.Proto
 }
 
 func (s *mysqlResolver) Resolve(setting config.Config) (interface{}, error) {
@@ -32,11 +38,11 @@ func (s *mysqlResolver) Resolve(setting config.Config) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	gromDB, err := buildGormDB(mysqlProto, cfg)
+	gromDB, err := buildGormDB(s.Proto, cfg)
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := tpl.GetDBTemplate(mysqlProto)
+	tpl, err := tpl.GetDBTemplate(s.Proto)
 	if err != nil {
 		return nil, err
 	}

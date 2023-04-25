@@ -67,11 +67,11 @@ func serverByConfig(cfg *Config) middleware.Middleware {
 
 func serverByOptions(opts *options) middleware.Middleware {
 	keyFunc := opts.Secret
-	excludeMatch := xpath.NewMatch(opts.Excludes...)
+	excludeMatch := xpath.NewMatch(opts.Excludes, xpath.WithCache(true))
 
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
-			path := ctx.Request().Path().GetURL().Path
+			path := ctx.Request().Path().FullPath()
 
 			isMatch, _ := excludeMatch.Match(path, "/")
 			if isMatch {

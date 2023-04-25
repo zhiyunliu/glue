@@ -6,10 +6,8 @@ import (
 
 	"github.com/nacos-group/nacos-sdk-go/clients"
 	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/nacos"
-	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 )
 
@@ -57,7 +55,5 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 }
 
 func init() {
-	logger.SetLogger(log.DefaultLogger)
-
 	registry.Register(&nacosFactory{})
 }

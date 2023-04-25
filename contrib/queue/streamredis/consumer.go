@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/queue"
 
 	redisqueue "github.com/zhiyunliu/redisqueue/v2"
@@ -14,7 +15,7 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 )
 
-//Consumer Consumer
+// Consumer Consumer
 type Consumer struct {
 	queues   cmap.ConcurrentMap
 	consumer *redisqueue.Consumer
@@ -27,7 +28,7 @@ type Consumer struct {
 type QueueItem struct {
 }
 
-//NewConsumerByConfig 创建新的Consumer
+// NewConsumerByConfig 创建新的Consumer
 func NewConsumer(config config.Config) (consumer *Consumer, err error) {
 	consumer = &Consumer{}
 	consumer.config = config
@@ -37,7 +38,7 @@ func NewConsumer(config config.Config) (consumer *Consumer, err error) {
 	return
 }
 
-//Connect  连接服务器
+// Connect  连接服务器
 func (consumer *Consumer) Connect() (err error) {
 	client, err := getRedisClient(consumer.config)
 	if err != nil {
@@ -50,12 +51,16 @@ func (consumer *Consumer) Connect() (err error) {
 	}
 
 	opts := &redisqueue.ConsumerOptions{
+		GroupName:         global.AppName,
 		RedisClient:       client.UniversalClient,
 		Concurrency:       100,
 		BufferSize:        1000,
 		BlockingTimeout:   1 * time.Second,
 		VisibilityTimeout: 30 * time.Second,
 		ReclaimInterval:   5 * time.Second,
+	}
+	if len(copts.GroupName) > 0 {
+		opts.GroupName = copts.GroupName
 	}
 	if copts.Concurrency > 0 {
 		opts.Concurrency = copts.Concurrency
@@ -90,7 +95,7 @@ func (consumer *Consumer) Connect() (err error) {
 	return
 }
 
-//Consume 注册消费信息
+// Consume 注册消费信息
 func (consumer *Consumer) Consume(queue string, callback queue.ConsumeCallback) (err error) {
 	if strings.EqualFold(queue, "") {
 		return fmt.Errorf("队列名字不能为空")
@@ -111,7 +116,7 @@ func (consumer *Consumer) Consume(queue string, callback queue.ConsumeCallback) 
 	return
 }
 
-//UnConsume 取消注册消费
+// UnConsume 取消注册消费
 func (consumer *Consumer) Unconsume(queue string) {
 	consumer.queues.Remove(queue)
 }
@@ -120,7 +125,7 @@ func (consumer *Consumer) Start() {
 	go consumer.consumer.Run()
 }
 
-//Close 关闭当前连接
+// Close 关闭当前连接
 func (consumer *Consumer) Close() {
 	consumer.once.Do(func() {
 		close(consumer.closeCh)

@@ -16,19 +16,20 @@ type xBuilder struct {
 func (xBuilder) Name() string {
 	return "tracing"
 }
-func (xBuilder) Build(data middleware.RawMessage) middleware.Middleware {
-	cfg := &Config{}
-	encoding.GetCodec(data.Codec).Unmarshal(data.Data, &cfg)
-	switch cfg.SpanKind {
+func (xBuilder) Build(cfg *middleware.Config) middleware.Middleware {
+	data := cfg.Data
+	traceCfg := &Config{}
+	encoding.GetCodec(data.Codec).Unmarshal(data.Data, &traceCfg)
+	switch traceCfg.SpanKind {
 	case trace.SpanKindClient:
 		fallthrough
 	case trace.SpanKindProducer:
-		return clientByConfig(cfg)
+		return clientByConfig(traceCfg)
 	case trace.SpanKindServer:
 		fallthrough
 	case trace.SpanKindConsumer:
-		return serverByConfig(cfg)
+		return serverByConfig(traceCfg)
 	default:
-		return serverByConfig(cfg)
+		return serverByConfig(traceCfg)
 	}
 }

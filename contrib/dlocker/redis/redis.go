@@ -18,7 +18,7 @@ func (r *Redis) GetImpl() interface{} {
 
 // Build 构建锁
 func (r *Redis) Build(key string) dlocker.DLocker {
-	return NewLock(r, key)
+	return newLock(r, key)
 }
 
 // Eval 执行脚本

@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/zhiyunliu/glue/config"
@@ -26,6 +27,13 @@ func (s *grpcResolver) Resolve(name string, cfg config.Config) (xrpc.Client, err
 	err := cfg.Scan(setval)
 	if err != nil {
 		return nil, fmt.Errorf("读取grpc配置:%w", err)
+	}
+	if setval.Balancer == "" && len(setval.ServerConfig) == 0 {
+		return nil, fmt.Errorf("grpc配置错误,必须指定Balancer/ServerConfig")
+	}
+
+	if len(setval.ServerConfig) == 0 {
+		setval.ServerConfig = json.RawMessage(fmt.Sprintf(`{"LoadBalancingPolicy":"%s"}`, setval.Balancer))
 	}
 	return NewRequest(setval), nil
 }

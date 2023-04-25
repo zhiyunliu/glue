@@ -40,7 +40,7 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 }
 func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error {
 	if msg, ok := value.(Message); ok {
-		return q.q.Push(key, msg)
+		return q.q.DelayPush(key, msg, delaySeconds)
 	}
 
 	msg, err := newMsgWrap("", value)

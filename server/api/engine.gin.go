@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/middleware"
 
@@ -30,6 +31,11 @@ func (e *Server) registryEngineRoute() {
 
 	engine.Handle(http.MethodGet, "/healthcheck", func(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusOK)
+	})
+
+	promHandler := promhttp.Handler()
+	engine.Handle(http.MethodGet, "/metrics", func(ctx *gin.Context) {
+		promHandler.ServeHTTP(ctx.Writer, ctx.Request)
 	})
 
 	for _, m := range e.opts.setting.Middlewares {

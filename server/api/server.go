@@ -80,7 +80,13 @@ func (e *Server) Start(ctx context.Context) error {
 		return err
 	}
 
-	e.srv = &http.Server{Handler: e.opts.handler}
+	e.srv = &http.Server{
+		Handler:           e.opts.handler,
+		ReadTimeout:       time.Duration(e.opts.setting.Config.ReadTimeout) * time.Second,
+		ReadHeaderTimeout: time.Duration(e.opts.setting.Config.ReadHeaderTimeout) * time.Second,
+		WriteTimeout:      time.Duration(e.opts.setting.Config.WriteTimeout) * time.Second,
+		MaxHeaderBytes:    int(e.opts.setting.Config.MaxHeaderBytes),
+	}
 	if len(e.opts.endHooks) > 0 {
 		endHook := func() {
 			for _, fn := range e.opts.endHooks {

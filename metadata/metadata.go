@@ -2,16 +2,17 @@ package metadata
 
 import (
 	"context"
+	"fmt"
 	"strings"
 )
 
 // Metadata is our way of representing request headers internally.
 // They're used at the RPC level and translate back and forth
 // from Transport headers.
-type Metadata map[string]string
+type Metadata map[string]interface{}
 
 // New creates an MD from a given key-values map.
-func New(mds ...map[string]string) Metadata {
+func New(mds ...map[string]interface{}) Metadata {
 	md := Metadata{}
 	for _, m := range mds {
 		for k, v := range m {
@@ -24,11 +25,18 @@ func New(mds ...map[string]string) Metadata {
 // Get returns the value associated with the passed key.
 func (m Metadata) Get(key string) string {
 	k := strings.ToLower(key)
-	return m[k]
+	switch v := m[k].(type) {
+	case string:
+		return v
+	case fmt.Stringer:
+		return v.String()
+	default:
+		return fmt.Sprint(v)
+	}
 }
 
 // Set stores the key-value pair.
-func (m Metadata) Set(key string, value string) {
+func (m Metadata) Set(key string, value interface{}) {
 	if key == "" || value == "" {
 		return
 	}
@@ -37,7 +45,7 @@ func (m Metadata) Set(key string, value string) {
 }
 
 // Range iterate over element in metadata.
-func (m Metadata) Range(f func(k, v string) bool) {
+func (m Metadata) Range(f func(k string, v interface{}) bool) {
 	for k, v := range m {
 		ret := f(k, v)
 		if !ret {

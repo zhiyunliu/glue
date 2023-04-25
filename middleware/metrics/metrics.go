@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"net/http"
 	"strconv"
 	"time"
 
@@ -58,7 +59,6 @@ func serverByConfig(cfg *Config) middleware.Middleware {
 
 	op.counter = provider.Counter()
 	op.observer = provider.Observer()
-	op.gauge = provider.Gauge()
 
 	return serverByOptions(op)
 }
@@ -69,10 +69,10 @@ func serverByOptions(op *options) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			var (
-				code      int
-				reason    string
-				kind      string = ctx.ServerType()
-				operation string = ctx.Request().Path().FullPath()
+				code   int = http.StatusOK
+				reason string
+				kind   string = ctx.ServerType()
+				path   string = ctx.Request().Path().FullPath()
 			)
 			startTime := time.Now()
 
@@ -86,10 +86,10 @@ func serverByOptions(op *options) middleware.Middleware {
 				code = int(se.Code)
 			}
 			if op.counter != nil {
-				op.counter.With(kind, operation, strconv.Itoa(code), reason).Inc()
+				op.counter.With(kind, path, strconv.Itoa(code), reason).Inc()
 			}
 			if op.observer != nil {
-				op.observer.With(kind, operation).Observe(time.Since(startTime).Seconds())
+				op.observer.With(kind, path).Observe(time.Since(startTime).Seconds())
 			}
 			return reply
 		}

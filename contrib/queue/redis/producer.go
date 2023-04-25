@@ -17,6 +17,10 @@ import (
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
+const (
+	DELAY_QUEUE_NAME = "glue:delayqueue:list"
+)
+
 // Producer memcache配置文件
 type Producer struct {
 	opts      *ProductOptions
@@ -33,7 +37,7 @@ func NewProducer(config config.Config) (m *Producer, err error) {
 		return
 	}
 	m.opts = &ProductOptions{
-		DelayQueueName: "glue:delayqueue:list",
+		DelayQueueName: DELAY_QUEUE_NAME,
 		RangeSeconds:   1800,
 		DelayInterval:  5,
 	}
@@ -113,22 +117,51 @@ func (c *Producer) delayQueue() {
 	}
 }
 
-func (c *Producer) procDelayQueue(cur int64) {
-	vals, err := c.client.ZRangeByScore(c.opts.DelayQueueName, &rds.ZRangeBy{
+func (p *Producer) procDelayQueue(cur int64) {
+	vals, err := p.client.ZRangeByScore(p.opts.DelayQueueName, &rds.ZRangeBy{
 		Min: "0",
 		Max: strconv.FormatInt(cur, 10),
 	}).Result()
 	if err != nil {
-		log.Errorf("redis.procDelayQueue:%s,err:%+v", c.opts.DelayQueueName, err)
+		log.Errorf("streamredis.procDelayQueue.ZRangeByScore:%s,err:%+v", p.opts.DelayQueueName, err)
 		return
 	}
-	args := make([]interface{}, len(vals), len(vals))
-	for i := range vals {
-		args[i] = vals[i]
-		c.procDelayItem(vals[i])
+	if len(vals) == 0 {
+		return
+	}
+	//每次处理的命令条数
+	const CMD_COUNT = 100
+	tmpLen := len(vals)
+	if tmpLen > CMD_COUNT {
+		tmpLen = CMD_COUNT
 	}
 
-	err = c.client.ZRem(c.opts.DelayQueueName, args...).Err()
+	cycCnt := len(vals) / tmpLen
+	if cycCnt*tmpLen < len(vals) {
+		cycCnt = cycCnt + 1
+	}
+
+	idx := 0
+	totalLen := len(vals)
+	isLast := false
+	for c := 0; c < cycCnt; c++ {
+		args := make([]interface{}, 0, tmpLen)
+		cycIdx := c * tmpLen
+		isLast = c == (cycCnt - 1)
+		for i := 0; i < tmpLen; i++ {
+			idx = cycIdx + i
+			args = append(args, vals[idx])
+			p.procDelayItem(vals[idx])
+			if isLast && (idx+1) == totalLen {
+				break
+			}
+		}
+		err = p.client.ZRem(p.opts.DelayQueueName, args...).Err()
+		if err != nil {
+			log.Errorf("streamredis.procDelayQueue.ZRem:%s,err:%+v", p.opts.DelayQueueName, err)
+		}
+	}
+
 }
 
 func (c *Producer) procDelayItem(uid string) {

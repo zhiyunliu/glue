@@ -9,4 +9,5 @@ type Request interface {
 	Path() Path
 	Query() Query
 	Body() Body
+	GetImpl() interface{}
 }

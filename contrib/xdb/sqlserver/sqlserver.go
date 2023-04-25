@@ -3,7 +3,7 @@ package sqlserver
 import (
 	"fmt"
 
-	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/microsoft/go-mssqldb"
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
@@ -25,10 +25,10 @@ func (s *sqlserverResolver) Resolve(setting config.Config) (interface{}, error) 
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	return contribxdb.NewDB(Proto, cfg.Conn, cfg.MaxOpen, cfg.MaxIdle, cfg.LifeTime)
+	return contribxdb.NewDB(Proto, cfg)
 }
 
 func init() {
 	xdb.Register(&sqlserverResolver{})
-	tpl.Register(New(Proto, "@p"))
+	tpl.Register(New(Proto, "p_"))
 }

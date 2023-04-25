@@ -2,6 +2,7 @@ package redis
 
 type options struct {
 	Addrs        []string `json:"addrs,omitempty"  valid:"required" `
+	Username     string   `json:"username,omitempty" `
 	Password     string   `json:"password,omitempty" `
 	DbIndex      uint     `json:"db,omitempty"`
 	DialTimeout  uint     `json:"dial_timeout,omitempty"`
@@ -17,7 +18,11 @@ func WithAddrs(addrs ...string) Option {
 		opts.Addrs = addrs
 	}
 }
-
+func WithUsername(username string) Option {
+	return func(opts *options) {
+		opts.Username = username
+	}
+}
 func WithPassword(password string) Option {
 	return func(opts *options) {
 		opts.Password = password

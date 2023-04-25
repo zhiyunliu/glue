@@ -15,8 +15,8 @@ type xBuilder struct {
 func (xBuilder) Name() string {
 	return "metrics"
 }
-func (xBuilder) Build(data middleware.RawMessage) middleware.Middleware {
-	cfg := &Config{}
-	encoding.GetCodec(data.Codec).Unmarshal(data.Data, &cfg)
-	return serverByConfig(cfg)
+func (xBuilder) Build(cfg *middleware.Config) middleware.Middleware {
+	mCfg := &Config{}
+	encoding.GetCodec(cfg.Data.Codec).Unmarshal(cfg.Data.Data, &mCfg)
+	return serverByConfig(mCfg)
 }

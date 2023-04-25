@@ -15,8 +15,9 @@ type xBuilder struct {
 func (xBuilder) Name() string {
 	return "ratelimit"
 }
-func (xBuilder) Build(data middleware.RawMessage) middleware.Middleware {
-	cfg := &Config{}
-	encoding.GetCodec(data.Codec).Unmarshal(data.Data, &cfg)
-	return serverByConfig(cfg)
+func (xBuilder) Build(cfg *middleware.Config) middleware.Middleware {
+	data := cfg.Data
+	limitCfg := &Config{}
+	encoding.GetCodec(data.Codec).Unmarshal(data.Data, &limitCfg)
+	return serverByConfig(limitCfg)
 }

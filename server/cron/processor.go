@@ -20,7 +20,7 @@ import (
 	"github.com/zhiyunliu/golibs/xstack"
 )
 
-//processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
+// processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
 	ctx          context.Context
 	lock         sync.Mutex
@@ -28,6 +28,7 @@ type processor struct {
 	index        int
 	jobs         cmap.ConcurrentMap
 	monopolyJobs cmap.ConcurrentMap
+	jobToSession cmap.ConcurrentMap
 	interval     time.Duration
 	slots        [60]cmap.ConcurrentMap //time slots
 	status       server.RunStatus
@@ -36,7 +37,7 @@ type processor struct {
 	cfg          config.Config
 }
 
-//NewProcessor 创建processor
+// NewProcessor 创建processor
 func newProcessor(cfg config.Config) (p *processor, err error) {
 	p = &processor{
 		index:        -1,
@@ -45,6 +46,7 @@ func newProcessor(cfg config.Config) (p *processor, err error) {
 		closeChan:    make(chan struct{}),
 		jobs:         cmap.New(),
 		monopolyJobs: cmap.New(),
+		jobToSession: cmap.New(),
 	}
 
 	p.engine = alloter.New()
@@ -55,12 +57,12 @@ func newProcessor(cfg config.Config) (p *processor, err error) {
 	return p, nil
 }
 
-//Items Items
+// Items Items
 func (s *processor) Items() map[string]interface{} {
 	return s.jobs.Items()
 }
 
-//Start 所有任务
+// Start 所有任务
 func (s *processor) Start() error {
 	ticker := time.NewTicker(s.interval)
 	for {
@@ -73,14 +75,22 @@ func (s *processor) Start() error {
 	}
 }
 
-//Add 添加任务
+// Add 添加任务
 func (s *processor) Add(jobs ...*Job) (err error) {
 	for _, t := range jobs {
 		if t.Disable {
 			s.Remove(t.GetKey())
 			continue
 		}
-		t.schedule, err = cron.ParseStandard(t.Cron)
+		parser := cron.NewParser(
+			cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
+		)
+		if t.WithSeconds {
+			parser = cron.NewParser(
+				cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
+			)
+		}
+		t.schedule, err = parser.Parse(t.Cron)
 		if err != nil {
 			return
 		}
@@ -134,19 +144,22 @@ func (s *processor) reset(req *Request) (err error) {
 	offset, round := s.getOffset(now, nextTime)
 	req.round.Update(round)
 	s.slots[offset].Set(req.session, req)
+	s.jobToSession.Set(req.job.GetKey(), req.session)
 	return
 }
 
-//Remove 移除服务
+// Remove 移除服务
 func (s *processor) Remove(key string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	for _, slot := range s.slots {
-		slot.Remove(key)
+	if session, ok := s.jobToSession.Get(key); ok {
+		for _, slot := range s.slots {
+			slot.Remove(session.(string))
+		}
 	}
 }
 
-//Close 退出
+// Close 退出
 func (s *processor) Close() error {
 	s.onceLock.Do(func() {
 		close(s.closeChan)
@@ -163,9 +176,9 @@ func (s *processor) closeMonopolyJobs() {
 }
 
 func (s *processor) getOffset(now time.Time, next time.Time) (pos int, circle int) {
-	//立即执行
+	// 立即执行的任务放在下一秒执行
 	if now == next {
-		return 0, 0
+		return s.index + 1, 0
 	}
 	secs := next.Sub(now).Seconds() //剩余时间
 	delaySeconds := int(math.Ceil(secs))

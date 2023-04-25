@@ -10,19 +10,25 @@ import (
 	"gorm.io/driver/postgres"
 )
 
-const postgresProto = "grom.postgres"
-
 func init() {
-	xdb.Register(&postgresResolver{})
-	tpl.Register(tpl.NewFixed(postgresProto, "$"))
-	callbackCache[postgresProto] = postgres.Open
+
+	resolver := &postgresResolver{Proto: "grom.postgres"}
+	xdb.Register(resolver)
+	tpl.Register(tpl.NewFixed(resolver.Proto, "$"))
+	callbackCache[resolver.Proto] = postgres.Open
+
+	rresolver := &postgresResolver{Proto: "gorm.postgres"}
+	xdb.Register(rresolver)
+	tpl.Register(tpl.NewFixed(rresolver.Proto, "$"))
+	callbackCache[rresolver.Proto] = postgres.Open
 }
 
 type postgresResolver struct {
+	Proto string
 }
 
 func (s *postgresResolver) Name() string {
-	return postgresProto
+	return s.Proto
 }
 
 func (s *postgresResolver) Resolve(setting config.Config) (interface{}, error) {
@@ -31,11 +37,11 @@ func (s *postgresResolver) Resolve(setting config.Config) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	gromDB, err := buildGormDB(postgresProto, cfg)
+	gromDB, err := buildGormDB(s.Proto, cfg)
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := tpl.GetDBTemplate(postgresProto)
+	tpl, err := tpl.GetDBTemplate(s.Proto)
 	if err != nil {
 		return nil, err
 	}

@@ -39,6 +39,7 @@ type Job struct {
 	Disable             bool              `json:"disable"`
 	Immediately         bool              `json:"immediately"`
 	Monopoly            bool              `json:"monopoly"`
+	WithSeconds         bool              `json:"with_seconds"`
 	Meta                metadata.Metadata `json:"meta,omitempty"`
 	schedule            cron.Schedule     `json:"-"`
 	immediatelyExecuted bool              `json:"-"`
@@ -61,22 +62,22 @@ func (t *Job) GetKey() string {
 	return md5.Str(tmpKey)
 }
 
-//服务地址
+// 服务地址
 func (t *Job) GetService() string {
 	return t.Service
 }
 
-//是否立即执行
+// 是否立即执行
 func (t *Job) IsImmediately() bool {
 	return t.Immediately
 }
 
-//是否独占
+// 是否独占
 func (t *Job) IsMonopoly() bool {
 	return t.Monopoly
 }
 
-//NextTime 下次执行时间
+// NextTime 下次执行时间
 func (m *Job) NextTime(t time.Time) time.Time {
 	if m.IsImmediately() && !m.immediatelyExecuted {
 		m.immediatelyExecuted = true

@@ -148,6 +148,9 @@ type ginRequest struct {
 func (r *ginRequest) GetMethod() string {
 	return r.gctx.Request.Method
 }
+func (r *ginRequest) GetImpl() interface{} {
+	return r.gctx.Request
+}
 
 func (r *ginRequest) GetClientIP() string {
 	return r.gctx.ClientIP()

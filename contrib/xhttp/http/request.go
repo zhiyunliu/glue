@@ -98,9 +98,16 @@ func (r *Request) getClient(pathVal *url.URL) *Client {
 		if exist {
 			return valueInMap
 		}
-		registrar, err := registry.GetRegistrar(global.Config)
-		if err != nil {
-			panic(err)
+		var (
+			registrar registry.Registrar
+			err       error
+		)
+		regCfg := registry.GetRegistrarName(global.Config)
+		if regCfg != "" {
+			registrar, err = registry.GetRegistrar(global.Config)
+			if err != nil {
+				panic(err)
+			}
 		}
 		reqPath := newValue.(*url.URL)
 		client, err := NewClient(registrar, r.setting, reqPath)

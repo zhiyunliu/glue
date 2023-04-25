@@ -49,7 +49,7 @@ func (e *Server) Name() string {
 	return e.name
 }
 
-//ServiceName 服务名称
+// ServiceName 服务名称
 func (s *Server) ServiceName() string {
 	return s.opts.serviceName
 }
@@ -162,6 +162,20 @@ func (e *Server) newProcessor() error {
 	return nil
 }
 
+func (e *Server) AddJob(jobs ...*Job) error {
+	err := e.processor.Add(jobs...)
+	if err != nil {
+		return err
+	}
+	e.registryEngineRoute()
+	return nil
+}
+func (e *Server) ResetRoute() {
+	e.opts.router = server.NewRouterGroup("")
+}
+func (e *Server) RemoveJob(key string) {
+	e.processor.Remove(key)
+}
 func (e *Server) Use(middlewares ...middleware.Middleware) {
 	e.opts.router.Use(middlewares...)
 }

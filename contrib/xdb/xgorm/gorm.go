@@ -30,7 +30,7 @@ func getDriverOpenCallback(driverName string) (callback DriverOpenCallback, err 
 
 func buildGormDB(driverName string, cfg *contribxdb.Config) (db *gorm.DB, err error) {
 	if cfg.MaxOpen <= 0 {
-		cfg.MaxOpen = runtime.NumCPU() * 10
+		cfg.MaxOpen = runtime.NumCPU() * 5
 	}
 	if cfg.MaxIdle <= 0 {
 		cfg.MaxIdle = cfg.MaxOpen

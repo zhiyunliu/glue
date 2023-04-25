@@ -31,10 +31,10 @@ func (d *dbWrap) GetImpl() interface{} {
 	return d.gromDB
 }
 func (d *dbWrap) Query(ctx context.Context, sql string, input map[string]interface{}) (data xdb.Rows, err error) {
-	query, args := d.tpl.GetSQLContext(sql, input)
-	rows, err := d.gromDB.Raw(query, args...).Rows()
+	query, execArgs := d.tpl.GetSQLContext(sql, input)
+	rows, err := d.gromDB.Raw(query, execArgs...).Rows()
 	if err != nil {
-		err = internal.GetError(err, query, args)
+		err = internal.GetError(err, query, execArgs...)
 		return
 	}
 	data, err = internal.ResolveRows(rows)
@@ -42,10 +42,10 @@ func (d *dbWrap) Query(ctx context.Context, sql string, input map[string]interfa
 
 }
 func (d *dbWrap) Multi(ctx context.Context, sql string, input map[string]interface{}) (data []xdb.Rows, err error) {
-	query, args := d.tpl.GetSQLContext(sql, input)
-	rows, err := d.gromDB.Raw(query, args...).Rows()
+	query, execArgs := d.tpl.GetSQLContext(sql, input)
+	rows, err := d.gromDB.Raw(query, execArgs...).Rows()
 	if err != nil {
-		err = internal.GetError(err, query, args)
+		err = internal.GetError(err, query, execArgs...)
 		return
 	}
 	data, err = internal.ResolveMultiRows(rows)
@@ -72,13 +72,12 @@ func (d *dbWrap) Scalar(ctx context.Context, sql string, input map[string]interf
 	return
 }
 func (d *dbWrap) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
-	query, args := d.tpl.GetSQLContext(sql, input)
+	query, execArgs := d.tpl.GetSQLContext(sql, input)
 
 	db := d.gromDB
-
-	result, err := db.Statement.ConnPool.ExecContext(db.Statement.Context, query, args...)
+	result, err := db.Statement.ConnPool.ExecContext(db.Statement.Context, query, execArgs...)
 	if err != nil {
-		err = internal.GetError(err, query, args)
+		err = internal.GetError(err, query, execArgs...)
 		return
 	}
 	r = result

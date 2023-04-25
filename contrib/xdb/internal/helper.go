@@ -3,14 +3,26 @@ package internal
 import (
 	"database/sql"
 	"database/sql/driver"
-	"fmt"
 	"reflect"
 
 	"github.com/zhiyunliu/glue/xdb"
 )
 
-func GetError(err error, query string, args []interface{}) error {
-	return fmt.Errorf("%w(sql:%s,args:%+v)", err, query, args)
+func Unwrap(args ...interface{}) []interface{} {
+	nargs := make([]interface{}, len(args))
+	for i := range args {
+		rv := reflect.ValueOf(args[i])
+		if rv.Kind() == reflect.Ptr {
+			nargs[i] = rv.Elem().Interface()
+			continue
+		}
+		nargs[i] = args[i]
+	}
+	return nargs
+}
+
+func GetError(err error, query string, args ...interface{}) error {
+	return xdb.NewError(err, query, Unwrap(args...))
 }
 
 func ResolveRows(rows *sql.Rows) (dataRows xdb.Rows, err error) {
@@ -46,16 +58,14 @@ func ResolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
 }
 
 func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
-	if len(columnTypes) > 0 {
-		for idx, columnType := range columnTypes {
-			if columnType.ScanType() != nil {
-				values[idx] = reflect.New(reflect.PtrTo(columnType.ScanType())).Interface()
-			} else {
-				values[idx] = new(interface{})
-			}
+	for idx, columnType := range columnTypes {
+		t, ok := getDbType(columnType.DatabaseTypeName())
+		if !ok {
+			t = columnType.ScanType()
 		}
-	} else {
-		for idx := range columnTypes {
+		if t != nil {
+			values[idx] = reflect.New(reflect.PtrTo(t)).Interface()
+		} else {
 			values[idx] = new(interface{})
 		}
 	}

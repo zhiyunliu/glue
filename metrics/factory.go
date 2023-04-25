@@ -9,7 +9,6 @@ import (
 type Provider interface {
 	Name() string
 	Counter() Counter
-	Gauge() Gauge
 	Observer() Observer
 	GetImpl() interface{}
 }

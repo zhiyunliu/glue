@@ -2,6 +2,7 @@ package xdb
 
 import (
 	"context"
+	"time"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/internal"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
@@ -9,18 +10,22 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
-//xTrans 数据库事务操作类
+// xTrans 数据库事务操作类
 type xTrans struct {
+	cfg *Config
 	tpl tpl.SQLTemplate
 	tx  internal.ISysTrans
 }
 
-//Query 查询数据
-func (t *xTrans) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
-	query, args := t.tpl.GetSQLContext(sql, input)
-	data, err := t.tx.Query(query, args...)
+// Query 查询数据
+func (db *xTrans) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
+	start := time.Now()
+	query, execArgs := db.tpl.GetSQLContext(sql, input)
+
+	debugPrint(ctx, db.cfg, query, execArgs...)
+	data, err := db.tx.Query(query, execArgs...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
 	defer func() {
 		if data != nil {
@@ -29,17 +34,23 @@ func (t *xTrans) Query(ctx context.Context, sql string, input map[string]interfa
 	}()
 	rows, err = internal.ResolveRows(data)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
+	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
 	return
 }
 
-//Query 查询数据
+// Query 查询数据
 func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
-	query, args := db.tpl.GetSQLContext(sql, input)
-	sqlRows, err := db.tx.Query(query, args...)
+	start := time.Now()
+
+	query, execArgs := db.tpl.GetSQLContext(sql, input)
+
+	debugPrint(ctx, db.cfg, query, execArgs...)
+
+	sqlRows, err := db.tx.Query(query, execArgs...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
 	defer func() {
 		if sqlRows != nil {
@@ -48,8 +59,9 @@ func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interf
 	}()
 	datasetRows, err = internal.ResolveMultiRows(sqlRows)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
+	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
 	return
 }
 
@@ -66,7 +78,7 @@ func (t *xTrans) First(ctx context.Context, sql string, input map[string]interfa
 	return
 }
 
-//Scalar 根据包含@名称占位符的查询语句执行查询语句
+// Scalar 根据包含@名称占位符的查询语句执行查询语句
 func (t *xTrans) Scalar(ctx context.Context, sql string, input map[string]interface{}) (result interface{}, err error) {
 	rows, err := t.Query(ctx, sql, input)
 	if err != nil {
@@ -79,22 +91,26 @@ func (t *xTrans) Scalar(ctx context.Context, sql string, input map[string]interf
 	return
 }
 
-//Execute 根据包含@名称占位符的语句执行查询语句
-func (t *xTrans) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
-	query, args := t.tpl.GetSQLContext(sql, input)
-	r, err = t.tx.Execute(query, args...)
+// Execute 根据包含@名称占位符的语句执行查询语句
+func (db *xTrans) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
+	start := time.Now()
+	query, execArgs := db.tpl.GetSQLContext(sql, input)
+
+	debugPrint(ctx, db.cfg, query, execArgs...)
+	r, err = db.tx.Execute(query, execArgs...)
 	if err != nil {
-		return nil, internal.GetError(err, query, args)
+		return nil, internal.GetError(err, query, execArgs...)
 	}
+	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
 	return
 }
 
-//Rollback 回滚所有操作
+// Rollback 回滚所有操作
 func (t *xTrans) Rollback() error {
 	return t.tx.Rollback()
 }
 
-//Commit 提交所有操作
+// Commit 提交所有操作
 func (t *xTrans) Commit() error {
 	return t.tx.Commit()
 }

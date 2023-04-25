@@ -9,6 +9,10 @@ const (
 	UnknownCode = 500
 )
 
+type IgnoreError interface {
+	Ignore() bool
+}
+
 type Error struct {
 	Code     int               `json:"code,omitempty"`
 	Message  string            `json:"message,omitempty"`
