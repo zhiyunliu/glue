@@ -28,7 +28,7 @@ type processor struct {
 	index        int
 	jobs         cmap.ConcurrentMap
 	monopolyJobs cmap.ConcurrentMap
-	jobToSession cmap.ConcurrentMap
+	reqs         cmap.ConcurrentMap
 	interval     time.Duration
 	slots        [60]cmap.ConcurrentMap //time slots
 	status       server.RunStatus
@@ -46,7 +46,7 @@ func newProcessor(cfg config.Config) (p *processor, err error) {
 		closeChan:    make(chan struct{}),
 		jobs:         cmap.New(),
 		monopolyJobs: cmap.New(),
-		jobToSession: cmap.New(),
+		reqs:         cmap.New(),
 	}
 
 	p.engine = alloter.New()
@@ -147,16 +147,16 @@ func (s *processor) reset(req *Request) (err error) {
 	offset, round := s.getOffset(now, nextTime)
 	req.round.Update(round)
 	s.slots[offset].Set(req.session, req)
-	s.jobToSession.Set(req.job.GetKey(), req)
+	s.reqs.Set(req.job.GetKey(), req)
 	return
 }
 
 // Remove 移除服务
 func (s *processor) Remove(key string) {
-	if req, ok := s.jobToSession.Get(key); ok {
+	if req, ok := s.reqs.Get(key); ok {
 		req.(*Request).job.Disable = true
 	}
-	s.jobToSession.Remove(key)
+	s.reqs.Remove(key)
 }
 
 // Close 退出
