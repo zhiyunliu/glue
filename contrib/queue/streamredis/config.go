@@ -15,11 +15,12 @@ type ProductOptions struct {
 }
 
 type ConsumerOptions struct {
-	Concurrency       int `json:"concurrency" yaml:"concurrency"`               //并发的消费者数量
-	BufferSize        int `json:"buffer_size" yaml:"buffer_size"`               //队列长度
-	BlockingTimeout   int `json:"blocking_timeout" yaml:"blocking_timeout"`     //获取消息阻塞时间秒
-	VisibilityTimeout int `json:"visibility_timeout" yaml:"visibility_timeout"` //消息保留时间 秒
-	ReclaimInterval   int `json:"reclaim_interval" yaml:"reclaim_interval"`     //失败消息重试周期
+	Concurrency       int    `json:"concurrency" yaml:"concurrency"`               //并发的消费者数量
+	BufferSize        int    `json:"buffer_size" yaml:"buffer_size"`               //队列长度
+	BlockingTimeout   int    `json:"blocking_timeout" yaml:"blocking_timeout"`     //获取消息阻塞时间秒
+	VisibilityTimeout int    `json:"visibility_timeout" yaml:"visibility_timeout"` //消息保留时间 秒
+	ReclaimInterval   int    `json:"reclaim_interval" yaml:"reclaim_interval"`     //失败消息重试周期
+	GroupName         string `json:"group_name" yaml:"group_name"`
 }
 
 func getRedisClient(config config.Config) (client *redis.Client, err error) {
