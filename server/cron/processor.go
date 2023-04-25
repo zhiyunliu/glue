@@ -135,6 +135,9 @@ func (s *processor) checkMonopoly(j *Job) (err error) {
 }
 
 func (s *processor) reset(req *Request) (err error) {
+	if req.job.Disable {
+		return
+	}
 	req.reset()
 	now := time.Now()
 	nextTime := req.job.NextTime(now)
@@ -144,19 +147,16 @@ func (s *processor) reset(req *Request) (err error) {
 	offset, round := s.getOffset(now, nextTime)
 	req.round.Update(round)
 	s.slots[offset].Set(req.session, req)
-	s.jobToSession.Set(req.job.GetKey(), req.session)
+	s.jobToSession.Set(req.job.GetKey(), req)
 	return
 }
 
 // Remove 移除服务
 func (s *processor) Remove(key string) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	if session, ok := s.jobToSession.Get(key); ok {
-		for _, slot := range s.slots {
-			slot.Remove(session.(string))
-		}
+	if req, ok := s.jobToSession.Get(key); ok {
+		req.(*Request).job.Disable = true
 	}
+	s.jobToSession.Remove(key)
 }
 
 // Close 退出
