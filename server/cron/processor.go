@@ -230,7 +230,7 @@ func (s *processor) execute() {
 		if !jobReq.round.CanProc() {
 			return
 		}
-		if jobReq.CanProc() {
+		if jobReq.CanProc() && !jobReq.job.Disable {
 			go s.handle(jobReq)
 		}
 
