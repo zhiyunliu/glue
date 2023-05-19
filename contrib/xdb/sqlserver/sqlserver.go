@@ -11,6 +11,7 @@ import (
 )
 
 const Proto = "sqlserver"
+const ArgumentPrefix = "p_"
 
 type sqlserverResolver struct {
 }
@@ -30,5 +31,5 @@ func (s *sqlserverResolver) Resolve(setting config.Config) (interface{}, error) 
 
 func init() {
 	xdb.Register(&sqlserverResolver{})
-	tpl.Register(New(Proto, "p_"))
+	tpl.Register(New(Proto, ArgumentPrefix))
 }

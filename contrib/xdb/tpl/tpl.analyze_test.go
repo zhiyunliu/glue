@@ -60,3 +60,31 @@ func TestDefaultAnalyze(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyzeTPLFromCache(t *testing.T) {
+	type args struct {
+		template SQLTemplate
+		tpl      string
+		input    map[string]interface{}
+		ph       Placeholder
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantSql    string
+		wantValues []any
+	}{
+		{},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSql, gotValues := AnalyzeTPLFromCache(tt.args.template, tt.args.tpl, tt.args.input, tt.args.ph)
+			if gotSql != tt.wantSql {
+				t.Errorf("AnalyzeTPLFromCache() gotSql = %v, want %v", gotSql, tt.wantSql)
+			}
+			if !reflect.DeepEqual(gotValues, tt.wantValues) {
+				t.Errorf("AnalyzeTPLFromCache() gotValues = %v, want %v", gotValues, tt.wantValues)
+			}
+		})
+	}
+}
