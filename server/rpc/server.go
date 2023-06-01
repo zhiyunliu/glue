@@ -17,6 +17,7 @@ import (
 	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/xnet"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type Server struct {
@@ -147,7 +148,7 @@ func (e *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-//ServiceName 服务名称
+// ServiceName 服务名称
 func (s *Server) ServiceName() string {
 	return s.opts.serviceName
 }
@@ -177,7 +178,7 @@ func (e *Server) newProcessor() {
 	if err != nil {
 		panic(err)
 	}
-
+	reflection.Register(e.srv)
 	grpcproto.RegisterGRPCServer(e.srv, e.processor)
 
 	e.registryEngineRoute()
