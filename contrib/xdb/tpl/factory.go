@@ -23,6 +23,7 @@ type SymbolCallback func(DBParam, string, *ReplaceItem) string
 type Symbols map[string]SymbolCallback
 type Placeholder interface {
 	Get(propName string) (argName string, phName string)
+	NamedArg(name string) string
 	BuildArgVal(argName string, val interface{}) interface{}
 	Clone() Placeholder
 }
