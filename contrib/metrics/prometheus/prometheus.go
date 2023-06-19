@@ -10,9 +10,12 @@ const (
 	Proto = "prometheus"
 )
 
+var _ metrics.Provider = &xProvider{}
+
 type xProvider struct {
 	counter  metrics.Counter
 	observer metrics.Observer
+	gauge    metrics.Gauge
 }
 
 func (p xProvider) Name() string {
@@ -26,7 +29,9 @@ func (p xProvider) Counter() metrics.Counter {
 
 func (p xProvider) Observer() metrics.Observer {
 	return p.observer
-
+}
+func (p xProvider) Gauge() metrics.Gauge {
+	return p.gauge
 }
 
 func (p xProvider) GetImpl() interface{} {
@@ -41,27 +46,44 @@ func (r xResover) Name() string {
 	return Proto
 }
 func (r xResover) Resolve(name string, config config.Config) (metrics.Provider, error) {
-	counter := prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "server",
-		Subsystem: "requests",
-		Name:      "code_total",
-		Help:      "The total number of processed requests",
-	}, []string{"kind", "path", "code", "reason"})
+	configOpts := prometheusConfig{
+		Counter: &counterOpts{
+			Namespace: "server",
+			Subsystem: "requests",
+			Name:      "code_total",
+			Help:      "The total number of processed requests",
+			Labels:    []string{"kind", "path", "code", "reason"},
+		},
+		Histogram: &histogramOpts{
+			Namespace: "server",
+			Subsystem: "requests",
+			Name:      "duration_sec",
+			Help:      "server requests duration(sec).",
+			Buckets:   []float64{0.05, 0.1, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5},
+			Labels:    []string{"kind", "path"},
+		},
+		Gauge: &gaugeOpts{
+			Namespace: "server",
+			Subsystem: "requests",
+			Name:      "cur_proc",
+			Help:      "server current processing.",
+			Labels:    []string{"kind", "path"},
+		},
+	}
+	config.Scan(&configOpts)
 
-	histogram := prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "server",
-		Subsystem: "requests",
-		Name:      "duration_sec",
-		Help:      "server requests duration(sec).",
-		Buckets:   []float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.250, 0.5, 1},
-	}, []string{"kind", "path"})
+	counter := prometheus.NewCounterVec(configOpts.GetCounter())
+	histogram := prometheus.NewHistogramVec(configOpts.GetHistogram())
+	gauge := prometheus.NewGaugeVec(configOpts.GetGauge())
 
 	prometheus.MustRegister(counter)
 	prometheus.MustRegister(histogram)
+	prometheus.MustRegister(gauge)
 
 	return &xProvider{
 		counter:  NewCounter(counter),
 		observer: NewHistogram(histogram),
+		gauge:    NewGauge(gauge),
 	}, nil
 }
 

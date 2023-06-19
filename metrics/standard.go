@@ -11,22 +11,22 @@ const (
 	TypeNode = "metrics"
 )
 
-//StandardMetric
+// StandardMetric
 type StandardMetric interface {
 	GetProvider(name string) (q Provider)
 }
 
-//StandardMetric
+// StandardMetric
 type xMetric struct {
 	c container.Container
 }
 
-//NewStandardMetric
+// NewStandardMetric
 func NewStandardMetric(c container.Container) StandardMetric {
 	return &xMetric{c: c}
 }
 
-//GetProvider GetProvider
+// GetProvider GetProvider
 func (s *xMetric) GetProvider(protoName string) (q Provider) {
 	if protoName == "" {
 		panic(fmt.Errorf("metric provider 配置错误,未设置"))
