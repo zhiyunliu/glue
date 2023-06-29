@@ -3,6 +3,7 @@ package balancer
 import (
 	"context"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/zhiyunliu/glue/log"
@@ -14,7 +15,7 @@ import (
 type registrarResolver struct {
 	ctx            context.Context
 	registrar      registry.Registrar
-	serviceName    string
+	serviceName    string //ip:port 或者服务名称
 	clientConn     resolver.ClientConn
 	waitGroup      sync.WaitGroup
 	resolveNowChan chan struct{}
@@ -35,6 +36,12 @@ func (r *registrarResolver) Close() {
 func (r *registrarResolver) watcher() {
 	defer r.waitGroup.Done()
 
+	address, ok := r.isServiceNameIpAddress()
+	if ok {
+		r.clientConn.UpdateState(resolver.State{Addresses: address})
+		return
+	}
+
 	if r.registrar == nil {
 		return
 	}
@@ -54,11 +61,11 @@ func (r *registrarResolver) watcher() {
 			continue
 		}
 
-		addresses, err := r.buildAddress(instances)
-		if err != nil || len(addresses) == 0 {
+		address, err = r.buildAddress(instances)
+		if err != nil || len(address) == 0 {
 			continue
 		}
-		r.clientConn.UpdateState(resolver.State{Addresses: addresses})
+		r.clientConn.UpdateState(resolver.State{Addresses: address})
 	}
 }
 
@@ -107,6 +114,25 @@ func (r *registrarResolver) watchRegistrar() {
 			r.clientConn.UpdateState(resolver.State{Addresses: addresses})
 		}
 	}
+}
+
+func (r *registrarResolver) isServiceNameIpAddress() (address []resolver.Address, ok bool) {
+	ok = false
+	parties := strings.SplitN(r.serviceName, ":", 2)
+	if len(parties) <= 1 {
+		ok = false
+		return
+	}
+
+	address = make([]resolver.Address, 0, 1)
+	a := resolver.Address{
+		Addr:       r.serviceName,
+		ServerName: r.serviceName,
+		Attributes: attributes.New(r.serviceName, equalMap(map[string]string{})),
+	}
+	address = append(address, a)
+	ok = true
+	return
 }
 
 type equalMap map[string]string

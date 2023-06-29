@@ -29,7 +29,7 @@ type Client struct {
 	tracer          *tracing.Tracer
 }
 
-//NewClient 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
+// NewClient 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
 func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL) (*Client, error) {
 	client := &Client{
 		registrar: registrar,
@@ -60,7 +60,7 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 // 	return c.RequestByString(ctx, buff, opts...)
 // }
 
-//RequestByString 发送Request请求
+// RequestByString 发送Request请求
 func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
 	//处理可选参数
 	o := &xrpc.Options{
@@ -87,7 +87,7 @@ func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xrpc
 	return response, err
 }
 
-//Close 关闭RPC客户端连接
+// Close 关闭RPC客户端连接
 func (c *Client) Close() {
 	if c.conn != nil {
 		c.conn.Close()
@@ -95,8 +95,8 @@ func (c *Client) Close() {
 	}
 }
 
-//Connect 连接到RPC服务器，如果当前无法连接系统会定时自动重连
-//未使用压缩，由于传输数据默认限制为4M(已修改为20M)压缩后会影响系统并发能力
+// Connect 连接到RPC服务器，如果当前无法连接系统会定时自动重连
+// 未使用压缩，由于传输数据默认限制为4M(已修改为20M)压缩后会影响系统并发能力
 // grpc.WithDefaultCallOptions(grpc.UseCompressor(Snappy)),
 // grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
 // grpc.WithCompressor(grpc.NewGZIPCompressor()),
