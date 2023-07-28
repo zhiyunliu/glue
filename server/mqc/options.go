@@ -23,13 +23,14 @@ type options struct {
 	endHooks     []server.Hook
 }
 
-func setDefaultOption() options {
-	return options{
+func setDefaultOption() *options {
+	return &options{
 		setting: &Setting{
 			Config: Config{
 				Status: server.StatusStart,
 				Addr:   "queues://default",
 			},
+			Tasks: TaskList{},
 		},
 		logOpts: &log.Options{},
 		decReq:  server.DefaultRequestDecoder,

@@ -21,6 +21,7 @@ type Consumer struct {
 	queues  cmap.ConcurrentMap
 	closeCh chan struct{}
 	once    sync.Once
+	wg      sync.WaitGroup
 	config  config.Config
 }
 
@@ -29,19 +30,15 @@ type QueueItem struct {
 	Concurrency  int //等于0 ，代表不限制
 	BlockTimeout int
 
-	onceLock      sync.Once
-	unconsumeChan chan struct{}
-	consumer      *Consumer
-	callback      queue.ConsumeCallback
+	closeMsgChanLock *sync.Once
+	unconsumeChan    chan struct{}
+	msgChan          chan string
+	callback         queue.ConsumeCallback
 }
 
-func (item *QueueItem) ReceiveStart() {
-	go doReceiveMsg(item)
-}
-
-func (item *QueueItem) ReceiveStop() {
-	item.onceLock.Do(func() {
-		close(item.unconsumeChan)
+func (qi *QueueItem) CloseMsgChan() {
+	qi.closeMsgChanLock.Do(func() {
+		close(qi.msgChan)
 	})
 }
 
@@ -62,7 +59,8 @@ func (consumer *Consumer) Connect() (err error) {
 }
 
 //Consume 注册消费信息
-func (consumer *Consumer) Consume(queue string, callback queue.ConsumeCallback) (err error) {
+func (consumer *Consumer) Consume(task queue.TaskInfo, callback queue.ConsumeCallback) (err error) {
+	queue := task.GetQueue()
 	if strings.EqualFold(queue, "") {
 		return fmt.Errorf("队列名字不能为空")
 	}
@@ -70,36 +68,44 @@ func (consumer *Consumer) Consume(queue string, callback queue.ConsumeCallback) 
 		return fmt.Errorf("queue:%s,回调函数不能为nil", queue)
 	}
 	item := &QueueItem{
-		QueueName:    queue,
-		BlockTimeout: 2,
-
-		unconsumeChan: make(chan struct{}),
-		consumer:      consumer,
-		callback:      callback,
+		QueueName:        queue,
+		Concurrency:      task.GetConcurrency(),
+		BlockTimeout:     2,
+		unconsumeChan:    make(chan struct{}),
+		callback:         callback,
+		closeMsgChanLock: &sync.Once{},
 	}
 
-	success := consumer.queues.SetIfAbsent(queue, item)
-	if success {
-		item.ReceiveStart()
-	}
+	consumer.queues.SetIfAbsent(queue, item)
 	return
 }
 
-func doReceiveMsg(item *QueueItem) {
-	consumer := item.consumer
-	unconsumeChan := item.unconsumeChan
+func (consumer *Consumer) doReceive(item *QueueItem) {
 	client := consumer.client
-	queue := item.QueueName
-	callback := item.callback
+	queueName := item.QueueName
+	concurrency := item.Concurrency
+	if concurrency == 0 {
+		concurrency = queue.DefaultMaxQueueLen //无限制时候，默认500个，如果消息没有正常处理，最多造成1000个消息丢失
+	}
+	item.Concurrency = concurrency
+	item.msgChan = make(chan string, concurrency)
+
+	consumer.wg.Add(concurrency)
+
+	for i := 0; i < item.Concurrency; i++ {
+		go consumer.work(item)
+	}
 
 	for {
 		select {
 		case <-consumer.closeCh:
+			close(item.msgChan)
 			return
-		case <-unconsumeChan:
+		case <-item.unconsumeChan:
+			close(item.msgChan)
 			return
 		default:
-			cmd := client.BLPop(time.Duration(item.BlockTimeout)*time.Second, queue)
+			cmd := client.BLPop(time.Duration(item.BlockTimeout)*time.Second, queueName)
 			msgs, err := cmd.Result()
 			if err != nil && err != rds.Nil {
 				time.Sleep(time.Second)
@@ -110,7 +116,31 @@ func doReceiveMsg(item *QueueItem) {
 				continue
 			}
 			ndata := msgs[len(msgs)-1]
-			go callback(&redisMessage{message: ndata})
+			item.msgChan <- ndata
+		}
+	}
+}
+
+func (consumer *Consumer) stopReceive(item *QueueItem) {
+	close(item.unconsumeChan)
+}
+
+func (consumer *Consumer) work(item *QueueItem) {
+	defer func() {
+		for data := range item.msgChan {
+			//回填消息队列数据
+			consumer.client.LPush(item.QueueName, data)
+		}
+		consumer.wg.Done()
+	}()
+	for {
+		select {
+		case msg := <-item.msgChan:
+			item.callback(&redisMessage{message: msg})
+		case <-consumer.closeCh:
+			return
+		case <-item.unconsumeChan:
+			return
 		}
 	}
 }
@@ -121,13 +151,18 @@ func (consumer *Consumer) Unconsume(queue string) {
 		return
 	}
 	if item, ok := consumer.queues.Get(queue); ok {
-		item.(*QueueItem).ReceiveStop()
+		consumer.stopReceive(item.(*QueueItem))
 	}
 	consumer.queues.Remove(queue)
 }
 
+//Start 启动
 func (consumer *Consumer) Start() {
-
+	for item := range consumer.queues.IterBuffered() {
+		func(qitem *QueueItem) {
+			go consumer.doReceive(qitem)
+		}(item.Val.(*QueueItem))
+	}
 }
 
 //Close 关闭当前连接
@@ -135,16 +170,12 @@ func (consumer *Consumer) Close() {
 	consumer.once.Do(func() {
 		close(consumer.closeCh)
 	})
-
-	for item := range consumer.queues.IterBuffered() {
-		item.Val.(*QueueItem).ReceiveStop()
-	}
-
+	//等等所有的关闭完成
+	consumer.wg.Wait()
 	if consumer.client == nil {
 		return
 	}
 	consumer.client.Close()
-
 }
 
 type consumeResolver struct {
