@@ -2,6 +2,7 @@ package xdb
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"time"
 
@@ -167,6 +168,38 @@ func (db *xDB) Begin() (t xdb.ITrans, err error) {
 	}
 	tt.tpl = db.tpl
 	return tt, nil
+}
+
+// Transaction 执行事务
+func (db *xDB) Transaction(callback xdb.TransactionCallback) (err error) {
+	tt := &xTrans{
+		cfg: db.cfg,
+	}
+	tt.tx, err = db.db.Begin()
+	if err != nil {
+		return
+	}
+	tt.tpl = db.tpl
+	defer func() {
+		if robj := recover(); robj != nil {
+			tt.Rollback()
+			rerr, ok := robj.(error)
+			if !ok {
+				rerr = fmt.Errorf("%+v", robj)
+			}
+			buf := make([]byte, 64<<10) //nolint:gomnd
+			n := runtime.Stack(buf, false)
+			buf = buf[:n]
+			err = xdb.NewPanicError(rerr, string(buf))
+		}
+	}()
+	err = callback(tt)
+	if err != nil {
+		tt.Rollback()
+		return
+	}
+	tt.Commit()
+	return
 }
 
 // Close  关闭当前数据库连接

@@ -7,9 +7,15 @@ type DbError interface {
 	Args() []interface{}
 }
 
+type PanicError interface {
+	Error() string
+	StackTrace() string
+}
+
 type xDBError struct {
 	innerError error
 	sql        string
+	stackTrace string
 	args       []interface{}
 }
 
@@ -35,4 +41,15 @@ func (e *xDBError) SQL() string {
 
 func (e *xDBError) Args() []interface{} {
 	return e.args
+}
+
+func (e *xDBError) StackTrace() string {
+	return e.stackTrace
+}
+
+func NewPanicError(err error, strace string) error {
+	return &xDBError{
+		innerError: err,
+		stackTrace: strace,
+	}
 }

@@ -2,6 +2,8 @@ package xgorm
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/internal"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
@@ -81,5 +83,35 @@ func (d *dbWrap) Exec(ctx context.Context, sql string, input map[string]interfac
 		return
 	}
 	r = result
+	return
+}
+
+// Transaction 执行事务
+func (d *dbWrap) Transaction(callback xdb.TransactionCallback) (err error) {
+	txdb := d.gromDB.Begin()
+	tt := &transWrap{
+		gromDB: txdb,
+		tpl:    d.tpl,
+	}
+
+	defer func() {
+		if robj := recover(); robj != nil {
+			tt.Rollback()
+			rerr, ok := robj.(error)
+			if !ok {
+				rerr = fmt.Errorf("%+v", robj)
+			}
+			buf := make([]byte, 64<<10) //nolint:gomnd
+			n := runtime.Stack(buf, false)
+			buf = buf[:n]
+			err = xdb.NewPanicError(rerr, string(buf))
+		}
+	}()
+	err = callback(tt)
+	if err != nil {
+		tt.Rollback()
+		return
+	}
+	tt.Commit()
 	return
 }

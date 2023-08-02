@@ -3,20 +3,53 @@ package internal
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"reflect"
 
 	"github.com/zhiyunliu/glue/xdb"
 )
 
+type WrapArgs struct {
+	Name  string
+	Value interface{}
+	Out   bool
+}
+
+func (a WrapArgs) String() string {
+	outv := ""
+	if a.Out {
+		outv = ",out:true"
+	}
+	return fmt.Sprintf("{%s:%+v%s}", a.Name, a.Value, outv)
+}
+
 func Unwrap(args ...interface{}) []interface{} {
 	nargs := make([]interface{}, len(args))
 	for i := range args {
-		rv := reflect.ValueOf(args[i])
+		val := args[i]
+		rv := reflect.ValueOf(val)
 		if rv.Kind() == reflect.Ptr {
-			nargs[i] = rv.Elem().Interface()
-			continue
+			val = rv.Elem().Interface()
 		}
-		nargs[i] = args[i]
+		if arg, ok := val.(sql.NamedArg); ok {
+			val = arg.Value
+			out := false
+			if otv, ok := val.(sql.Out); ok {
+				out = true
+				val = otv.Dest
+				orv := reflect.ValueOf(val)
+				if orv.Kind() == reflect.Ptr {
+					val = orv.Elem().Interface()
+				}
+			}
+			nargs[i] = WrapArgs{
+				Name:  arg.Name,
+				Value: val,
+				Out:   out,
+			}
+		} else {
+			nargs[i] = val
+		}
 	}
 	return nargs
 }
