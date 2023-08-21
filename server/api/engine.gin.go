@@ -7,6 +7,7 @@ import (
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/middleware"
 
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/server"
@@ -32,6 +33,8 @@ func (e *Server) registryEngineRoute() {
 	engine.Handle(http.MethodGet, "/healthcheck", func(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusOK)
 	})
+
+	pprof.Register(engine)
 
 	promHandler := promhttp.Handler()
 	engine.Handle(http.MethodGet, "/metrics", func(ctx *gin.Context) {
