@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
@@ -278,7 +279,7 @@ func (q *gquery) Close() {
 	q.closed = true
 }
 
-//-gbody---------------------------------
+// -gbody---------------------------------
 type gbody struct {
 	gctx      *gin.Context
 	vctx      *GinContext
@@ -337,17 +338,28 @@ func (q *gbody) Close() {
 	q.hasRead = false
 }
 
-//gresponse --------------------------------
+// gresponse --------------------------------
 type ginResponse struct {
 	vctx       *GinContext
 	gctx       *gin.Context
 	writebytes []byte
 	hasWrited  bool
 	closed     bool
+	statusCode int
+}
+
+func (q *ginResponse) Redirect(statusCode int, location string) {
+	q.statusCode = statusCode
+	q.gctx.Redirect(statusCode, location)
 }
 
 func (q *ginResponse) Status(statusCode int) {
+	q.statusCode = statusCode
 	q.gctx.Writer.WriteHeader(statusCode)
+}
+
+func (q *ginResponse) GetStatusCode() int {
+	return q.statusCode
 }
 
 func (q *ginResponse) Header(key, val string) {
@@ -390,4 +402,5 @@ func (q *ginResponse) Close() {
 	q.writebytes = nil
 	q.hasWrited = false
 	q.closed = true
+	q.statusCode = http.StatusOK
 }

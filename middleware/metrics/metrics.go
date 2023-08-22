@@ -86,6 +86,7 @@ func serverByOptions(op *options) middleware.Middleware {
 				err = rerr
 			}
 
+			code = ctx.Response().GetStatusCode()
 			if se := errors.FromError(err); se != nil {
 				code = int(se.Code)
 			}
