@@ -36,7 +36,7 @@ func (db *xTrans) Query(ctx context.Context, sql string, input map[string]interf
 	if err != nil {
 		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 	return
 }
 
@@ -61,7 +61,7 @@ func (db *xTrans) Multi(ctx context.Context, sql string, input map[string]interf
 	if err != nil {
 		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 	return
 }
 
@@ -101,7 +101,7 @@ func (db *xTrans) Exec(ctx context.Context, sql string, input map[string]interfa
 	if err != nil {
 		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 	return
 }
 

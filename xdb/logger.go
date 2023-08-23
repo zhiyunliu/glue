@@ -1,6 +1,9 @@
 package xdb
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 var (
 	loggerCache = sync.Map{}
@@ -8,7 +11,7 @@ var (
 
 type Logger interface {
 	Name() string
-	Log(args ...interface{})
+	Log(ctx context.Context, args ...interface{})
 }
 
 func RegistryLogger(logger Logger) {

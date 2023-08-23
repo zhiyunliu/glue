@@ -27,7 +27,7 @@ func NewDB(proto string, cfg *Config) (obj xdb.IDB, err error) {
 	maxLifeTime := cfg.LifeTime
 
 	if cfg.LoggerName == "" {
-		cfg.LoggerName = "default"
+		cfg.LoggerName = "dbslowsql"
 	}
 	if cfg.LongQueryTime == 0 {
 		cfg.LongQueryTime = 500
@@ -86,7 +86,7 @@ func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface
 	if err != nil {
 		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 
 	return
 }
@@ -111,7 +111,7 @@ func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface
 	if err != nil {
 		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 
 	return
 }
@@ -152,7 +152,7 @@ func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{
 	if err != nil {
 		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 
 	return
 }

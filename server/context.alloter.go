@@ -154,6 +154,10 @@ func (r *alloterRequest) GetImpl() interface{} {
 	return r.actx.Request
 }
 
+func (r *alloterRequest) RequestID() string {
+	return r.vctx.Log().SessionID()
+}
+
 func (r *alloterRequest) GetClientIP() string {
 	return r.actx.ClientIP()
 }

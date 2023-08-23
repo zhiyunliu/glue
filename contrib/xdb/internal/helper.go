@@ -3,6 +3,7 @@ package internal
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"reflect"
 
@@ -11,8 +12,18 @@ import (
 
 type WrapArgs struct {
 	Name  string
-	Value interface{}
+	Value any
 	Out   bool
+}
+
+func (a WrapArgs) MarshalJSON() (result []byte, err error) {
+	tmp := map[string]any{
+		a.Name: a.Value,
+	}
+	if a.Out {
+		tmp["out"] = true
+	}
+	return json.Marshal(tmp)
 }
 
 func (a WrapArgs) String() string {

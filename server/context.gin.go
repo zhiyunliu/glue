@@ -157,6 +157,10 @@ func (r *ginRequest) GetClientIP() string {
 	return r.gctx.ClientIP()
 }
 
+func (r *ginRequest) RequestID() string {
+	return r.vctx.Log().SessionID()
+}
+
 func (r *ginRequest) Header() vctx.Header {
 	if r.gheader == nil {
 		r.gheader = map[string]string{}

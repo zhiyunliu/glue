@@ -24,7 +24,7 @@ func init() {
 	}
 }
 
-//设置日志的builder
+// 设置日志的builder
 func SetBuilder(builder Builder) {
 	if builder == nil {
 		return
@@ -45,9 +45,12 @@ func (l *wraper) Close() {
 	l.xloger.Close()
 	logpool.Put(l)
 }
-
 func (l *wraper) Log(level Level, args ...interface{}) {
 	l.xloger.Log(level, args...)
+}
+
+func (l *wraper) SessionID() string {
+	return l.xloger.GetSessionID()
 }
 
 func (l *wraper) Logf(level Level, format string, args ...interface{}) {

@@ -3,12 +3,13 @@ module github.com/zhiyunliu/glue
 go 1.18
 
 require (
-	github.com/zhiyunliu/golibs v0.1.23
+	github.com/zhiyunliu/golibs v0.1.24
 	github.com/zhiyunliu/redisqueue/v2 v2.2.2
 )
 
 require (
 	github.com/fsnotify/fsnotify v1.5.4
+	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-kratos/aegis v0.1.3
 	github.com/go-redis/redis/v7 v7.4.1
@@ -43,7 +44,6 @@ require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
-	github.com/gin-contrib/pprof v1.4.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
