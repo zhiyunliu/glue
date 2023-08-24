@@ -103,7 +103,7 @@ func ResolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
 
 func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
 	for idx, columnType := range columnTypes {
-		t, ok := getDbType(columnType.DatabaseTypeName())
+		t, ok := xdb.GetDbType(columnType.DatabaseTypeName())
 		if !ok {
 			t = columnType.ScanType()
 		}

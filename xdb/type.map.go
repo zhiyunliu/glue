@@ -1,4 +1,4 @@
-package internal
+package xdb
 
 import (
 	"reflect"
@@ -14,7 +14,7 @@ func init() {
 	typeMap["MONEY"] = reflect.TypeOf((*xtypes.Decimal)(nil)).Elem()
 }
 
-func getDbType(dbtype string) (reflect.Type, bool) {
+func GetDbType(dbtype string) (reflect.Type, bool) {
 	t, ok := typeMap[dbtype]
 	return t, ok
 }

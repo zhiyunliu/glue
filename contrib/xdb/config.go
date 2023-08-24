@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/zhiyunliu/glue/contrib/xdb/internal"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
@@ -36,5 +35,5 @@ func NewConfig(opts ...xdb.Option) *Setting {
 
 // 注册自定义类型转换
 func RegisterDbType(dbType string, reflectType reflect.Type) error {
-	return internal.RegisterDbType(dbType, reflectType)
+	return xdb.RegisterDbType(dbType, reflectType)
 }
