@@ -20,8 +20,8 @@ func (s *mysqlResolver) Name() string {
 }
 
 func (s *mysqlResolver) Resolve(setting config.Config) (interface{}, error) {
-	cfg := &contribxdb.Config{}
-	err := setting.Scan(cfg)
+	cfg := contribxdb.NewConfig()
+	err := setting.Scan(cfg.Cfg)
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}

@@ -12,7 +12,7 @@ import (
 
 // xTrans 数据库事务操作类
 type xTrans struct {
-	cfg *Config
+	cfg *Setting
 	tpl tpl.SQLTemplate
 	tx  internal.ISysTrans
 }

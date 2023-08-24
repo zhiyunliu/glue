@@ -21,8 +21,8 @@ func (s *sqlserverResolver) Name() string {
 }
 
 func (s *sqlserverResolver) Resolve(setting config.Config) (interface{}, error) {
-	cfg := &contribxdb.Config{}
-	err := setting.Scan(cfg)
+	cfg := contribxdb.NewConfig()
+	err := setting.Scan(cfg.Cfg)
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}

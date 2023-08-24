@@ -14,24 +14,17 @@ import (
 
 // DB 数据库操作类
 type xDB struct {
-	cfg *Config
+	cfg *Setting
 	db  internal.ISysDB
 	tpl tpl.SQLTemplate
 }
 
 // NewDB 创建DB实例
-func NewDB(proto string, cfg *Config) (obj xdb.IDB, err error) {
-	conn := cfg.Conn
-	maxOpen := cfg.MaxOpen
-	maxIdle := cfg.MaxIdle
-	maxLifeTime := cfg.LifeTime
-
-	if cfg.LoggerName == "" {
-		cfg.LoggerName = "dbslowsql"
-	}
-	if cfg.LongQueryTime == 0 {
-		cfg.LongQueryTime = 500
-	}
+func NewDB(proto string, setting *Setting) (obj xdb.IDB, err error) {
+	conn := setting.Cfg.Conn
+	maxOpen := setting.Cfg.MaxOpen
+	maxIdle := setting.Cfg.MaxIdle
+	maxLifeTime := setting.Cfg.LifeTime
 
 	conn, err = DecryptConn(conn)
 	if err != nil {
@@ -43,16 +36,14 @@ func NewDB(proto string, cfg *Config) (obj xdb.IDB, err error) {
 	if maxIdle <= 0 {
 		maxIdle = maxOpen
 	}
-	if maxLifeTime <= 0 {
-		maxLifeTime = 600 //10分钟
-	}
+
 	dbobj := &xDB{
-		cfg: cfg,
+		cfg: setting,
 	}
 
-	cfg.slowThreshold = time.Duration(cfg.LongQueryTime) * time.Millisecond
-	if cfg.LoggerName != "" {
-		cfg.logger, _ = xdb.GetLogger(cfg.LoggerName)
+	setting.slowThreshold = time.Duration(setting.Cfg.LongQueryTime) * time.Millisecond
+	if setting.Cfg.LoggerName != "" {
+		setting.logger, _ = xdb.GetLogger(setting.Cfg.LoggerName)
 	}
 
 	dbobj.tpl, err = tpl.GetDBTemplate(proto)
