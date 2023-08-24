@@ -20,7 +20,7 @@ require (
 	github.com/kardianos/service v1.2.1
 	github.com/lib/pq v1.10.6
 	github.com/mattn/go-oci8 v0.1.1
-	github.com/mattn/go-sqlite3 v1.14.15
+	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/microsoft/go-mssqldb v1.1.0
 	github.com/nacos-group/nacos-sdk-go v1.1.2
 	github.com/orcaman/concurrent-map v1.0.0
@@ -35,9 +35,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.3.6
 	gorm.io/driver/postgres v1.3.9
-	gorm.io/driver/sqlite v1.3.6
+	gorm.io/driver/sqlite v1.5.3
 	gorm.io/driver/sqlserver v1.5.1
-	gorm.io/gorm v1.25.1
+	gorm.io/gorm v1.25.2-0.20230530020048-26663ab9bf55
 )
 
 require (
