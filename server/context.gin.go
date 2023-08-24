@@ -363,6 +363,9 @@ func (q *ginResponse) Status(statusCode int) {
 }
 
 func (q *ginResponse) GetStatusCode() int {
+	if q.statusCode == 0 {
+		q.statusCode = http.StatusOK
+	}
 	return q.statusCode
 }
 

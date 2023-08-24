@@ -14,6 +14,10 @@ import (
 // SupportPackageIsVersion1 These constants should not be referenced from any other code.
 const SupportPackageIsVersion1 = true
 
+type DataEncoder interface {
+	Render(ctx context.Context) error
+}
+
 // DecodeRequestFunc is decode request func.
 type DecodeRequestFunc func(context.Context, interface{}) error
 
@@ -42,6 +46,9 @@ func DefaultRequestDecoder(ctx context.Context, v interface{}) error {
 
 // DefaultResponseEncoder encodes the object to the HTTP response.
 func DefaultResponseEncoder(ctx context.Context, v interface{}) error {
+	if render, ok := v.(DataEncoder); ok {
+		return render.Render(ctx)
+	}
 	var codec encoding.Codec
 	if _, ok := v.(string); ok {
 		codec = encoding.GetCodec(text.Name)
