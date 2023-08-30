@@ -67,13 +67,16 @@ func (e *Server) Config(cfg config.Config) {
 	}
 	e.Options(WithConfig(cfg))
 	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
-	e.opts.setting.Config.Addr = server.GetAvaliableAddr(e.opts.setting.Config.Addr)
 }
 
 // Start 开始
-func (e *Server) Start(ctx context.Context) error {
+func (e *Server) Start(ctx context.Context) (err error) {
 	if e.opts.setting.Config.Status == server.StatusStop {
 		return nil
+	}
+	e.opts.setting.Config.Addr, err = xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.opts.setting.Config.Addr)
+	if err != nil {
+		return
 	}
 
 	e.ctx = transport.WithServerContext(ctx, e)

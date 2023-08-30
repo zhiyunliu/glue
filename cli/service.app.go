@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,9 +23,8 @@ import (
 )
 
 var (
-	_defaultAppmode   AppMode = Release
-	_defaultTraceAddr         = ":18081"
-	_defaultIpMask            = "192.168"
+	_defaultAppmode AppMode = Release
+	_defaultIpMask          = "192.168"
 )
 
 type AppService struct {
@@ -39,7 +37,7 @@ type AppService struct {
 	Arguments   []string
 }
 
-//GetService GetServices
+// GetService GetServices
 func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 	srvApp := GetSrvApp(c)
 	if err = srvApp.initApp(); err != nil {
@@ -62,7 +60,7 @@ func getService(c *cli.Context, args ...string) (srv *AppService, err error) {
 	}, err
 }
 
-//GetSrvConfig SrvCfg
+// GetSrvConfig SrvCfg
 func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 	path, _ := filepath.Abs(os.Args[0])
 
@@ -80,7 +78,7 @@ func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 	return cfg
 }
 
-//GetSrvApp SrvCfg
+// GetSrvApp SrvCfg
 func GetSrvApp(c *cli.Context) *ServiceApp {
 	opts := c.App.Metadata[options_key].(*Options)
 	app := &ServiceApp{
@@ -91,12 +89,13 @@ func GetSrvApp(c *cli.Context) *ServiceApp {
 	return app
 }
 
-//ServiceApp ServiceApp
+// ServiceApp ServiceApp
 type ServiceApp struct {
 	cliCtx         *cli.Context
 	options        *Options
 	instance       *registry.ServiceInstance
 	svcCtx         context.Context
+	traceEndpoint  *registry.ServerItem
 	closeWaitGroup *sync.WaitGroup
 }
 
@@ -125,7 +124,7 @@ func (app *ServiceApp) initApp() error {
 		global.LocalIp = xnet.GetLocalIP(app.options.setting.IpMask)
 		return fmt.Errorf("config file [%s] 不存在", app.options.configFile)
 	}
-	content, err := ioutil.ReadFile(app.options.configFile)
+	content, err := os.ReadFile(app.options.configFile)
 	log.Info("configFile.content", string(content), err)
 
 	app.options.Config = config.New(config.WithSource(file.NewSource(app.options.configFile)))
@@ -194,20 +193,22 @@ func (app *ServiceApp) loadConfig() error {
 
 func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
 	endpoints := make([]registry.ServerItem, 0)
-	if len(endpoints) == 0 {
-		for _, srv := range app.options.Servers {
-			if r, ok := srv.(transport.Endpointer); ok {
-				if strings.EqualFold(r.ServiceName(), "") {
-					continue
-				}
-				e := r.Endpoint()
-				endpoints = append(endpoints, registry.ServerItem{
-					ServiceName: r.ServiceName(),
-					EndpointURL: e.String(),
-				})
+	for _, srv := range app.options.Servers {
+		if r, ok := srv.(transport.Endpointer); ok {
+			if strings.EqualFold(r.ServiceName(), "") {
+				continue
 			}
+			e := r.Endpoint()
+			endpoints = append(endpoints, registry.ServerItem{
+				ServiceName: r.ServiceName(),
+				EndpointURL: e.String(),
+			})
 		}
 	}
+	if app.traceEndpoint != nil {
+		endpoints = append(endpoints, *app.traceEndpoint)
+	}
+
 	if app.options.Id == "" {
 		app.options.Id = session.Create()
 	}
