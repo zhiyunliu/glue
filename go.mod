@@ -3,7 +3,7 @@ module github.com/zhiyunliu/glue
 go 1.18
 
 require (
-	github.com/zhiyunliu/golibs v0.1.24
+	github.com/zhiyunliu/golibs v0.1.25
 	github.com/zhiyunliu/redisqueue/v2 v2.2.2
 )
 

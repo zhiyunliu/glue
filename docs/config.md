@@ -1,6 +1,6 @@
 
-``` json 总体配置结构
-{
+```json
+
 	"app":{
 		"encrypt":"1234567890123456",
 		"mode":"debug",
@@ -47,14 +47,19 @@
 		},
 		"mqcserver":{
 			"config":{"addr":"queues://redisxxx","status":"start/stop"},
-			"tasks":[{"queue":"xx.xx.xx","service":"/xx/bb/cc","disable":true},{"queue":"yy.yy.yy","service":"/xx/bb/yy"}],
+			"tasks":[
+				{"queue":"xx.xx.xx","service":"/xx/bb/cc","disable":true},
+				{"queue":"yy.yy.yy","service":"/xx/bb/yy","concurrency":10}
+			],
 		},
 		"cronserver":{
 			"config":{"status":"start/stop","sharding":1},
-			"jobs":[{"cron":"* 15 2 * * ? *","service":"/xx/bb/cc","immediately":true,"monopoly":true,"disable":false},{"cron":"* 15 2 * * ? *","service":"/xx/bb/yy"}],
-		}		
+			"jobs":[
+				{"cron":"* 15 2 * * ? *","service":"/xx/bb/cc","immediately":true,"monopoly":true,"disable":false},
+				{"cron":"* 15 2 * * ? *","service":"/xx/bb/yy"}
+			],
+		}
 	}
 }
 
 ```
- 

@@ -95,22 +95,22 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	e.newProcessor()
 
 	errChan := make(chan error, 1)
-	log.Infof("RPC Server [%s] listening on %s%s", e.name, global.LocalIp, e.opts.setting.Config.Addr)
+	log.Infof("RPC Server [%s] listening on %s", e.name, e.opts.setting.Config.Addr)
+
+	done := make(chan struct{})
 	go func() {
 		e.started = true
-		done := make(chan struct{})
-		go func() {
-			errChan <- e.srv.Serve(lsr)
-			close(done)
-		}()
-
-		select {
-		case <-done:
-			return
-		case <-time.After(time.Second):
-			errChan <- nil
-		}
+		errChan <- e.srv.Serve(lsr)
+		close(done)
 	}()
+
+	select {
+	case <-done:
+		return
+	case <-time.After(time.Second):
+		errChan <- nil
+	}
+
 	err = <-errChan
 	if err != nil {
 		log.Errorf("RPC Server [%s] start error: %s", e.name, err.Error())

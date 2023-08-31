@@ -105,22 +105,19 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	e.srv.BaseContext = func(_ net.Listener) context.Context {
 		return e.ctx
 	}
+	log.Infof("API Server [%s] listening on %s", e.name, e.opts.setting.Config.Addr)
 	errChan := make(chan error, 1)
-	log.Infof("API Server [%s] listening on %s%s", e.name, global.LocalIp, e.opts.setting.Config.Addr)
+	done := make(chan struct{})
 	go func() {
-		done := make(chan struct{})
-		go func() {
-			errChan <- e.srv.Serve(lsr)
-			close(done)
-		}()
-
-		select {
-		case <-done:
-			return
-		case <-time.After(time.Second):
-			errChan <- nil
-		}
+		errChan <- e.srv.Serve(lsr)
+		close(done)
 	}()
+
+	select {
+	case <-time.After(time.Second):
+		errChan <- nil
+	case <-done:
+	}
 	err = <-errChan
 	if err != nil {
 		log.Errorf("API Server [%s] start error: %s", e.name, err.Error())
