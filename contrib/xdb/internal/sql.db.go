@@ -23,7 +23,7 @@ type ISysDB interface {
 	Close() error
 }
 
-//SysDB 数据库实体
+// SysDB 数据库实体
 type sysDB struct {
 	proto       string
 	conn        string
@@ -33,15 +33,21 @@ type sysDB struct {
 	maxLifeTime time.Duration
 }
 
-//NewSysDB 创建DB实例
+// NewSysDB 创建DB实例
 func NewSysDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime time.Duration) (ISysDB, error) {
 	var err error
 	if proto == "" || conn == "" {
-		err = errors.New("proto or conn not allow nil")
+		err = errors.New("proto or conn not allow null")
 		return nil, err
 	}
 
-	obj := &sysDB{proto: proto, conn: conn, maxIdle: maxIdle, maxOpen: maxOpen, maxLifeTime: maxLifeTime}
+	obj := &sysDB{
+		proto:       proto,
+		conn:        conn,
+		maxIdle:     maxIdle,
+		maxOpen:     maxOpen,
+		maxLifeTime: maxLifeTime,
+	}
 	proto = strings.ToLower(proto)
 	proto = nameMap.GetWithDefault(proto, proto)
 	obj.db, err = sql.Open(proto, conn)
@@ -58,7 +64,7 @@ func NewSysDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime t
 	return obj, nil
 }
 
-//Query 执行SQL查询语句
+// Query 执行SQL查询语句
 func (db *sysDB) Query(query string, args ...interface{}) (rows *sql.Rows, err error) {
 	rows, err = db.db.Query(query, args...)
 	if err != nil {
@@ -70,7 +76,7 @@ func (db *sysDB) Query(query string, args ...interface{}) (rows *sql.Rows, err e
 	return
 }
 
-//Exec 执行SQL操作语句
+// Exec 执行SQL操作语句
 func (db *sysDB) Exec(query string, args ...interface{}) (result sql.Result, err error) {
 	result, err = db.db.Exec(query, args...)
 	if err != nil {
@@ -79,14 +85,14 @@ func (db *sysDB) Exec(query string, args ...interface{}) (result sql.Result, err
 	return result, err
 }
 
-//Begin 创建一个事务请求
+// Begin 创建一个事务请求
 func (db *sysDB) Begin() (r ISysTrans, err error) {
 	t := &sysTrans{}
 	t.tx, err = db.db.Begin()
 	return t, err
 }
 
-//Close 关闭数据库
+// Close 关闭数据库
 func (db *sysDB) Close() error {
 	return db.db.Close()
 }

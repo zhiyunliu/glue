@@ -26,7 +26,7 @@ func NewDB(proto string, setting *Setting) (obj xdb.IDB, err error) {
 	maxIdle := setting.Cfg.MaxIdle
 	maxLifeTime := setting.Cfg.LifeTime
 
-	conn, err = DecryptConn(conn)
+	conn, err = xdb.DefaultRefactor(conn)
 	if err != nil {
 		return
 	}

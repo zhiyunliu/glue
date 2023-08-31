@@ -9,15 +9,18 @@ import (
 	"github.com/zhiyunliu/golibs/xsecurity/aes"
 )
 
-//默认数据库环境变量加密key
-var SecretKey = "glue.xdb12345678"
-var SecretMode = "cbc/pkcs7"
+var (
+	SecretKey  = "glue.xdb12345678"
+	SecretMode = "cbc/pkcs7"
+)
 
 const (
 	_connPrefix = "encrypt://"
 )
 
-func DecryptConn(conn string) (newConn string, err error) {
+var DecryptConn func(conn string) (newConn string, err error) = defaultDecryptConn
+
+func defaultDecryptConn(conn string) (newConn string, err error) {
 	if !strings.HasPrefix(conn, _connPrefix) {
 		newConn = conn
 		return
