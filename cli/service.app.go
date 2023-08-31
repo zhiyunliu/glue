@@ -116,21 +116,38 @@ func (p *ServiceApp) Endpoint() []registry.ServerItem {
 
 func (app *ServiceApp) initApp() error {
 
-	if app.options.configFile == "" {
+	if app.options.cmdConfigFile == "" && len(app.options.configFileList) == 0 {
 		return fmt.Errorf("configFile必须参数")
 	}
-	if !xfile.Exists(app.options.configFile) {
-		global.Mode = string(app.options.setting.Mode)
-		global.LocalIp = xnet.GetLocalIP(app.options.setting.IpMask)
-		return fmt.Errorf("config file [%s] 不存在", app.options.configFile)
+	if !xfile.Exists(app.options.cmdConfigFile) {
+		// global.Mode = string(app.options.setting.Mode)
+		// global.LocalIp = xnet.GetLocalIP(app.options.setting.IpMask)
+		return fmt.Errorf("config file [%s] 不存在", app.options.cmdConfigFile)
 	}
-	content, err := os.ReadFile(app.options.configFile)
-	log.Info("configFile.content", string(content), err)
+	configSources := make([]config.Source, 0)
+	for i := range app.options.configFileList {
+		cfgFile := app.options.configFileList[i]
+		if strings.TrimSpace(cfgFile) == "" {
+			continue
+		}
+		if cfgFile != "" && !xfile.Exists(cfgFile) {
+			err := fmt.Errorf("config-file:%s not exists", cfgFile)
+			return err
+		}
+		log.Info("config-file:", cfgFile)
+		configSources = append(configSources, file.NewSource(cfgFile))
+	}
+	absCmdFile, err := filepath.Abs(app.options.cmdConfigFile)
+	if err != nil {
+		return err
+	}
+	log.Info("config-file:", absCmdFile)
+	configSources = append(configSources, file.NewSource(app.options.cmdConfigFile))
 
-	app.options.Config = config.New(config.WithSource(file.NewSource(app.options.configFile)))
+	app.options.Config = config.New(config.WithSource(configSources...))
 	err = app.options.Config.Load()
 	if err != nil {
-		return fmt.Errorf("config.Load:%s,Error:%+v", app.options.configFile, err)
+		return fmt.Errorf("config.Load:%s,Error:%+v", app.options.cmdConfigFile, err)
 	}
 	log.Info("serviceApp load appSetting")
 	if err = app.loadAppSetting(); err != nil {

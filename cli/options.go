@@ -25,11 +25,12 @@ type Options struct {
 
 	logConcurrency int
 	setting        *appSetting
-	configFile     string
+	configFileList []string
+	cmdConfigFile  string
 	logPath        string
 }
 
-//Option 配置选项
+// Option 配置选项
 type Option func(*Options)
 
 // ID with service id.
@@ -47,21 +48,28 @@ func Server(srv ...transport.Server) Option {
 	return func(o *Options) { o.Servers = srv }
 }
 
-//WithAppMode
+// WithAppMode
+func WithConfigList(fileList ...string) Option {
+	return func(o *Options) {
+		o.configFileList = fileList
+	}
+}
+
+// WithAppMode
 func WithAppMode(mode AppMode) Option {
 	return func(o *Options) {
 		o.setting.Mode = mode
 	}
 }
 
-//IpMask
+// IpMask
 func IpMask(mask string) Option {
 	return func(o *Options) {
 		o.setting.IpMask = mask
 	}
 }
 
-//TraceAddr
+// TraceAddr
 func TraceAddr(addr string) Option {
 	return func(o *Options) {
 		o.setting.TraceAddr = addr
