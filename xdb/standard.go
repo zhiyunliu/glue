@@ -12,18 +12,18 @@ var (
 const DbTypeNode = "dbs"
 const _defaultName = "default"
 
-//StandardDB
+// StandardDB
 type StandardDB interface {
 	GetDB(name ...string) (q IDB)
 	GetImpl(name ...string) interface{}
 }
 
-//StandardDB
+// StandardDB
 type xDB struct {
 	container container.Container
 }
 
-//NewStandardDBs 创建DB
+// NewStandardDBs 创建DB
 func NewStandardDB(container container.Container) StandardDB {
 	return &xDB{container: container}
 }
@@ -38,7 +38,7 @@ func (s *xDB) GetImpl(name ...string) interface{} {
 	}
 	obj, err := s.container.GetOrCreate(DbTypeNode, realName, func(cfg config.Config) (interface{}, error) {
 		dbcfg := cfg.Get(DbTypeNode).Get(realName)
-		return newDB(dbcfg)
+		return newDB(realName, dbcfg)
 	})
 	if err != nil {
 		panic(err)
@@ -46,7 +46,7 @@ func (s *xDB) GetImpl(name ...string) interface{} {
 	return obj
 }
 
-//GetDB
+// GetDB
 func (s *xDB) GetDB(name ...string) (q IDB) {
 	obj := s.GetImpl(name...)
 	return obj.(IDB)

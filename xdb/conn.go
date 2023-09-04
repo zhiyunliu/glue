@@ -1,18 +1,17 @@
 package xdb
 
 //数据库连接重构方法
-var ConnRefactor func(string) (string, error)
+var ConnRefactor func(connName string, cfg *Config) (newcfg *Config, err error)
 
-func DefaultRefactor(conn string) (newConn string, err error) {
-	newConn = conn
+func DefaultRefactor(connName string, cfg *Config) (newcfg *Config, err error) {
 	if DecryptConn != nil {
-		newConn, err = DecryptConn(newConn)
+		cfg.Conn, err = DecryptConn(connName, cfg.Conn)
 		if err != nil {
 			return
 		}
 	}
 	if ConnRefactor != nil {
-		newConn, err = ConnRefactor(newConn)
+		newcfg, err = ConnRefactor(connName, cfg)
 	}
 	return
 }

@@ -32,8 +32,8 @@ func (s *mysqlResolver) Name() string {
 	return s.Proto
 }
 
-func (s *mysqlResolver) Resolve(setting config.Config) (interface{}, error) {
-	cfg := contribxdb.NewConfig()
+func (s *mysqlResolver) Resolve(connName string, setting config.Config) (interface{}, error) {
+	cfg := contribxdb.NewConfig(connName)
 	err := setting.Scan(cfg.Cfg)
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)

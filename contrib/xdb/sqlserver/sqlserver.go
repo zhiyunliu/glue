@@ -20,8 +20,8 @@ func (s *sqlserverResolver) Name() string {
 	return Proto
 }
 
-func (s *sqlserverResolver) Resolve(setting config.Config) (interface{}, error) {
-	cfg := contribxdb.NewConfig()
+func (s *sqlserverResolver) Resolve(connName string, setting config.Config) (interface{}, error) {
+	cfg := contribxdb.NewConfig(connName)
 	err := setting.Scan(cfg.Cfg)
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)

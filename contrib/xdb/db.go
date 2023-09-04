@@ -21,15 +21,16 @@ type xDB struct {
 
 // NewDB 创建DB实例
 func NewDB(proto string, setting *Setting) (obj xdb.IDB, err error) {
+	newCfg, err := xdb.DefaultRefactor(setting.ConnName, setting.Cfg)
+	if err != nil {
+		return
+	}
+	setting.Cfg = newCfg
 	conn := setting.Cfg.Conn
 	maxOpen := setting.Cfg.MaxOpen
 	maxIdle := setting.Cfg.MaxIdle
 	maxLifeTime := setting.Cfg.LifeTime
 
-	conn, err = xdb.DefaultRefactor(conn)
-	if err != nil {
-		return
-	}
 	if maxOpen <= 0 {
 		maxOpen = runtime.NumCPU() * 10
 	}

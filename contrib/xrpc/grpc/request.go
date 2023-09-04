@@ -11,6 +11,7 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
@@ -84,10 +85,12 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	})
 
 	client := tmpClient.(*Client)
-	nopts := make([]xrpc.RequestOption, 0, len(opts)+1)
+	nopts := make([]xrpc.RequestOption, 0, len(opts)+2)
+	nopts = append(nopts, xrpc.WithSourceName(global.AppName))
 	nopts = append(nopts, opts...)
-	if reqidVal := ctx.Value(constants.HeaderRequestId); reqidVal != nil {
-		nopts = append(nopts, xrpc.WithXRequestID(fmt.Sprintf("%+v", reqidVal)))
+
+	if logger, ok := log.FromContext(ctx); ok {
+		nopts = append(nopts, xrpc.WithXRequestID(logger.SessionID()))
 	}
 
 	var bodyBytes []byte

@@ -9,14 +9,16 @@ import (
 
 // DB 数据库配置
 type Setting struct {
+	ConnName      string        `json:"-"`
 	Cfg           *xdb.Config   `json:"-"`
 	slowThreshold time.Duration `json:"-"`
 	logger        xdb.Logger    `json:"-"`
 }
 
 // New 构建DB连接信息
-func NewConfig(opts ...xdb.Option) *Setting {
+func NewConfig(connName string, opts ...xdb.Option) *Setting {
 	db := &Setting{
+		ConnName: connName,
 		Cfg: &xdb.Config{
 			MaxOpen:       xdb.Default.MaxOpen,
 			MaxIdle:       xdb.Default.MaxIdle,

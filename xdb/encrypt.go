@@ -10,24 +10,25 @@ import (
 )
 
 var (
-	SecretKey  = "glue.xdb12345678"
-	SecretMode = "cbc/pkcs7"
+	SecretKey         = "glue.xdb12345678"
+	SecretMode        = "cbc/pkcs7"
+	BaseSecretEnvName = "BASE_SECRET_ENV_NAME"
 )
 
 const (
 	_connPrefix = "encrypt://"
 )
 
-var DecryptConn func(conn string) (newConn string, err error) = defaultDecryptConn
+var DecryptConn func(connName, conn string) (newConn string, err error) = defaultDecryptConn
 
-func defaultDecryptConn(conn string) (newConn string, err error) {
+func defaultDecryptConn(connName, conn string) (newConn string, err error) {
 	if !strings.HasPrefix(conn, _connPrefix) {
 		newConn = conn
 		return
 	}
-	envName := global.Config.Get("app").Value("BASE_SECRET_ENV_NAME")
+	envName := global.Config.Get("app").Value(BaseSecretEnvName)
 	if envName.String() == "" {
-		err = fmt.Errorf("数据库配置为加密模式,但 app.BASE_SECRET_ENV_NAME 值为空")
+		err = fmt.Errorf("数据库配置为加密模式,但 app.%s 值为空", BaseSecretEnvName)
 		return
 	}
 	secretKey := os.Getenv(envName.String())
