@@ -69,8 +69,8 @@ func (p *ServiceApp) startTraceServer() error {
 			errChan <- err
 			return
 		}
-		log.Infof("pprof trace config addr[%s]", p.options.setting.TraceAddr)
-		log.Infof("pprof trace bind addr:%s", newAddr)
+		log.Infof("pprof trace config addr [%s]", p.options.setting.TraceAddr)
+		log.Infof("pprof trace bind addr [%s]", newAddr)
 		lsr, err := net.Listen("tcp", newAddr)
 		if err != nil {
 			errChan <- err

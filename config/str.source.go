@@ -21,6 +21,10 @@ func (f *strSource) Name() string {
 	return _strSourceName
 }
 
+func (f *strSource) Path() string {
+	return _strSourceName
+}
+
 func (f *strSource) Load() (kvs []*KeyValue, err error) {
 	return []*KeyValue{
 		{

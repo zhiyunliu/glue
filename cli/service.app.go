@@ -116,7 +116,7 @@ func (p *ServiceApp) Endpoint() []registry.ServerItem {
 
 func (app *ServiceApp) initApp() error {
 
-	if app.options.cmdConfigFile == "" && len(app.options.configFileList) == 0 {
+	if app.options.cmdConfigFile == "" && len(app.options.configSources) == 0 {
 		return fmt.Errorf("configFile必须参数")
 	}
 	if !xfile.Exists(app.options.cmdConfigFile) {
@@ -124,19 +124,8 @@ func (app *ServiceApp) initApp() error {
 		// global.LocalIp = xnet.GetLocalIP(app.options.setting.IpMask)
 		return fmt.Errorf("config file [%s] 不存在", app.options.cmdConfigFile)
 	}
-	configSources := make([]config.Source, 0)
-	for i := range app.options.configFileList {
-		cfgFile := app.options.configFileList[i]
-		if strings.TrimSpace(cfgFile) == "" {
-			continue
-		}
-		if cfgFile != "" && !xfile.Exists(cfgFile) {
-			err := fmt.Errorf("config-file:%s not exists", cfgFile)
-			return err
-		}
-		log.Info("config-file:", cfgFile)
-		configSources = append(configSources, file.NewSource(cfgFile))
-	}
+	configSources := app.options.configSources
+
 	absCmdFile, err := filepath.Abs(app.options.cmdConfigFile)
 	if err != nil {
 		return err

@@ -25,7 +25,7 @@ type Options struct {
 
 	logConcurrency int
 	setting        *appSetting
-	configFileList []string
+	configSources  []config.Source
 	cmdConfigFile  string
 	logPath        string
 }
@@ -49,9 +49,9 @@ func Server(srv ...transport.Server) Option {
 }
 
 // WithAppMode
-func WithConfigList(fileList ...string) Option {
+func WithConfigSource(fileList ...config.Source) Option {
 	return func(o *Options) {
-		o.configFileList = fileList
+		o.configSources = fileList
 	}
 }
 

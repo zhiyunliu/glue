@@ -12,6 +12,7 @@ type Source interface {
 	Name() string
 	Load() ([]*KeyValue, error)
 	Watch() (Watcher, error)
+	Path() string
 }
 
 // Watcher watches a source for changes.

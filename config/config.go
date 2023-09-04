@@ -127,7 +127,7 @@ func (c *config) loadSource(sources ...Source) error {
 			return err
 		}
 		for _, v := range kvs {
-			c.opts.logger.Infof("config loaded: %s format: %s", v.Key, v.Format)
+			c.opts.logger.Infof("config path:%s loaded: %s format: %s", src.Path(), v.Key, v.Format)
 		}
 		if err = c.reader.Merge(kvs...); err != nil {
 			c.opts.logger.Errorf("failed to merge config source: %v", err)

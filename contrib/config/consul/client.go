@@ -60,6 +60,10 @@ func (c *source) Name() string {
 	return _name
 }
 
+func (f *source) Path() string {
+	return f.options.path
+}
+
 // Load return the config values
 func (s *source) Load() ([]*config.KeyValue, error) {
 	kv, _, err := s.client.KV().List(s.options.path, nil)

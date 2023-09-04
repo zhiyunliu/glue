@@ -20,6 +20,10 @@ func NewSource(path string) config.Source {
 	return &file{path: path}
 }
 
+func (f *file) Path() string {
+	return f.path
+}
+
 func (f *file) loadFile(path string) (*config.KeyValue, error) {
 	file, err := os.Open(path)
 	if err != nil {
