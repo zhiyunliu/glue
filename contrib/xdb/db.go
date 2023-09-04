@@ -25,7 +25,9 @@ func NewDB(proto string, setting *Setting) (obj xdb.IDB, err error) {
 	if err != nil {
 		return
 	}
-	setting.Cfg = newCfg
+	if newCfg != nil {
+		setting.Cfg = newCfg
+	}
 	conn := setting.Cfg.Conn
 	maxOpen := setting.Cfg.MaxOpen
 	maxIdle := setting.Cfg.MaxIdle

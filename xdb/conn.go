@@ -4,14 +4,15 @@ package xdb
 var ConnRefactor func(connName string, cfg *Config) (newcfg *Config, err error)
 
 func DefaultRefactor(connName string, cfg *Config) (newcfg *Config, err error) {
+	newcfg = cfg
 	if DecryptConn != nil {
-		cfg.Conn, err = DecryptConn(connName, cfg.Conn)
+		newcfg.Conn, err = DecryptConn(connName, cfg.Conn)
 		if err != nil {
 			return
 		}
 	}
 	if ConnRefactor != nil {
-		newcfg, err = ConnRefactor(connName, cfg)
+		newcfg, err = ConnRefactor(connName, newcfg)
 	}
 	return
 }
