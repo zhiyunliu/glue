@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -324,13 +324,13 @@ func (q *gbody) Bytes() []byte {
 func (q *gbody) loadBody() (err error) {
 	if len(q.bodyBytes) == 0 && !q.hasRead {
 		q.hasRead = true
-		q.bodyBytes, err = ioutil.ReadAll(q.gctx.Request.Body)
+		q.bodyBytes, err = io.ReadAll(q.gctx.Request.Body)
 		if err != nil {
 			return err
 		}
 		q.reader = bytes.NewReader(q.bodyBytes)
 		q.gctx.Request.Body.Close()
-		q.gctx.Request.Body = ioutil.NopCloser(q.reader)
+		q.gctx.Request.Body = io.NopCloser(q.reader)
 	}
 	return nil
 }

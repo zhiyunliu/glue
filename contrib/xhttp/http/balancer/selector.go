@@ -79,6 +79,9 @@ func (r *httpSelector) buildServiceNode(instances []*registry.ServiceInstance) [
 
 	var addresses = make([]selector.Node, 0, len(instances))
 	for _, v := range instances {
+		if scheme, ok := v.Metadata["scheme"]; ok && !strings.EqualFold(scheme, "http") {
+			continue
+		}
 		for _, ep := range v.Endpoints {
 			addresses = append(addresses, selector.NewNode(ep, v))
 		}

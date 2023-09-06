@@ -73,6 +73,10 @@ func (r *registrarResolver) buildAddress(instances []*registry.ServiceInstance) 
 
 	var addresses = make([]resolver.Address, 0, len(instances))
 	for _, v := range instances {
+		if scheme, ok := v.Metadata["scheme"]; ok && !strings.EqualFold(scheme, "grpc") {
+			continue
+		}
+
 		for _, ep := range v.Endpoints {
 			// ep=grpc://172.16.0.128:7080
 			epv, _ := url.Parse(ep.EndpointURL)

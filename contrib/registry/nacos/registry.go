@@ -67,20 +67,14 @@ func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) err
 		if err != nil {
 			return err
 		}
-		var rmd map[string]string
-		if si.Metadata == nil {
-			rmd = map[string]string{
-				"scheme":  u.Scheme,
-				"version": si.Version,
-			}
-		} else {
-			rmd = make(map[string]string, len(si.Metadata)+2)
+		var rmd = map[string]string{}
+		if si.Metadata != nil {
 			for k, v := range si.Metadata {
 				rmd[k] = v
 			}
-			rmd["scheme"] = u.Scheme
-			rmd["version"] = si.Version
 		}
+		rmd["scheme"] = u.Scheme
+		rmd["version"] = si.Version
 		_, e := r.cli.RegisterInstance(vo.RegisterInstanceParam{
 			Ip:          host,
 			Port:        uint64(p),
