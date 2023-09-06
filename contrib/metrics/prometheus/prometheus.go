@@ -3,6 +3,7 @@ package prometheus
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/zhiyunliu/glue/config"
+	collector "github.com/zhiyunliu/glue/contrib/metrics/prometheus/collector"
 	"github.com/zhiyunliu/glue/metrics"
 )
 
@@ -87,7 +88,16 @@ func (r xResover) Resolve(name string, config config.Config) (metrics.Provider, 
 	}, nil
 }
 
-func init() {
-	metrics.Register(&xResover{})
+// 只需要初始化一次的collector
+func initCollector() {
+	pc, err := collector.NewProcessCollector()
+	if err != nil {
+		panic(err)
+	}
+	prometheus.MustRegister(pc)
+}
 
+func init() {
+	initCollector()
+	metrics.Register(&xResover{})
 }
