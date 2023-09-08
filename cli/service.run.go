@@ -10,6 +10,7 @@ import (
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
+	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/xnet"
 )
 
@@ -87,11 +88,9 @@ func (p *ServiceApp) startTraceServer() error {
 		case <-done:
 			p.closeWaitGroup.Add(1)
 		case <-time.After(time.Second):
-			p.traceEndpoint = &registry.ServerItem{
-				ServiceName: global.AppName,
-				EndpointURL: fmt.Sprintf("pprof://%s", newAddr),
-			}
-			errChan <- nil
+			p.traceEndpoint, err = p.buildTraceEndpoint(newAddr)
+			errChan <- err
+
 		}
 	}
 	startTrace()
@@ -101,6 +100,22 @@ func (p *ServiceApp) startTraceServer() error {
 		return fmt.Errorf("trace server error:%+v", err)
 	}
 	return nil
+}
+
+func (e *ServiceApp) buildTraceEndpoint(addr string) (item *registry.ServerItem, err error) {
+	host, port, err := xnet.ExtractHostPort(addr)
+	if err != nil {
+		err = fmt.Errorf("trace Server Addr:%s 配置错误", addr)
+		return
+	}
+	if host == "" {
+		host = global.LocalIp
+	}
+	ep := transport.NewEndpoint("pprof", fmt.Sprintf("%s:%d", host, port))
+	return &registry.ServerItem{
+		ServiceName: global.AppName,
+		EndpointURL: ep.String(),
+	}, nil
 }
 
 func (p *ServiceApp) register(ctx context.Context) error {
