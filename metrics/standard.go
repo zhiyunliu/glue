@@ -31,7 +31,7 @@ func (s *xMetric) GetProvider(protoName string) (q Provider) {
 	if protoName == "" {
 		panic(fmt.Errorf("metric provider 配置错误,未设置"))
 	}
-	obj, err := s.c.GetOrCreate(protoName, protoName, func(cfg config.Config) (interface{}, error) {
+	obj, err := s.c.GetOrCreate(TypeNode, protoName, func(cfg config.Config) (interface{}, error) {
 		cfgVal := cfg.Get(protoName)
 		return newProvider(protoName, cfgVal)
 	})
