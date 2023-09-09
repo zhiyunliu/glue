@@ -2,6 +2,7 @@ package cron
 
 import (
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/server"
 )
@@ -13,28 +14,29 @@ type options struct {
 	serviceName string
 	setting     *Setting
 	logOpts     *log.Options
-	router      *server.RouterGroup
+	router      *engine.RouterGroup
 	config      config.Config
-	decReq      server.DecodeRequestFunc
-	encResp     server.EncodeResponseFunc
-	encErr      server.EncodeErrorFunc
+	decReq      engine.DecodeRequestFunc
+	encResp     engine.EncodeResponseFunc
+	encErr      engine.EncodeErrorFunc
 
-	startedHooks []server.Hook
-	endHooks     []server.Hook
+	startedHooks []engine.Hook
+	endHooks     []engine.Hook
 }
 
 func setDefaultOption() options {
 	return options{
 		setting: &Setting{
 			Config: Config{
+				Engine: "alloter",
 				Status: server.StatusStart,
 			},
 		},
 		logOpts: &log.Options{},
-		decReq:  server.DefaultRequestDecoder,
-		encResp: server.DefaultResponseEncoder,
-		encErr:  server.DefaultErrorEncoder,
-		router:  server.NewRouterGroup(""),
+		decReq:  engine.DefaultRequestDecoder,
+		encResp: engine.DefaultResponseEncoder,
+		encErr:  engine.DefaultErrorEncoder,
+		router:  engine.NewRouterGroup(""),
 	}
 
 }

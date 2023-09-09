@@ -7,14 +7,14 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/golibs/xstack"
 )
 
-//processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
+// processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
 	ctx       context.Context
 	lock      sync.Mutex
@@ -22,11 +22,11 @@ type processor struct {
 	queues    cmap.ConcurrentMap
 	consumer  queue.IMQC
 	status    server.RunStatus
-	engine    *alloter.Engine
 	onceLock  sync.Once
+	engine    engine.AlloterEngine
 }
 
-//NewProcessor 创建processor
+// NewProcessor 创建processor
 func newProcessor(ctx context.Context, proto string, setting config.Config) (p *processor, err error) {
 	p = &processor{
 		ctx:       ctx,
@@ -39,17 +39,15 @@ func newProcessor(ctx context.Context, proto string, setting config.Config) (p *
 	if err != nil {
 		return nil, fmt.Errorf("构建mqc服务失败:%v", err)
 	}
-	p.engine = alloter.New()
-
 	return p, nil
 }
 
-//QueueItems QueueItems
+// QueueItems QueueItems
 func (s *processor) QueueItems() map[string]interface{} {
 	return s.queues.Items()
 }
 
-//Start 所有任务
+// Start 所有任务
 func (s *processor) Start() error {
 	if err := s.consumer.Connect(); err != nil {
 		return err
@@ -59,7 +57,7 @@ func (s *processor) Start() error {
 	return err
 }
 
-//Add 添加队列信息
+// Add 添加队列信息
 func (s *processor) Add(tasks ...*Task) error {
 	for _, task := range tasks {
 		if task.Disable {
@@ -74,7 +72,7 @@ func (s *processor) Add(tasks ...*Task) error {
 	return nil
 }
 
-//Remove 除移队列信息
+// Remove 除移队列信息
 func (s *processor) Remove(tasks ...*Task) error {
 	for _, t := range tasks {
 		s.consumer.Unconsume(t.Queue)
@@ -83,7 +81,7 @@ func (s *processor) Remove(tasks ...*Task) error {
 	return nil
 }
 
-//Pause 暂停所有任务
+// Pause 暂停所有任务
 func (s *processor) Pause() (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -99,7 +97,7 @@ func (s *processor) Pause() (bool, error) {
 	return false, nil
 }
 
-//Resume 恢复所有任务
+// Resume 恢复所有任务
 func (s *processor) Resume() (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -120,7 +118,7 @@ func (s *processor) consume(task *Task) error {
 	return s.consumer.Consume(task, s.handleCallback(task))
 }
 
-//Close 退出
+// Close 退出
 func (s *processor) Close() error {
 	s.onceLock.Do(func() {
 		close(s.closeChan)
@@ -137,13 +135,13 @@ func (s *processor) handleCallback(task *Task) func(queue.IMQCMessage) {
 			}
 		}()
 
-		req, err := NewRequest(task, m)
+		req, err := newRequest(task, m)
 		if err != nil {
 			m.Nack(err)
 			panic(err)
 		}
 		req.ctx = s.ctx
-		resp, err := NewResponse(task, m)
+		resp, err := newResponse(task, m)
 		if err != nil {
 			m.Nack(err)
 			panic(err)

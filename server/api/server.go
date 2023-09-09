@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
@@ -76,7 +77,11 @@ func (e *Server) Start(ctx context.Context) (err error) {
 
 	e.ctx = transport.WithServerContext(ctx, e)
 	e.started = true
-	e.registryEngineRoute()
+
+	err = e.resoverEngineRoute()
+	if err != nil {
+		return
+	}
 
 	lsr, err := net.Listen("tcp", e.opts.setting.Config.Addr)
 	if err != nil {
@@ -182,11 +187,11 @@ func (e *Server) Use(middlewares ...middleware.Middleware) {
 	e.opts.router.Use(middlewares...)
 }
 
-func (e *Server) Group(group string, middlewares ...middleware.Middleware) *server.RouterGroup {
+func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engine.RouterGroup {
 	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Handle(path string, obj interface{}, methods ...server.Method) {
+func (e *Server) Handle(path string, obj interface{}, methods ...engine.Method) {
 	e.opts.router.Handle(path, obj, methods...)
 }
 

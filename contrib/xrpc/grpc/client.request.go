@@ -19,16 +19,16 @@ import (
 
 // Request RPC Request
 type Request struct {
-	requests cmap.ConcurrentMap
-	setting  *setting
+	requests     cmap.ConcurrentMap
+	clientConfig *clientConfig
 }
 
 // NewRequest 构建请求
-func NewRequest(setting *setting) *Request {
+func NewRequest(clientCfg *clientConfig) *Request {
 
 	req := &Request{
-		setting:  setting,
-		requests: cmap.New(),
+		clientConfig: clientCfg,
+		requests:     cmap.New(),
 	}
 	return req
 }
@@ -60,7 +60,7 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	}
 
 	//todo:当前是通过url 进行client 构建，是否考虑只通过服务来构建客户端？
-	key := fmt.Sprintf("%s:%s", r.setting.Name, service)
+	key := fmt.Sprintf("%s:%s", r.clientConfig.Name, service)
 	tmpClient := r.requests.Upsert(key, pathVal, func(exist bool, valueInMap interface{}, newValue interface{}) interface{} {
 		if exist {
 			return valueInMap
@@ -77,7 +77,7 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 		}
 
 		pathVal = newValue.(*url.URL)
-		client, err := NewClient(registrar, r.setting, pathVal)
+		client, err := NewClient(registrar, r.clientConfig, pathVal)
 		if err != nil {
 			panic(err)
 		}

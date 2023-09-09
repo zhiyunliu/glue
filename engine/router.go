@@ -1,4 +1,4 @@
-package server
+package engine
 
 import (
 	"fmt"
@@ -13,18 +13,22 @@ import (
 type Method string
 
 const (
-	MethodPost = "POST"
-	MethodGet  = "GET"
+	MethodPost   = "POST"
+	MethodGet    = "GET"
+	MethodPut    = "PUT"
+	MethodDelete = "DELETE"
 )
 
 var methodMap = map[string]bool{
-	MethodGet:  true,
-	MethodPost: true,
+	MethodGet:    true,
+	MethodPost:   true,
+	MethodPut:    true,
+	MethodDelete: true,
 }
 
 func adjustMethods(methods ...Method) []Method {
 	if len(methods) == 0 {
-		return []Method{MethodGet, MethodPost}
+		return []Method{MethodGet, MethodPost, MethodPut, MethodDelete}
 	}
 	result := []Method{}
 	for _, v := range methods {

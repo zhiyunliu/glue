@@ -1,45 +1,35 @@
 package api
 
 import (
-	"net/http"
+	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/middleware"
-
-	"github.com/gin-contrib/pprof"
-	"github.com/gin-gonic/gin"
-	"github.com/zhiyunliu/glue/global"
-	"github.com/zhiyunliu/glue/server"
 )
 
-func (e *Server) registryEngineRoute() {
-	gin.SetMode(global.Mode)
-	engine := gin.New()
-	e.opts.handler = engine
-	adapterEngine := server.NewGinEngine(engine,
-		server.WithSrvType(e.Type()),
-		server.WithSrvName(e.Name()),
-		server.WithErrorEncoder(e.opts.encErr),
-		server.WithRequestDecoder(e.opts.decReq),
-
-		server.WithResponseEncoder(func(ctx context.Context, resp interface{}) error {
+func (e *Server) resoverEngineRoute() (err error) {
+	adapterEngine, err := engine.NewEngine(e.opts.setting.Config.Engine, e.opts.config,
+		engine.WithSrvType(e.Type()),
+		engine.WithSrvName(e.Name()),
+		engine.WithErrorEncoder(e.opts.encErr),
+		engine.WithRequestDecoder(e.opts.decReq),
+		engine.WithResponseEncoder(func(ctx context.Context, resp interface{}) error {
 			for k, v := range e.opts.setting.Header {
 				ctx.Response().Header(k, v)
 			}
 			return e.opts.encResp(ctx, resp)
 		}))
+	if err != nil {
+		return
+	}
 
-	engine.Handle(http.MethodGet, "/healthcheck", func(ctx *gin.Context) {
-		ctx.AbortWithStatus(http.StatusOK)
-	})
-
-	pprof.Register(engine)
-
-	promHandler := promhttp.Handler()
-	engine.Handle(http.MethodGet, "/metrics", func(ctx *gin.Context) {
-		promHandler.ServeHTTP(ctx.Writer, ctx.Request)
-	})
+	httpEngine, ok := adapterEngine.GetImpl().(engine.HttpEngine)
+	if !ok {
+		err = fmt.Errorf("engine:[%s] is not http.Handler", e.opts.setting.Config.Engine)
+		return
+	}
+	e.opts.handler = httpEngine
 
 	for _, m := range e.opts.setting.Middlewares {
 		e.opts.router.Use(middleware.Resolve(&m))
@@ -47,10 +37,11 @@ func (e *Server) registryEngineRoute() {
 
 	for _, s := range e.opts.static {
 		if s.IsFile {
-			engine.StaticFile(s.RouterPath, s.FilePath)
+			httpEngine.StaticFile(s.RouterPath, s.FilePath)
 		} else {
-			engine.Static(s.RouterPath, s.FilePath)
+			httpEngine.Static(s.RouterPath, s.FilePath)
 		}
 	}
-	server.RegistryEngineRoute(adapterEngine, e.opts.router, e.opts.logOpts)
+	engine.RegistryEngineRoute(adapterEngine, e.opts.router, e.opts.logOpts)
+	return nil
 }

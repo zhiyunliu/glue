@@ -25,7 +25,7 @@ var (
 var _ = registrydefault()
 var builderMap = sync.Map{}
 
-//注册标准对象的builder
+// 注册标准对象的builder
 func Registry(builder container.StandardBuilder) {
 	builderMap.Store(builder.Name(), builder)
 }
@@ -48,7 +48,7 @@ func GetInstance(name string) interface{} {
 	return obj
 }
 
-//注册默认的提供程序
+// 注册默认的提供程序
 func registrydefault() error {
 	Registry(xdb.NewBuilder())
 	Registry(cache.NewBuilder())

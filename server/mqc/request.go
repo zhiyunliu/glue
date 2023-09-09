@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/zhiyunliu/glue/constants"
-	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/glue/engine"
 
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/queue"
@@ -16,7 +16,7 @@ import (
 
 var _ alloter.IRequest = (*Request)(nil)
 
-//Request 处理任务请求
+// Request 处理任务请求
 type Request struct {
 	ctx  sctx.Context
 	task *Task
@@ -27,12 +27,12 @@ type Request struct {
 	body   cbody //map[string]string
 }
 
-//NewRequest 构建任务请求
-func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
+// NewRequest 构建任务请求
+func newRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 	r = &Request{
 		IMQCMessage: m,
 		task:        task,
-		method:      server.MethodGet,
+		method:      engine.MethodGet,
 		params:      make(map[string]string),
 	}
 
@@ -51,17 +51,17 @@ func NewRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
 	return r, nil
 }
 
-//GetName 获取任务名称
+// GetName 获取任务名称
 func (m *Request) GetName() string {
 	return m.task.Queue
 }
 
-//GetService 服务名
+// GetService 服务名
 func (m *Request) GetService() string {
 	return m.task.GetService()
 }
 
-//GetMethod 方法名
+// GetMethod 方法名
 func (m *Request) GetMethod() string {
 	return m.method
 }

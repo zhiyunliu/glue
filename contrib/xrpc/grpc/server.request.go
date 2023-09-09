@@ -1,4 +1,4 @@
-package rpc
+package grpc
 
 import (
 	"bytes"
@@ -14,10 +14,10 @@ import (
 	"github.com/zhiyunliu/glue/contrib/alloter"
 )
 
-var _ alloter.IRequest = (*Request)(nil)
+var _ alloter.IRequest = (*serverRequest)(nil)
 
-//Request 处理任务请求
-type Request struct {
+// Request 处理任务请求
+type serverRequest struct {
 	ctx    sctx.Context
 	rpcReq *grpcproto.Request
 	method string
@@ -26,10 +26,10 @@ type Request struct {
 	body   cbody
 }
 
-//NewRequest 构建任务请求
-func NewRequest(ctx context.Context, rpcReq *grpcproto.Request) (r *Request, err error) {
+// NewRequest 构建任务请求
+func newServerRequest(ctx context.Context, rpcReq *grpcproto.Request) (r *serverRequest, err error) {
 
-	r = &Request{
+	r = &serverRequest{
 		rpcReq: rpcReq,
 		method: rpcReq.Method,
 		header: rpcReq.Header,
@@ -45,44 +45,44 @@ func NewRequest(ctx context.Context, rpcReq *grpcproto.Request) (r *Request, err
 	return r, nil
 }
 
-//GetName 获取任务名称
-func (m *Request) GetName() string {
+// GetName 获取任务名称
+func (m *serverRequest) GetName() string {
 	return m.rpcReq.Service
 }
 
-//GetService 服务名
-func (m *Request) GetService() string {
+// GetService 服务名
+func (m *serverRequest) GetService() string {
 	return m.rpcReq.Service
 }
 
-//GetMethod 方法名
-func (m *Request) GetMethod() string {
+// GetMethod 方法名
+func (m *serverRequest) GetMethod() string {
 	return m.method
 }
 
-func (m *Request) Params() map[string]string {
+func (m *serverRequest) Params() map[string]string {
 	return m.params
 }
 
-func (m *Request) GetHeader() map[string]string {
+func (m *serverRequest) GetHeader() map[string]string {
 	return m.header
 }
 
-func (m *Request) Body() []byte {
+func (m *serverRequest) Body() []byte {
 	return m.body
 }
 
-func (m *Request) GetRemoteAddr() string {
+func (m *serverRequest) GetRemoteAddr() string {
 	if p, ok := peer.FromContext(m.ctx); ok {
 		return p.Addr.String()
 	}
 	return m.header[constants.HeaderRemoteHeader]
 }
 
-func (m *Request) Context() sctx.Context {
+func (m *serverRequest) Context() sctx.Context {
 	return m.ctx
 }
-func (m *Request) WithContext(ctx sctx.Context) alloter.IRequest {
+func (m *serverRequest) WithContext(ctx sctx.Context) alloter.IRequest {
 	m.ctx = ctx
 	return m
 }

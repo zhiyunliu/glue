@@ -3,31 +3,28 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/url"
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
 	_ "github.com/zhiyunliu/glue/contrib/xrpc/grpc"
-	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/transport"
+	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/xnet"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 type Server struct {
-	ctx       context.Context
-	name      string
-	processor *processor
-	srv       *grpc.Server
-	endpoint  *url.URL
-	opts      options
-	started   bool
+	ctx      context.Context
+	name     string
+	server   xrpc.Server
+	endpoint *url.URL
+	opts     *options
+	started  bool
 }
 
 var _ transport.Server = (*Server)(nil)
@@ -46,7 +43,7 @@ func New(name string, opts ...Option) *Server {
 // Options 设置参数
 func (e *Server) Options(opts ...Option) {
 	for _, o := range opts {
-		o(&e.opts)
+		o(e.opts)
 	}
 }
 
@@ -66,7 +63,7 @@ func (e *Server) Config(cfg config.Config) {
 		return
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
+	cfg.Get(e.serverPath()).Scan(e.opts.setting)
 }
 
 // Start 开始
@@ -74,33 +71,23 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	if e.opts.setting.Config.Status == server.StatusStop {
 		return nil
 	}
-	e.opts.setting.Config.Addr, err = xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.opts.setting.Config.Addr)
+	e.ctx = transport.WithServerContext(ctx, e)
+	e.server, err = xrpc.NewServer(e.opts.setting.Config.Proto, e.opts.config.Get(e.configPath()))
+	if err != nil {
+		return
+	}
+	err = e.resoverEngineRoute(e.server)
 	if err != nil {
 		return
 	}
 
-	e.ctx = transport.WithServerContext(ctx, e)
-	lsr, err := net.Listen("tcp", e.opts.setting.Config.Addr)
-	if err != nil {
-		return err
-	}
-	grpcOpts := []grpc.ServerOption{}
-	if e.opts.setting.Config.MaxRecvMsgSize > 0 {
-		grpcOpts = append(grpcOpts, grpc.MaxRecvMsgSize(e.opts.setting.Config.MaxRecvMsgSize))
-	}
-	if e.opts.setting.Config.MaxSendMsgSize > 0 {
-		grpcOpts = append(grpcOpts, grpc.MaxSendMsgSize(e.opts.setting.Config.MaxSendMsgSize))
-	}
-	e.srv = grpc.NewServer(grpcOpts...)
-	e.newProcessor()
-
 	errChan := make(chan error, 1)
-	log.Infof("RPC Server [%s] listening on %s", e.name, e.opts.setting.Config.Addr)
+	log.Infof("RPC Server [%s] listening on %s", e.name, e.server.GetAddr())
 
 	done := make(chan struct{})
 	go func() {
 		e.started = true
-		errChan <- e.srv.Serve(lsr)
+		errChan <- e.server.Serve(e.ctx)
 		close(done)
 	}()
 
@@ -137,7 +124,10 @@ func (e *Server) Attempt() bool {
 
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
-	e.srv.GracefulStop()
+	err := e.server.Stop(ctx)
+	if err != nil {
+		return err
+	}
 	if len(e.opts.endHooks) > 0 {
 		for _, fn := range e.opts.endHooks {
 			err := fn(ctx)
@@ -163,38 +153,32 @@ func (e *Server) Endpoint() *url.URL {
 	return e.endpoint
 
 }
+func (e *Server) serverPath() string {
+	return fmt.Sprintf("servers.%s", e.Name())
+}
+func (e *Server) configPath() string {
+	return fmt.Sprintf("%s.config", e.serverPath())
+}
 
 func (e *Server) buildEndpoint() *url.URL {
-	host, port, err := xnet.ExtractHostPort(e.opts.setting.Config.Addr)
+	host, port, err := xnet.ExtractHostPort(e.server.GetAddr())
 	if err != nil {
-		panic(fmt.Errorf("RPC Server Addr:%s 配置错误", e.opts.setting.Config.Addr))
+		panic(fmt.Errorf("RPC Server Addr:%s 配置错误", e.server.GetAddr()))
 	}
 	if host == "" {
 		host = global.LocalIp
 	}
-	return transport.NewEndpoint("grpc", fmt.Sprintf("%s:%d", host, port))
-}
-
-func (e *Server) newProcessor() {
-	var err error
-	e.processor, err = newProcessor(e)
-	if err != nil {
-		panic(err)
-	}
-	reflection.Register(e.srv)
-	grpcproto.RegisterGRPCServer(e.srv, e.processor)
-
-	e.registryEngineRoute()
+	return transport.NewEndpoint(e.server.GetProto(), fmt.Sprintf("%s:%d", host, port))
 }
 
 func (e *Server) Use(middlewares ...middleware.Middleware) {
 	e.opts.router.Use(middlewares...)
 }
 
-func (e *Server) Group(group string, middlewares ...middleware.Middleware) *server.RouterGroup {
+func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engine.RouterGroup {
 	return e.opts.router.Group(group, middlewares...)
 }
 
 func (e *Server) Handle(path string, obj interface{}) {
-	e.opts.router.Handle(path, obj, server.MethodPost)
+	e.opts.router.Handle(path, obj, engine.MethodPost)
 }

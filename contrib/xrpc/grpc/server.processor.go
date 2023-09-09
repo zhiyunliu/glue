@@ -1,4 +1,4 @@
-package rpc
+package grpc
 
 import (
 	"fmt"
@@ -12,16 +12,15 @@ import (
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
-//processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
+// processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
 	server transport.Server
 	engine *alloter.Engine
 }
 
-//NewProcessor 创建processor
-func newProcessor(server transport.Server) (p *processor, err error) {
+// NewProcessor 创建processor
+func newProcessor() (p *processor, err error) {
 	p = &processor{}
-	p.server = server
 	p.engine = alloter.New()
 
 	return p, nil
@@ -30,16 +29,15 @@ func newProcessor(server transport.Server) (p *processor, err error) {
 func (s *processor) Process(ctx context.Context, request *grpcproto.Request) (response *grpcproto.Response, err error) {
 	response = &grpcproto.Response{}
 	//转换输入参数
-	ctx = transport.WithServerContext(ctx, s.server)
 
-	req, err := NewRequest(ctx, request)
+	req, err := newServerRequest(ctx, request)
 	if err != nil {
 		response.Status = int32(http.StatusNotAcceptable)
 		response.Result = bytesconv.StringToBytes(fmt.Sprintf("输入参数有误:%v", err))
 		return response, nil
 	}
 
-	resp := NewResponse()
+	resp := newServerResponse()
 
 	//发起本地处理
 	err = s.engine.HandleRequest(req, resp)

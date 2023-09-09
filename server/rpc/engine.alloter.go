@@ -1,31 +1,26 @@
 package rpc
 
 import (
-	"net/http"
-
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/glue/xrpc"
 )
 
-func (e *Server) registryEngineRoute() {
-	engine := e.processor.engine
-
-	adapterEngine := server.NewAlloterEngine(engine,
-		server.WithSrvType(e.Type()),
-		server.WithSrvName(e.Name()),
-		server.WithErrorEncoder(e.opts.encErr),
-		server.WithRequestDecoder(e.opts.decReq),
-		server.WithResponseEncoder(e.opts.encResp))
-
-	engine.Handle(http.MethodGet, "/healthcheck", func(ctx *alloter.Context) {
-		ctx.AbortWithStatus(http.StatusOK)
-	})
-
+func (e *Server) resoverEngineRoute(server xrpc.Server) (err error) {
+	adapterEngine, err := engine.NewEngine(e.opts.setting.Config.Engine, e.opts.config,
+		engine.WithSrvType(e.Type()),
+		engine.WithSrvName(e.Name()),
+		engine.WithErrorEncoder(e.opts.encErr),
+		engine.WithRequestDecoder(e.opts.decReq),
+		engine.WithResponseEncoder(e.opts.encResp),
+	)
+	if err != nil {
+		return
+	}
 	for _, m := range e.opts.setting.Middlewares {
 		e.opts.router.Use(middleware.Resolve(&m))
 	}
 
-	server.RegistryEngineRoute(adapterEngine, e.opts.router, e.opts.logOpts)
-
+	engine.RegistryEngineRoute(adapterEngine, e.opts.router, e.opts.logOpts)
+	return nil
 }

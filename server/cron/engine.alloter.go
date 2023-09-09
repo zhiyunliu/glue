@@ -1,24 +1,36 @@
 package cron
 
 import (
+	"fmt"
+
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/server"
 )
 
-func (e *Server) registryEngineRoute() {
-	engine := e.processor.engine
+func (e *Server) resoverEngineRoute(processor *processor) (err error) {
+	adapterEngine, err := engine.NewEngine(e.opts.setting.Config.Engine, e.opts.config,
+		engine.WithSrvType(e.Type()),
+		engine.WithSrvName(e.Name()),
+		engine.WithErrorEncoder(e.opts.encErr),
+		engine.WithRequestDecoder(e.opts.decReq),
+		engine.WithResponseEncoder(e.opts.encResp),
+	)
+	if err != nil {
+		return
+	}
 
-	adapterEngine := server.NewAlloterEngine(engine,
-		server.WithSrvType(e.Type()),
-		server.WithSrvName(e.Name()),
-		server.WithErrorEncoder(e.opts.encErr),
-		server.WithRequestDecoder(e.opts.decReq),
-		server.WithResponseEncoder(e.opts.encResp))
+	alloterEngine, ok := adapterEngine.GetImpl().(engine.AlloterEngine)
+	if !ok {
+		err = fmt.Errorf("engine:[%s] is not engine.AlloterEngine", e.opts.setting.Config.Engine)
+		return
+	}
+	processor.engine = alloterEngine
 
 	for _, m := range e.opts.setting.Middlewares {
 		e.opts.router.Use(middleware.Resolve(&m))
 	}
 
-	server.RegistryEngineRoute(adapterEngine, e.opts.router, e.opts.logOpts)
+	engine.RegistryEngineRoute(adapterEngine, e.opts.router, e.opts.logOpts)
+	return
 
 }

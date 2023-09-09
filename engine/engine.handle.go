@@ -1,4 +1,4 @@
-package server
+package engine
 
 import (
 	"net/http"
@@ -13,14 +13,6 @@ import (
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/middleware/recovery"
 )
-
-type AdapterEngine interface {
-	NoMethod()
-	NoRoute()
-	Handle(method string, path string, callfunc HandlerFunc)
-	Write(ctx context.Context, resp interface{})
-}
-type HandlerFunc func(context.Context)
 
 func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup, logOpt *log.Options) {
 	defaultMiddlewares := []middleware.Middleware{

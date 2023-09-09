@@ -9,13 +9,13 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/alloter"
-	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/golibs/session"
 )
 
 var _ alloter.IRequest = (*Request)(nil)
 
-//Request 处理任务请求
+// Request 处理任务请求
 type Request struct {
 	ctx      sctx.Context
 	job      *Job
@@ -29,12 +29,12 @@ type Request struct {
 	canProc  bool
 }
 
-//NewRequest 构建任务请求
+// NewRequest 构建任务请求
 func NewRequest(job *Job) (r *Request, err error) {
 
 	r = &Request{
 		job:    job,
-		method: server.MethodGet,
+		method: engine.MethodGet,
 		params: make(map[string]string),
 		round:  &Round{},
 	}
@@ -52,17 +52,17 @@ func NewRequest(job *Job) (r *Request, err error) {
 	return r, nil
 }
 
-//GetName 服务名
+// GetName 服务名
 func (m *Request) GetName() string {
 	return m.job.Cron
 }
 
-//GetService 服务名
+// GetService 服务名
 func (m *Request) GetService() string {
 	return m.job.GetService()
 }
 
-//GetMethod 方法名
+// GetMethod 方法名
 func (m *Request) GetMethod() string {
 	return m.method
 }

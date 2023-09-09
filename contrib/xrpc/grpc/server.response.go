@@ -1,4 +1,4 @@
-package rpc
+package grpc
 
 import (
 	"bufio"
@@ -9,15 +9,15 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
-var _ alloter.ResponseWriter = (*Response)(nil)
+var _ alloter.ResponseWriter = (*serverResponse)(nil)
 
 const (
 	noWritten     = -1
 	defaultStatus = http.StatusOK
 )
 
-//Request 处理任务请求
-type Response struct {
+// Request 处理任务请求
+type serverResponse struct {
 	status int
 	size   int
 	header xtypes.SMap
@@ -25,10 +25,10 @@ type Response struct {
 	buffer *bytes.Buffer
 }
 
-//NewRequest 构建任务请求
-func NewResponse() (r *Response) {
+// NewRequest 构建任务请求
+func newServerResponse() (r *serverResponse) {
 
-	r = &Response{
+	r = &serverResponse{
 		header: make(xtypes.SMap),
 		size:   noWritten,
 		status: defaultStatus,
@@ -38,39 +38,39 @@ func NewResponse() (r *Response) {
 	return r
 }
 
-func (r *Response) Status() int {
+func (r *serverResponse) Status() int {
 	return r.status
 }
 
-func (r *Response) Size() int {
+func (r *serverResponse) Size() int {
 	return r.size
 }
 
 // Returns true if the response body was already written.
-func (r *Response) Written() bool {
+func (r *serverResponse) Written() bool {
 	return r.size != noWritten
 
 }
 
-func (r *Response) WriteHeader(code int) {
+func (r *serverResponse) WriteHeader(code int) {
 	if code > 0 && r.status != code {
 		r.status = code
 	}
 }
-func (r *Response) Header() xtypes.SMap {
+func (r *serverResponse) Header() xtypes.SMap {
 	return r.header
 }
-func (r *Response) Write(data []byte) (n int, err error) {
+func (r *serverResponse) Write(data []byte) (n int, err error) {
 	r.size += len(data)
 	return r.data.Write(data)
 }
 
 // Writes the string into the response body.
-func (r *Response) WriteString(s string) (n int, err error) {
+func (r *serverResponse) WriteString(s string) (n int, err error) {
 	r.size += n
 	return r.data.WriteString(s)
 }
 
-func (r *Response) Flush() error {
+func (r *serverResponse) Flush() error {
 	return r.data.Flush()
 }
