@@ -14,12 +14,13 @@ import (
 	"github.com/zhiyunliu/glue/xrpc"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 )
 
 type Client struct {
 	registrar       registry.Registrar
-	setting         *setting
+	setting         *clientConfig
 	reqPath         *url.URL
 	conn            *grpc.ClientConn
 	client          grpcproto.GRPCClient
@@ -30,7 +31,7 @@ type Client struct {
 }
 
 // NewClient 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
-func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL) (*Client, error) {
+func NewClient(registrar registry.Registrar, setting *clientConfig, reqPath *url.URL) (*Client, error) {
 	client := &Client{
 		registrar: registrar,
 		setting:   setting,
@@ -106,7 +107,7 @@ func (c *Client) connect() (err error) {
 	ctx, _ := context.WithTimeout(context.Background(), time.Duration(c.setting.ConnTimeout)*time.Second)
 	c.conn, err = grpc.DialContext(ctx,
 		c.reqPath.String(),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultServiceConfig(string(c.setting.ServerConfig)),
 		//grpc.WithBalancerName(c.setting.Balancer),
 		grpc.WithResolvers(c.balancerBuilder),

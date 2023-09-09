@@ -11,15 +11,15 @@ import (
 
 const Proto = "grpc"
 
-type grpcResolver struct {
+type clientResolver struct {
 }
 
-func (s *grpcResolver) Name() string {
+func (s *clientResolver) Name() string {
 	return Proto
 }
 
-func (s *grpcResolver) Resolve(name string, cfg config.Config) (xrpc.Client, error) {
-	setval := &setting{
+func (s *clientResolver) Resolve(name string, cfg config.Config) (xrpc.Client, error) {
+	setval := &clientConfig{
 		Name:        name,
 		Balancer:    roundrobin.Name,
 		ConnTimeout: 10,
@@ -39,5 +39,5 @@ func (s *grpcResolver) Resolve(name string, cfg config.Config) (xrpc.Client, err
 }
 
 func init() {
-	xrpc.Register(&grpcResolver{})
+	xrpc.RegisterClient(&clientResolver{})
 }

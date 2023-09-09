@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/server"
 )
@@ -17,14 +18,14 @@ type options struct {
 	logOpts     *log.Options
 	config      config.Config
 	handler     http.Handler
-	router      *server.RouterGroup
+	router      *engine.RouterGroup
 	static      map[string]Static
-	decReq      server.DecodeRequestFunc
-	encResp     server.EncodeResponseFunc
-	encErr      server.EncodeErrorFunc
+	decReq      engine.DecodeRequestFunc
+	encResp     engine.EncodeResponseFunc
+	encErr      engine.EncodeErrorFunc
 
-	startedHooks []server.Hook
-	endHooks     []server.Hook
+	startedHooks []engine.Hook
+	endHooks     []engine.Hook
 }
 
 func setDefaultOption() *options {
@@ -32,6 +33,7 @@ func setDefaultOption() *options {
 		setting: &Setting{
 			Config: Config{
 				Addr:              ":8080",
+				Engine:            "gin",
 				Status:            server.StatusStart,
 				ReadTimeout:       15,
 				WriteTimeout:      15,
@@ -41,23 +43,23 @@ func setDefaultOption() *options {
 		},
 		logOpts:      &log.Options{},
 		static:       make(map[string]Static),
-		startedHooks: make([]server.Hook, 0),
-		endHooks:     make([]server.Hook, 0),
-		decReq:       server.DefaultRequestDecoder,
-		encResp:      server.DefaultResponseEncoder,
-		encErr:       server.DefaultErrorEncoder,
-		router:       server.NewRouterGroup(""),
+		startedHooks: make([]engine.Hook, 0),
+		endHooks:     make([]engine.Hook, 0),
+		decReq:       engine.DefaultRequestDecoder,
+		encResp:      engine.DefaultResponseEncoder,
+		encErr:       engine.DefaultErrorEncoder,
+		router:       engine.NewRouterGroup(""),
 	}
 }
 
-func WithEndHook(f server.Hook) Option {
+func WithEndHook(f engine.Hook) Option {
 	return func(o *options) {
 		o.endHooks = append(o.endHooks, f)
 	}
 }
 
 // WithStartedHook 设置启动回调函数
-func WithStartedHook(f server.Hook) Option {
+func WithStartedHook(f engine.Hook) Option {
 	return func(o *options) {
 		o.startedHooks = append(o.startedHooks, f)
 	}

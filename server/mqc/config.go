@@ -27,6 +27,7 @@ type Setting struct {
 
 type Config struct {
 	Addr   string        `json:"addr"`
+	Engine string        `json:"engine"`
 	Status server.Status `json:"status"`
 }
 

@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
@@ -53,7 +54,7 @@ func (e *Server) Type() string {
 	return Type
 }
 
-//ServiceName 服务名称
+// ServiceName 服务名称
 func (s *Server) ServiceName() string {
 	return s.opts.serviceName
 }
@@ -71,13 +72,16 @@ func (e *Server) Config(cfg config.Config) {
 }
 
 // Start 开始
-func (e *Server) Start(ctx context.Context) error {
+func (e *Server) Start(ctx context.Context) (err error) {
 	if e.opts.setting.Config.Status == server.StatusStop {
 		return nil
 	}
 
 	e.ctx = transport.WithServerContext(ctx, e)
-	e.newProcessor()
+	err = e.newProcessor()
+	if err != nil {
+		return
+	}
 
 	errChan := make(chan error, 1)
 	log.Infof("MQC Server [%s] listening on %s", e.name, e.opts.setting.Config.String())
@@ -91,7 +95,7 @@ func (e *Server) Start(ctx context.Context) error {
 		errChan <- nil
 	}()
 
-	err := <-errChan
+	err = <-errChan
 	if err != nil {
 		log.Errorf("MQC Server [%s] start error: %s", e.name, err.Error())
 		return err
@@ -137,13 +141,12 @@ func (e *Server) Stop(ctx context.Context) error {
 
 }
 
-func (e *Server) newProcessor() {
-	var err error
+func (e *Server) newProcessor() (err error) {
 	config := e.opts.setting.Config
 	//queue://default
 	protoType, configName, err := xnet.Parse(config.Addr)
 	if err != nil {
-		panic(err)
+		return
 	}
 	//{"proto":"redis","addr":"redis://localhost"}
 	cfg := e.opts.config.Get(protoType).Get(configName)
@@ -152,24 +155,25 @@ func (e *Server) newProcessor() {
 
 	e.processor, err = newProcessor(e.ctx, protoType, cfg)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	err = e.processor.Add(e.opts.setting.Tasks...)
 	if err != nil {
-		panic(err)
+		return
 	}
-	e.registryEngineRoute()
+	err = e.resoverEngineRoute(e.processor)
+	return
 }
 
 func (e *Server) Use(middlewares ...middleware.Middleware) {
 	e.opts.router.Use(middlewares...)
 }
 
-func (e *Server) Group(group string, middlewares ...middleware.Middleware) *server.RouterGroup {
+func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engine.RouterGroup {
 	return e.opts.router.Group(group, middlewares...)
 }
 
 func (e *Server) Handle(queue string, obj interface{}) {
-	e.opts.router.Handle(getService(queue), obj, server.MethodGet)
+	e.opts.router.Handle(getService(queue), obj, engine.MethodGet)
 }

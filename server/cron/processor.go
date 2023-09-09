@@ -1,7 +1,6 @@
 package cron
 
 import (
-	"context"
 	sctx "context"
 	"errors"
 	"fmt"
@@ -12,8 +11,8 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 	cron "github.com/robfig/cron/v3"
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/dlocker"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/standard"
@@ -22,7 +21,6 @@ import (
 
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
-	ctx          context.Context
 	lock         sync.Mutex
 	closeChan    chan struct{}
 	index        int
@@ -32,7 +30,7 @@ type processor struct {
 	interval     time.Duration
 	slots        [60]cmap.ConcurrentMap //time slots
 	status       server.RunStatus
-	engine       *alloter.Engine
+	engine       engine.AlloterEngine
 	onceLock     sync.Once
 	cfg          config.Config
 }
@@ -47,9 +45,8 @@ func newProcessor(cfg config.Config) (p *processor, err error) {
 		jobs:         cmap.New(),
 		monopolyJobs: cmap.New(),
 		reqs:         cmap.New(),
+		cfg:          cfg,
 	}
-
-	p.engine = alloter.New()
 
 	for i := range p.slots {
 		p.slots[i] = cmap.New()

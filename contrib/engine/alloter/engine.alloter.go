@@ -1,25 +1,27 @@
-package server
+package alloter
 
 import (
 	"sync"
 
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/contrib/alloter"
-	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/engine"
 )
+
+var _ engine.AdapterEngine = (*AlloterEngine)(nil)
 
 type AlloterEngine struct {
 	Engine *alloter.Engine
 	pool   sync.Pool
-	opts   *options
+	opts   *engine.Options
 }
 
-func NewAlloterEngine(engine *alloter.Engine, opts ...Option) *AlloterEngine {
+func NewAlloterEngine(innerEngine *alloter.Engine, opts ...engine.Option) *AlloterEngine {
 	g := &AlloterEngine{
-		Engine: engine,
-		opts:   setDefaultOptions(),
+		Engine: innerEngine,
+		opts:   engine.DefaultOptions(),
 	}
-	alloter.SetMode(global.Mode)
+	alloter.SetMode(alloter.ReleaseMode)
 
 	for i := range opts {
 		opts[i](g.opts)
@@ -53,7 +55,7 @@ func (e *AlloterEngine) NoRoute() {
 	})
 }
 
-func (e *AlloterEngine) Handle(method string, path string, callfunc HandlerFunc) {
+func (e *AlloterEngine) Handle(method string, path string, callfunc engine.HandlerFunc) {
 	e.Engine.Handle(method, path, func(ctx *alloter.Context) {
 		actx := e.pool.Get().(*AlloterContext)
 		actx.reset(ctx)
@@ -69,4 +71,7 @@ func (e *AlloterEngine) Write(ctx context.Context, resp interface{}) {
 	if err != nil {
 		ctx.Log().Errorf("%s:写入响应出错:%s,%+v", e.opts.SrvType, ctx.Request().Path().FullPath(), err)
 	}
+}
+func (e *AlloterEngine) GetImpl() any {
+	return e.Engine
 }

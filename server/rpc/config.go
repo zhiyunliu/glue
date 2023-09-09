@@ -21,8 +21,7 @@ type Setting struct {
 }
 
 type Config struct {
-	Addr           string        `json:"addr"`
-	Status         server.Status `json:"status"`
-	MaxRecvMsgSize int           `json:"max_recv_msg_size"`
-	MaxSendMsgSize int           `json:"max_send_msg_size"`
+	Status server.Status `json:"status"`
+	Proto  string        `json:"proto"`
+	Engine string        `json:"engine"`
 }

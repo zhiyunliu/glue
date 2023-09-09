@@ -31,6 +31,7 @@ type Setting struct {
 
 type Config struct {
 	Status server.Status `json:"status"`
+	Engine string        `json:"engine"`
 }
 
 type Job struct {

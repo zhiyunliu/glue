@@ -1,8 +1,8 @@
-package server
+package engine
 
-type Option func(*options)
+type Option func(*Options)
 
-type options struct {
+type Options struct {
 	SrvType         string
 	SrvName         string
 	RequestDecoder  DecodeRequestFunc  //:          server.DefaultRequestDecoder,
@@ -10,9 +10,8 @@ type options struct {
 	ErrorEncoder    EncodeErrorFunc    //:          server.DefaultErrorEncoder,
 }
 
-func setDefaultOptions() *options {
-	return &options{
-		SrvType:         "api",
+func DefaultOptions() *Options {
+	return &Options{
 		RequestDecoder:  DefaultRequestDecoder,
 		ResponseEncoder: DefaultResponseEncoder,
 		ErrorEncoder:    DefaultErrorEncoder,
@@ -20,30 +19,30 @@ func setDefaultOptions() *options {
 }
 
 func WithSrvType(srvType string) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.SrvType = srvType
 	}
 }
 
 func WithSrvName(name string) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.SrvName = name
 	}
 }
 func WithRequestDecoder(requestDecoder DecodeRequestFunc) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.RequestDecoder = requestDecoder
 	}
 }
 
 func WithResponseEncoder(responseEncoder EncodeResponseFunc) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.ResponseEncoder = responseEncoder
 	}
 }
 
 func WithErrorEncoder(errorEncoder EncodeErrorFunc) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.ErrorEncoder = errorEncoder
 	}
 }

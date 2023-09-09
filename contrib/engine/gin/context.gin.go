@@ -1,4 +1,4 @@
-package server
+package gin
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
@@ -20,7 +21,7 @@ import (
 )
 
 type GinContext struct {
-	opts   *options
+	opts   *engine.Options
 	meta   map[string]interface{}
 	Gctx   *gin.Context
 	greq   *ginRequest
@@ -28,7 +29,7 @@ type GinContext struct {
 	logger log.Logger
 }
 
-func newGinContext(opts *options) *GinContext {
+func newGinContext(opts *engine.Options) *GinContext {
 	return &GinContext{
 		opts: opts,
 		greq: &ginRequest{
@@ -75,7 +76,7 @@ func (ctx *GinContext) Bind(obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	if chr, ok := obj.(IChecker); ok {
+	if chr, ok := obj.(engine.IChecker); ok {
 		return chr.Check()
 	}
 	return nil

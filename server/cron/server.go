@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
@@ -155,20 +156,20 @@ func (e *Server) newProcessor() error {
 	if err != nil {
 		return err
 	}
-	e.registryEngineRoute()
-	return nil
+	err = e.resoverEngineRoute(e.processor)
+	return err
 }
 
-func (e *Server) AddJob(jobs ...*Job) error {
-	err := e.processor.Add(jobs...)
+func (e *Server) AddJob(jobs ...*Job) (err error) {
+	err = e.processor.Add(jobs...)
 	if err != nil {
 		return err
 	}
-	e.registryEngineRoute()
-	return nil
+	err = e.resoverEngineRoute(e.processor)
+	return err
 }
 func (e *Server) ResetRoute() {
-	e.opts.router = server.NewRouterGroup("")
+	e.opts.router = engine.NewRouterGroup("")
 }
 func (e *Server) RemoveJob(key string) {
 	e.processor.Remove(key)
@@ -177,10 +178,10 @@ func (e *Server) Use(middlewares ...middleware.Middleware) {
 	e.opts.router.Use(middlewares...)
 }
 
-func (e *Server) Group(group string, middlewares ...middleware.Middleware) *server.RouterGroup {
+func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engine.RouterGroup {
 	return e.opts.router.Group(group, middlewares...)
 }
 
 func (e *Server) Handle(path string, obj interface{}) {
-	e.opts.router.Handle(path, obj, server.MethodGet)
+	e.opts.router.Handle(path, obj, engine.MethodGet)
 }

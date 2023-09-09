@@ -16,7 +16,7 @@ const (
 	_sucessStatus = http.StatusOK
 )
 
-//Request 处理任务请求
+// Request 处理任务请求
 type Response struct {
 	status int
 	size   int
@@ -25,8 +25,8 @@ type Response struct {
 	//stream *bufio.Writer
 }
 
-//NewRequest 构建任务请求
-func NewResponse(task *Task, msg queue.IMQCMessage) (r *Response, err error) {
+// newResponse 构建任务请求
+func newResponse(task *Task, msg queue.IMQCMessage) (r *Response, err error) {
 	r = &Response{
 		header: make(xtypes.SMap),
 		size:   noWritten,

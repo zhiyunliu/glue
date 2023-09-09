@@ -1,4 +1,4 @@
-package server
+package alloter
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	vctx "github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
@@ -18,14 +19,14 @@ import (
 
 type AlloterContext struct {
 	Actx   *alloter.Context
-	opts   *options
+	opts   *engine.Options
 	meta   map[string]interface{}
 	areq   *alloterRequest
 	aresp  *alloterResponse
 	logger log.Logger
 }
 
-func newAlloterContext(opts *options) *AlloterContext {
+func newAlloterContext(opts *engine.Options) *AlloterContext {
 	return &AlloterContext{
 		opts: opts,
 		meta: make(map[string]interface{}),
@@ -79,7 +80,7 @@ func (ctx *AlloterContext) Bind(obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	if chr, ok := obj.(IChecker); ok {
+	if chr, ok := obj.(engine.IChecker); ok {
 		return chr.Check()
 	}
 	return nil
