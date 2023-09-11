@@ -111,9 +111,10 @@ func (e *ServiceApp) buildTraceEndpoint(addr string) (item *registry.ServerItem,
 	if host == "" {
 		host = global.LocalIp
 	}
-	ep := transport.NewEndpoint("pprof", fmt.Sprintf("%s:%d", host, port))
+	const scheme = "pprof"
+	ep := transport.NewEndpoint(scheme, fmt.Sprintf("%s:%d", host, port))
 	return &registry.ServerItem{
-		ServiceName: global.AppName,
+		ServiceName: fmt.Sprintf("%s-%s", scheme, global.AppName),
 		EndpointURL: ep.String(),
 	}, nil
 }
