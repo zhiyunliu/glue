@@ -28,6 +28,7 @@ var (
 	Metadata            = cli.Metadata
 	Server              = cli.Server
 	AppMode             = cli.WithAppMode
+	WithConfigSource    = cli.WithConfigSource
 	IpMask              = cli.IpMask
 	TraceAddr           = cli.TraceAddr
 	ServiceDependencies = cli.ServiceDependencies

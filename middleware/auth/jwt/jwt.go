@@ -20,7 +20,7 @@ type Option func(*options)
 // Parser is a jwt parser
 type options struct {
 	signingMethod jwt.SigningMethod
-	Secret        string
+	Secret        interface{}
 	Excludes      []string
 	Expire        int //单位：second
 }
@@ -32,7 +32,7 @@ func WithSigningMethod(method jwt.SigningMethod) Option {
 	}
 }
 
-func WithSecret(secret string) Option {
+func WithSecret(secret interface{}) Option {
 	return func(o *options) {
 		o.Secret = secret
 	}
@@ -88,7 +88,7 @@ func serverByOptions(opts *options) middleware.Middleware {
 				return reply
 			}
 
-			if keyFunc == "" {
+			if keyFunc == nil || keyFunc == "" {
 				return gluejwt.ErrMissingKeyFunc
 			}
 			authVal := ctx.Header(gluejwt.AuthorizationKey)

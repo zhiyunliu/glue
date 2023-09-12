@@ -28,27 +28,27 @@ func getDriverOpenCallback(driverName string) (callback DriverOpenCallback, err 
 	return
 }
 
-func buildGormDB(driverName string, cfg *contribxdb.Config) (db *gorm.DB, err error) {
-	if cfg.MaxOpen <= 0 {
-		cfg.MaxOpen = runtime.NumCPU() * 5
+func buildGormDB(driverName string, cfg *contribxdb.Setting) (db *gorm.DB, err error) {
+	if cfg.Cfg.MaxOpen <= 0 {
+		cfg.Cfg.MaxOpen = runtime.NumCPU() * 5
 	}
-	if cfg.MaxIdle <= 0 {
-		cfg.MaxIdle = cfg.MaxOpen
+	if cfg.Cfg.MaxIdle <= 0 {
+		cfg.Cfg.MaxIdle = cfg.Cfg.MaxOpen
 	}
-	if cfg.LifeTime <= 0 {
-		cfg.LifeTime = 600 //10分钟
+	if cfg.Cfg.LifeTime <= 0 {
+		cfg.Cfg.LifeTime = 600 //10分钟
 	}
-	if cfg.LongQueryTime <= 0 {
-		cfg.LongQueryTime = 500
+	if cfg.Cfg.LongQueryTime <= 0 {
+		cfg.Cfg.LongQueryTime = 500
 	}
 
 	w := log.New(xlog.DefaultLogger, "\r\n", log.LstdFlags)
 	var newLogger = logger.New(
 		w,
 		logger.Config{
-			SlowThreshold: time.Duration(cfg.LongQueryTime) * time.Millisecond, // 慢 SQL 阈值
-			LogLevel:      logger.Info,                                         // Log level
-			Colorful:      true,                                                // 开启彩色打印
+			SlowThreshold: time.Duration(cfg.Cfg.LongQueryTime) * time.Millisecond, // 慢 SQL 阈值
+			LogLevel:      logger.Info,                                             // Log level
+			Colorful:      true,                                                    // 开启彩色打印
 		},
 	)
 
@@ -57,7 +57,7 @@ func buildGormDB(driverName string, cfg *contribxdb.Config) (db *gorm.DB, err er
 		return
 	}
 
-	db, err = gorm.Open(callback(cfg.Conn), &gorm.Config{Logger: newLogger})
+	db, err = gorm.Open(callback(cfg.Cfg.Conn), &gorm.Config{Logger: newLogger})
 	if err != nil {
 		return nil, err
 	}
@@ -66,10 +66,10 @@ func buildGormDB(driverName string, cfg *contribxdb.Config) (db *gorm.DB, err er
 	if err != nil {
 		return nil, err
 	}
-	sqlDB.SetConnMaxIdleTime(time.Duration(cfg.LifeTime) * time.Second)
-	sqlDB.SetConnMaxLifetime(time.Duration(cfg.LifeTime) * time.Second)
-	sqlDB.SetMaxIdleConns(cfg.MaxIdle)
-	sqlDB.SetMaxOpenConns(cfg.MaxOpen)
+	sqlDB.SetConnMaxIdleTime(time.Duration(cfg.Cfg.LifeTime) * time.Second)
+	sqlDB.SetConnMaxLifetime(time.Duration(cfg.Cfg.LifeTime) * time.Second)
+	sqlDB.SetMaxIdleConns(cfg.Cfg.MaxIdle)
+	sqlDB.SetMaxOpenConns(cfg.Cfg.MaxOpen)
 	return db, nil
 }
 

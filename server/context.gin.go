@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
@@ -156,6 +157,10 @@ func (r *ginRequest) GetClientIP() string {
 	return r.gctx.ClientIP()
 }
 
+func (r *ginRequest) RequestID() string {
+	return r.vctx.Log().SessionID()
+}
+
 func (r *ginRequest) Header() vctx.Header {
 	if r.gheader == nil {
 		r.gheader = map[string]string{}
@@ -278,7 +283,7 @@ func (q *gquery) Close() {
 	q.closed = true
 }
 
-//-gbody---------------------------------
+// -gbody---------------------------------
 type gbody struct {
 	gctx      *gin.Context
 	vctx      *GinContext
@@ -319,13 +324,13 @@ func (q *gbody) Bytes() []byte {
 func (q *gbody) loadBody() (err error) {
 	if len(q.bodyBytes) == 0 && !q.hasRead {
 		q.hasRead = true
-		q.bodyBytes, err = ioutil.ReadAll(q.gctx.Request.Body)
+		q.bodyBytes, err = io.ReadAll(q.gctx.Request.Body)
 		if err != nil {
 			return err
 		}
 		q.reader = bytes.NewReader(q.bodyBytes)
 		q.gctx.Request.Body.Close()
-		q.gctx.Request.Body = ioutil.NopCloser(q.reader)
+		q.gctx.Request.Body = io.NopCloser(q.reader)
 	}
 	return nil
 }
@@ -337,17 +342,31 @@ func (q *gbody) Close() {
 	q.hasRead = false
 }
 
-//gresponse --------------------------------
+// gresponse --------------------------------
 type ginResponse struct {
 	vctx       *GinContext
 	gctx       *gin.Context
 	writebytes []byte
 	hasWrited  bool
 	closed     bool
+	statusCode int
+}
+
+func (q *ginResponse) Redirect(statusCode int, location string) {
+	q.statusCode = statusCode
+	q.gctx.Redirect(statusCode, location)
 }
 
 func (q *ginResponse) Status(statusCode int) {
+	q.statusCode = statusCode
 	q.gctx.Writer.WriteHeader(statusCode)
+}
+
+func (q *ginResponse) GetStatusCode() int {
+	if q.statusCode == 0 {
+		q.statusCode = http.StatusOK
+	}
+	return q.statusCode
 }
 
 func (q *ginResponse) Header(key, val string) {
@@ -390,4 +409,5 @@ func (q *ginResponse) Close() {
 	q.writebytes = nil
 	q.hasWrited = false
 	q.closed = true
+	q.statusCode = http.StatusOK
 }

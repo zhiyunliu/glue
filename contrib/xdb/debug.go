@@ -10,8 +10,8 @@ import (
 	"github.com/zhiyunliu/glue/log"
 )
 
-func debugPrint(ctx context.Context, cfg *Config, query string, args ...interface{}) {
-	if cfg.Debug {
+func debugPrint(ctx context.Context, setting *Setting, query string, args ...interface{}) {
+	if setting.Cfg.Debug {
 		logger, ok := log.FromContext(ctx)
 		if !ok {
 			logger = log.DefaultLogger

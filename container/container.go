@@ -62,6 +62,11 @@ func (c *container) GetOrCreate(typeName string, name string, creator CreateFunc
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	val, ok = c.cache.Get(key)
+	if ok {
+		return val, nil
+	}
+
 	val, err := creator(nameSetting)
 	if err != nil {
 		return nil, fmt.Errorf("创建Type:%s,Name:%s,失败,Error:%+v", typeName, name, err)

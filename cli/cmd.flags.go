@@ -4,7 +4,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-//getFlags 获取运行时的参数
+// getFlags 获取运行时的参数
 func getFlags(cfg *Options) (flags []cli.Flag) {
 	flags = append(flags,
 		// cli.StringFlag{
@@ -15,7 +15,7 @@ func getFlags(cfg *Options) (flags []cli.Flag) {
 		// },
 		cli.StringFlag{
 			Name:        "config,C",
-			Destination: &cfg.configFile,
+			Destination: &cfg.cmdConfigFile,
 			Usage:       `-配置文件`,
 			Value:       "config.json",
 		},

@@ -1,8 +1,6 @@
 package log
 
 import (
-	"sync"
-
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xlog"
 )
@@ -10,21 +8,21 @@ import (
 var (
 	DefaultLogger  Logger
 	defaultBuilder Builder
-	logpool        sync.Pool
+	//logpool        sync.Pool
 )
 
 func init() {
 	defaultBuilder = &defaultBuilderWrap{}
 	Register(defaultBuilder)
 	SetBuilder(defaultBuilder)
-	logpool = sync.Pool{
-		New: func() interface{} {
-			return &wraper{}
-		},
-	}
+	// logpool = sync.Pool{
+	// 	New: func() interface{} {
+	// 		return &wraper{}
+	// 	},
+	// }
 }
 
-//设置日志的builder
+// 设置日志的builder
 func SetBuilder(builder Builder) {
 	if builder == nil {
 		return
@@ -43,11 +41,13 @@ func (l *wraper) Name() string {
 
 func (l *wraper) Close() {
 	l.xloger.Close()
-	logpool.Put(l)
 }
-
 func (l *wraper) Log(level Level, args ...interface{}) {
 	l.xloger.Log(level, args...)
+}
+
+func (l *wraper) SessionID() string {
+	return l.xloger.SessionID()
 }
 
 func (l *wraper) Logf(level Level, format string, args ...interface{}) {

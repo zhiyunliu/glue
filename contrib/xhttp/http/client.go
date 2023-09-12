@@ -6,10 +6,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/zhiyunliu/glue/contrib/xhttp/http/balancer"
@@ -31,7 +31,7 @@ type Client struct {
 	tracer    *tracing.Tracer
 }
 
-//NewClientByConf 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
+// NewClientByConf 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
 func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL) (*Client, error) {
 	client := &Client{
 		registrar: registrar,
@@ -67,7 +67,7 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 	return client, nil
 }
 
-//RequestByString 发送Request请求
+// RequestByString 发送Request请求
 func (c *Client) RequestByString(ctx context.Context, reqPath *url.URL, input []byte, opts ...xhttp.RequestOption) (res xhttp.Body, err error) {
 	//处理可选参数
 	o := &xhttp.Options{
@@ -94,7 +94,7 @@ func (c *Client) RequestByString(ctx context.Context, reqPath *url.URL, input []
 	return response, err
 }
 
-//Close 关闭RPC客户端连接
+// Close 关闭RPC客户端连接
 func (c *Client) Close() {
 	c.ctxCancel()
 }
@@ -133,7 +133,7 @@ func (c *Client) getTlsConfig() (*tls.Config, error) {
 		ssl.Certificates = []tls.Certificate{cert}
 	}
 	if c.setting.CaFile != "" {
-		caData, err := ioutil.ReadFile(c.setting.CaFile)
+		caData, err := os.ReadFile(c.setting.CaFile)
 		if err != nil {
 			return nil, fmt.Errorf("CaFile(%s) error:%v", c.setting.CaFile, err)
 		}

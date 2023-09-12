@@ -20,6 +20,11 @@ func (ph *fixedPlaceHolder) BuildArgVal(argName string, val interface{}) interfa
 	return val
 }
 
+func (ph *fixedPlaceHolder) NamedArg(propName string) (phName string) {
+	phName = ph.ctx.prefix
+	return
+}
+
 func (ph *fixedPlaceHolder) Clone() Placeholder {
 	return &fixedPlaceHolder{
 		ctx: ph.ctx,

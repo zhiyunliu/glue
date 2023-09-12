@@ -70,7 +70,7 @@ func procHandler(engine AdapterEngine, group *router.Group, opts *log.Options, m
 			if rerr, ok := resp.(error); ok {
 				err = rerr
 			}
-
+			code = ctx.Response().GetStatusCode()
 			if se := errors.FromError(err); se != nil {
 				code = se.Code
 			}

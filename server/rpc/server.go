@@ -17,6 +17,7 @@ import (
 	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/xnet"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type Server struct {
@@ -66,13 +67,16 @@ func (e *Server) Config(cfg config.Config) {
 	}
 	e.Options(WithConfig(cfg))
 	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
-	e.opts.setting.Config.Addr = server.GetAvaliableAddr(e.opts.setting.Config.Addr)
 }
 
 // Start 开始
-func (e *Server) Start(ctx context.Context) error {
+func (e *Server) Start(ctx context.Context) (err error) {
 	if e.opts.setting.Config.Status == server.StatusStop {
 		return nil
+	}
+	e.opts.setting.Config.Addr, err = xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.opts.setting.Config.Addr)
+	if err != nil {
+		return
 	}
 
 	e.ctx = transport.WithServerContext(ctx, e)
@@ -91,22 +95,22 @@ func (e *Server) Start(ctx context.Context) error {
 	e.newProcessor()
 
 	errChan := make(chan error, 1)
-	log.Infof("RPC Server [%s] listening on %s%s", e.name, global.LocalIp, e.opts.setting.Config.Addr)
+	log.Infof("RPC Server [%s] listening on %s", e.name, e.opts.setting.Config.Addr)
+
+	done := make(chan struct{})
 	go func() {
 		e.started = true
-		done := make(chan struct{})
-		go func() {
-			errChan <- e.srv.Serve(lsr)
-			close(done)
-		}()
-
-		select {
-		case <-done:
-			return
-		case <-time.After(time.Second):
-			errChan <- nil
-		}
+		errChan <- e.srv.Serve(lsr)
+		close(done)
 	}()
+
+	select {
+	case <-done:
+		return
+	case <-time.After(time.Second):
+		errChan <- nil
+	}
+
 	err = <-errChan
 	if err != nil {
 		log.Errorf("RPC Server [%s] start error: %s", e.name, err.Error())
@@ -147,7 +151,7 @@ func (e *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-//ServiceName 服务名称
+// ServiceName 服务名称
 func (s *Server) ServiceName() string {
 	return s.opts.serviceName
 }
@@ -177,7 +181,7 @@ func (e *Server) newProcessor() {
 	if err != nil {
 		panic(err)
 	}
-
+	reflection.Register(e.srv)
 	grpcproto.RegisterGRPCServer(e.srv, e.processor)
 
 	e.registryEngineRoute()

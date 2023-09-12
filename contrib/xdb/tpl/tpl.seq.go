@@ -26,6 +26,13 @@ func (ph *seqPlaceHolder) Get(propName string) (argName, phName string) {
 func (ph *seqPlaceHolder) BuildArgVal(argName string, val interface{}) interface{} {
 	return val
 }
+
+func (ph *seqPlaceHolder) NamedArg(propName string) (phName string) {
+	ph.idx++
+	phName = fmt.Sprint(ph.ctx.prefix, ph.idx)
+	return
+}
+
 func (ph *seqPlaceHolder) Clone() Placeholder {
 	return &seqPlaceHolder{
 		idx: ph.idx,

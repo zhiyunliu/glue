@@ -2,10 +2,12 @@ package jwt
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
 type authKey struct{}
@@ -32,9 +34,18 @@ var (
 	ErrGetKey                 = errors.Unauthorized("Can not get key while signing token")
 )
 
-func Verify(tokenVal, secret string) (map[string]interface{}, error) {
+type Option func(map[string]any)
+type Keyfunc func(jwt.Claims) ([]byte, error)
+
+func WithSNo(serialNo string) Option {
+	return func(m map[string]any) {
+		m["sno"] = serialNo
+	}
+}
+
+func Verify(tokenVal string, secret interface{}) (map[string]interface{}, error) {
 	tokenInfo, err := jwt.Parse(tokenVal, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
+		return getSecret(secret, token.Claims)
 	})
 	if err != nil {
 		if ve, ok := err.(*jwt.ValidationError); ok {
@@ -59,19 +70,38 @@ func Verify(tokenVal, secret string) (map[string]interface{}, error) {
 	return nil, ErrUnSupportSigningMethod
 }
 
-//timeout 秒
-func Sign(signingMethod string, secret string, data map[string]interface{}, timeout int64) (string, error) {
+// timeout 秒
+func Sign(signingMethod string, secret interface{}, data map[string]interface{}, timeout int64, opts ...Option) (string, error) {
 	expireAt := time.Now().Unix() + timeout
 	if timeout == 0 {
 		expireAt = 0
 	}
-	claims := &jwt.MapClaims{
+	claims := jwt.MapClaims{
 		"exp":  expireAt,
 		"data": data,
 	}
+
+	for i := range opts {
+		opts[i](claims)
+	}
+
 	method := jwt.GetSigningMethod(signingMethod)
 	token := jwt.NewWithClaims(method, claims)
-	return token.SignedString([]byte(secret))
+	secretBytes, _ := getSecret(secret, claims)
+	return token.SignedString(secretBytes)
+}
+
+func getSecret(secret interface{}, claims jwt.Claims) ([]byte, error) {
+	switch val := secret.(type) {
+	case string:
+		return bytesconv.StringToBytes(val), nil
+	case func(jwt.Claims) ([]byte, error):
+		return val(claims)
+	case Keyfunc:
+		return val(claims)
+	default:
+		return nil, fmt.Errorf("获取Secret失败")
+	}
 }
 
 // NewContext put auth info into context

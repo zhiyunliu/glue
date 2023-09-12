@@ -22,7 +22,7 @@ const Type string = "mqc"
 type Setting struct {
 	Config      Config              `json:"config" yaml:"config"`
 	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
-	Tasks       []*Task             `json:"tasks"  yaml:"tasks"`
+	Tasks       TaskList            `json:"tasks"  yaml:"tasks"`
 }
 
 type Config struct {
@@ -40,6 +40,16 @@ type Task struct {
 	Disable     bool              `json:"disable"`
 	Concurrency int               `json:"concurrency,omitempty"`
 	Meta        metadata.Metadata `json:"meta,omitempty"`
+}
+
+type TaskList []*Task
+
+func (t *Task) GetQueue() string {
+	return t.Queue
+}
+
+func (t *Task) GetConcurrency() int {
+	return t.Concurrency
 }
 
 func (t *Task) GetService() string {

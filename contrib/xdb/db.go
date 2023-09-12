@@ -2,6 +2,7 @@ package xdb
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"time"
 
@@ -13,45 +14,39 @@ import (
 
 // DB 数据库操作类
 type xDB struct {
-	cfg *Config
+	cfg *Setting
 	db  internal.ISysDB
 	tpl tpl.SQLTemplate
 }
 
 // NewDB 创建DB实例
-func NewDB(proto string, cfg *Config) (obj xdb.IDB, err error) {
-	conn := cfg.Conn
-	maxOpen := cfg.MaxOpen
-	maxIdle := cfg.MaxIdle
-	maxLifeTime := cfg.LifeTime
-
-	if cfg.LoggerName == "" {
-		cfg.LoggerName = "default"
-	}
-	if cfg.LongQueryTime == 0 {
-		cfg.LongQueryTime = 500
-	}
-
-	conn, err = DecryptConn(conn)
+func NewDB(proto string, setting *Setting) (obj xdb.IDB, err error) {
+	newCfg, err := xdb.DefaultRefactor(setting.ConnName, setting.Cfg)
 	if err != nil {
 		return
 	}
+	if newCfg != nil {
+		setting.Cfg = newCfg
+	}
+	conn := setting.Cfg.Conn
+	maxOpen := setting.Cfg.MaxOpen
+	maxIdle := setting.Cfg.MaxIdle
+	maxLifeTime := setting.Cfg.LifeTime
+
 	if maxOpen <= 0 {
 		maxOpen = runtime.NumCPU() * 10
 	}
 	if maxIdle <= 0 {
 		maxIdle = maxOpen
 	}
-	if maxLifeTime <= 0 {
-		maxLifeTime = 600 //10分钟
-	}
+
 	dbobj := &xDB{
-		cfg: cfg,
+		cfg: setting,
 	}
 
-	cfg.slowThreshold = time.Duration(cfg.LongQueryTime) * time.Millisecond
-	if cfg.LoggerName != "" {
-		cfg.logger, _ = xdb.GetLogger(cfg.LoggerName)
+	setting.slowThreshold = time.Duration(setting.Cfg.LongQueryTime) * time.Millisecond
+	if setting.Cfg.LoggerName != "" {
+		setting.logger, _ = xdb.GetLogger(setting.Cfg.LoggerName)
 	}
 
 	dbobj.tpl, err = tpl.GetDBTemplate(proto)
@@ -85,7 +80,7 @@ func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface
 	if err != nil {
 		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 
 	return
 }
@@ -110,7 +105,7 @@ func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface
 	if err != nil {
 		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 
 	return
 }
@@ -151,7 +146,7 @@ func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{
 	if err != nil {
 		return nil, internal.GetError(err, query, execArgs...)
 	}
-	printSlowQuery(db.cfg, time.Since(start), query, execArgs...)
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 
 	return
 }
@@ -167,6 +162,38 @@ func (db *xDB) Begin() (t xdb.ITrans, err error) {
 	}
 	tt.tpl = db.tpl
 	return tt, nil
+}
+
+// Transaction 执行事务
+func (db *xDB) Transaction(callback xdb.TransactionCallback) (err error) {
+	tt := &xTrans{
+		cfg: db.cfg,
+	}
+	tt.tx, err = db.db.Begin()
+	if err != nil {
+		return
+	}
+	tt.tpl = db.tpl
+	defer func() {
+		if robj := recover(); robj != nil {
+			tt.Rollback()
+			rerr, ok := robj.(error)
+			if !ok {
+				rerr = fmt.Errorf("%+v", robj)
+			}
+			buf := make([]byte, 64<<10) //nolint:gomnd
+			n := runtime.Stack(buf, false)
+			buf = buf[:n]
+			err = xdb.NewPanicError(rerr, string(buf))
+		}
+	}()
+	err = callback(tt)
+	if err != nil {
+		tt.Rollback()
+		return
+	}
+	tt.Commit()
+	return
 }
 
 // Close  关闭当前数据库连接

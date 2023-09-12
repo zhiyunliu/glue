@@ -9,6 +9,9 @@ import (
 
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/registry"
+	"github.com/zhiyunliu/glue/transport"
+	"github.com/zhiyunliu/golibs/xnet"
 )
 
 func (p *ServiceApp) run() (err error) {
@@ -40,10 +43,11 @@ func (p *ServiceApp) apprun() error {
 			return err
 		}
 	}
-	if err := p.register(p.svcCtx); err != nil {
+	if err := p.startTraceServer(); err != nil {
 		return err
 	}
-	if err := p.startTraceServer(); err != nil {
+
+	if err := p.register(p.svcCtx); err != nil {
 		return err
 	}
 	if err := p.startedHooks(p.svcCtx); err != nil {
@@ -60,12 +64,17 @@ func (p *ServiceApp) startTraceServer() error {
 	}
 
 	errChan := make(chan error, 1)
-	go func() {
-		log.Infof("pprof trace addr %s%s", global.LocalIp, p.options.setting.TraceAddr)
-		lsr, err := net.Listen("tcp", p.options.setting.TraceAddr)
+	startTrace := func() {
+		newAddr, err := xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, p.options.setting.TraceAddr)
 		if err != nil {
 			errChan <- err
-			log.Errorf("trace server listen error:%+v", err)
+			return
+		}
+		log.Infof("pprof trace config addr [%s]", p.options.setting.TraceAddr)
+		log.Infof("pprof trace bind addr [%s]", newAddr)
+		lsr, err := net.Listen("tcp", newAddr)
+		if err != nil {
+			errChan <- err
 			return
 		}
 		traceSrv := &http.Server{}
@@ -78,21 +87,36 @@ func (p *ServiceApp) startTraceServer() error {
 		select {
 		case <-done:
 			p.closeWaitGroup.Add(1)
-			return
 		case <-time.After(time.Second):
-			errChan <- nil
-		}
-	}()
+			p.traceEndpoint, err = p.buildTraceEndpoint(newAddr)
+			errChan <- err
 
-	select {
-	case err := <-errChan:
-		if err != nil {
-			return fmt.Errorf("trace server Serve error:%+v", err)
 		}
-		return nil
-	case <-time.After(time.Second):
-		return nil
 	}
+	startTrace()
+
+	err := <-errChan
+	if err != nil {
+		return fmt.Errorf("trace server error:%+v", err)
+	}
+	return nil
+}
+
+func (e *ServiceApp) buildTraceEndpoint(addr string) (item *registry.ServerItem, err error) {
+	host, port, err := xnet.ExtractHostPort(addr)
+	if err != nil {
+		err = fmt.Errorf("trace Server Addr:%s 配置错误", addr)
+		return
+	}
+	if host == "" {
+		host = global.LocalIp
+	}
+	const scheme = "pprof"
+	ep := transport.NewEndpoint(scheme, fmt.Sprintf("%s:%d", host, port))
+	return &registry.ServerItem{
+		ServiceName: fmt.Sprintf("%s-%s", scheme, global.AppName),
+		EndpointURL: ep.String(),
+	}, nil
 }
 
 func (p *ServiceApp) register(ctx context.Context) error {

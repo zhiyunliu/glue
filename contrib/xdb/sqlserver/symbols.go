@@ -23,6 +23,8 @@ func newMssqlSymbols() tpl.Symbols {
 	}
 
 	symbols["&"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
+		item.HasAndOper = true
+
 		propName := tpl.GetPropName(fullKey)
 		if ph, ok := item.NameCache[propName]; ok {
 			return fmt.Sprintf("and %s=%s ", fullKey, ph)
@@ -37,6 +39,8 @@ func newMssqlSymbols() tpl.Symbols {
 		return ""
 	}
 	symbols["|"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
+		item.HasOrOper = true
+
 		propName := tpl.GetPropName(fullKey)
 		if ph, ok := item.NameCache[propName]; ok {
 			return fmt.Sprintf("or %s=%s ", fullKey, ph)

@@ -117,7 +117,7 @@ func (s *processor) Resume() (bool, error) {
 	return false, nil
 }
 func (s *processor) consume(task *Task) error {
-	return s.consumer.Consume(task.Queue, s.handleCallback(task))
+	return s.consumer.Consume(task, s.handleCallback(task))
 }
 
 //Close 退出

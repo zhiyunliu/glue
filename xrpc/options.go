@@ -40,3 +40,12 @@ func WithContentType(contentType string) RequestOption {
 		o.Header[constants.ContentTypeName] = contentType
 	}
 }
+
+func WithSourceName(sourceName string) RequestOption {
+	return func(o *Options) {
+		if o.Header == nil {
+			o.Header = make(map[string]string)
+		}
+		o.Header[constants.HeaderSourceName] = sourceName
+	}
+}

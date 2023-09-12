@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"reflect"
 
@@ -153,6 +154,10 @@ func (r *alloterRequest) GetImpl() interface{} {
 	return r.actx.Request
 }
 
+func (r *alloterRequest) RequestID() string {
+	return r.vctx.Log().SessionID()
+}
+
 func (r *alloterRequest) GetClientIP() string {
 	return r.actx.ClientIP()
 }
@@ -275,7 +280,7 @@ func (q *aquery) Close() {
 	q.closed = true
 }
 
-//-gbody---------------------------------
+// -gbody---------------------------------
 type abody struct {
 	actx      *alloter.Context
 	vctx      *AlloterContext
@@ -333,17 +338,30 @@ func (q *abody) Close() {
 	q.hasRead = false
 }
 
-//gresponse --------------------------------
+// gresponse --------------------------------
 type alloterResponse struct {
 	vctx       *AlloterContext
 	actx       *alloter.Context
 	writebytes []byte
 	hasWrited  bool
 	closed     bool
+	statusCode int
+}
+
+func (q *alloterResponse) Redirect(statusCode int, location string) {
+
 }
 
 func (q *alloterResponse) Status(statusCode int) {
+	q.statusCode = statusCode
 	q.actx.Writer.WriteHeader(statusCode)
+}
+
+func (q *alloterResponse) GetStatusCode() int {
+	if q.statusCode == 0 {
+		q.statusCode = http.StatusOK
+	}
+	return q.statusCode
 }
 
 func (q *alloterResponse) Header(key, val string) {
@@ -386,4 +404,5 @@ func (q *alloterResponse) Close() {
 	q.writebytes = nil
 	q.hasWrited = false
 	q.closed = true
+	q.statusCode = http.StatusOK
 }

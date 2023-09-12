@@ -14,11 +14,12 @@ type DBParam map[string]interface{}
 
 func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interface{}) {
 	val := p.GetVal(name)
-	argName, phName := ph.Get(name)
 	if tmpv, ok := val.(sql.NamedArg); ok {
 		argVal = tmpv
+		phName = ph.NamedArg(tmpv.Name)
 		return
 	}
+	argName, phName := ph.Get(name)
 	argVal = ph.BuildArgVal(argName, val)
 	return
 }

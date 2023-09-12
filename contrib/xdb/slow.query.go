@@ -1,27 +1,23 @@
 package xdb
 
 import (
+	"context"
 	"time"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/internal"
 )
 
-//打印慢sql
-func printSlowQuery(cfg *Config, timeRange time.Duration, query string, args ...interface{}) {
-	if !cfg.ShowQueryLog {
+// 打印慢sql
+func printSlowQuery(ctx context.Context, setting *Setting, timeRange time.Duration, query string, args ...interface{}) {
+	if !setting.Cfg.ShowQueryLog {
 		return
 	}
-	if cfg.logger == nil {
-		return
-	}
-
-	if timeRange < cfg.slowThreshold {
+	if setting.logger == nil {
 		return
 	}
 
-	cfg.logger.Log(map[string]interface{}{
-		"time":  timeRange.Milliseconds(),
-		"query": query,
-		"args":  internal.Unwrap(args...),
-	})
+	if setting.slowThreshold <= 0 || timeRange < setting.slowThreshold {
+		return
+	}
+	setting.logger.Log(ctx, timeRange.Milliseconds(), query, internal.Unwrap(args...)...)
 }

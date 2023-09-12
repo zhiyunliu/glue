@@ -85,22 +85,19 @@ func (e *Server) Start(ctx context.Context) error {
 
 	errChan := make(chan error, 1)
 	log.Infof("CRON Server [%s] listening on %s", e.name, global.LocalIp)
+
+	done := make(chan struct{})
 	go func() {
 		e.started = true
-
-		done := make(chan struct{})
-		go func() {
-			errChan <- e.processor.Start()
-			close(done)
-		}()
-
-		select {
-		case <-done:
-			return
-		case <-time.After(time.Second):
-			errChan <- nil
-		}
+		errChan <- e.processor.Start()
+		close(done)
 	}()
+
+	select {
+	case <-time.After(time.Second):
+		errChan <- nil
+	case <-done:
+	}
 	err = <-errChan
 	if err != nil {
 		log.Errorf("CRON Server [%s] start error: %s", e.name, err.Error())

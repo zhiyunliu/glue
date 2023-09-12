@@ -11,18 +11,19 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
-//Request RPC Request
+// Request RPC Request
 type Request struct {
 	requests cmap.ConcurrentMap
 	setting  *setting
 }
 
-//NewRequest 构建请求
+// NewRequest 构建请求
 func NewRequest(setting *setting) *Request {
 
 	req := &Request{
@@ -32,7 +33,7 @@ func NewRequest(setting *setting) *Request {
 	return req
 }
 
-//Swap 将当前请求参数作为RPC参数并发送RPC请求
+// Swap 将当前请求参数作为RPC参数并发送RPC请求
 func (r *Request) Swap(ctx context.Context, service string, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
 
 	//获取内容
@@ -48,8 +49,8 @@ func (r *Request) Swap(ctx context.Context, service string, opts ...xrpc.Request
 	return r.Request(ctx.Context(), service, input, opts...)
 }
 
-//RequestByCtx RPC请求，可通过context撤销请求
-//service=grpc://servername/path
+// RequestByCtx RPC请求，可通过context撤销请求
+// service=grpc://servername/path
 func (r *Request) Request(ctx sctx.Context, service string, input interface{}, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
 
 	pathVal, err := url.Parse(service)
@@ -65,9 +66,14 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 			return valueInMap
 		}
 
-		registrar, err := registry.GetRegistrar(global.Config)
-		if err != nil {
-			panic(err)
+		var registrar registry.Registrar
+		var err error
+		_, _, ok := xrpc.IsIpPortAddr(pathVal.Host)
+		if !ok {
+			registrar, err = registry.GetRegistrar(global.Config)
+			if err != nil {
+				panic(err)
+			}
 		}
 
 		pathVal = newValue.(*url.URL)
@@ -79,10 +85,12 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	})
 
 	client := tmpClient.(*Client)
-	nopts := make([]xrpc.RequestOption, 0, len(opts)+1)
+	nopts := make([]xrpc.RequestOption, 0, len(opts)+2)
+	nopts = append(nopts, xrpc.WithSourceName(global.AppName))
 	nopts = append(nopts, opts...)
-	if reqidVal := ctx.Value(constants.HeaderRequestId); reqidVal != nil {
-		nopts = append(nopts, xrpc.WithXRequestID(fmt.Sprintf("%+v", reqidVal)))
+
+	if logger, ok := log.FromContext(ctx); ok {
+		nopts = append(nopts, xrpc.WithXRequestID(logger.SessionID()))
 	}
 
 	var bodyBytes []byte
@@ -102,7 +110,7 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	return client.RequestByString(ctx, bodyBytes, nopts...)
 }
 
-//Close 关闭RPC连接
+// Close 关闭RPC连接
 func (r *Request) Close() error {
 	r.requests.IterCb(func(key string, v interface{}) {
 		client := v.(*Client)

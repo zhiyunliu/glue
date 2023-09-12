@@ -24,6 +24,11 @@ func (ph *mssqlPlaceHolder) Get(propName string) (argName, phName string) {
 	return
 }
 
+func (ph *mssqlPlaceHolder) NamedArg(argName string) (phName string) {
+	phName = "@" + argName
+	return
+}
+
 func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val interface{}) interface{} {
 	if arg, ok := val.(sql.NamedArg); ok {
 		return arg

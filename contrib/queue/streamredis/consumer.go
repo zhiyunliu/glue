@@ -8,6 +8,7 @@ import (
 
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/queue"
 
 	redisqueue "github.com/zhiyunliu/redisqueue/v2"
@@ -26,6 +27,16 @@ type Consumer struct {
 }
 
 type QueueItem struct {
+	QueueName   string
+	Concurrency int //等于0 ，代表不限制
+	callback    queue.ConsumeCallback
+}
+
+func (q QueueItem) GetQueue() string {
+	return q.QueueName
+}
+func (q QueueItem) GetConcurrency() int {
+	return q.Concurrency
 }
 
 // NewConsumerByConfig 创建新的Consumer
@@ -55,7 +66,7 @@ func (consumer *Consumer) Connect() (err error) {
 		RedisClient:       client.UniversalClient,
 		Concurrency:       100,
 		BufferSize:        1000,
-		BlockingTimeout:   1 * time.Second,
+		BlockingTimeout:   2 * time.Second,
 		VisibilityTimeout: 30 * time.Second,
 		ReclaimInterval:   5 * time.Second,
 	}
@@ -87,7 +98,8 @@ func (consumer *Consumer) Connect() (err error) {
 			select {
 			case <-consumer.closeCh:
 				return
-			case <-consumer.consumer.Errors:
+			case err := <-consumer.consumer.Errors:
+				log.Error(err)
 				continue
 			}
 		}
@@ -96,23 +108,26 @@ func (consumer *Consumer) Connect() (err error) {
 }
 
 // Consume 注册消费信息
-func (consumer *Consumer) Consume(queue string, callback queue.ConsumeCallback) (err error) {
-	if strings.EqualFold(queue, "") {
+func (consumer *Consumer) Consume(task queue.TaskInfo, callback queue.ConsumeCallback) (err error) {
+	queueName := task.GetQueue()
+	if strings.EqualFold(queueName, "") {
 		return fmt.Errorf("队列名字不能为空")
 	}
 	if callback == nil {
-		return fmt.Errorf("queue:%s,回调函数不能为nil", queue)
+		return fmt.Errorf("queue:%s,回调函数不能为nil", queueName)
 	}
-	item := &QueueItem{}
-	success := consumer.queues.SetIfAbsent(queue, item)
-	if success {
-		consumer.consumer.Register(queue, func(m *redisqueue.Message) error {
-			msg := &redisMessage{message: m.Values, retryCount: m.RetryCount}
-			callback(msg)
 
-			return msg.Error()
-		})
+	item := &QueueItem{
+		QueueName:   queueName,
+		Concurrency: task.GetConcurrency(),
+		callback:    callback,
 	}
+	if item.Concurrency == 0 {
+		item.Concurrency = queue.DefaultMaxQueueLen
+	}
+
+	consumer.queues.SetIfAbsent(queueName, item)
+
 	return
 }
 
@@ -122,6 +137,18 @@ func (consumer *Consumer) Unconsume(queue string) {
 }
 
 func (consumer *Consumer) Start() {
+	for item := range consumer.queues.IterBuffered() {
+		tqi := item.Val.(*QueueItem)
+		var confunc redisqueue.ConsumerFunc = func(qi *QueueItem) redisqueue.ConsumerFunc {
+			return func(m *redisqueue.Message) error {
+				msg := &redisMessage{message: m.Values, retryCount: m.RetryCount}
+				qi.callback(msg)
+				return msg.Error()
+			}
+		}(tqi)
+		consumer.consumer.Register(tqi, confunc)
+	}
+
 	go consumer.consumer.Run()
 }
 

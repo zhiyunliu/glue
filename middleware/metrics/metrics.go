@@ -59,6 +59,7 @@ func serverByConfig(cfg *Config) middleware.Middleware {
 
 	op.counter = provider.Counter()
 	op.observer = provider.Observer()
+	op.gauge = provider.Gauge()
 
 	return serverByOptions(op)
 }
@@ -75,6 +76,9 @@ func serverByOptions(op *options) middleware.Middleware {
 				path   string = ctx.Request().Path().FullPath()
 			)
 			startTime := time.Now()
+			if op.gauge != nil {
+				op.gauge.With(kind, path).Add(1)
+			}
 
 			reply = handler(ctx)
 			var err error
@@ -82,6 +86,7 @@ func serverByOptions(op *options) middleware.Middleware {
 				err = rerr
 			}
 
+			code = ctx.Response().GetStatusCode()
 			if se := errors.FromError(err); se != nil {
 				code = int(se.Code)
 			}
@@ -90,6 +95,9 @@ func serverByOptions(op *options) middleware.Middleware {
 			}
 			if op.observer != nil {
 				op.observer.With(kind, path).Observe(time.Since(startTime).Seconds())
+			}
+			if op.gauge != nil {
+				op.gauge.With(kind, path).Sub(1)
 			}
 			return reply
 		}

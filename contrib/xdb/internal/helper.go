@@ -3,20 +3,64 @@ package internal
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"reflect"
 
 	"github.com/zhiyunliu/glue/xdb"
 )
 
+type WrapArgs struct {
+	Name  string
+	Value any
+	Out   bool
+}
+
+func (a WrapArgs) MarshalJSON() (result []byte, err error) {
+	tmp := map[string]any{
+		a.Name: a.Value,
+	}
+	if a.Out {
+		tmp["out"] = true
+	}
+	return json.Marshal(tmp)
+}
+
+func (a WrapArgs) String() string {
+	outv := ""
+	if a.Out {
+		outv = ",out:true"
+	}
+	return fmt.Sprintf("{%s:%+v%s}", a.Name, a.Value, outv)
+}
+
 func Unwrap(args ...interface{}) []interface{} {
 	nargs := make([]interface{}, len(args))
 	for i := range args {
-		rv := reflect.ValueOf(args[i])
+		val := args[i]
+		rv := reflect.ValueOf(val)
 		if rv.Kind() == reflect.Ptr {
-			nargs[i] = rv.Elem().Interface()
-			continue
+			val = rv.Elem().Interface()
 		}
-		nargs[i] = args[i]
+		if arg, ok := val.(sql.NamedArg); ok {
+			val = arg.Value
+			out := false
+			if otv, ok := val.(sql.Out); ok {
+				out = true
+				val = otv.Dest
+				orv := reflect.ValueOf(val)
+				if orv.Kind() == reflect.Ptr {
+					val = orv.Elem().Interface()
+				}
+			}
+			nargs[i] = WrapArgs{
+				Name:  arg.Name,
+				Value: val,
+				Out:   out,
+			}
+		} else {
+			nargs[i] = val
+		}
 	}
 	return nargs
 }
@@ -59,7 +103,7 @@ func ResolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
 
 func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
 	for idx, columnType := range columnTypes {
-		t, ok := getDbType(columnType.DatabaseTypeName())
+		t, ok := xdb.GetDbType(columnType.DatabaseTypeName())
 		if !ok {
 			t = columnType.ScanType()
 		}

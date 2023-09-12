@@ -4,84 +4,38 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/zhiyunliu/glue/contrib/xdb/internal"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
-//DB 数据库配置
-type Config struct {
-	Proto         string        `json:"proto" valid:"required"`
-	Conn          string        `json:"conn" valid:"required" label:"连接字符串"`
-	MaxOpen       int           `json:"max_open" valid:"required" label:"最大打开连接数"`
-	MaxIdle       int           `json:"max_idle" valid:"required" label:"最大空闲连接数"`
-	LifeTime      int           `json:"life_time" valid:"required" label:"单个连接时长(秒)"`
-	ShowQueryLog  bool          `json:"show_query_log"  label:"开启慢查询日志"`
-	LongQueryTime int           `json:"long_query_time"  label:"慢查询阈值(毫秒)"`
-	LoggerName    string        `json:"logger_name" label:"日志提供程序"`
-	Debug         bool          `json:"debug" label:"调试模式"`
+// DB 数据库配置
+type Setting struct {
+	ConnName      string        `json:"-"`
+	Cfg           *xdb.Config   `json:"-"`
 	slowThreshold time.Duration `json:"-"`
 	logger        xdb.Logger    `json:"-"`
 }
 
-//New 构建DB连接信息
-func New(proto string, conn string, opts ...Option) *Config {
-	db := &Config{
-		Proto:         proto,
-		Conn:          conn,
-		MaxOpen:       10,
-		MaxIdle:       10,
-		LifeTime:      600,
-		LongQueryTime: 500,
+// New 构建DB连接信息
+func NewConfig(connName string, opts ...xdb.Option) *Setting {
+	db := &Setting{
+		ConnName: connName,
+		Cfg: &xdb.Config{
+			MaxOpen:       xdb.Default.MaxOpen,
+			MaxIdle:       xdb.Default.MaxIdle,
+			LifeTime:      xdb.Default.LifeTime,
+			ShowQueryLog:  xdb.Default.ShowQueryLog,
+			LongQueryTime: xdb.Default.LongQueryTime,
+			LoggerName:    xdb.Default.LoggerName,
+			Debug:         xdb.Default.Debug,
+		},
 	}
 	for _, opt := range opts {
-		opt(db)
+		opt(db.Cfg)
 	}
 	return db
 }
 
-//Option 配置选项
-type Option func(*Config)
-
-func WithMaxOpen(maxOpen int) Option {
-	return func(a *Config) {
-		a.MaxOpen = maxOpen
-	}
-}
-
-func WithMaxIdle(maxIdle int) Option {
-	return func(a *Config) {
-		a.MaxIdle = maxIdle
-	}
-}
-
-func WithLongQueryTime(longQueryTime int) Option {
-	return func(a *Config) {
-		if longQueryTime <= 0 {
-			return
-		}
-		a.LongQueryTime = longQueryTime
-	}
-}
-
-func WithLifeTime(lifeTime int) Option {
-	return func(a *Config) {
-		a.LifeTime = lifeTime
-	}
-}
-
-func WithShowQueryLog(showQueryLog bool) Option {
-	return func(a *Config) {
-		a.ShowQueryLog = showQueryLog
-	}
-}
-
-func WithLoggerName(name string) Option {
-	return func(a *Config) {
-		a.LoggerName = name
-	}
-}
-
-//注册自定义类型转换
+// 注册自定义类型转换
 func RegisterDbType(dbType string, reflectType reflect.Type) error {
-	return internal.RegisterDbType(dbType, reflectType)
+	return xdb.RegisterDbType(dbType, reflectType)
 }

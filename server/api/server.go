@@ -62,13 +62,16 @@ func (e *Server) Config(cfg config.Config) {
 	}
 	e.Options(WithConfig(cfg))
 	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
-	e.opts.setting.Config.Addr = server.GetAvaliableAddr(e.opts.setting.Config.Addr)
 }
 
 // Start 开始
-func (e *Server) Start(ctx context.Context) error {
+func (e *Server) Start(ctx context.Context) (err error) {
 	if e.opts.setting.Config.Status == server.StatusStop {
 		return nil
+	}
+	e.opts.setting.Config.Addr, err = xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.opts.setting.Config.Addr)
+	if err != nil {
+		return err
 	}
 
 	e.ctx = transport.WithServerContext(ctx, e)
@@ -102,22 +105,19 @@ func (e *Server) Start(ctx context.Context) error {
 	e.srv.BaseContext = func(_ net.Listener) context.Context {
 		return e.ctx
 	}
+	log.Infof("API Server [%s] listening on %s", e.name, e.opts.setting.Config.Addr)
 	errChan := make(chan error, 1)
-	log.Infof("API Server [%s] listening on %s%s", e.name, global.LocalIp, e.opts.setting.Config.Addr)
+	done := make(chan struct{})
 	go func() {
-		done := make(chan struct{})
-		go func() {
-			errChan <- e.srv.Serve(lsr)
-			close(done)
-		}()
-
-		select {
-		case <-done:
-			return
-		case <-time.After(time.Second):
-			errChan <- nil
-		}
+		errChan <- e.srv.Serve(lsr)
+		close(done)
 	}()
+
+	select {
+	case <-time.After(time.Second):
+		errChan <- nil
+	case <-done:
+	}
 	err = <-errChan
 	if err != nil {
 		log.Errorf("API Server [%s] start error: %s", e.name, err.Error())
@@ -149,12 +149,12 @@ func (e *Server) Stop(ctx context.Context) error {
 	return err
 }
 
-//ServiceName 服务名称
+// ServiceName 服务名称
 func (s *Server) ServiceName() string {
 	return s.opts.serviceName
 }
 
-//   http://127.0.0.1:8000
+// http://127.0.0.1:8000
 func (s *Server) Endpoint() *url.URL {
 	if s.endpoint == nil {
 		s.endpoint = s.buildEndpoint()

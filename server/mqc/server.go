@@ -18,7 +18,7 @@ type Server struct {
 	name      string
 	processor *processor
 	ctx       context.Context
-	opts      options
+	opts      *options
 	started   bool
 }
 
@@ -38,7 +38,7 @@ func New(name string, opts ...Option) *Server {
 // Options 设置参数
 func (e *Server) Options(opts ...Option) {
 	for _, o := range opts {
-		o(&e.opts)
+		o(e.opts)
 	}
 }
 

@@ -59,7 +59,9 @@ func IsNil(input interface{}) bool {
 	if arg, ok := input.(*sql.NamedArg); ok {
 		input = arg.Value
 	}
-
+	if input == nil {
+		return true
+	}
 	if fmt.Sprintf("%v", input) == "" {
 		return true
 	}

@@ -2,6 +2,7 @@ package nacos
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -25,6 +26,10 @@ func NewConfigSource(client config_client.IConfigClient, opts options) config.So
 }
 func (c *Config) Name() string {
 	return _name
+}
+
+func (f *Config) Path() string {
+	return fmt.Sprintf("Group=%s&DataID=%s", f.opts.Group, f.opts.DataID)
 }
 
 func (c *Config) Load() ([]*config.KeyValue, error) {
