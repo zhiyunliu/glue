@@ -19,6 +19,7 @@ type AlloterEngine struct {
 func NewAlloterEngine(innerEngine *alloter.Engine, opts ...engine.Option) *AlloterEngine {
 	g := &AlloterEngine{
 		Engine: innerEngine,
+		pool:   sync.Pool{},
 		opts:   engine.DefaultOptions(),
 	}
 	alloter.SetMode(alloter.ReleaseMode)
@@ -72,6 +73,10 @@ func (e *AlloterEngine) Write(ctx context.Context, resp interface{}) {
 		ctx.Log().Errorf("%s:写入响应出错:%s,%+v", e.opts.SrvType, ctx.Request().Path().FullPath(), err)
 	}
 }
+func (e *AlloterEngine) HandleRequest(req engine.Request, resp engine.ResponseWriter) (err error) {
+	return e.Engine.HandleRequest(req, resp)
+}
+
 func (e *AlloterEngine) GetImpl() any {
 	return e.Engine
 }

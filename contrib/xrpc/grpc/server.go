@@ -6,7 +6,9 @@ import (
 	"net"
 
 	"github.com/zhiyunliu/glue/contrib/alloter"
+	enginealloter "github.com/zhiyunliu/glue/contrib/engine/alloter"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/xnet"
@@ -21,7 +23,9 @@ type Server struct {
 	processor *processor
 }
 
-func newServer(cfg *serverConfig) (server *Server, err error) {
+func newServer(cfg *serverConfig,
+	router *engine.RouterGroup,
+	opts ...engine.Option) (server *Server, err error) {
 
 	grpcOpts := []grpc.ServerOption{}
 	if cfg.MaxRecvMsgSize > 0 {
@@ -35,11 +39,19 @@ func newServer(cfg *serverConfig) (server *Server, err error) {
 		err = fmt.Errorf("GRPC Avaliable Addr %+v", err)
 		return
 	}
+
 	server = &Server{
 		cfg:    cfg,
 		srv:    grpc.NewServer(grpcOpts...),
 		engine: alloter.New(),
 	}
+
+	server.processor, err = newProcessor(server.engine)
+	if err != nil {
+		return
+	}
+	adapterEngine := enginealloter.NewAlloterEngine(server.engine, opts...)
+	engine.RegistryEngineRoute(adapterEngine, router)
 	return
 }
 
@@ -52,7 +64,7 @@ func (e *Server) GetProto() string {
 }
 
 func (e *Server) Serve(ctx context.Context) (err error) {
-	e.processor, err = newProcessor()
+	newAddr, err := xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.cfg.Addr)
 	if err != nil {
 		return
 	}
@@ -62,7 +74,7 @@ func (e *Server) Serve(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	lsr, err := net.Listen("tcp", e.cfg.Addr)
+	lsr, err := net.Listen("tcp", newAddr)
 	if err != nil {
 		return err
 	}

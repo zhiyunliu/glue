@@ -47,6 +47,10 @@ func (ctx *GinContext) reset(gctx *gin.Context) {
 	ctx.Gctx = gctx
 }
 
+func (ctx *GinContext) LogOptions() *log.Options {
+	return ctx.opts.LogOpts
+}
+
 func (ctx *GinContext) ServerType() string {
 	return ctx.opts.SrvType
 }

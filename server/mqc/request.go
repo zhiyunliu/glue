@@ -10,11 +10,10 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
 
-	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/queue"
 )
 
-var _ alloter.IRequest = (*Request)(nil)
+var _ engine.Request = (*Request)(nil)
 
 // Request 处理任务请求
 type Request struct {
@@ -86,9 +85,9 @@ func (m *Request) GetRemoteAddr() string {
 func (m *Request) Context() sctx.Context {
 	return m.ctx
 }
-func (m *Request) WithContext(ctx sctx.Context) alloter.IRequest {
+func (m *Request) WithContext(ctx sctx.Context) {
 	m.ctx = ctx
-	return m
+	return
 }
 
 type Body interface {

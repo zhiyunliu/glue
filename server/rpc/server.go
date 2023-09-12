@@ -72,11 +72,21 @@ func (e *Server) Start(ctx context.Context) (err error) {
 		return nil
 	}
 	e.ctx = transport.WithServerContext(ctx, e)
-	e.server, err = xrpc.NewServer(e.opts.setting.Config.Proto, e.opts.config.Get(e.configPath()))
-	if err != nil {
-		return
+
+	for _, m := range e.opts.setting.Middlewares {
+		e.opts.router.Use(middleware.Resolve(&m))
 	}
-	err = e.resoverEngineRoute(e.server)
+
+	e.server, err = xrpc.NewServer(e.opts.setting.Config.Proto,
+		e.opts.router,
+		e.opts.config.Get(e.configPath()),
+		engine.WithLogOptions(e.opts.logOpts),
+		engine.WithSrvType(e.Type()),
+		engine.WithSrvName(e.Name()),
+		engine.WithErrorEncoder(e.opts.encErr),
+		engine.WithRequestDecoder(e.opts.decReq),
+		engine.WithResponseEncoder(e.opts.encResp),
+	)
 	if err != nil {
 		return
 	}

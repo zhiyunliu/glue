@@ -38,8 +38,6 @@ func (r *Request) Swap(ctx context.Context, service string, opts ...xrpc.Request
 
 	//获取内容
 	input := ctx.Request().Body().Bytes()
-	opts = append(opts, xrpc.WithXRequestID(ctx.Request().GetHeader(constants.HeaderRequestId)))
-
 	//复制请求头
 	hd := ctx.Request().Header()
 
@@ -86,8 +84,8 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 
 	client := tmpClient.(*Client)
 	nopts := make([]xrpc.RequestOption, 0, len(opts)+2)
-	nopts = append(nopts, xrpc.WithSourceName(global.AppName))
 	nopts = append(nopts, opts...)
+	nopts = append(nopts, xrpc.WithSourceName(global.AppName))
 
 	if logger, ok := log.FromContext(ctx); ok {
 		nopts = append(nopts, xrpc.WithXRequestID(logger.SessionID()))

@@ -24,7 +24,7 @@ type xRPC struct {
 }
 
 // NewStandardRPC 创建RPC服务代理
-func NewClient(container container.Container) StandardRPC {
+func newStdClient(container container.Container) StandardRPC {
 	return &xRPC{
 		container: container,
 	}
@@ -60,5 +60,5 @@ func (xBuilder) Name() string {
 }
 
 func (xBuilder) Build(c container.Container) interface{} {
-	return NewClient(c)
+	return newStdClient(c)
 }

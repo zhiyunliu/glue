@@ -76,6 +76,10 @@ func (e *GinEngine) Write(ctx context.Context, resp interface{}) {
 	}
 }
 
+func (e *GinEngine) HandleRequest(req engine.Request, resp engine.ResponseWriter) (err error) {
+	return
+}
+
 func (e *GinEngine) GetImpl() any {
 	return &httpEngine{engine: e.Engine}
 }

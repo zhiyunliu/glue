@@ -1,8 +1,10 @@
-package alloter
+package engine
 
-import "context"
+import (
+	"context"
+)
 
-type IRequest interface {
+type Request interface {
 	Context() context.Context
 	WithContext(context.Context)
 	GetName() string

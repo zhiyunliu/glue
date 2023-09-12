@@ -82,9 +82,8 @@ func (m *serverRequest) GetRemoteAddr() string {
 func (m *serverRequest) Context() sctx.Context {
 	return m.ctx
 }
-func (m *serverRequest) WithContext(ctx sctx.Context) alloter.IRequest {
+func (m *serverRequest) WithContext(ctx sctx.Context) {
 	m.ctx = ctx
-	return m
 }
 
 type Body interface {
