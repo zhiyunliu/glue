@@ -12,6 +12,7 @@ type AdapterEngine interface {
 	NoRoute()
 	Handle(method string, path string, callfunc HandlerFunc)
 	Write(ctx context.Context, resp interface{})
+	HandleRequest(r Request, resp ResponseWriter) (err error)
 	GetImpl() any
 }
 type HandlerFunc func(context.Context)

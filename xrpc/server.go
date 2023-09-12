@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/engine"
 )
 
 type Server interface {
@@ -17,7 +18,10 @@ type Server interface {
 // ServerResover 定义配置文件转换方法
 type ServerResover interface {
 	Name() string
-	Resolve(name string, setting config.Config) (Server, error)
+	Resolve(name string,
+		router *engine.RouterGroup,
+		cfg config.Config,
+		opts ...engine.Option) (Server, error)
 }
 
 var serverResolvers = make(map[string]ServerResover)
@@ -37,10 +41,14 @@ func DeregisterServer(name string) {
 }
 
 // NewServer 根据适配器名称及参数返回配置处理器
-func NewServer(proto string, setting config.Config) (Server, error) {
+func NewServer(proto string,
+	router *engine.RouterGroup,
+	cfg config.Config,
+	opts ...engine.Option) (Server, error) {
+
 	resolver, ok := serverResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("xrpc: 未知的协议类型:%s", proto)
 	}
-	return resolver.Resolve(proto, setting)
+	return resolver.Resolve(proto, router, cfg, opts...)
 }

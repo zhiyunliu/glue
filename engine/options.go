@@ -1,5 +1,9 @@
 package engine
 
+import (
+	"github.com/zhiyunliu/glue/log"
+)
+
 type Option func(*Options)
 
 type Options struct {
@@ -8,6 +12,7 @@ type Options struct {
 	RequestDecoder  DecodeRequestFunc  //:          server.DefaultRequestDecoder,
 	ResponseEncoder EncodeResponseFunc //:          server.DefaultResponseEncoder,
 	ErrorEncoder    EncodeErrorFunc    //:          server.DefaultErrorEncoder,
+	LogOpts         *log.Options
 }
 
 func DefaultOptions() *Options {
@@ -44,5 +49,11 @@ func WithResponseEncoder(responseEncoder EncodeResponseFunc) Option {
 func WithErrorEncoder(errorEncoder EncodeErrorFunc) Option {
 	return func(o *Options) {
 		o.ErrorEncoder = errorEncoder
+	}
+}
+
+func WithLogOptions(opt *log.Options) Option {
+	return func(o *Options) {
+		o.LogOpts = opt
 	}
 }

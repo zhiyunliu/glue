@@ -8,21 +8,18 @@ import (
 
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
-	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
-	server transport.Server
 	engine *alloter.Engine
 }
 
 // NewProcessor 创建processor
-func newProcessor() (p *processor, err error) {
+func newProcessor(engine *alloter.Engine) (p *processor, err error) {
 	p = &processor{}
-	p.engine = alloter.New()
-
+	p.engine = engine
 	return p, nil
 }
 

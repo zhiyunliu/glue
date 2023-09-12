@@ -30,7 +30,7 @@ type processor struct {
 	interval     time.Duration
 	slots        [60]cmap.ConcurrentMap //time slots
 	status       server.RunStatus
-	engine       engine.AlloterEngine
+	engine       engine.AdapterEngine
 	onceLock     sync.Once
 	cfg          config.Config
 }

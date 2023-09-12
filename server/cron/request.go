@@ -8,25 +8,23 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/constants"
-	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/golibs/session"
 )
 
-var _ alloter.IRequest = (*Request)(nil)
+var _ engine.Request = (*Request)(nil)
 
 // Request 处理任务请求
 type Request struct {
-	ctx      sctx.Context
-	job      *Job
-	round    *Round
-	method   string
-	params   map[string]string
-	header   map[string]string
-	body     cbody //map[string]string
-	executed bool
-	session  string
-	canProc  bool
+	ctx     sctx.Context
+	job     *Job
+	round   *Round
+	method  string
+	params  map[string]string
+	header  map[string]string
+	body    cbody //map[string]string
+	session string
+	canProc bool
 }
 
 // NewRequest 构建任务请求
@@ -87,9 +85,8 @@ func (m *Request) GetRemoteAddr() string {
 func (m *Request) Context() sctx.Context {
 	return m.ctx
 }
-func (m *Request) WithContext(ctx sctx.Context) alloter.IRequest {
+func (m *Request) WithContext(ctx sctx.Context) {
 	m.ctx = ctx
-	return m
 }
 
 func (m *Request) CanProc() bool {

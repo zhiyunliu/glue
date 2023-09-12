@@ -23,7 +23,7 @@ type processor struct {
 	consumer  queue.IMQC
 	status    server.RunStatus
 	onceLock  sync.Once
-	engine    engine.AlloterEngine
+	engine    engine.AdapterEngine
 }
 
 // NewProcessor 创建processor

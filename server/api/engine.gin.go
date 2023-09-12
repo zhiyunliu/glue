@@ -12,6 +12,7 @@ func (e *Server) resoverEngineRoute() (err error) {
 	adapterEngine, err := engine.NewEngine(e.opts.setting.Config.Engine, e.opts.config,
 		engine.WithSrvType(e.Type()),
 		engine.WithSrvName(e.Name()),
+		engine.WithLogOptions(e.opts.logOpts),
 		engine.WithErrorEncoder(e.opts.encErr),
 		engine.WithRequestDecoder(e.opts.decReq),
 		engine.WithResponseEncoder(func(ctx context.Context, resp interface{}) error {
@@ -42,6 +43,6 @@ func (e *Server) resoverEngineRoute() (err error) {
 			httpEngine.Static(s.RouterPath, s.FilePath)
 		}
 	}
-	engine.RegistryEngineRoute(adapterEngine, e.opts.router, e.opts.logOpts)
+	engine.RegistryEngineRoute(adapterEngine, e.opts.router)
 	return nil
 }

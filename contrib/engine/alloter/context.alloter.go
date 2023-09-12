@@ -42,6 +42,10 @@ func newAlloterContext(opts *engine.Options) *AlloterContext {
 	}
 }
 
+func (ctx *AlloterContext) LogOptions() *log.Options {
+	return ctx.opts.LogOpts
+}
+
 func (ctx *AlloterContext) reset(gctx *alloter.Context) {
 	ctx.Actx = gctx
 }
@@ -62,8 +66,7 @@ func (ctx *AlloterContext) Context() context.Context {
 }
 
 func (ctx *AlloterContext) ResetContext(nctx context.Context) {
-	req := ctx.Actx.Request.WithContext(nctx)
-	ctx.Actx.Request = req
+	ctx.Actx.Request.WithContext(nctx)
 }
 
 func (ctx *AlloterContext) Header(key string) string {

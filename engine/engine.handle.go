@@ -14,17 +14,16 @@ import (
 	"github.com/zhiyunliu/glue/middleware/recovery"
 )
 
-func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup, logOpt *log.Options) {
+func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup) {
 	defaultMiddlewares := []middleware.Middleware{
-		//logging.Server(logOpt),
 		recovery.Recovery(),
 	}
 	engine.NoMethod()
 	engine.NoRoute()
-	execRegistry(engine, router, logOpt, defaultMiddlewares)
+	execRegistry(engine, router, defaultMiddlewares)
 }
 
-func execRegistry(engine AdapterEngine, group *RouterGroup, logOpt *log.Options, defaultMiddlewares []middleware.Middleware) {
+func execRegistry(engine AdapterEngine, group *RouterGroup, defaultMiddlewares []middleware.Middleware) {
 
 	groups := group.ServiceGroups
 	gmlen := len(group.middlewares)
@@ -36,15 +35,15 @@ func execRegistry(engine AdapterEngine, group *RouterGroup, logOpt *log.Options,
 	}
 
 	for _, v := range groups {
-		procHandler(engine, v, logOpt, mls...)
+		procHandler(engine, v, mls...)
 	}
 
 	for i := range group.Children {
-		execRegistry(engine, group.Children[i], logOpt, mls)
+		execRegistry(engine, group.Children[i], mls)
 	}
 }
 
-func procHandler(engine AdapterEngine, group *router.Group, opts *log.Options, middlewares ...middleware.Middleware) {
+func procHandler(engine AdapterEngine, group *router.Group, middlewares ...middleware.Middleware) {
 	for method, v := range group.Services {
 		engine.Handle(method, group.GetReallyPath(), func(ctx context.Context) {
 			var (
@@ -52,6 +51,7 @@ func procHandler(engine AdapterEngine, group *router.Group, opts *log.Options, m
 				kind            = ctx.ServerType()
 				fullPath string = ctx.Request().Path().FullPath()
 			)
+			opts := getLogOptions(ctx)
 			startTime := time.Now()
 
 			ctx.Log().Infof("%s.req %s %s from:%s %s", kind, ctx.Request().GetMethod(), fullPath, ctx.Request().GetClientIP(), extractReq(opts, ctx.Request()))
@@ -77,7 +77,7 @@ func procHandler(engine AdapterEngine, group *router.Group, opts *log.Options, m
 		})
 	}
 	for i := range group.Children {
-		procHandler(engine, group.Children[i], opts, middlewares...)
+		procHandler(engine, group.Children[i], middlewares...)
 	}
 }
 
@@ -149,4 +149,17 @@ func extractError(err error) (log.Level, string) {
 		return log.LevelError, err.Error()
 	}
 	return log.LevelInfo, ""
+}
+
+func getLogOptions(ctx context.Context) *log.Options {
+	logCtx, ok := ctx.(LogContext)
+	if !ok {
+		//todo:应该不会进入该逻辑
+		return &log.Options{}
+	}
+	return logCtx.LogOptions()
+}
+
+type LogContext interface {
+	LogOptions() *log.Options
 }
