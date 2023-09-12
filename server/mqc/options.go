@@ -12,7 +12,7 @@ type Option func(*options)
 
 type options struct {
 	serviceName string
-	setting     *Setting
+	srvCfg      *serverConfig
 	logOpts     *log.Options
 	router      *engine.RouterGroup
 	config      config.Config
@@ -26,7 +26,7 @@ type options struct {
 
 func setDefaultOption() *options {
 	return &options{
-		setting: &Setting{
+		srvCfg: &serverConfig{
 			Config: Config{
 				Status: server.StatusStart,
 				Addr:   "queues://default",

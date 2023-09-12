@@ -23,7 +23,7 @@ import (
 
 const Type string = "cron"
 
-type Setting struct {
+type serverConfig struct {
 	Config      Config              `json:"config" yaml:"config"`
 	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
 	Jobs        []*Job              `json:"jobs"  yaml:"jobs"`

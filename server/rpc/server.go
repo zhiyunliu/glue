@@ -63,21 +63,21 @@ func (e *Server) Config(cfg config.Config) {
 		return
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(e.serverPath()).Scan(e.opts.setting)
+	cfg.Get(e.serverPath()).Scan(e.opts.srvCfg)
 }
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) (err error) {
-	if e.opts.setting.Config.Status == server.StatusStop {
+	if e.opts.srvCfg.Config.Status == server.StatusStop {
 		return nil
 	}
 	e.ctx = transport.WithServerContext(ctx, e)
 
-	for _, m := range e.opts.setting.Middlewares {
+	for _, m := range e.opts.srvCfg.Middlewares {
 		e.opts.router.Use(middleware.Resolve(&m))
 	}
 
-	e.server, err = xrpc.NewServer(e.opts.setting.Config.Proto,
+	e.server, err = xrpc.NewServer(e.opts.srvCfg.Config.Proto,
 		e.opts.router,
 		e.opts.config.Get(e.configPath()),
 		engine.WithLogOptions(e.opts.logOpts),

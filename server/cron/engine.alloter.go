@@ -6,7 +6,7 @@ import (
 )
 
 func (e *Server) resoverEngineRoute(processor *processor) (err error) {
-	adapterEngine, err := engine.NewEngine(e.opts.setting.Config.Engine, e.opts.config,
+	adapterEngine, err := engine.NewEngine(e.opts.srvCfg.Config.Engine, e.opts.config,
 		engine.WithSrvType(e.Type()),
 		engine.WithSrvName(e.Name()),
 		engine.WithLogOptions(e.opts.logOpts),
@@ -20,7 +20,7 @@ func (e *Server) resoverEngineRoute(processor *processor) (err error) {
 
 	processor.engine = adapterEngine
 
-	for _, m := range e.opts.setting.Middlewares {
+	for _, m := range e.opts.srvCfg.Middlewares {
 		e.opts.router.Use(middleware.Resolve(&m))
 	}
 

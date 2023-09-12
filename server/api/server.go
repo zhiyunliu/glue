@@ -62,15 +62,15 @@ func (e *Server) Config(cfg config.Config) {
 		return
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
+	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.srvCfg)
 }
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) (err error) {
-	if e.opts.setting.Config.Status == server.StatusStop {
+	if e.opts.srvCfg.Config.Status == server.StatusStop {
 		return nil
 	}
-	e.opts.setting.Config.Addr, err = xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.opts.setting.Config.Addr)
+	e.opts.srvCfg.Config.Addr, err = xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.opts.srvCfg.Config.Addr)
 	if err != nil {
 		return err
 	}
@@ -83,17 +83,17 @@ func (e *Server) Start(ctx context.Context) (err error) {
 		return
 	}
 
-	lsr, err := net.Listen("tcp", e.opts.setting.Config.Addr)
+	lsr, err := net.Listen("tcp", e.opts.srvCfg.Config.Addr)
 	if err != nil {
 		return err
 	}
 
 	e.srv = &http.Server{
 		Handler:           e.opts.handler,
-		ReadTimeout:       time.Duration(e.opts.setting.Config.ReadTimeout) * time.Second,
-		ReadHeaderTimeout: time.Duration(e.opts.setting.Config.ReadHeaderTimeout) * time.Second,
-		WriteTimeout:      time.Duration(e.opts.setting.Config.WriteTimeout) * time.Second,
-		MaxHeaderBytes:    int(e.opts.setting.Config.MaxHeaderBytes),
+		ReadTimeout:       time.Duration(e.opts.srvCfg.Config.ReadTimeout) * time.Second,
+		ReadHeaderTimeout: time.Duration(e.opts.srvCfg.Config.ReadHeaderTimeout) * time.Second,
+		WriteTimeout:      time.Duration(e.opts.srvCfg.Config.WriteTimeout) * time.Second,
+		MaxHeaderBytes:    int(e.opts.srvCfg.Config.MaxHeaderBytes),
 	}
 	if len(e.opts.endHooks) > 0 {
 		endHook := func() {
@@ -110,7 +110,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	e.srv.BaseContext = func(_ net.Listener) context.Context {
 		return e.ctx
 	}
-	log.Infof("API Server [%s] listening on %s", e.name, e.opts.setting.Config.Addr)
+	log.Infof("API Server [%s] listening on %s", e.name, e.opts.srvCfg.Config.Addr)
 	errChan := make(chan error, 1)
 	done := make(chan struct{})
 	go func() {
@@ -173,9 +173,9 @@ func (e *Server) Attempt() bool {
 }
 
 func (e *Server) buildEndpoint() *url.URL {
-	host, port, err := xnet.ExtractHostPort(e.opts.setting.Config.Addr)
+	host, port, err := xnet.ExtractHostPort(e.opts.srvCfg.Config.Addr)
 	if err != nil {
-		panic(fmt.Errorf("API Server Addr:%s 配置错误", e.opts.setting.Config.Addr))
+		panic(fmt.Errorf("API Server Addr:%s 配置错误", e.opts.srvCfg.Config.Addr))
 	}
 	if host == "" {
 		host = global.LocalIp
