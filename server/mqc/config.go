@@ -19,7 +19,7 @@ import (
 
 const Type string = "mqc"
 
-type Setting struct {
+type serverConfig struct {
 	Config      Config              `json:"config" yaml:"config"`
 	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
 	Tasks       TaskList            `json:"tasks"  yaml:"tasks"`

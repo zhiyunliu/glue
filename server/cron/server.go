@@ -68,13 +68,13 @@ func (e *Server) Config(cfg config.Config) {
 		return
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
+	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.srvCfg)
 }
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) error {
 
-	if e.opts.setting.Config.Status == server.StatusStop {
+	if e.opts.srvCfg.Config.Status == server.StatusStop {
 		return nil
 	}
 
@@ -152,7 +152,7 @@ func (e *Server) newProcessor() error {
 		return err
 	}
 
-	err = e.processor.Add(e.opts.setting.Jobs...)
+	err = e.processor.Add(e.opts.srvCfg.Jobs...)
 	if err != nil {
 		return err
 	}

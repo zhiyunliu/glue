@@ -15,7 +15,7 @@ import (
 
 const Type string = "rpc"
 
-type Setting struct {
+type serverConfig struct {
 	Config      Config              `json:"config" yaml:"config"`
 	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
 }

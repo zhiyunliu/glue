@@ -68,12 +68,12 @@ func (e *Server) Config(cfg config.Config) {
 		return
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
+	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.srvCfg)
 }
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) (err error) {
-	if e.opts.setting.Config.Status == server.StatusStop {
+	if e.opts.srvCfg.Config.Status == server.StatusStop {
 		return nil
 	}
 
@@ -84,7 +84,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	}
 
 	errChan := make(chan error, 1)
-	log.Infof("MQC Server [%s] listening on %s", e.name, e.opts.setting.Config.String())
+	log.Infof("MQC Server [%s] listening on %s", e.name, e.opts.srvCfg.Config.String())
 	go func() {
 		e.started = true
 		err := e.processor.Start()
@@ -142,7 +142,7 @@ func (e *Server) Stop(ctx context.Context) error {
 }
 
 func (e *Server) newProcessor() (err error) {
-	config := e.opts.setting.Config
+	config := e.opts.srvCfg.Config
 	//queue://default
 	protoType, configName, err := xnet.Parse(config.Addr)
 	if err != nil {
@@ -158,7 +158,7 @@ func (e *Server) newProcessor() (err error) {
 		return
 	}
 
-	err = e.processor.Add(e.opts.setting.Tasks...)
+	err = e.processor.Add(e.opts.srvCfg.Tasks...)
 	if err != nil {
 		return
 	}

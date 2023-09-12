@@ -9,14 +9,14 @@ import (
 )
 
 func (e *Server) resoverEngineRoute() (err error) {
-	adapterEngine, err := engine.NewEngine(e.opts.setting.Config.Engine, e.opts.config,
+	adapterEngine, err := engine.NewEngine(e.opts.srvCfg.Config.Engine, e.opts.config,
 		engine.WithSrvType(e.Type()),
 		engine.WithSrvName(e.Name()),
 		engine.WithLogOptions(e.opts.logOpts),
 		engine.WithErrorEncoder(e.opts.encErr),
 		engine.WithRequestDecoder(e.opts.decReq),
 		engine.WithResponseEncoder(func(ctx context.Context, resp interface{}) error {
-			for k, v := range e.opts.setting.Header {
+			for k, v := range e.opts.srvCfg.Header {
 				ctx.Response().Header(k, v)
 			}
 			return e.opts.encResp(ctx, resp)
@@ -27,12 +27,12 @@ func (e *Server) resoverEngineRoute() (err error) {
 
 	httpEngine, ok := adapterEngine.GetImpl().(engine.HttpEngine)
 	if !ok {
-		err = fmt.Errorf("engine:[%s] is not http.Handler", e.opts.setting.Config.Engine)
+		err = fmt.Errorf("engine:[%s] is not http.Handler", e.opts.srvCfg.Config.Engine)
 		return
 	}
 	e.opts.handler = httpEngine
 
-	for _, m := range e.opts.setting.Middlewares {
+	for _, m := range e.opts.srvCfg.Middlewares {
 		e.opts.router.Use(middleware.Resolve(&m))
 	}
 
