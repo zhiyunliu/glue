@@ -27,7 +27,6 @@ func setDefaultOption() *options {
 	return &options{
 		srvCfg: &serverConfig{
 			Config: Config{
-				Engine: "alloter",
 				Proto:  "grpc",
 				Status: server.StatusStart,
 			},

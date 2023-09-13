@@ -29,6 +29,10 @@ func (l *wrap) Get(key string) Config {
 	}
 }
 
+func (l *wrap) Path() string {
+	return l.curkey
+}
+
 func (c *wrap) Root() Config {
 	return c.rootConfig
 }

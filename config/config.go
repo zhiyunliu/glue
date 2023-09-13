@@ -30,6 +30,7 @@ type Config interface {
 	Value(key string) Value
 	Watch(key string, o Observer) error
 	Close() error
+	Path() string
 	Get(key string) Config
 	Root() Config
 }
@@ -40,6 +41,7 @@ type config struct {
 	cached    sync.Map
 	observers sync.Map
 	watchers  []Watcher
+	curkey    string
 	//	log       log.Logger
 }
 
@@ -55,8 +57,13 @@ func New(opts ...Option) Config {
 	}
 	return &config{
 		opts:   o,
+		curkey: "",
 		reader: newReader(o),
 	}
+}
+
+func (c *config) Path() string {
+	return c.curkey
 }
 
 func (c *config) Get(key string) Config {

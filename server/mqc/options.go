@@ -30,7 +30,7 @@ func setDefaultOption() *options {
 			Config: Config{
 				Status: server.StatusStart,
 				Addr:   "queues://default",
-				Engine: "alloter",
+				Proto:  "alloter",
 			},
 			Tasks: TaskList{},
 		},

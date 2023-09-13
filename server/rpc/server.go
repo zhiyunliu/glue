@@ -79,7 +79,8 @@ func (e *Server) Start(ctx context.Context) (err error) {
 
 	e.server, err = xrpc.NewServer(e.opts.srvCfg.Config.Proto,
 		e.opts.router,
-		e.opts.config.Get(e.configPath()),
+		e.opts.config.Get(e.serverPath()),
+		engine.WithConfig(e.opts.config),
 		engine.WithLogOptions(e.opts.logOpts),
 		engine.WithSrvType(e.Type()),
 		engine.WithSrvName(e.Name()),
@@ -103,7 +104,6 @@ func (e *Server) Start(ctx context.Context) (err error) {
 
 	select {
 	case <-done:
-		return
 	case <-time.After(time.Second):
 		errChan <- nil
 	}
@@ -136,6 +136,7 @@ func (e *Server) Attempt() bool {
 func (e *Server) Stop(ctx context.Context) error {
 	err := e.server.Stop(ctx)
 	if err != nil {
+		log.Errorf("RPC Server [%s] stop error: %s", e.name, err.Error())
 		return err
 	}
 	if len(e.opts.endHooks) > 0 {
@@ -163,11 +164,9 @@ func (e *Server) Endpoint() *url.URL {
 	return e.endpoint
 
 }
+
 func (e *Server) serverPath() string {
 	return fmt.Sprintf("servers.%s", e.Name())
-}
-func (e *Server) configPath() string {
-	return fmt.Sprintf("%s.config", e.serverPath())
 }
 
 func (e *Server) buildEndpoint() *url.URL {
