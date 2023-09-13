@@ -23,10 +23,11 @@ type Server struct {
 	processor *processor
 }
 
-func newServer(cfg *serverConfig,
+func newServer(srvcfg *serverConfig,
 	router *engine.RouterGroup,
 	opts ...engine.Option) (server *Server, err error) {
 
+	cfg := srvcfg.Config
 	grpcOpts := []grpc.ServerOption{}
 	if cfg.MaxRecvMsgSize > 0 {
 		grpcOpts = append(grpcOpts, grpc.MaxRecvMsgSize(cfg.MaxRecvMsgSize))
@@ -41,7 +42,7 @@ func newServer(cfg *serverConfig,
 	}
 
 	server = &Server{
-		cfg:    cfg,
+		cfg:    srvcfg,
 		srv:    grpc.NewServer(grpcOpts...),
 		engine: alloter.New(),
 	}
@@ -56,7 +57,7 @@ func newServer(cfg *serverConfig,
 }
 
 func (e *Server) GetAddr() string {
-	return e.cfg.Addr
+	return e.cfg.Config.Addr
 }
 
 func (e *Server) GetProto() string {
@@ -64,7 +65,7 @@ func (e *Server) GetProto() string {
 }
 
 func (e *Server) Serve(ctx context.Context) (err error) {
-	newAddr, err := xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.cfg.Addr)
+	newAddr, err := xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.GetAddr())
 	if err != nil {
 		return
 	}

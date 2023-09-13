@@ -1,4 +1,4 @@
-package mqc
+package alloter
 
 import (
 	"fmt"

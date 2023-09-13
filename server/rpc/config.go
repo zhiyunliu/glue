@@ -23,5 +23,4 @@ type serverConfig struct {
 type Config struct {
 	Status server.Status `json:"status"`
 	Proto  string        `json:"proto"`
-	Engine string        `json:"engine"`
 }

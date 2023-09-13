@@ -1,4 +1,4 @@
-package mqc
+package alloter
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/glue/server"
@@ -22,17 +22,18 @@ type processor struct {
 	queues    cmap.ConcurrentMap
 	consumer  queue.IMQC
 	status    server.RunStatus
+	engine    *alloter.Engine
 	onceLock  sync.Once
-	engine    engine.AdapterEngine
 }
 
 // NewProcessor 创建processor
-func newProcessor(ctx context.Context, proto string, setting config.Config) (p *processor, err error) {
+func newProcessor(ctx context.Context, engine *alloter.Engine, proto string, setting config.Config) (p *processor, err error) {
 	p = &processor{
 		ctx:       ctx,
 		status:    server.Unstarted,
 		closeChan: make(chan struct{}),
 		queues:    cmap.New(),
+		engine:    engine,
 	}
 
 	p.consumer, err = queue.NewMQC(proto, setting)
