@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -13,7 +14,7 @@ type MsgWrap struct {
 	BodyMap   xtypes.XMap `json:"body"`
 	hasProced bool        `json:"-"`
 	reqid     string      `json:"-"`
-	bytes     []byte      `json:"-"`
+	bodyBytes []byte      `json:"-"`
 }
 
 type Option func(m *MsgWrap)
@@ -24,16 +25,30 @@ func WithXRequestID(reqId string) Option {
 	}
 }
 
+func WithHeader(key, val string) Option {
+	return func(m *MsgWrap) {
+		if m.HeaderMap == nil {
+			m.HeaderMap = make(xtypes.SMap)
+		}
+		m.HeaderMap[key] = val
+	}
+}
+
 func NewMsg(obj interface{}, opts ...Option) (msg Message, err error) {
-	bytes, ok := obj.([]byte)
-	if !ok {
+	var bytes []byte
+	switch val := obj.(type) {
+	case []byte:
+		bytes = val
+	case Message:
+		return val, nil
+	default:
 		bytes, err = json.Marshal(obj)
 		if err != nil {
 			return nil, err
 		}
 	}
 	tmpmsg := &MsgWrap{
-		bytes: bytes,
+		bodyBytes: bytes,
 	}
 	for i := range opts {
 		opts[i](tmpmsg)
@@ -56,15 +71,19 @@ func (w *MsgWrap) adapterMsg() {
 	if w.hasProced {
 		return
 	}
-	w.HeaderMap = map[string]string{}
+	if w.HeaderMap == nil {
+		w.HeaderMap = map[string]string{}
+	}
 	w.BodyMap = map[string]interface{}{}
 	w.hasProced = true
-	w.HeaderMap[constants.HeaderRequestId] = w.reqid
-	decoder := json.NewDecoder(bytes.NewReader(w.bytes))
+	if w.reqid != "" {
+		w.HeaderMap[constants.HeaderRequestId] = w.reqid
+	}
+	decoder := json.NewDecoder(bytes.NewReader(w.bodyBytes))
 	decoder.UseNumber()
 	decoder.Decode(&w.BodyMap)
 }
 
 func (w *MsgWrap) String() string {
-	return string(w.bytes)
+	return bytesconv.BytesToString(w.bodyBytes)
 }
