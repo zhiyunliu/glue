@@ -8,9 +8,10 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/queue"
-	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/glue/xmqc"
 	"github.com/zhiyunliu/golibs/xstack"
 )
 
@@ -21,19 +22,19 @@ type processor struct {
 	closeChan chan struct{}
 	queues    cmap.ConcurrentMap
 	consumer  queue.IMQC
-	status    server.RunStatus
+	status    engine.RunStatus
 	engine    *alloter.Engine
 	onceLock  sync.Once
 }
 
 // NewProcessor 创建processor
-func newProcessor(ctx context.Context, engine *alloter.Engine, proto string, setting config.Config) (p *processor, err error) {
+func newProcessor(ctx context.Context, alloterEngine *alloter.Engine, proto string, setting config.Config) (p *processor, err error) {
 	p = &processor{
 		ctx:       ctx,
-		status:    server.Unstarted,
+		status:    engine.Unstarted,
 		closeChan: make(chan struct{}),
 		queues:    cmap.New(),
-		engine:    engine,
+		engine:    alloterEngine,
 	}
 
 	p.consumer, err = queue.NewMQC(proto, setting)
@@ -59,12 +60,12 @@ func (s *processor) Start() error {
 }
 
 // Add 添加队列信息
-func (s *processor) Add(tasks ...*Task) error {
+func (s *processor) Add(tasks ...*xmqc.Task) error {
 	for _, task := range tasks {
 		if task.Disable {
 			continue
 		}
-		if ok := s.queues.SetIfAbsent(task.Queue, task); ok && s.status == server.Running {
+		if ok := s.queues.SetIfAbsent(task.Queue, task); ok && s.status == engine.Running {
 			if err := s.consume(task); err != nil {
 				return err
 			}
@@ -74,7 +75,7 @@ func (s *processor) Add(tasks ...*Task) error {
 }
 
 // Remove 除移队列信息
-func (s *processor) Remove(tasks ...*Task) error {
+func (s *processor) Remove(tasks ...*xmqc.Task) error {
 	for _, t := range tasks {
 		s.consumer.Unconsume(t.Queue)
 		s.queues.Remove(t.Queue)
@@ -86,11 +87,11 @@ func (s *processor) Remove(tasks ...*Task) error {
 func (s *processor) Pause() (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	if s.status != server.Pause {
-		s.status = server.Pause
+	if s.status != engine.Pause {
+		s.status = engine.Pause
 		items := s.queues.Items()
 		for _, v := range items {
-			queue := v.(*Task)
+			queue := v.(*xmqc.Task)
 			s.consumer.Unconsume(queue.Queue) //取消服务订阅
 		}
 		return true, nil
@@ -102,11 +103,11 @@ func (s *processor) Pause() (bool, error) {
 func (s *processor) Resume() (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	if s.status != server.Running {
-		s.status = server.Running
+	if s.status != engine.Running {
+		s.status = engine.Running
 		items := s.queues.Items()
 		for _, v := range items {
-			queue := v.(*Task)
+			queue := v.(*xmqc.Task)
 			if err := s.consume(queue); err != nil {
 				return true, err
 			}
@@ -115,7 +116,7 @@ func (s *processor) Resume() (bool, error) {
 	}
 	return false, nil
 }
-func (s *processor) consume(task *Task) error {
+func (s *processor) consume(task *xmqc.Task) error {
 	return s.consumer.Consume(task, s.handleCallback(task))
 }
 
@@ -128,7 +129,7 @@ func (s *processor) Close() error {
 	return nil
 }
 
-func (s *processor) handleCallback(task *Task) func(queue.IMQCMessage) {
+func (s *processor) handleCallback(task *xmqc.Task) func(queue.IMQCMessage) {
 	return func(m queue.IMQCMessage) {
 		defer func() {
 			if obj := recover(); obj != nil {

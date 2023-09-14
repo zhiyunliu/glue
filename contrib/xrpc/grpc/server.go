@@ -11,6 +11,7 @@ import (
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/golibs/xnet"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -51,6 +52,11 @@ func newServer(srvcfg *serverConfig,
 	if err != nil {
 		return
 	}
+
+	for _, m := range srvcfg.Middlewares {
+		router.Use(middleware.Resolve(&m))
+	}
+
 	adapterEngine := enginealloter.NewAlloterEngine(server.engine, opts...)
 	engine.RegistryEngineRoute(adapterEngine, router)
 	return

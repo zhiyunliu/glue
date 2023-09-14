@@ -2,11 +2,11 @@ package alloter
 
 import (
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/xmqc"
+	"github.com/zhiyunliu/glue/xcron"
 )
 
 type serverConfig struct {
-	Config      xmqc.Config         `json:"config" yaml:"config"`
+	Config      xcron.Config        `json:"config" yaml:"config"`
 	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
-	Tasks       xmqc.TaskList       `json:"tasks"  yaml:"tasks"`
+	Jobs        []*xcron.Job        `json:"jobs"  yaml:"jobs"`
 }

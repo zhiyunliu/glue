@@ -6,7 +6,6 @@ import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
-	"github.com/zhiyunliu/glue/server"
 )
 
 // Option 参数设置类型
@@ -34,7 +33,7 @@ func setDefaultOption() *options {
 			Config: Config{
 				Addr:              ":8080",
 				Engine:            "gin",
-				Status:            server.StatusStart,
+				Status:            engine.StatusStart,
 				ReadTimeout:       15,
 				WriteTimeout:      15,
 				ReadHeaderTimeout: 15,

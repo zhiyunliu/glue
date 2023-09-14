@@ -4,7 +4,7 @@ import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
-	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/glue/xrpc"
 )
 
 // Option 参数设置类型
@@ -26,9 +26,9 @@ type options struct {
 func setDefaultOption() *options {
 	return &options{
 		srvCfg: &serverConfig{
-			Config: Config{
+			Config: xrpc.Config{
 				Proto:  "grpc",
-				Status: server.StatusStart,
+				Status: engine.StatusStart,
 			},
 		},
 		logOpts: &log.Options{},

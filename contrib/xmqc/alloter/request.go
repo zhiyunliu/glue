@@ -9,6 +9,7 @@ import (
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/xmqc"
 
 	"github.com/zhiyunliu/glue/queue"
 )
@@ -18,7 +19,7 @@ var _ engine.Request = (*Request)(nil)
 // Request 处理任务请求
 type Request struct {
 	ctx  sctx.Context
-	task *Task
+	task *xmqc.Task
 	queue.IMQCMessage
 	method string
 	params map[string]string
@@ -27,7 +28,7 @@ type Request struct {
 }
 
 // NewRequest 构建任务请求
-func newRequest(task *Task, m queue.IMQCMessage) (r *Request, err error) {
+func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request, err error) {
 	r = &Request{
 		IMQCMessage: m,
 		task:        task,
