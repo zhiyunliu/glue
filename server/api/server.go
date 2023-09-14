@@ -13,7 +13,6 @@ import (
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/xnet"
 )
@@ -67,7 +66,7 @@ func (e *Server) Config(cfg config.Config) {
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) (err error) {
-	if e.opts.srvCfg.Config.Status == server.StatusStop {
+	if e.opts.srvCfg.Config.Status == engine.StatusStop {
 		return nil
 	}
 	e.opts.srvCfg.Config.Addr, err = xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.opts.srvCfg.Config.Addr)

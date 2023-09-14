@@ -6,6 +6,7 @@ import (
 
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/queue"
+	"github.com/zhiyunliu/glue/xmqc"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -26,7 +27,7 @@ type Response struct {
 }
 
 // newResponse 构建任务请求
-func newResponse(task *Task, msg queue.IMQCMessage) (r *Response, err error) {
+func newResponse(task *xmqc.Task, msg queue.IMQCMessage) (r *Response, err error) {
 	r = &Response{
 		header: make(xtypes.SMap),
 		size:   noWritten,

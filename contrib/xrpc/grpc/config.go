@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/xrpc"
 )
 
 type clientConfig struct {
@@ -16,11 +18,6 @@ type clientConfig struct {
 }
 
 type serverConfig struct {
-	Config *Config `json:"config"`
-}
-
-type Config struct {
-	Addr           string `json:"addr"`
-	MaxRecvMsgSize int    `json:"max_recv_msg_size"`
-	MaxSendMsgSize int    `json:"max_send_msg_size"`
+	Config      *xrpc.Config        `json:"config"`
+	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
 }

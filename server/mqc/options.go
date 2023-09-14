@@ -4,7 +4,7 @@ import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
-	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/glue/xmqc"
 )
 
 // Option 参数设置类型
@@ -27,12 +27,11 @@ type options struct {
 func setDefaultOption() *options {
 	return &options{
 		srvCfg: &serverConfig{
-			Config: Config{
-				Status: server.StatusStart,
+			Config: xmqc.Config{
+				Status: engine.StatusStart,
 				Addr:   "queues://default",
 				Proto:  "alloter",
 			},
-			Tasks: TaskList{},
 		},
 		logOpts: &log.Options{},
 		decReq:  engine.DefaultRequestDecoder,

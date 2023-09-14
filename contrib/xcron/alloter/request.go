@@ -1,4 +1,4 @@
-package cron
+package alloter
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/xcron"
 	"github.com/zhiyunliu/golibs/session"
 )
 
@@ -17,7 +18,7 @@ var _ engine.Request = (*Request)(nil)
 // Request 处理任务请求
 type Request struct {
 	ctx     sctx.Context
-	job     *Job
+	job     *xcron.Job
 	round   *Round
 	method  string
 	params  map[string]string
@@ -28,7 +29,7 @@ type Request struct {
 }
 
 // NewRequest 构建任务请求
-func NewRequest(job *Job) (r *Request, err error) {
+func newRequest(job *xcron.Job) (r *Request, err error) {
 
 	r = &Request{
 		job:    job,

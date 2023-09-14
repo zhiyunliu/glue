@@ -12,7 +12,6 @@ import (
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/glue/xmqc"
 )
@@ -75,15 +74,11 @@ func (e *Server) Config(cfg config.Config) {
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) (err error) {
-	if e.opts.srvCfg.Config.Status == server.StatusStop {
+	if e.opts.srvCfg.Config.Status == engine.StatusStop {
 		return nil
 	}
 
 	e.ctx = transport.WithServerContext(ctx, e)
-
-	for _, m := range e.opts.srvCfg.Middlewares {
-		e.opts.router.Use(middleware.Resolve(&m))
-	}
 
 	e.server, err = xmqc.NewServer(e.opts.srvCfg.Config.Proto,
 		e.opts.router,
@@ -102,7 +97,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	}
 
 	errChan := make(chan error, 1)
-	log.Infof("MQC Server [%s] listening on %s", e.name, e.opts.srvCfg.Config.String())
+	log.Infof("MQC Server [%s] listening on %s", e.name, e.opts.srvCfg.Config.Addr)
 	done := make(chan struct{})
 
 	go func() {
@@ -171,7 +166,7 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engi
 }
 
 func (e *Server) Handle(queue string, obj interface{}) {
-	e.opts.router.Handle(getService(queue), obj, engine.MethodGet)
+	e.opts.router.Handle(xmqc.GetService(queue), obj, engine.MethodGet)
 }
 
 func (e *Server) serverPath() string {

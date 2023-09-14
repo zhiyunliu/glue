@@ -1,4 +1,4 @@
-package cron
+package alloter
 
 import (
 	"net/http"
@@ -14,7 +14,7 @@ const (
 	defaultStatus = http.StatusOK
 )
 
-//Request 处理任务请求
+// Request 处理任务请求
 type Response struct {
 	status int
 	size   int
@@ -22,8 +22,8 @@ type Response struct {
 	//stream *bufio.Writer
 }
 
-//NewRequest 构建任务请求
-func NewResponse() (r *Response) {
+// newResponse 构建任务请求
+func newResponse() (r *Response) {
 	r = &Response{
 		header: make(xtypes.SMap),
 		size:   noWritten,

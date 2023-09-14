@@ -1,9 +1,8 @@
-package xmqc
+package xcron
 
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/engine"
@@ -14,6 +13,8 @@ type Server interface {
 	GetAddr() string
 	Serve(ctx context.Context) (err error)
 	Stop(ctx context.Context) error
+	AddJob(jobs ...*Job) (keys []string, err error)
+	RemoveJob(key ...string)
 }
 
 // ServerResover 定义配置文件转换方法
@@ -31,7 +32,7 @@ var serverResolvers = make(map[string]ServerResover)
 func RegisterServer(resolver ServerResover) {
 	proto := resolver.Name()
 	if _, ok := serverResolvers[proto]; ok {
-		panic(fmt.Errorf("xmqc: 不能重复注册:%s", proto))
+		panic(fmt.Errorf("xcron: 不能重复注册:%s", proto))
 	}
 	serverResolvers[proto] = resolver
 }
@@ -49,16 +50,7 @@ func NewServer(proto string,
 
 	resolver, ok := serverResolvers[proto]
 	if !ok {
-		return nil, fmt.Errorf("xmqc: 未知的协议类型:%s", proto)
+		return nil, fmt.Errorf("xcron: 未知的协议类型:%s", proto)
 	}
 	return resolver.Resolve(proto, router, cfg, opts...)
-}
-
-func GetService(queue string) string {
-	if strings.HasPrefix(queue, "/") {
-		return queue
-	}
-	tmp := queue
-	tmp = strings.ReplaceAll(tmp, ":", "_")
-	return fmt.Sprintf("/mqc_%s", tmp)
 }

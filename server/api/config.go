@@ -1,8 +1,8 @@
 package api
 
 import (
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/server"
 )
 
 /*
@@ -26,13 +26,13 @@ import (
 type serverConfig struct {
 	Config      Config              `json:"config" yaml:"config"`
 	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
-	Header      server.Header       `json:"header"  yaml:"header"`
+	Header      engine.Header       `json:"header"  yaml:"header"`
 }
 
 type Config struct {
 	Addr              string        `json:"addr"`
 	Engine            string        `json:"engine"`
-	Status            server.Status `json:"status"`
+	Status            engine.Status `json:"status"`
 	ReadTimeout       uint          `json:"read_timeout"`
 	WriteTimeout      uint          `json:"write_timeout"`
 	ReadHeaderTimeout uint          `json:"read_header_timeout"`

@@ -6,9 +6,8 @@ import (
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	enginealloter "github.com/zhiyunliu/glue/contrib/engine/alloter"
 	"github.com/zhiyunliu/glue/engine"
-	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/golibs/xnet"
+	"github.com/zhiyunliu/glue/xcron"
 )
 
 const (
@@ -19,6 +18,7 @@ type Server struct {
 	srvCfg    *serverConfig
 	engine    *alloter.Engine
 	processor *processor
+	router    *engine.RouterGroup
 }
 
 func newServer(cfg *serverConfig,
@@ -27,6 +27,7 @@ func newServer(cfg *serverConfig,
 
 	server = &Server{
 		srvCfg: cfg,
+		router: router,
 		engine: alloter.New(),
 	}
 
@@ -48,29 +49,33 @@ func (e *Server) GetProto() string {
 }
 
 func (e *Server) Serve(ctx context.Context) (err error) {
-	//queue://default
-	protoType, configName, err := xnet.Parse(e.GetAddr())
+	e.processor, err = newProcessor(ctx, e.engine)
 	if err != nil {
 		return
 	}
-	//{"proto":"redis","addr":"redis://localhost"}
-	cfg := global.Config.Get(protoType).Get(configName)
-
-	protoType = cfg.Value("proto").String()
-	e.processor, err = newProcessor(ctx, e.engine, protoType, cfg)
-	if err != nil {
-		return
-	}
-
-	err = e.processor.Add(e.srvCfg.Tasks...)
+	err = e.processor.Add(e.srvCfg.Jobs...)
 	if err != nil {
 		return
 	}
 	err = e.processor.Start()
 	return err
-
 }
 
 func (e *Server) Stop(ctx context.Context) error {
-	return nil
+	return e.processor.Close()
+}
+
+func (e *Server) AddJob(jobs ...*xcron.Job) (keys []string, err error) {
+	keys = make([]string, len(jobs))
+	for i := range jobs {
+		keys[i] = jobs[i].GetKey()
+	}
+	err = e.processor.Add(jobs...)
+	return
+}
+
+func (e *Server) RemoveJob(keys ...string) {
+	for i := range keys {
+		e.processor.Remove(keys[i])
+	}
 }

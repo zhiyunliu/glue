@@ -1,4 +1,4 @@
-package cron
+package alloter
 
 import (
 	sctx "context"
@@ -9,18 +9,17 @@ import (
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map"
-	cron "github.com/robfig/cron/v3"
-	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/dlocker"
-	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
-	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/standard"
+	"github.com/zhiyunliu/glue/xcron"
 	"github.com/zhiyunliu/golibs/xstack"
 )
 
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
+	ctx          sctx.Context
 	lock         sync.Mutex
 	closeChan    chan struct{}
 	index        int
@@ -29,23 +28,21 @@ type processor struct {
 	reqs         cmap.ConcurrentMap
 	interval     time.Duration
 	slots        [60]cmap.ConcurrentMap //time slots
-	status       server.RunStatus
-	engine       engine.AdapterEngine
+	engine       *alloter.Engine
 	onceLock     sync.Once
-	cfg          config.Config
 }
 
 // NewProcessor 创建processor
-func newProcessor(cfg config.Config) (p *processor, err error) {
+func newProcessor(ctx sctx.Context, engine *alloter.Engine) (p *processor, err error) {
 	p = &processor{
+		ctx:          ctx,
 		index:        -1,
 		interval:     time.Second,
-		status:       server.Unstarted,
 		closeChan:    make(chan struct{}),
 		jobs:         cmap.New(),
 		monopolyJobs: cmap.New(),
 		reqs:         cmap.New(),
-		cfg:          cfg,
+		engine:       engine,
 	}
 
 	for i := range p.slots {
@@ -73,32 +70,24 @@ func (s *processor) Start() error {
 }
 
 // Add 添加任务
-func (s *processor) Add(jobs ...*Job) (err error) {
+func (s *processor) Add(jobs ...*xcron.Job) (err error) {
 	for _, t := range jobs {
 		if t.Disable {
 			s.Remove(t.GetKey())
 			continue
 		}
-		parser := cron.NewParser(
-			cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
-		)
-		if t.WithSeconds {
-			parser = cron.NewParser(
-				cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
-			)
-		}
-		t.schedule, err = parser.Parse(t.Cron)
-		if err != nil {
+		if err = t.Init(); err != nil {
 			return
 		}
+
 		if err := s.checkMonopoly(t); err != nil {
 			return err
 		}
-		req, err := NewRequest(t)
+		req, err := newRequest(t)
 		if err != nil {
 			return fmt.Errorf("构建cron失败:cron=%s,service=%s,error:%v", t.Cron, t.Service, err)
 		}
-
+		req.ctx = s.ctx
 		if err := s.reset(req); err != nil {
 			return err
 		}
@@ -106,14 +95,13 @@ func (s *processor) Add(jobs ...*Job) (err error) {
 	return
 }
 
-func (s *processor) checkMonopoly(j *Job) (err error) {
+func (s *processor) checkMonopoly(j *xcron.Job) (err error) {
 	if !j.IsMonopoly() {
 		return nil
 	}
 	defer func() {
 		if obj := recover(); obj != nil {
 			err = fmt.Errorf("cron任务包含monopoly时需要提供dlocker的配置:%v", obj)
-
 		}
 	}()
 	ins := standard.GetInstance(dlocker.TypeNode)
@@ -125,7 +113,7 @@ func (s *processor) checkMonopoly(j *Job) (err error) {
 		return &monopolyJob{
 			job:    j,
 			locker: sdlocker.GetDLocker().Build(fmt.Sprintf("glue:cron:locker:%s", j.GetKey())),
-			expire: int(math.Ceil(j.schedule.Next(time.Now()).Sub(time.Now()).Seconds())),
+			expire: j.CalcExpireTime(),
 		}
 	})
 	return nil
@@ -205,7 +193,7 @@ func (s *processor) handle(req *Request) {
 	}
 
 	req.ctx = sctx.Background()
-	resp := NewResponse()
+	resp := newResponse()
 	err = s.engine.HandleRequest(req, resp)
 	if err != nil {
 		panic(err)
@@ -240,7 +228,7 @@ func (s *processor) execute() {
 }
 
 type monopolyJob struct {
-	job    *Job
+	job    *xcron.Job
 	locker dlocker.DLocker
 	expire int
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/xnet"
@@ -68,14 +67,10 @@ func (e *Server) Config(cfg config.Config) {
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) (err error) {
-	if e.opts.srvCfg.Config.Status == server.StatusStop {
+	if e.opts.srvCfg.Config.Status == engine.StatusStop {
 		return nil
 	}
 	e.ctx = transport.WithServerContext(ctx, e)
-
-	for _, m := range e.opts.srvCfg.Middlewares {
-		e.opts.router.Use(middleware.Resolve(&m))
-	}
 
 	e.server, err = xrpc.NewServer(e.opts.srvCfg.Config.Proto,
 		e.opts.router,
