@@ -38,8 +38,8 @@ type redisResolver struct {
 func (s *redisResolver) Name() string {
 	return Proto
 }
-func (s *redisResolver) Resolve(setting config.Config) (dlocker.DLockerBuilder, error) {
-	client, err := redis.NewByConfig(setting)
+func (s *redisResolver) Resolve(configName string, setting config.Config) (dlocker.DLockerBuilder, error) {
+	client, err := redis.NewByConfig(configName, setting)
 	if err != nil {
 		return nil, err
 	}

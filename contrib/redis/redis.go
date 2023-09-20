@@ -9,36 +9,48 @@ import (
 
 var Nil = redis.Nil
 
-//Client redis客户端
+// Client redis客户端
 type Client struct {
 	redis.UniversalClient
-	opts *options
+	opts *Options
 }
 
-//NewByOpts 构建客户端
-func NewByOpts(opts ...Option) (r *Client, err error) {
-	redisOpts := &options{}
+// NewByOpts 构建客户端
+func NewByOpts(configName string, opts ...Option) (r *Client, err error) {
+	redisOpts := newOpts()
 	for i := range opts {
 		opts[i](redisOpts)
 	}
-	return newRedis(redisOpts)
+	return newRedis(configName, redisOpts)
 }
 
-//NewByConfig 构建客户端
-func NewByConfig(setting config.Config) (r *Client, err error) {
-	redisOpts := &options{
+// NewByConfig 构建客户端
+func NewByConfig(configName string, setting config.Config) (r *Client, err error) {
+	redisOpts := newOpts()
+	setting.Scan(redisOpts)
+	return newRedis(configName, redisOpts)
+}
+
+func newOpts() *Options {
+	return &Options{
 		DialTimeout:  5,
 		ReadTimeout:  5,
 		WriteTimeout: 5,
 		PoolSize:     20,
 	}
-	setting.Scan(redisOpts)
-	return newRedis(redisOpts)
 }
 
-func newRedis(opts *options) (r *Client, err error) {
+func newRedis(configName string, opts *Options) (r *Client, err error) {
+	var newOpts = opts
+	if Refactor != nil {
+		newOpts, err = Refactor(configName, opts)
+		if err != nil {
+			return
+		}
+	}
+
 	r = &Client{}
-	r.opts = opts
+	r.opts = newOpts
 
 	ropts := &redis.UniversalOptions{
 		Addrs:        r.opts.Addrs,
@@ -55,7 +67,7 @@ func newRedis(opts *options) (r *Client, err error) {
 	return
 }
 
-//GetAddrs GetAddrs
+// GetAddrs GetAddrs
 func (c *Client) GetAddrs() []string {
 	return c.opts.Addrs
 }

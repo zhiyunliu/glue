@@ -32,6 +32,6 @@ func getRedisClient(config config.Config) (client *redis.Client, err error) {
 	rootCfg := config.Root()
 	queueCfg := rootCfg.Get(protoType).Get(configName)
 
-	client, err = redis.NewByConfig(queueCfg)
+	client, err = redis.NewByConfig(configName, queueCfg)
 	return
 }
