@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	goredis "github.com/go-redis/redis/v7"
+	"github.com/zhiyunliu/glue/dlocker"
 	"github.com/zhiyunliu/golibs/xrandom"
 )
 
@@ -39,11 +40,15 @@ type Lock struct {
 }
 
 // NewLock returns a Lock.
-func newLock(client *Redis, key string) *Lock {
+func newLock(client *Redis, key string, opts *dlocker.Options) *Lock {
+	rndval := xrandom.Str(randomLen)
+	if opts.Data != "" {
+		rndval = fmt.Sprintf("%s(%s)", rndval, opts.Data)
+	}
 	return &Lock{
 		client: client,
 		key:    key,
-		rndVal: xrandom.Str(randomLen),
+		rndVal: rndval,
 	}
 }
 
