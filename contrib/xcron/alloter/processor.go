@@ -188,6 +188,7 @@ func (s *processor) handle(req *Request) {
 		return
 	}
 	if hasMonopoly {
+		log.Infof("cron.handle.Cron.3:%s,service:%s,meta:%+v=>monopoly.key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
 		s.reset(req)
 		return
 	}
