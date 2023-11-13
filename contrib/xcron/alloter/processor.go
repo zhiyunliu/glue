@@ -59,12 +59,30 @@ func (s *processor) Items() map[string]interface{} {
 // Start 所有任务
 func (s *processor) Start() error {
 	ticker := time.NewTicker(s.interval)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-s.closeChan:
 			return nil
-		case <-ticker.C:
-			s.execute()
+		case tickTime := <-ticker.C:
+			now := time.Now()
+			if tickTime.Unix() > now.Unix() {
+				log.Warnf("ticker quick than now.tick:%v,now:%v", tickTime.Unix(), now.Unix())
+				// // 计算实际的时间间隔
+				// actualInterval := now.Truncate(time.Second).Sub(now)
+
+				// // 手动矫正下一次触发时间
+				// nextTick := now.Add(time.Second - actualInterval)
+
+				// // 输出当前时间和下一次触发时间
+				// fmt.Println("Current time:", now)
+				// fmt.Println("Next tick:", nextTick)
+
+				// // 等待下一次触发时间
+				// time.Sleep(nextTick.Sub(now))
+			}
+			s.index = (s.index + 1) % len(s.slots)
+			go s.execute(s.index)
 		}
 	}
 }
@@ -93,6 +111,23 @@ func (s *processor) Add(jobs ...*xcron.Job) (err error) {
 		}
 	}
 	return
+}
+
+// Remove 移除服务
+func (s *processor) Remove(key string) {
+	if req, ok := s.reqs.Get(key); ok {
+		req.(*Request).job.Disable = true
+	}
+	s.reqs.Remove(key)
+}
+
+// Close 退出
+func (s *processor) Close() error {
+	s.onceLock.Do(func() {
+		close(s.closeChan)
+		s.closeMonopolyJobs()
+	})
+	return nil
 }
 
 func (s *processor) checkMonopoly(j *xcron.Job) (err error) {
@@ -124,11 +159,13 @@ func (s *processor) reset(req *Request) (err error) {
 		return
 	}
 	req.reset()
+	s.resetMonopolyJob(req.job)
 	now := time.Now()
 	nextTime := req.job.NextTime(now)
 	if nextTime.Sub(now) < 0 {
 		return errors.New("next time less than now.1")
 	}
+
 	offset, round := s.getOffset(now, nextTime)
 	req.round.Update(round)
 	s.slots[offset].Set(req.session, req)
@@ -136,21 +173,18 @@ func (s *processor) reset(req *Request) (err error) {
 	return
 }
 
-// Remove 移除服务
-func (s *processor) Remove(key string) {
-	if req, ok := s.reqs.Get(key); ok {
-		req.(*Request).job.Disable = true
+func (s *processor) resetMonopolyJob(job *xcron.Job) {
+	//根据执行后，重置下一次的独占时间
+	if !job.IsMonopoly() {
+		return
 	}
-	s.reqs.Remove(key)
-}
+	val, ok := s.monopolyJobs.Get(job.GetKey())
+	if !ok {
+		return
+	}
+	mjob := val.(*monopolyJob)
+	mjob.expire = job.CalcExpireTime()
 
-// Close 退出
-func (s *processor) Close() error {
-	s.onceLock.Do(func() {
-		close(s.closeChan)
-		s.closeMonopolyJobs()
-	})
-	return nil
 }
 
 func (s *processor) closeMonopolyJobs() {
@@ -181,14 +215,23 @@ func (s *processor) handle(req *Request) {
 			log.Panicf("cron.handle.Cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
 		}
 	}()
+
+	rangeSecs := time.Since(req.job.CalcNextTime).Seconds()
+	//时间差距超过1分钟
+	if math.Abs(rangeSecs) >= 60 {
+		log.Warnf("cron.handle.Cron.1:%s,service:%s,over 60s.calc:%d,now:%d", req.job.Cron, req.job.Service, req.job.CalcNextTime.Unix(), time.Now().Unix())
+		s.reset(req)
+		return
+	}
+
 	hasMonopoly, err := req.Monopoly(s.monopolyJobs)
 	if err != nil {
-		log.Panicf("cron.handle.Cron.2:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, err, xstack.GetStack(1))
+		log.Warnf("cron.handle.Cron.2:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, err, xstack.GetStack(1))
 		s.reset(req)
 		return
 	}
 	if hasMonopoly {
-		log.Infof("cron.handle.Cron.3:%s,service:%s,meta:%+v=>monopoly.key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
+		log.Warnf("cron.handle.Cron.3:%s,service:%s,meta:%+v=>monopoly.key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
 		s.reset(req)
 		return
 	}
@@ -203,12 +246,8 @@ func (s *processor) handle(req *Request) {
 	s.reset(req)
 }
 
-func (s *processor) execute() {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	s.index = (s.index + 1) % len(s.slots)
-	current := s.slots[s.index]
-
+func (s *processor) execute(idx int) {
+	current := s.slots[idx]
 	resetJobList := []*Request{}
 
 	current.IterCb(func(key string, value interface{}) {
