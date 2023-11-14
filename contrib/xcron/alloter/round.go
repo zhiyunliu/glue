@@ -29,7 +29,7 @@ type Round struct {
 func (m *Round) CanProc() bool {
 	if m.round > 0 {
 		m.round--
-		return false
+		return m.round == 0
 	}
 	return true
 }

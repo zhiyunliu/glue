@@ -203,9 +203,7 @@ func (s *processor) getOffset(now time.Time, next time.Time) (pos int, circle in
 	delaySeconds := int(math.Ceil(secs))
 	circle = int(delaySeconds) / len(s.slots)
 	pos = int(s.index+delaySeconds) % len(s.slots)
-	if pos == s.index { //offset与当前index相同时，应减少一环
-		circle--
-	}
+
 	return
 }
 
