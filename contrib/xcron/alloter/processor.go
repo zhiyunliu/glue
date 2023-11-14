@@ -20,7 +20,6 @@ import (
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
 	ctx          sctx.Context
-	lock         sync.Mutex
 	closeChan    chan struct{}
 	index        int
 	jobs         cmap.ConcurrentMap
@@ -60,27 +59,26 @@ func (s *processor) Items() map[string]interface{} {
 func (s *processor) Start() error {
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
+	const ADJUST_COUNT = 3600 //1小时的秒数
+	idx := 0
+	var lastTickTime time.Time
 	for {
+		idx++
+
+		//跳的1h后，进行一次时间检查（定位ticker 太快的问题）
+		if idx%ADJUST_COUNT == 0 {
+			idx = 0
+			now := time.Now()
+			if lastTickTime.Unix() != now.Unix() {
+				log.Warnf("ticker not equal now.tick:%v,now:%v", lastTickTime.Unix(), now.Unix())
+			}
+		}
+
 		select {
 		case <-s.closeChan:
 			return nil
-		case tickTime := <-ticker.C:
-			now := time.Now()
-			if tickTime.Unix() > now.Unix() {
-				log.Warnf("ticker quick than now.tick:%v,now:%v", tickTime.Unix(), now.Unix())
-				// // 计算实际的时间间隔
-				// actualInterval := now.Truncate(time.Second).Sub(now)
+		case lastTickTime = <-ticker.C:
 
-				// // 手动矫正下一次触发时间
-				// nextTick := now.Add(time.Second - actualInterval)
-
-				// // 输出当前时间和下一次触发时间
-				// fmt.Println("Current time:", now)
-				// fmt.Println("Next tick:", nextTick)
-
-				// // 等待下一次触发时间
-				// time.Sleep(nextTick.Sub(now))
-			}
 			s.index = (s.index + 1) % len(s.slots)
 			go s.execute(s.index)
 		}
