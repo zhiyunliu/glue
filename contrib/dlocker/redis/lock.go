@@ -7,7 +7,7 @@ import (
 
 	goredis "github.com/go-redis/redis/v7"
 	"github.com/zhiyunliu/glue/dlocker"
-	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/golibs/xrandom"
 )
 
 const (
@@ -41,9 +41,9 @@ type Lock struct {
 
 // NewLock returns a Lock.
 func newLock(client *Redis, key string, opts *dlocker.Options) *Lock {
-	rndval := global.LocalIp
+	rndval := xrandom.Str(16)
 	if opts.Data != "" {
-		rndval = fmt.Sprintf("%s(%s)", rndval, opts.Data)
+		rndval = opts.Data
 	}
 	return &Lock{
 		client: client,

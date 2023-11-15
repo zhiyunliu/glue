@@ -9,6 +9,7 @@ import (
 
 	cron "github.com/robfig/cron/v3"
 	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/metadata"
 	"github.com/zhiyunliu/golibs/xsecurity/md5"
 )
@@ -52,6 +53,11 @@ func (t *Job) GetKey() string {
 	orgKey := fmt.Sprintf("c:%s,s:%s,m:%s", t.Cron, t.Service, strings.Join(mks, ","))
 	t.tmpKey = md5.Str(orgKey)
 	return t.tmpKey
+}
+
+// 服务地址
+func (t *Job) GetLockData() string {
+	return fmt.Sprintf("%s(c:%s,s:%s,m:%+v)", global.LocalIp, t.Cron, t.Service, t.Meta.String())
 }
 
 // 服务地址

@@ -2,6 +2,7 @@ package metadata
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -61,6 +62,11 @@ func (m Metadata) Clone() Metadata {
 		md[k] = v
 	}
 	return md
+}
+
+func (m Metadata) String() string {
+	mbytes, _ := json.Marshal(m)
+	return string(mbytes)
 }
 
 type serverMetadataKey struct{}
