@@ -31,7 +31,6 @@ type Job struct {
 	schedule            cron.Schedule     `json:"-"`
 	immediatelyExecuted bool              `json:"-"`
 	tmpKey              string            `json:"-"`
-	CalcNextTime        time.Time         `json:"-"` //计算的执行时间
 }
 
 func (t *Job) GetKey() string {
@@ -79,11 +78,9 @@ func (t *Job) IsMonopoly() bool {
 func (m *Job) NextTime(t time.Time) (nextTime time.Time) {
 	if m.IsImmediately() && !m.immediatelyExecuted {
 		m.immediatelyExecuted = true
-		m.CalcNextTime = t
 		return t
 	}
 	nextTime = m.schedule.Next(t)
-	m.CalcNextTime = nextTime
 	return nextTime
 }
 

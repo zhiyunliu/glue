@@ -1,11 +1,10 @@
-package alloter
+package robfigcron
 
 import (
 	"bytes"
 	sctx "context"
 	"encoding/json"
 	"io"
-	"time"
 
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/constants"
@@ -18,39 +17,31 @@ var _ engine.Request = (*Request)(nil)
 
 // Request 处理任务请求
 type Request struct {
-	ctx          sctx.Context
-	job          *xcron.Job
-	round        *Round
-	method       string
-	params       map[string]string
-	header       map[string]string
-	body         cbody //map[string]string
-	session      string
-	canProc      bool
-	CalcNextTime time.Time
+	ctx     sctx.Context
+	job     *xcron.Job
+	method  string
+	params  map[string]string
+	header  map[string]string
+	body    cbody //map[string]string
+	session string
+	canProc bool
 }
 
 // NewRequest 构建任务请求
-func newRequest(job *xcron.Job) (r *Request, err error) {
-
+func newRequest(job *xcron.Job) (r *Request) {
 	r = &Request{
 		job:    job,
 		method: engine.MethodGet,
 		params: make(map[string]string),
-		round:  &Round{Job: job},
 	}
 
 	r.reset()
 	r.body = make(cbody)
-	if err != nil {
-		return r, err
-	}
 
 	for k, v := range job.Meta {
 		r.body[k] = v
 	}
-
-	return r, nil
+	return r
 }
 
 // GetName 服务名
@@ -108,6 +99,7 @@ func (m *Request) reset() {
 	m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
 	m.header[constants.HeaderRequestId] = m.session
 	m.header["x-cron-engine"] = Proto
+
 }
 
 func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (bool, error) {

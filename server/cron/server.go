@@ -8,6 +8,7 @@ import (
 
 	"github.com/zhiyunliu/glue/config"
 	_ "github.com/zhiyunliu/glue/contrib/xcron/alloter"
+	_ "github.com/zhiyunliu/glue/contrib/xcron/robfigcron"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
