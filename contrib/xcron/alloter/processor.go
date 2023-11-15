@@ -146,7 +146,7 @@ func (s *processor) checkMonopoly(j *xcron.Job) (err error) {
 		return &monopolyJob{
 			job:    j,
 			locker: sdlocker.GetDLocker().Build(fmt.Sprintf("glue:cron:locker:%s", j.GetKey()), dlocker.WithData(fmt.Sprintf("c:%s,s:%s", j.Cron, j.Service))),
-			expire: j.CalcExpireTime(),
+			expire: j.CalcExpireSeconds(),
 		}
 	})
 	return nil
@@ -181,7 +181,7 @@ func (s *processor) resetMonopolyJob(job *xcron.Job) {
 		return
 	}
 	mjob := val.(*monopolyJob)
-	mjob.expire = job.CalcExpireTime()
+	mjob.expire = job.CalcExpireSeconds()
 
 }
 

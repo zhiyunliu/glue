@@ -81,7 +81,7 @@ func (m *Job) NextTime(t time.Time) (nextTime time.Time) {
 	return nextTime
 }
 
-func (m *Job) CalcExpireTime() int {
+func (m *Job) CalcExpireSeconds() int {
 	nextTime := m.schedule.Next(time.Now())
 	val := math.Ceil(time.Until(nextTime).Seconds())
 	return int(val)
