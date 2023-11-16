@@ -78,7 +78,6 @@ func (s *processor) Start() error {
 		case <-s.closeChan:
 			return nil
 		case lastTickTime = <-ticker.C:
-
 			s.index = (s.index + 1) % len(s.slots)
 			go s.execute(s.index)
 		}
@@ -182,7 +181,7 @@ func (s *processor) resetMonopolyJob(job *xcron.Job) {
 	}
 	mjob := val.(*monopolyJob)
 	mjob.expire = job.CalcExpireSeconds()
-
+	mjob.Renewal()
 }
 
 func (s *processor) closeMonopolyJobs() {
@@ -208,32 +207,33 @@ func (s *processor) getOffset(now time.Time, next time.Time) (pos int, circle in
 }
 
 func (s *processor) handle(req *Request) {
+	logger := log.New(log.WithSid(req.session))
+
 	defer func() {
 		if obj := recover(); obj != nil {
-			log.Panicf("cron.handle.Cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
+			logger.Panicf("cron.handle.Cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
+		}
+		if err := s.reset(req); err != nil {
+			logger.Panicf("cron.handle.cron:%s,service:%s, error:%+v. reset", req.job.Cron, req.job.Service, err)
 		}
 	}()
 
 	rangeSecs := time.Since(req.CalcNextTime).Seconds()
 	//时间差距超过1分钟
 	if math.Abs(rangeSecs) >= 60 {
-		log.Warnf("cron.handle.Cron.1:%s,service:%s,over 60s.calc:%d,now:%d", req.job.Cron, req.job.Service, req.CalcNextTime.Unix(), time.Now().Unix())
-		s.reset(req)
+		logger.Warnf("cron.handle.Cron.1:%s,service:%s,over 60s.calc:%d,now:%d", req.job.Cron, req.job.Service, req.CalcNextTime.Unix(), time.Now().Unix())
 		return
 	}
 
 	hasMonopoly, err := req.Monopoly(s.monopolyJobs)
 	if err != nil {
-		log.Warnf("cron.handle.Cron.2:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, err, xstack.GetStack(1))
-		s.reset(req)
+		logger.Warnf("cron.handle.Cron.2:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, err, xstack.GetStack(1))
 		return
 	}
 	if hasMonopoly {
-		log.Warnf("cron.handle.Cron.3:%s,service:%s,meta:%+v=>monopoly.key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
-		s.reset(req)
+		logger.Warnf("cron.handle.Cron.3:%s,service:%s,meta:%+v=>monopoly.key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
 		return
 	}
-	req.header["x-cron-job-key"] = req.job.GetKey()
 	req.ctx = sctx.Background()
 	resp := newResponse()
 	err = s.engine.HandleRequest(req, resp)
@@ -241,7 +241,6 @@ func (s *processor) handle(req *Request) {
 		panic(err)
 	}
 	resp.Flush()
-	s.reset(req)
 }
 
 func (s *processor) execute(idx int) {

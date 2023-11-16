@@ -103,5 +103,8 @@ func (m *Job) Init() (err error) {
 		)
 	}
 	m.schedule, err = parser.Parse(m.Cron)
+	if err != nil {
+		err = fmt.Errorf("cron parser.Parse:%s,err:%+v", m.Cron, err)
+	}
 	return err
 }

@@ -99,7 +99,7 @@ func (m *Request) reset() {
 	m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
 	m.header[constants.HeaderRequestId] = m.session
 	m.header["x-cron-engine"] = Proto
-
+	m.header["x-cron-job-key"] = m.job.GetKey()
 }
 
 func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (bool, error) {

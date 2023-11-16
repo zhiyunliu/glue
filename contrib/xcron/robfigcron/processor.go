@@ -4,6 +4,7 @@ import (
 	sctx "context"
 	"fmt"
 	"sync"
+	"time"
 
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/robfig/cron/v3"
@@ -17,14 +18,15 @@ import (
 
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
-	ctx           sctx.Context
-	closeChan     chan struct{}
-	jobs          cmap.ConcurrentMap
-	monopolyJobs  cmap.ConcurrentMap
-	engine        *alloter.Engine
-	onceLock      sync.Once
-	cronStdEngine *cron.Cron
-	cronSecEngine *cron.Cron
+	ctx             sctx.Context
+	closeChan       chan struct{}
+	onceLock        sync.Once
+	jobs            cmap.ConcurrentMap
+	monopolyJobs    cmap.ConcurrentMap
+	routerEngine    *alloter.Engine
+	immediatelyJobs []cron.FuncJob
+	cronStdEngine   *cron.Cron
+	cronSecEngine   *cron.Cron
 }
 
 type procJob struct {
@@ -40,7 +42,7 @@ func newProcessor(ctx sctx.Context, engine *alloter.Engine) (p *processor, err e
 		closeChan:     make(chan struct{}),
 		jobs:          cmap.New(),
 		monopolyJobs:  cmap.New(),
-		engine:        engine,
+		routerEngine:  engine,
 		cronStdEngine: cron.New(),
 		cronSecEngine: cron.New(cron.WithSeconds()),
 	}
@@ -54,8 +56,10 @@ func (s *processor) Items() map[string]interface{} {
 
 // Start 所有任务
 func (s *processor) Start() error {
+	s.handleImmediatelyJob()
 	go s.cronStdEngine.Run()
 	go s.cronSecEngine.Run()
+
 	return nil
 }
 
@@ -70,34 +74,30 @@ func (s *processor) Add(jobs ...*xcron.Job) (err error) {
 		if err = t.Init(); err != nil {
 			return
 		}
-
-		if err := s.checkMonopoly(t); err != nil {
+		if err := s.checkIsMonopoly(t); err != nil {
 			return err
 		}
-		var jobId cron.EntryID
 		curEngine = s.cronStdEngine
 		if t.WithSeconds {
 			curEngine = s.cronSecEngine
 		}
-		jobId, err = curEngine.AddJob(t.Cron, s.buildFuncJob(t))
-		if err != nil {
-			return err
+		funcJob := s.buildFuncJob(t)
+		if t.IsImmediately() {
+			s.immediatelyJobs = append(s.immediatelyJobs, funcJob)
 		}
-		s.jobs.Set(t.GetKey(), &procJob{
-			job:     t,
-			entryid: jobId,
-			engine:  curEngine,
-		})
+
+		if jobId, err := curEngine.AddJob(t.Cron, funcJob); err != nil {
+			err = fmt.Errorf("AddJob:%s,err:%+v", t.Cron, err)
+			return err
+		} else {
+			s.jobs.Set(t.GetKey(), &procJob{
+				job:     t,
+				entryid: jobId,
+				engine:  curEngine,
+			})
+		}
 	}
 	return
-}
-
-func (s *processor) buildFuncJob(job *xcron.Job) cron.FuncJob {
-	return func() {
-		req := newRequest(job)
-		req.ctx = s.ctx
-		s.handle(req)
-	}
 }
 
 // Remove 移除服务
@@ -121,7 +121,7 @@ func (s *processor) Close() error {
 	return nil
 }
 
-func (s *processor) checkMonopoly(j *xcron.Job) (err error) {
+func (s *processor) checkIsMonopoly(j *xcron.Job) (err error) {
 	if !j.IsMonopoly() {
 		return nil
 	}
@@ -139,22 +139,19 @@ func (s *processor) checkMonopoly(j *xcron.Job) (err error) {
 		return &monopolyJob{
 			job:    j,
 			locker: sdlocker.GetDLocker().Build(fmt.Sprintf("glue:cron:locker:%s", j.GetKey()), dlocker.WithData(j.GetLockData())),
-			expire: j.CalcExpireSeconds(),
+			expire: 300, //默认300秒
 		}
 	})
 	return nil
 }
 
 func (s *processor) reset(req *Request) (err error) {
-	if req.job.Disable {
-		return
-	}
+	err = s.releaseMonopolyJob(req.job)
 	req.reset()
-	s.resetMonopolyJob(req.job)
 	return
 }
 
-func (s *processor) resetMonopolyJob(job *xcron.Job) {
+func (s *processor) releaseMonopolyJob(job *xcron.Job) (err error) {
 	//根据执行后，重置下一次的独占时间
 	if !job.IsMonopoly() {
 		return
@@ -164,8 +161,22 @@ func (s *processor) resetMonopolyJob(job *xcron.Job) {
 		return
 	}
 	mjob := val.(*monopolyJob)
-	mjob.expire = job.CalcExpireSeconds()
+	nextSecs := mjob.job.CalcExpireSeconds()
+	err = mjob.locker.Renewal(nextSecs)
+	return
+}
 
+func (s *processor) renewalMonopolyJob(job *xcron.Job) (err error) {
+	if !job.IsMonopoly() {
+		return
+	}
+	val, ok := s.monopolyJobs.Get(job.GetKey())
+	if !ok {
+		return
+	}
+	mjob := val.(*monopolyJob)
+	err = mjob.locker.Renewal(mjob.expire)
+	return
 }
 
 func (s *processor) closeMonopolyJobs() {
@@ -175,33 +186,79 @@ func (s *processor) closeMonopolyJobs() {
 	s.monopolyJobs.Clear()
 }
 
+func (s *processor) buildFuncJob(job *xcron.Job) cron.FuncJob {
+	req := newRequest(job)
+	return func() {
+		req.ctx = s.ctx
+		s.handle(req)
+	}
+}
+
 func (s *processor) handle(req *Request) {
+	//任务是否处理中，如果是，直接退出
+	if !req.CanProc() {
+		return
+	}
+	logger := log.New(log.WithSid(req.session))
+
+	done := make(chan struct{})
 	defer func() {
 		if obj := recover(); obj != nil {
-			log.Panicf("cron.handle.Cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
+			logger.Panicf("cron.handle.cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
 		}
+		if err := s.reset(req); err != nil {
+			logger.Errorf("cron.handle.cron:%s,service:%s, error:%+v. reset", req.job.Cron, req.job.Service, err)
+		}
+		close(done)
 	}()
 
 	hasMonopoly, err := req.Monopoly(s.monopolyJobs)
 	if err != nil {
-		log.Warnf("cron.handle.Cron.2:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, err, xstack.GetStack(1))
-		s.reset(req)
+		logger.Warnf("cron.handle.cron.2:%s,service:%s, error:%+v", req.job.Cron, req.job.Service)
 		return
 	}
 	if hasMonopoly {
-		log.Warnf("cron.handle.Cron.3:%s,service:%s,meta:%+v=>monopoly.key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
-		s.reset(req)
+		logger.Warnf("cron.handle.cron.3:%s,service:%s,meta:%+v=>monopoly.key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
 		return
 	}
-	req.header["x-cron-job-key"] = req.job.GetKey()
+	go s.handleMonopolyJobExpire(logger, req.job, done)
+
 	req.ctx = sctx.Background()
 	resp := newResponse()
-	err = s.engine.HandleRequest(req, resp)
+	err = s.routerEngine.HandleRequest(req, resp)
 	if err != nil {
 		panic(err)
 	}
 	resp.Flush()
-	s.reset(req)
+}
+
+func (s *processor) handleImmediatelyJob() {
+	for i := range s.immediatelyJobs {
+		go func(idx int) {
+			s.immediatelyJobs[idx]()
+		}(i)
+	}
+}
+
+func (s *processor) handleMonopolyJobExpire(logger log.Logger, job *xcron.Job, done chan struct{}) {
+	ticker := time.NewTicker(time.Minute)
+	defer func() {
+		if obj := recover(); obj != nil {
+			logger.Panicf("cron.jobexpire:%s,service:%s,meta:%+v,recover:%s, stack:%s", job.Cron, job.Service, job.Meta, job.GetKey(), xstack.GetStack(1))
+		}
+		ticker.Stop()
+	}()
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+		}
+		err := s.renewalMonopolyJob(job)
+		if err != nil {
+			logger.Errorf("cron.jobexpire:%s,service:%s,meta:%+v,renewal.key=%s", job.Cron, job.Service, job.Meta, job.GetKey())
+		}
+	}
 }
 
 type monopolyJob struct {

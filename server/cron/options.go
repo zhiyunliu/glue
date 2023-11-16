@@ -28,7 +28,7 @@ func setDefaultOption() options {
 	return options{
 		srvCfg: &serverConfig{
 			Config: xcron.Config{
-				Proto:  "alloter",
+				Proto:  "robfigcron",
 				Status: engine.StatusStart,
 			},
 		},
