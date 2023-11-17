@@ -40,7 +40,7 @@ func (x *Error) GetMetadata() map[string]string {
 	return nil
 }
 
-func (e *Error) Error() string {
+func (e Error) Error() string {
 	return fmt.Sprintf("error: code = %d message = %s metadata = %+v", e.Code, e.Message, e.Metadata)
 }
 

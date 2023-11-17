@@ -204,21 +204,21 @@ func (s *processor) handle(req *Request) {
 	done := make(chan struct{})
 	defer func() {
 		if obj := recover(); obj != nil {
-			logger.Panicf("cron.handle.cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
+			logger.Panicf("cron.handle.recover:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
 		}
 		if err := s.reset(req); err != nil {
-			logger.Errorf("cron.handle.cron:%s,service:%s, error:%+v. reset", req.job.Cron, req.job.Service, err)
+			logger.Errorf("cron.handle.reset:%s,service:%s, error:%+v. ", req.job.Cron, req.job.Service, err)
 		}
 		close(done)
 	}()
 
 	hasMonopoly, err := req.Monopoly(s.monopolyJobs)
 	if err != nil {
-		logger.Errorf("cron.handle.cron.2:%s,service:%s, error:%+v", req.job.Cron, req.job.Service, err)
+		logger.Errorf("cron.handle.monopoly:%s,service:%s, error:%+v", req.job.Cron, req.job.Service, err)
 		return
 	}
 	if hasMonopoly {
-		logger.Warnf("cron.handle.cron.3:%s,service:%s,meta:%+v=>monopoly.key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
+		logger.Warnf("cron.handle.monopoly:%s,service:%s,meta:%+v,key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
 		return
 	}
 	go s.handleMonopolyJobExpire(logger, req.job, done)
