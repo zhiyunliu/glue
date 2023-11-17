@@ -214,7 +214,7 @@ func (s *processor) handle(req *Request) {
 			logger.Panicf("cron.handle.Cron:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, obj, xstack.GetStack(1))
 		}
 		if err := s.reset(req); err != nil {
-			logger.Panicf("cron.handle.cron:%s,service:%s, error:%+v. reset", req.job.Cron, req.job.Service, err)
+			logger.Errorf("cron.handle.cron:%s,service:%s, error:%+v. reset", req.job.Cron, req.job.Service, err)
 		}
 	}()
 
@@ -227,7 +227,7 @@ func (s *processor) handle(req *Request) {
 
 	hasMonopoly, err := req.Monopoly(s.monopolyJobs)
 	if err != nil {
-		logger.Warnf("cron.handle.Cron.2:%s,service:%s, error:%+v. stack:%s", req.job.Cron, req.job.Service, err, xstack.GetStack(1))
+		logger.Errorf("cron.handle.Cron.2:%s,service:%s, error:%+v.", req.job.Cron, req.job.Service, err)
 		return
 	}
 	if hasMonopoly {

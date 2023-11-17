@@ -214,7 +214,7 @@ func (s *processor) handle(req *Request) {
 
 	hasMonopoly, err := req.Monopoly(s.monopolyJobs)
 	if err != nil {
-		logger.Warnf("cron.handle.cron.2:%s,service:%s, error:%+v", req.job.Cron, req.job.Service)
+		logger.Errorf("cron.handle.cron.2:%s,service:%s, error:%+v", req.job.Cron, req.job.Service, err)
 		return
 	}
 	if hasMonopoly {
