@@ -81,15 +81,20 @@ func serverByOptions(op *options) middleware.Middleware {
 			}
 
 			reply = handler(ctx)
-			var err error
 			if rerr, ok := reply.(error); ok {
-				err = rerr
+				code = http.StatusInternalServerError
+				if se := errors.FromError(rerr); se != nil {
+					code = int(se.Code)
+				}
+			} else {
+				if respErr, ok := reply.(errors.RespError); ok {
+					code = respErr.GetCode()
+				}
+				if code == 0 {
+					code = ctx.Response().GetStatusCode()
+				}
 			}
 
-			code = ctx.Response().GetStatusCode()
-			if se := errors.FromError(err); se != nil {
-				code = int(se.Code)
-			}
 			if op.counter != nil {
 				op.counter.With(kind, path, strconv.Itoa(code), reason).Inc()
 			}

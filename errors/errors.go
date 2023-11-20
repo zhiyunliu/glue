@@ -13,38 +13,35 @@ type IgnoreError interface {
 	Ignore() bool
 }
 
+type RespError interface {
+	GetCode() int
+	GetMessage() string
+}
+
 type Error struct {
 	Code     int               `json:"code,omitempty"`
 	Message  string            `json:"message,omitempty"`
 	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
-func (x *Error) GetCode() int {
-	if x != nil {
-		return x.Code
-	}
-	return 0
+func (x Error) GetCode() int {
+	return x.Code
 }
 
-func (x *Error) GetMessage() string {
-	if x != nil {
-		return x.Message
-	}
-	return ""
+func (x Error) GetMessage() string {
+	return x.Message
 }
 
-func (x *Error) GetMetadata() map[string]string {
-	if x != nil {
-		return x.Metadata
-	}
-	return nil
+func (x Error) GetMetadata() map[string]string {
+	return x.Metadata
+
 }
 
 func (e Error) Error() string {
 	return fmt.Sprintf("error: code = %d message = %s metadata = %+v", e.Code, e.Message, e.Metadata)
 }
 
-func (e *Error) Is(err error) bool {
+func (e Error) Is(err error) bool {
 	if se := new(Error); errors.As(err, &se) {
 		return se.Code == e.Code
 	}
