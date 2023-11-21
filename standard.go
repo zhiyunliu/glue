@@ -14,9 +14,9 @@ import (
 )
 
 // DB 获取DB 处理对象
-func DB(name ...string) xdb.IDB {
+func DB(name string, opts ...xdb.Option) xdb.IDB {
 	obj := standard.GetInstance(xdb.DbTypeNode)
-	return obj.(xdb.StandardDB).GetDB(name...)
+	return obj.(xdb.StandardDB).GetDB(name, opts...)
 }
 
 // Cache 获取Cache 处理对象

@@ -20,7 +20,7 @@ type xDB struct {
 }
 
 // NewDB 创建DB实例
-func NewDB(proto string, setting *Setting) (obj xdb.IDB, err error) {
+func NewDB(proto string, setting *Setting, opts ...xdb.Option) (obj xdb.IDB, err error) {
 	newCfg, err := xdb.DefaultRefactor(setting.ConnName, setting.Cfg)
 	if err != nil {
 		return
@@ -28,6 +28,11 @@ func NewDB(proto string, setting *Setting) (obj xdb.IDB, err error) {
 	if newCfg != nil {
 		setting.Cfg = newCfg
 	}
+
+	for i := range opts {
+		opts[i](setting.Cfg)
+	}
+
 	conn := setting.Cfg.Conn
 	maxOpen := setting.Cfg.MaxOpen
 	maxIdle := setting.Cfg.MaxIdle

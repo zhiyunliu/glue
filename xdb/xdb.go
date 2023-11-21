@@ -38,7 +38,7 @@ type Executer interface {
 // dbResover 定义配置文件转换方法
 type Resover interface {
 	Name() string
-	Resolve(connName string, setting config.Config) (interface{}, error)
+	Resolve(connName string, setting config.Config, opts ...Option) (interface{}, error)
 }
 
 var dbResolvers = make(map[string]Resover)
@@ -58,12 +58,12 @@ func Deregister(name string) {
 }
 
 // newDB 根据适配器名称及参数返回配置处理器
-func newDB(connName string, setting config.Config) (interface{}, error) {
+func newDB(connName string, setting config.Config, opts ...Option) (interface{}, error) {
 	val := setting.Value("proto")
 	proto := val.String()
 	resolver, ok := dbResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("db: 未知的协议类型:%s", proto)
 	}
-	return resolver.Resolve(connName, setting)
+	return resolver.Resolve(connName, setting, opts...)
 }
