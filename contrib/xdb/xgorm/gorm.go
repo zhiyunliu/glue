@@ -7,6 +7,7 @@ import (
 	"time"
 
 	xlog "github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/xdb"
 
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
 	"gorm.io/gorm"
@@ -28,7 +29,7 @@ func getDriverOpenCallback(driverName string) (callback DriverOpenCallback, err 
 	return
 }
 
-func buildGormDB(driverName string, cfg *contribxdb.Setting) (db *gorm.DB, err error) {
+func buildGormDB(driverName string, cfg *contribxdb.Setting, opts ...xdb.Option) (db *gorm.DB, err error) {
 	if cfg.Cfg.MaxOpen <= 0 {
 		cfg.Cfg.MaxOpen = runtime.NumCPU() * 5
 	}
@@ -40,6 +41,19 @@ func buildGormDB(driverName string, cfg *contribxdb.Setting) (db *gorm.DB, err e
 	}
 	if cfg.Cfg.LongQueryTime <= 0 {
 		cfg.Cfg.LongQueryTime = 500
+	}
+
+	newCfg, err := xdb.DefaultRefactor(cfg.ConnName, cfg.Cfg)
+	if err != nil {
+		return
+	}
+
+	if newCfg != nil {
+		cfg.Cfg = newCfg
+	}
+
+	for i := range opts {
+		opts[i](cfg.Cfg)
 	}
 
 	w := log.New(xlog.DefaultLogger, "\r\n", log.LstdFlags)

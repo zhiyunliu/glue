@@ -9,7 +9,7 @@ const TypeNode = "rpcs"
 const _defaultName = "default"
 
 type StandardRPC interface {
-	GetRPC(name ...string) (c Client)
+	GetRPC(name string) (c Client)
 }
 
 type Body interface {
@@ -31,13 +31,10 @@ func newStdClient(container container.Container) StandardRPC {
 }
 
 // GetRPC 获取缓存操作对象
-func (s *xRPC) GetRPC(name ...string) (c Client) {
+func (s *xRPC) GetRPC(name string) (c Client) {
 	realName := _defaultName
 	if len(name) > 0 {
-		realName = name[0]
-	}
-	if realName == "" {
-		realName = _defaultName
+		realName = name
 	}
 	obj, err := s.container.GetOrCreate(TypeNode, realName, func(cfg config.Config) (interface{}, error) {
 		dbcfg := cfg.Get(TypeNode).Get(realName)

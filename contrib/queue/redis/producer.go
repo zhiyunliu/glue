@@ -30,9 +30,9 @@ type Producer struct {
 }
 
 // NewProducerByConfig 根据配置文件创建一个redis连接
-func NewProducer(config config.Config) (m *Producer, err error) {
+func NewProducer(config config.Config, opts ...queue.Option) (m *Producer, err error) {
 	m = &Producer{}
-	m.client, err = getRedisClient(config)
+	m.client, err = getRedisClient(config, opts...)
 	if err != nil {
 		return
 	}
@@ -181,8 +181,8 @@ type producerResolver struct {
 func (s *producerResolver) Name() string {
 	return Proto
 }
-func (s *producerResolver) Resolve(config config.Config) (queue.IMQP, error) {
-	return NewProducer(config)
+func (s *producerResolver) Resolve(config config.Config, opts ...queue.Option) (queue.IMQP, error) {
+	return NewProducer(config, opts...)
 }
 func init() {
 	queue.RegisterProducer(&producerResolver{})

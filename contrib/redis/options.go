@@ -1,5 +1,7 @@
 package redis
 
+import "github.com/zhiyunliu/golibs/xtypes"
+
 type Options struct {
 	Addrs        []string `json:"addrs,omitempty"  valid:"required" `
 	Username     string   `json:"username,omitempty" `
@@ -53,5 +55,28 @@ func WithWriteTimeout(timeout uint) Option {
 func WithDialTimeout(timeout uint) Option {
 	return func(opts *Options) {
 		opts.DialTimeout = timeout
+	}
+}
+
+func WithMapConfig(cfg map[string]any) Option {
+	return func(opts *Options) {
+		for k, v := range cfg {
+			switch k {
+			case "db":
+				tmp, err := xtypes.GetInt(v)
+				if err != nil {
+					continue
+				}
+				opts.DbIndex = uint(tmp)
+			case "pool_size":
+				tmp, err := xtypes.GetInt(v)
+				if err != nil {
+					continue
+				}
+				opts.PoolSize = uint(tmp)
+			default:
+			}
+
+		}
 	}
 }

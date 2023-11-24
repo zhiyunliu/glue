@@ -3,6 +3,7 @@ package streamredis
 import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
+	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/xnet"
 )
 
@@ -23,7 +24,7 @@ type ConsumerOptions struct {
 	GroupName         string `json:"group_name" yaml:"group_name"`
 }
 
-func getRedisClient(config config.Config) (client *redis.Client, err error) {
+func getRedisClient(config config.Config, opts ...queue.Option) (client *redis.Client, err error) {
 	addr := config.Value("addr").String()
 	protoType, configName, err := xnet.Parse(addr)
 	if err != nil {
@@ -32,6 +33,11 @@ func getRedisClient(config config.Config) (client *redis.Client, err error) {
 	rootCfg := config.Root()
 	queueCfg := rootCfg.Get(protoType).Get(configName)
 
-	client, err = redis.NewByConfig(configName, queueCfg)
+	queueOpts := &queue.Options{}
+	for i := range opts {
+		opts[i](queueOpts)
+	}
+
+	client, err = redis.NewByConfig(configName, queueCfg, queueOpts.CfgData)
 	return
 }
