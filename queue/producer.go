@@ -6,15 +6,15 @@ import (
 	"github.com/zhiyunliu/glue/config"
 )
 
-//imqpResover 定义配置文件转换方法
+// imqpResover 定义配置文件转换方法
 type imqpResover interface {
 	Name() string
-	Resolve(setting config.Config) (IMQP, error)
+	Resolve(setting config.Config, opts ...Option) (IMQP, error)
 }
 
 var mqpResolvers = make(map[string]imqpResover)
 
-//RegisterProducer 注册配置文件适配器
+// RegisterProducer 注册配置文件适配器
 func RegisterProducer(resolver imqpResover) {
 	proto := resolver.Name()
 	if _, ok := mqpResolvers[proto]; ok {
@@ -23,16 +23,16 @@ func RegisterProducer(resolver imqpResover) {
 	mqpResolvers[proto] = resolver
 }
 
-//Deregister 清理配置适配器
+// Deregister 清理配置适配器
 func DeregisterProducer(name string) {
 	delete(mqpResolvers, name)
 }
 
-//NewMQP 根据适配器名称及参数返回配置处理器
-func NewMQP(proto string, setting config.Config) (IMQP, error) {
+// NewMQP 根据适配器名称及参数返回配置处理器
+func NewMQP(proto string, setting config.Config, opts ...Option) (IMQP, error) {
 	resolver, ok := mqpResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("mqp: 未知的协议类型:%s", proto)
 	}
-	return resolver.Resolve(setting)
+	return resolver.Resolve(setting, opts...)
 }

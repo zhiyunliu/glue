@@ -17,15 +17,15 @@ type MsgWrap struct {
 	bodyBytes []byte      `json:"-"`
 }
 
-type Option func(m *MsgWrap)
+type MsgOption func(m *MsgWrap)
 
-func WithXRequestID(reqId string) Option {
+func WithXRequestID(reqId string) MsgOption {
 	return func(m *MsgWrap) {
 		m.reqid = reqId
 	}
 }
 
-func WithHeader(key, val string) Option {
+func WithHeader(key, val string) MsgOption {
 	return func(m *MsgWrap) {
 		if m.HeaderMap == nil {
 			m.HeaderMap = make(xtypes.SMap)
@@ -34,7 +34,7 @@ func WithHeader(key, val string) Option {
 	}
 }
 
-func NewMsg(obj interface{}, opts ...Option) (msg Message, err error) {
+func NewMsg(obj interface{}, opts ...MsgOption) (msg Message, err error) {
 	var bytes []byte
 	switch val := obj.(type) {
 	case []byte:

@@ -18,17 +18,29 @@ type Client struct {
 // NewByOpts 构建客户端
 func NewByOpts(configName string, opts ...Option) (r *Client, err error) {
 	redisOpts := newOpts()
+	if Refactor != nil {
+		redisOpts, err = Refactor(configName, redisOpts)
+		if err != nil {
+			return
+		}
+	}
 	for i := range opts {
 		opts[i](redisOpts)
 	}
-	return newRedis(configName, redisOpts)
+	return newRedis(configName, redisOpts, map[string]any{})
 }
 
 // NewByConfig 构建客户端
-func NewByConfig(configName string, setting config.Config) (r *Client, err error) {
+func NewByConfig(configName string, setting config.Config, mapCfg map[string]any) (r *Client, err error) {
 	redisOpts := newOpts()
 	setting.Scan(redisOpts)
-	return newRedis(configName, redisOpts)
+	if Refactor != nil {
+		redisOpts, err = Refactor(configName, redisOpts)
+		if err != nil {
+			return
+		}
+	}
+	return newRedis(configName, redisOpts, mapCfg)
 }
 
 func newOpts() *Options {
@@ -40,17 +52,13 @@ func newOpts() *Options {
 	}
 }
 
-func newRedis(configName string, opts *Options) (r *Client, err error) {
-	var newOpts = opts
-	if Refactor != nil {
-		newOpts, err = Refactor(configName, opts)
-		if err != nil {
-			return
-		}
+func newRedis(configName string, opts *Options, mapCfg map[string]any) (r *Client, err error) {
+	if len(mapCfg) > 0 {
+		WithMapConfig(mapCfg)(opts)
 	}
 
 	r = &Client{}
-	r.opts = newOpts
+	r.opts = opts
 
 	ropts := &redis.UniversalOptions{
 		Addrs:        r.opts.Addrs,

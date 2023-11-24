@@ -109,7 +109,7 @@ func (r *Redis) Expire(ctx context.Context, key string, expire int) error {
 	return err
 }
 
-//Exists
+// Exists
 func (r *Redis) Exists(ctx context.Context, key string) (bool, error) {
 	v, err := r.client.Exists(key).Result()
 	if err == rds.Nil {
@@ -129,8 +129,11 @@ type redisResolver struct {
 func (s *redisResolver) Name() string {
 	return Proto
 }
-func (s *redisResolver) Resolve(config config.Config) (cache.ICache, error) {
-	client, err := getRedisClient(config)
+func (s *redisResolver) Resolve(config config.Config, opts ...cache.Option) (cache.ICache, error) {
+	client, err := getRedisClient(config, opts...)
+	if err != nil {
+		return nil, err
+	}
 	return &Redis{
 		client: client,
 	}, err

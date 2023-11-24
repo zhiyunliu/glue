@@ -16,10 +16,10 @@ type queue struct {
 	q IMQP
 }
 
-func newQueue(proto string, cfg config.Config) (IQueue, error) {
+func newQueue(proto string, cfg config.Config, opts ...Option) (IQueue, error) {
 	var err error
 	q := &queue{}
-	q.q, err = NewMQP(proto, cfg)
+	q.q, err = NewMQP(proto, cfg, opts...)
 	return q, err
 }
 
