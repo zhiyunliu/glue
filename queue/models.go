@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
@@ -79,6 +80,7 @@ func (w *MsgWrap) adapterMsg() {
 	if w.reqid != "" {
 		w.HeaderMap[constants.HeaderRequestId] = w.reqid
 	}
+	w.HeaderMap[constants.HeaderSourceIp] = global.LocalIp
 	decoder := json.NewDecoder(bytes.NewReader(w.bodyBytes))
 	decoder.UseNumber()
 	decoder.Decode(&w.BodyMap)

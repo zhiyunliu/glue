@@ -17,27 +17,29 @@ import (
 
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
-	ctx       context.Context
-	lock      sync.Mutex
-	closeChan chan struct{}
-	queues    cmap.ConcurrentMap
-	consumer  queue.IMQC
-	status    engine.RunStatus
-	engine    *alloter.Engine
-	onceLock  sync.Once
+	ctx        context.Context
+	lock       sync.Mutex
+	closeChan  chan struct{}
+	queues     cmap.ConcurrentMap
+	consumer   queue.IMQC
+	status     engine.RunStatus
+	engine     *alloter.Engine
+	onceLock   sync.Once
+	configName string
 }
 
 // NewProcessor 创建processor
-func newProcessor(ctx context.Context, alloterEngine *alloter.Engine, proto string, setting config.Config) (p *processor, err error) {
+func newProcessor(ctx context.Context, alloterEngine *alloter.Engine, proto, configName string, setting config.Config) (p *processor, err error) {
 	p = &processor{
-		ctx:       ctx,
-		status:    engine.Unstarted,
-		closeChan: make(chan struct{}),
-		queues:    cmap.New(),
-		engine:    alloterEngine,
+		ctx:        ctx,
+		status:     engine.Unstarted,
+		closeChan:  make(chan struct{}),
+		queues:     cmap.New(),
+		engine:     alloterEngine,
+		configName: configName,
 	}
 
-	p.consumer, err = queue.NewMQC(proto, setting)
+	p.consumer, err = queue.NewMQC(proto, configName, setting)
 	if err != nil {
 		return nil, fmt.Errorf("构建mqc服务失败:%v", err)
 	}

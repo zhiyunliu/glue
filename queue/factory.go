@@ -7,6 +7,8 @@ import (
 	"context"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/global"
 )
 
 var Nil error = errors.New("Queue Nil")
@@ -34,6 +36,7 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 		return fmt.Errorf("queue.Send:%s,Error:%w", key, err)
 	}
 
+	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
 	return q.q.Push(key, msg)
 }
 func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error {
@@ -45,7 +48,7 @@ func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, de
 	if err != nil {
 		return fmt.Errorf("queue.Send:%s,Error:%w", key, err)
 	}
-
+	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
 	return q.q.DelayPush(key, msg, delaySeconds)
 }
 

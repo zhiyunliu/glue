@@ -15,14 +15,17 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 )
 
-//Consumer Consumer
+// Consumer Consumer
 type Consumer struct {
-	client  *redis.Client
-	queues  cmap.ConcurrentMap
-	closeCh chan struct{}
-	once    sync.Once
-	wg      sync.WaitGroup
-	config  config.Config
+	configName       string
+	EnableDeadLetter bool //开启死信队列
+	DeadLetterQueue  string
+	client           *redis.Client
+	queues           cmap.ConcurrentMap
+	closeCh          chan struct{}
+	once             sync.Once
+	wg               sync.WaitGroup
+	config           config.Config
 }
 
 type QueueItem struct {
@@ -42,9 +45,10 @@ func (qi *QueueItem) CloseMsgChan() {
 	})
 }
 
-//NewConsumerByConfig 创建新的Consumer
-func NewConsumer(config config.Config) (consumer *Consumer, err error) {
+// NewConsumerByConfig 创建新的Consumer
+func NewConsumer(configName string, config config.Config) (consumer *Consumer, err error) {
 	consumer = &Consumer{}
+	consumer.configName = configName
 	consumer.config = config
 
 	consumer.closeCh = make(chan struct{})
@@ -52,13 +56,15 @@ func NewConsumer(config config.Config) (consumer *Consumer, err error) {
 	return
 }
 
-//Connect  连接服务器
+// Connect  连接服务器
 func (consumer *Consumer) Connect() (err error) {
 	consumer.client, err = getRedisClient(consumer.config)
+	consumer.DeadLetterQueue = consumer.config.Value("deadletter_queue").String()
+	consumer.EnableDeadLetter = len(consumer.DeadLetterQueue) > 0
 	return
 }
 
-//Consume 注册消费信息
+// Consume 注册消费信息
 func (consumer *Consumer) Consume(task queue.TaskInfo, callback queue.ConsumeCallback) (err error) {
 	queue := task.GetQueue()
 	if strings.EqualFold(queue, "") {
@@ -136,7 +142,17 @@ func (consumer *Consumer) work(item *QueueItem) {
 	for {
 		select {
 		case msg := <-item.msgChan:
-			item.callback(&redisMessage{message: msg})
+			rdsMsg := &redisMessage{message: msg}
+			item.callback(rdsMsg)
+			if rdsMsg.err != nil {
+				//超过最大次数
+				if rdsMsg.RetryCount() >= queue.MaxRetrtCount {
+					consumer.writeToDeadLetter(item.QueueName, msg)
+					continue
+				}
+				obj := rdsMsg.PlusRetryCount()
+				consumer.client.RPush(item.QueueName, obj)
+			}
 		case <-consumer.closeCh:
 			return
 		case <-item.unconsumeChan:
@@ -145,7 +161,7 @@ func (consumer *Consumer) work(item *QueueItem) {
 	}
 }
 
-//UnConsume 取消注册消费
+// UnConsume 取消注册消费
 func (consumer *Consumer) Unconsume(queue string) {
 	if consumer.client == nil {
 		return
@@ -156,7 +172,7 @@ func (consumer *Consumer) Unconsume(queue string) {
 	consumer.queues.Remove(queue)
 }
 
-//Start 启动
+// Start 启动
 func (consumer *Consumer) Start() {
 	for item := range consumer.queues.IterBuffered() {
 		func(qitem *QueueItem) {
@@ -165,7 +181,7 @@ func (consumer *Consumer) Start() {
 	}
 }
 
-//Close 关闭当前连接
+// Close 关闭当前连接
 func (consumer *Consumer) Close() {
 	consumer.once.Do(func() {
 		close(consumer.closeCh)
@@ -178,6 +194,17 @@ func (consumer *Consumer) Close() {
 	consumer.client.Close()
 }
 
+func (consumer *Consumer) writeToDeadLetter(queue string, msg string) {
+	if !consumer.EnableDeadLetter {
+		return
+	}
+
+	if strings.EqualFold(queue, consumer.DeadLetterQueue) {
+		return
+	}
+	consumer.client.RPush(consumer.DeadLetterQueue, deadMsg{Queue: queue, Msg: msg})
+}
+
 type consumeResolver struct {
 }
 
@@ -185,8 +212,8 @@ func (s *consumeResolver) Name() string {
 	return Proto
 }
 
-func (s *consumeResolver) Resolve(setting config.Config) (queue.IMQC, error) {
-	return NewConsumer(setting)
+func (s *consumeResolver) Resolve(configName string, setting config.Config) (queue.IMQC, error) {
+	return NewConsumer(configName, setting)
 }
 func init() {
 	queue.RegisterConsumer(&consumeResolver{})

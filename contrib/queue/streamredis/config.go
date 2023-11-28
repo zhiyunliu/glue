@@ -16,6 +16,7 @@ type ProductOptions struct {
 }
 
 type ConsumerOptions struct {
+	DeadLetterQueue   string `json:"deadletter_queue"  yaml:"deadletter_queue"`    //开启死信队列
 	Concurrency       int    `json:"concurrency" yaml:"concurrency"`               //并发的消费者数量
 	BufferSize        int    `json:"buffer_size" yaml:"buffer_size"`               //队列长度
 	BlockingTimeout   int    `json:"blocking_timeout" yaml:"blocking_timeout"`     //获取消息阻塞时间秒

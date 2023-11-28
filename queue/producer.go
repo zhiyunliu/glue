@@ -6,16 +6,16 @@ import (
 	"github.com/zhiyunliu/glue/config"
 )
 
-// imqpResover 定义配置文件转换方法
-type imqpResover interface {
+// MqpResover 定义配置文件转换方法
+type MqpResover interface {
 	Name() string
 	Resolve(setting config.Config, opts ...Option) (IMQP, error)
 }
 
-var mqpResolvers = make(map[string]imqpResover)
+var mqpResolvers = make(map[string]MqpResover)
 
 // RegisterProducer 注册配置文件适配器
-func RegisterProducer(resolver imqpResover) {
+func RegisterProducer(resolver MqpResover) {
 	proto := resolver.Name()
 	if _, ok := mqpResolvers[proto]; ok {
 		panic(fmt.Errorf("mqp: 不能重复注册:%s", proto))

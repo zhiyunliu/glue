@@ -7,6 +7,14 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
+var (
+	MaxRetrtCount int64 = 3 //最大重试三次
+)
+
+const (
+	QueueKey string = "qk"
+)
+
 // Option 配置选项
 type Option func(*Options)
 

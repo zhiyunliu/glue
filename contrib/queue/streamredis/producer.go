@@ -83,9 +83,9 @@ func (c *Producer) DelayPush(key string, msg queue.Message, delaySeconds int64) 
 	}
 
 	bytes, _ := json.Marshal(map[string]interface{}{
-		"queuekey": key,
-		"header":   msg.Header(),
-		"body":     msg.Body(),
+		queue.QueueKey: key,
+		"header":       msg.Header(),
+		"body":         msg.Body(),
 	})
 
 	uid := strings.ReplaceAll(uuid.New().String(), "-", "")
@@ -184,7 +184,7 @@ func (c *Producer) procDelayItem(uid string) {
 	var data xtypes.XMap = make(map[string]interface{})
 	decoder.Decode(&data)
 
-	key := data.GetString("queuekey")
+	key := data.GetString(queue.QueueKey)
 	c.Push(key, newMsgBody(data))
 
 	c.client.Del(newkey)

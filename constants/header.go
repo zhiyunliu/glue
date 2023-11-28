@@ -3,5 +3,6 @@ package constants
 const (
 	HeaderRequestId    = "x-request-id"
 	HeaderRemoteHeader = "x-remote-addr"
-	HeaderSourceName   = "x-source-name"
+	HeaderSourceIp     = "x-src-ip"
+	HeaderSourceName   = "x-src-name"
 )
