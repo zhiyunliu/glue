@@ -37,6 +37,7 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 	}
 
 	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
+	msg.Header()[constants.HeaderSourceName] = global.AppName
 	return q.q.Push(key, msg)
 }
 func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error {
@@ -49,6 +50,7 @@ func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, de
 		return fmt.Errorf("queue.Send:%s,Error:%w", key, err)
 	}
 	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
+	msg.Header()[constants.HeaderSourceName] = global.AppName
 	return q.q.DelayPush(key, msg, delaySeconds)
 }
 
