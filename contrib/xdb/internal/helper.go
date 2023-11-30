@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"github.com/zhiyunliu/glue/xdb"
+	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 type WrapArgs struct {
@@ -69,6 +70,61 @@ func GetError(err error, query string, args ...interface{}) error {
 	return xdb.NewError(err, query, Unwrap(args...))
 }
 
+func ResolveFirstDataResult(rows *sql.Rows, result any) (err error) {
+	for rows.Next() {
+		err = rows.Scan(result)
+		return
+	}
+	return
+}
+
+// 解析单个数据结果
+func ResolveDataResult(rows *sql.Rows, result any) (err error) {
+	for rows.Next() {
+		err = rows.Scan(result)
+		return
+	}
+	return
+}
+
+// 解析多个数据结果
+func ResolveMultiDataResult(rows *sql.Rows, result []any) (err error) {
+	for rows.Next() {
+		err = rows.Scan(result)
+		return
+	}
+	return
+}
+
+func ResolveScalar(rows *sql.Rows) (val any, err error) {
+	val = new(interface{})
+	if rows.Next() {
+		err = rows.Scan(val)
+		if err != nil {
+			return
+		}
+		return val, nil
+	}
+	return
+}
+
+func ResolveFirstRow(rows *sql.Rows) (dataRows xdb.Row, err error) {
+	columnTypes, _ := rows.ColumnTypes()
+	columns, _ := rows.Columns()
+	values := make([]interface{}, len(columnTypes))
+	prepareValues(values, columnTypes)
+	if rows.Next() {
+		err = rows.Scan(values...)
+		if err != nil {
+			return
+		}
+		mapValue := map[string]interface{}{}
+		scanIntoMap(mapValue, values, columns)
+		return mapValue, nil
+	}
+	return
+}
+
 func ResolveRows(rows *sql.Rows) (dataRows xdb.Rows, err error) {
 	dataRows = xdb.NewRows()
 	columnTypes, _ := rows.ColumnTypes()
@@ -99,6 +155,55 @@ func ResolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
 			return
 		}
 	}
+}
+
+func ResolveParams(input any) (params xtypes.XMap, err error) {
+
+	switch t := input.(type) {
+	case map[string]any:
+		return t, nil
+	case xtypes.XMap:
+		return t, nil
+	case map[string]string:
+		params = make(xtypes.XMap)
+		for k, v := range t {
+			params[k] = v
+		}
+		return params, nil
+	case xtypes.SMap:
+		params = make(xtypes.XMap)
+		for k, v := range t {
+			params[k] = v
+		}
+		return params, nil
+	case xdb.DbParam:
+		return t.ToDbParam(), nil
+	default:
+		return analyzeParamFields(t)
+	}
+
+}
+
+func analyzeParamFields(input any) (params xtypes.XMap, err error) {
+	params = make(xtypes.XMap)
+	refval := reflect.ValueOf(input)
+	//获取最终的类型值
+	for refval.Kind() == reflect.Pointer {
+		refval = refval.Elem()
+	}
+
+	if refval.Kind() != reflect.Struct {
+		return params, fmt.Errorf("只能接收struct; 实际是 %s", refval.Kind().String())
+	}
+
+	fields := cachedTypeFields(refval.Type())
+
+	for i := range fields.list {
+		f := &fields.list[i]
+		fv := refval.Field(f.index)
+		params[f.name] = f.encoder(fv)
+	}
+	return
 }
 
 func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
