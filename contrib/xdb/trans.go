@@ -72,13 +72,13 @@ func (db *xTrans) Exec(ctx context.Context, sql string, input any) (r xdb.Result
 // Query 查询数据
 func (db *xTrans) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, a any) error {
-		return internal.ResolveDataResult(r, results)
+		return internal.ResolveRowsDataResult(r, results)
 	})
 }
 
 func (db *xTrans) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return internal.ResolveDataResult(r, result)
+		return internal.ResolveFirstDataResult(r, result)
 	})
 }
 

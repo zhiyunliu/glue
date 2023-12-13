@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/zhiyunliu/golibs/xtypes"
 )
@@ -56,6 +57,17 @@ func (m StrMap) String() string {
 	mapBytes, _ := json.Marshal(m)
 	return string(mapBytes)
 }
+
+type NotImpl struct{ NotImpl any }
+
+type Impl struct{ impl any }
+
+func (i *Impl) Scan(v any) error {
+	i.impl = v
+	return nil
+}
+
+type Binary []uint8
 
 func Test_analyzeParamFields(t *testing.T) {
 	decVal := xtypes.NewDecimalFromInt(10)
@@ -186,4 +198,218 @@ func TestResolveParams(t *testing.T) {
 			}
 		})
 	}
+}
+
+type val struct {
+	BB         bool              `json:"bool"`
+	IA         int               `json:"ia"`
+	IB         int32             `json:"ib"`
+	IC         int64             `json:"ic"`
+	IU         uint64            `json:"iu"`
+	FA         float32           `json:"fa"`
+	FB         float32           `json:"fb"`
+	Str        string            `json:"str"`
+	Bytes      []byte            `json:"bytes"`
+	IntArray   []int             `json:"ints"`
+	FloatArray []float32         `json:"floats"`
+	Impl       Impl              `json:"impl"`
+	NotImpl    NotImpl           `json:"notimpl"`
+	MapStr     map[string]string `json:"mapstr"`
+	MapAny     map[string]any    `json:"mapany"`
+	XMap       xtypes.XMap       `json:"xmap"`
+	SMap       xtypes.SMap       `json:"smap"`
+	XMaps      xtypes.XMaps      `json:"xmaps"`
+	Binary     Binary            `json:"binary"`
+	Any        any               `json:"any"`
+	Dec        xtypes.Decimal    `json:"dec"`
+	DecPtr     *xtypes.Decimal   `json:"decptr"`
+	BBPtr      *bool             `json:"boolptr"`
+	IAPtr      *int              `json:"iaptr"`
+	IBPtr      *int32            `json:"ibptr"`
+	ICPtr      *int64            `json:"icptr"`
+	IUPtr      *uint64           `json:"iuptr"`
+	FAPtr      *float32          `json:"faptr"`
+	FBPtr      *float32          `json:"fbptr"`
+	StrPtr     *string           `json:"strptr"`
+	ImplPtr    *Impl             `json:"implptr"`
+	Time       time.Time         `json:"time"`
+	TimePtr    *time.Time        `json:"timeptr"`
+	MapAnyPtr  *map[string]any   `json:"mapanyptr"`
+	XMapPtr    *xtypes.XMap      `json:"xmapptr"`
+}
+
+type scannerVal struct {
+	IA int   `json:"ia"`
+	IB int32 `json:"ib"`
+	IC int64 `json:"ic"`
+}
+
+func (v *scannerVal) StructScan(vals ...any) error {
+	v.IA, _ = vals[0].(int)
+	v.IB, _ = vals[1].(int32)
+	v.IC, _ = vals[2].(int64)
+	return nil
+}
+
+func Test_fillRowToStruct(t *testing.T) {
+
+	var (
+		testVal1 *val = &val{}
+	)
+
+	tests := []struct {
+		name       string
+		fields     *structFields
+		reflectVal reflect.Value
+		result     any
+		vals       []any
+		wantErr    bool
+	}{
+		{name: "1.", result: testVal1, vals: []any{
+			true, 1, 2, 3, 4, 1.1, 2.2, "str",
+			[]byte{65, 66},
+			[]int{1, 2},
+			[]float32{3.1, 4.2},
+			"impl", "notimpl",
+			"mapstr", "mapany",
+			`{"xmap":"1"}`,
+			`{"smap":"2"}`,
+			`[{"xmap":"1"},{"smap":"2"}]`,
+			[]uint8{1, 2, 3},
+			"any",
+			[]byte("10.2"),
+			[]byte("10.3"),
+			true, 11, 12, 13, 14, 2.1, 2.2, "abc",
+			///////////"mapstrptr", "mapanyptr",
+			"implptr",
+			time.Now(),
+			time.Now(),
+			"mapanyptr",
+			`{"xmapptr":"1"}`,
+		}, wantErr: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.reflectVal = reflect.ValueOf(tt.result)
+			tt.fields = cachedTypeFields(tt.reflectVal.Type())
+
+			cols := make([]string, len(tt.fields.list))
+			for i, k := range tt.fields.list {
+				cols[i] = k.name
+			}
+
+			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, tt.vals); (err != nil) != tt.wantErr {
+				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_fillRowToStruct_Scanner(t *testing.T) {
+
+	var (
+		testVal1 *scannerVal = &scannerVal{}
+	)
+
+	tests := []struct {
+		name       string
+		fields     *structFields
+		reflectVal reflect.Value
+		result     any
+		vals       []any
+		wantErr    bool
+	}{
+		{name: "1.", result: testVal1, vals: []any{
+			1, 2, 3,
+		}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.reflectVal = reflect.ValueOf(tt.result)
+			tt.fields = cachedTypeFields(tt.reflectVal.Type())
+
+			cols := make([]string, len(tt.fields.list))
+			for i, k := range tt.fields.list {
+				cols[i] = k.name
+			}
+
+			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, tt.vals); (err != nil) != tt.wantErr {
+				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Benchmark_fillRowToStruct(b *testing.B) {
+	var (
+		testVal1 *val = &val{}
+	)
+
+	tt := struct {
+		name       string
+		fields     *structFields
+		reflectVal reflect.Value
+		result     any
+		vals       []any
+		wantErr    bool
+	}{name: "1.", result: testVal1, vals: []any{
+		true, 1, 2, 3, 4, 1.1, 2.2, "str",
+		[]byte{65, 66}, []int{1, 2},
+		"impl", "notimpl",
+		"mapstr", "mapany",
+		`{"xmap":"1"}`,
+		`{"smap":"2"}`,
+		`[{"xmap":"1"},{"smap":"2"}]`,
+		[]uint8{1, 2, 3},
+		"any",
+		[]byte("10.2"),
+		[]byte("10.3"),
+		true, 11, 12, 13, 14, 2.1, 2.2, "abc",
+		///////////"mapstrptr", "mapanyptr",
+		"implptr",
+		time.Now(),
+		time.Now(),
+		"mapanyptr",
+		`{"xmapptr":"1"}`,
+	}, wantErr: false}
+
+	for i := 0; i < b.N; i++ {
+
+		tt.reflectVal = reflect.ValueOf(tt.result)
+		tt.fields = cachedTypeFields(tt.reflectVal.Type())
+
+		cols := make([]string, len(tt.fields.list))
+		for i, k := range tt.fields.list {
+			cols[i] = k.name
+		}
+
+		if err := scanInToStruct(tt.fields, tt.reflectVal, cols, tt.vals); (err != nil) != tt.wantErr {
+			b.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+		}
+	}
+}
+
+func Test_Map(t *testing.T) {
+	type val struct {
+		Map *map[string]any `json:"map"`
+	}
+	result := &val{}
+	reflectVal := reflect.ValueOf(result)
+
+	fields := cachedTypeFields(reflectVal.Type())
+
+	for i := range fields.list {
+		ftype := fields.list[i].typ
+
+		mapval := reflect.MakeMap(reflect.MapOf(ftype.Key(), ftype.Elem()))
+		rv1 := reflect.New(ftype)
+		mapval.SetMapIndex(reflect.ValueOf("aaaa"), reflect.ValueOf("bbb"))
+		rv1.Elem().Set(mapval)
+
+		fv := reflectVal.Elem().Field(fields.list[i].index)
+		fv.Set(rv1)
+
+	}
+
 }

@@ -104,13 +104,13 @@ func (d *transWrap) Exec(ctx context.Context, sql string, input any) (r xdb.Resu
 // Query 查询数据
 func (d *transWrap) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
 	return d.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, a any) error {
-		return internal.ResolveDataResult(r, results)
+		return internal.ResolveRowsDataResult(r, results)
 	})
 }
 
 func (d *transWrap) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
 	return d.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return internal.ResolveDataResult(r, result)
+		return internal.ResolveFirstDataResult(r, result)
 	})
 }
 

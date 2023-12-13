@@ -120,14 +120,14 @@ func (db *xDB) Exec(ctx context.Context, sql string, input any) (r xdb.Result, e
 
 // Query 查询数据
 func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
-	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, a any) error {
-		return internal.ResolveDataResult(r, results)
+	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, val any) error {
+		return internal.ResolveRowsDataResult(r, val)
 	})
 }
 
 func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
-	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return internal.ResolveDataResult(r, result)
+	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, val any) error {
+		return internal.ResolveFirstDataResult(r, val)
 	})
 }
 

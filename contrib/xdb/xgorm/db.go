@@ -74,25 +74,29 @@ func (d *dbWrap) Exec(ctx context.Context, sql string, input any) (r xdb.Result,
 	query, execArgs := d.tpl.GetSQLContext(sql, dbParam)
 
 	db := d.gromDB
-	result, err := db.Statement.ConnPool.ExecContext(db.Statement.Context, query, execArgs...)
+	db = db.Exec(query, execArgs...)
+	err = db.Error
 	if err != nil {
 		err = internal.GetError(err, query, execArgs...)
 		return
 	}
-	r = result
+
+	r = &sqlResult{
+		rowsAffected: db.RowsAffected,
+	}
 	return
 }
 
 // Query 查询数据
 func (db *dbWrap) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, a any) error {
-		return internal.ResolveDataResult(r, results)
+		return internal.ResolveRowsDataResult(r, results)
 	})
 }
 
 func (db *dbWrap) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return internal.ResolveDataResult(r, result)
+		return internal.ResolveFirstDataResult(r, result)
 	})
 }
 
