@@ -130,47 +130,10 @@ func ResolveRowsDataResult(rows *sql.Rows, result any) (err error) {
 		return &xdb.InvalidArgTypeError{Type: rv.Elem().Type()}
 	}
 	rv = rv.Elem()
-	reflectResults := reflect.MakeSlice(reflect.SliceOf(rv.Type().Elem()), 0, 1)
-
-	itemType := reflect.Indirect(rv).Type().Elem()
-	switch itemType.Kind() {
-	case reflect.Map:
-		columnTypes, _ := rows.ColumnTypes()
-		columns, _ := rows.Columns()
-		values := make([]interface{}, len(columnTypes))
-		prepareValues(values, columnTypes)
-
-		for rows.Next() {
-			err = rows.Scan(values...)
-			if err != nil {
-				return
-			}
-			// 创建一个新的 map 实例，键和值的类型是 result 中 map 的类型
-			mapval := reflect.MakeMap(itemType)
-			err = scanIntoMap(mapval, values, columns)
-			reflectResults = reflect.Append(reflectResults, mapval)
-		}
-
-	case reflect.Struct:
-		fields := cachedTypeFields(itemType)
-		columnTypes, _ := rows.ColumnTypes()
-		columns, _ := rows.Columns()
-		values := make([]interface{}, len(columnTypes))
-		prepareValues(values, columnTypes)
-		for rows.Next() {
-			err = rows.Scan(values...)
-			if err != nil {
-				return
-			}
-			itemVal := reflect.New(itemType)
-			err = scanInToStruct(fields, itemVal, columns, values)
-			if err != nil {
-				return
-			}
-			reflectResults = reflect.Append(reflectResults, itemVal.Elem())
-		}
-	default:
-		return &xdb.InvalidArgTypeError{Type: rv.Type()}
+	var reflectResults reflect.Value
+	reflectResults, err = resolveRows(rows, rv)
+	if err != nil {
+		return
 	}
 	rv.Set(reflectResults)
 	return
@@ -363,7 +326,88 @@ func scanInToStruct(fields *structFields, rv reflect.Value, cols []string, vals 
 	return nil
 }
 
-func resolveRowsToStruct(fields *structFields, rv reflect.Value, cols []string, vals []any) (err error) {
+func resolveRows(rows *sql.Rows, rv reflect.Value) (reflectResults reflect.Value, err error) {
+	itemType := reflect.Indirect(rv).Type().Elem()
+
+	var kind reflect.Kind = itemType.Kind()
+
+	switch {
+	case kind == reflect.Map ||
+		(kind == reflect.Ptr && itemType.Elem().Kind() == reflect.Map):
+		reflectResults, err = resolveRowsToMap(rows, itemType)
+	case kind == reflect.Struct ||
+		(kind == reflect.Ptr && itemType.Elem().Kind() == reflect.Struct):
+		reflectResults, err = resolveRowsToStruct(rows, itemType)
+	default:
+		err = &xdb.InvalidArgTypeError{Type: rv.Type()}
+		return
+	}
+	return
+}
+
+func resolveRowsToStruct(rows *sql.Rows, itemType reflect.Type) (reflectResults reflect.Value, err error) {
+	reflectResults = reflect.MakeSlice(reflect.SliceOf(itemType), 0, 1)
+
+	isPtr := false
+	if itemType.Kind() == reflect.Pointer {
+		isPtr = true
+		itemType = itemType.Elem()
+	}
+
+	fields := cachedTypeFields(itemType)
+	columnTypes, _ := rows.ColumnTypes()
+	columns, _ := rows.Columns()
+	values := make([]interface{}, len(columnTypes))
+	prepareValues(values, columnTypes)
+	for rows.Next() {
+		err = rows.Scan(values...)
+		if err != nil {
+			return
+		}
+
+		itemVal := reflect.New(itemType)
+		err = scanInToStruct(fields, itemVal, columns, values)
+		if err != nil {
+			return
+		}
+		if isPtr {
+			reflectResults = reflect.Append(reflectResults, itemVal)
+		} else {
+			reflectResults = reflect.Append(reflectResults, itemVal.Elem())
+		}
+	}
+	return
+}
+
+func resolveRowsToMap(rows *sql.Rows, itemType reflect.Type) (reflectResults reflect.Value, err error) {
+	reflectResults = reflect.MakeSlice(reflect.SliceOf(itemType), 0, 1)
+	isPtr := false
+	if itemType.Kind() == reflect.Pointer {
+		isPtr = true
+		itemType = itemType.Elem()
+	}
+
+	columnTypes, _ := rows.ColumnTypes()
+	columns, _ := rows.Columns()
+	values := make([]interface{}, len(columnTypes))
+	prepareValues(values, columnTypes)
+
+	for rows.Next() {
+		err = rows.Scan(values...)
+		if err != nil {
+			return
+		}
+		// 创建一个新的 map 实例，键和值的类型是 result 中 map 的类型
+		mapval := reflect.MakeMap(itemType)
+		err = scanIntoMap(mapval, values, columns)
+		if isPtr {
+			mapPtr := reflect.New(itemType)
+			mapPtr.Elem().Set(mapval)
+			reflectResults = reflect.Append(reflectResults, mapPtr)
+		} else {
+			reflectResults = reflect.Append(reflectResults, mapval)
+		}
+	}
 	return
 }
 
