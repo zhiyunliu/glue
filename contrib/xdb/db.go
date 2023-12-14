@@ -70,6 +70,9 @@ func (db *xDB) Query(ctx context.Context, sqls string, input any) (rows xdb.Rows
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return internal.ResolveRows(r)
 	})
+	if err != nil {
+		return
+	}
 	rows = tmp.(xdb.Rows)
 	return
 }
@@ -79,6 +82,9 @@ func (db *xDB) Multi(ctx context.Context, sqls string, input any) (datasetRows [
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return internal.ResolveMultiRows(r)
 	})
+	if err != nil {
+		return
+	}
 	datasetRows = tmp.([]xdb.Rows)
 	return
 }
@@ -87,6 +93,9 @@ func (db *xDB) First(ctx context.Context, sqls string, input any) (data xdb.Row,
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return internal.ResolveFirstRow(r)
 	})
+	if err != nil {
+		return
+	}
 	data = tmp.(xdb.Row)
 	return
 }
@@ -105,7 +114,11 @@ func (db *xDB) Exec(ctx context.Context, sql string, input any) (r xdb.Result, e
 	if err != nil {
 		return
 	}
-	query, execArgs := db.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
 
 	start := time.Now()
 	debugPrint(ctx, db.cfg, query, execArgs...)
@@ -187,7 +200,11 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback inte
 		return
 	}
 
-	query, execArgs := db.tpl.GetSQLContext(sql, dbParams)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
 
 	start := time.Now()
 
@@ -212,7 +229,11 @@ func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any,
 		return
 	}
 
-	query, execArgs := db.tpl.GetSQLContext(sql, dbParams)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
 
 	start := time.Now()
 

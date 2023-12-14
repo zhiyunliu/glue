@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/golibs/xsecurity/md5"
 )
 
@@ -15,11 +16,14 @@ var tplcache sync.Map
 // $表达式，检查值，值为空时返加"",否则直接替换字符
 // &条件表达式，检查值，值为空时返加"",否则返回: and name=value
 // |条件表达式，检查值，值为空时返回"", 否则返回: or name=value
-func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}, ph Placeholder) (sql string, values []any) {
+func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}, ph Placeholder) (sql string, values []any, err error) {
 	hashVal := md5.Str(template.Name() + tpl)
 	tplval, ok := tplcache.Load(hashVal)
 	if !ok {
-		sql, rpsitem := template.AnalyzeTPL(tpl, input, ph)
+		sql, rpsitem, err := template.AnalyzeTPL(tpl, input, ph)
+		if err != nil {
+			return "", nil, err
+		}
 
 		values = rpsitem.Values
 		if rpsitem.CanCache() {
@@ -34,24 +38,30 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 			for k := range rpsitem.NameCache {
 				temp.nameCache[k] = rpsitem.NameCache[k]
 			}
-			sql, temp.hasReplace = handleRelaceSymbols(sql, input, ph)
+			sql, temp.hasReplace, err = handleRelaceSymbols(sql, input, ph)
+			if err != nil {
+				return sql, values, err
+			}
 			tplcache.Store(hashVal, temp)
 		} else {
-			sql, _ = handleRelaceSymbols(sql, input, ph)
+			sql, _, err = handleRelaceSymbols(sql, input, ph)
 		}
 
-		return sql, values
+		return sql, values, err
 	}
 	item := tplval.(*cacheItem)
 	return item.build(input)
 }
 
-func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, placeholder Placeholder) (string, *ReplaceItem) {
+func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, placeholder Placeholder) (string, *ReplaceItem, error) {
 	word, _ := regexp.Compile(TotalPattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
 		Placeholder: placeholder,
 	}
+
+	var outerrs []xdb.MissParamError
+
 	//@变量, 将数据放入params中
 	sql := word.ReplaceAllStringFunc(tpl, func(s string) string {
 		/*
@@ -71,10 +81,17 @@ func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, p
 		if !ok {
 			return s
 		}
-		return callback(input, fullKey, item)
+		tmpv, err := callback(input, fullKey, item)
+		if err != nil {
+			outerrs = append(outerrs, err)
+		}
+		return tmpv
 	})
+	if len(outerrs) > 0 {
+		return sql, item, xdb.NewMissParamsError(outerrs...)
+	}
 
-	return sql, item
+	return sql, item, nil
 }
 
 func GetPropName(fullKey string) (propName string) {

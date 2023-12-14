@@ -1,12 +1,26 @@
 package xdb
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+	"strings"
+)
 
 type DbError interface {
 	Error() string
 	Inner() error
 	SQL() string
 	Args() []interface{}
+}
+
+type MissParamError interface {
+	Error() string
+	ParamName() string
+}
+
+type MissParamsError interface {
+	Error() string
+	ParamList() []string
 }
 
 type PanicError interface {
@@ -34,6 +48,46 @@ type xDBError struct {
 	sql        string
 	stackTrace string
 	args       []interface{}
+}
+
+type xMissParamError struct {
+	paramName string
+}
+
+func (e xMissParamError) Error() string {
+	return fmt.Sprintf("SQL缺少参数:[%s]", e.paramName)
+}
+
+func (e xMissParamError) ParamName() string {
+	return e.paramName
+}
+
+func NewMissParamError(name string) MissParamError {
+	return &xMissParamError{
+		paramName: name,
+	}
+}
+
+type xMissParamsError struct {
+	paramList []string
+}
+
+func (e xMissParamsError) Error() string {
+	return fmt.Sprintf("SQL缺少参数:[%s]", strings.Join(e.paramList, ","))
+}
+
+func (e xMissParamsError) ParamList() []string {
+	return e.paramList
+}
+
+func NewMissParamsError(errList ...MissParamError) MissParamsError {
+	paramList := make([]string, len(errList))
+	for i := range errList {
+		paramList[i] = errList[i].ParamName()
+	}
+	return &xMissParamsError{
+		paramList: paramList,
+	}
 }
 
 func NewError(err error, execSql string, args []interface{}) error {

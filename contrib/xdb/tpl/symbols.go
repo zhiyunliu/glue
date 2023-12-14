@@ -4,15 +4,20 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 var defaultSymbols Symbols
 
 func init() {
 	defaultSymbols = make(Symbols)
-	defaultSymbols["@"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
+	defaultSymbols["@"] = func(input DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissParamError) {
 		propName := GetPropName(fullKey)
-		argName, value := input.Get(propName, item.Placeholder)
+		argName, value, err := input.Get(propName, item.Placeholder)
+		if err != nil {
+			return "", err
+		}
 		if !IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
@@ -20,30 +25,36 @@ func init() {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, nil)
 		}
-		return argName
+		return argName, nil
 	}
 
-	defaultSymbols["&"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
+	defaultSymbols["&"] = func(input DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissParamError) {
 		propName := GetPropName(fullKey)
-		argName, value := input.Get(propName, item.Placeholder)
+		argName, value, err := input.Get(propName, item.Placeholder)
+		if err != nil {
+			return "", err
+		}
 		item.HasAndOper = true
 		if !IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
-			return fmt.Sprintf(" and %s=%s", fullKey, argName)
+			return fmt.Sprintf(" and %s=%s", fullKey, argName), nil
 		}
-		return ""
+		return "", nil
 	}
-	defaultSymbols["|"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
+	defaultSymbols["|"] = func(input DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissParamError) {
 		propName := GetPropName(fullKey)
-		argName, value := input.Get(propName, item.Placeholder)
+		argName, value, err := input.Get(propName, item.Placeholder)
+		if err != nil {
+			return "", err
+		}
 		item.HasOrOper = true
 		if !IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
-			return fmt.Sprintf(" or %s=%s", fullKey, argName)
+			return fmt.Sprintf(" or %s=%s", fullKey, argName), nil
 		}
-		return ""
+		return "", nil
 	}
 
 }

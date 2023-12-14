@@ -64,7 +64,10 @@ func TestDBParam_Get(t *testing.T) {
 func callParamGet(t *testing.T, tests []paramGetCase, val DBParam, ph Placeholder) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			argName, gotVal := val.Get(tt.key, ph)
+			argName, gotVal, err := val.Get(tt.key, ph)
+			if err != nil {
+				t.Errorf("case %s DBParam.Get() err:%+v", err)
+			}
 			if !reflect.DeepEqual(gotVal, tt.wantVal) {
 				t.Errorf("case %s DBParam.Get() = %v, want %v", tt.name, gotVal, tt.wantVal)
 			}

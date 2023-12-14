@@ -12,8 +12,11 @@ import (
 
 type DBParam map[string]interface{}
 
-func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interface{}) {
-	val := p.GetVal(name)
+func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interface{}, err xdb.MissParamError) {
+	val, err := p.GetVal(name)
+	if err != nil {
+		return
+	}
 	if tmpv, ok := val.(sql.NamedArg); ok {
 		argVal = tmpv
 		phName = ph.NamedArg(tmpv.Name)
@@ -24,10 +27,11 @@ func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interfa
 	return
 }
 
-func (p DBParam) GetVal(name string) (val interface{}) {
+func (p DBParam) GetVal(name string) (val interface{}, err xdb.MissParamError) {
 	val, ok := p[name]
 	if !ok {
-		return nil
+		err = xdb.NewMissParamError(name)
+		return
 	}
 	switch t := val.(type) {
 	case sql.NamedArg:

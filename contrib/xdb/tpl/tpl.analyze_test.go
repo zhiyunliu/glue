@@ -50,7 +50,7 @@ func TestDefaultAnalyze(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := DefaultAnalyze(symbols, tt.args.tpl, tt.args.input, tt.args.placeholder)
+			got, got1, _ := DefaultAnalyze(symbols, tt.args.tpl, tt.args.input, tt.args.placeholder)
 			if got != tt.want {
 				t.Errorf("DefaultAnalyze() got = %v, want %v", got, tt.want)
 			}
@@ -78,7 +78,7 @@ func TestAnalyzeTPLFromCache(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotSql, gotValues := AnalyzeTPLFromCache(tt.args.template, tt.args.tpl, tt.args.input, tt.args.ph)
+			gotSql, gotValues, _ := AnalyzeTPLFromCache(tt.args.template, tt.args.tpl, tt.args.input, tt.args.ph)
 			if gotSql != tt.wantSql {
 				t.Errorf("AnalyzeTPLFromCache() gotSql = %v, want %v", gotSql, tt.wantSql)
 			}

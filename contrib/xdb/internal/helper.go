@@ -208,6 +208,12 @@ func ResolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
 }
 
 func ResolveParams(input any) (params xtypes.XMap, err error) {
+	if input == nil {
+		return xtypes.XMap{}, nil
+	}
+	if reflect.ValueOf(input).IsNil() {
+		return xtypes.XMap{}, nil
+	}
 
 	switch t := input.(type) {
 	case map[string]any:

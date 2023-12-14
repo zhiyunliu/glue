@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 var (
@@ -19,7 +20,7 @@ const (
 	ReplacePattern = `\$\{\w*[\.]?\w+\}`
 )
 
-type SymbolCallback func(DBParam, string, *ReplaceItem) string
+type SymbolCallback func(DBParam, string, *ReplaceItem) (string, xdb.MissParamError)
 type Symbols map[string]SymbolCallback
 type Placeholder interface {
 	Get(propName string) (argName string, phName string)
@@ -32,8 +33,8 @@ type Placeholder interface {
 type SQLTemplate interface {
 	Name() string
 	Placeholder() Placeholder
-	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any)
-	AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem)
+	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any, err error)
+	AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem, err error)
 }
 
 func init() {

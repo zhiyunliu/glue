@@ -39,6 +39,9 @@ func (db *dbWrap) Query(ctx context.Context, sqls string, input any) (data xdb.R
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return internal.ResolveRows(r)
 	})
+	if err != nil {
+		return
+	}
 	data = tmp.(xdb.Rows)
 	return
 }
@@ -47,6 +50,9 @@ func (db *dbWrap) Multi(ctx context.Context, sqls string, input any) (data []xdb
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return internal.ResolveMultiRows(r)
 	})
+	if err != nil {
+		return
+	}
 	data = tmp.([]xdb.Rows)
 	return
 }
@@ -55,6 +61,9 @@ func (db *dbWrap) First(ctx context.Context, sqls string, input any) (data xdb.R
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return internal.ResolveFirstRow(r)
 	})
+	if err != nil {
+		return
+	}
 	data = tmp.(xdb.Row)
 	return
 }
@@ -71,7 +80,11 @@ func (d *dbWrap) Exec(ctx context.Context, sql string, input any) (r xdb.Result,
 	if err != nil {
 		return
 	}
-	query, execArgs := d.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := d.tpl.GetSQLContext(sql, dbParam)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
 
 	db := d.gromDB
 	db = db.Exec(query, execArgs...)
@@ -136,7 +149,12 @@ func (db *dbWrap) dbQuery(ctx context.Context, sql string, input any, callback i
 		return
 	}
 
-	query, execArgs := db.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
+
 	rows, err := db.gromDB.Raw(query, execArgs...).Rows()
 	if err != nil {
 		err = internal.GetError(err, query, execArgs...)
@@ -153,7 +171,12 @@ func (db *dbWrap) dbQueryAs(ctx context.Context, sql string, input any, result a
 		return
 	}
 
-	query, execArgs := db.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
+
 	rows, err := db.gromDB.Raw(query, execArgs...).Rows()
 	if err != nil {
 		err = internal.GetError(err, query, execArgs...)

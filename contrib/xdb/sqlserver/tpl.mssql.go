@@ -56,7 +56,7 @@ func (ctx *MssqlContext) Name() string {
 }
 
 // GetSQLContext 获取查询串
-func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interface{}) (query string, args []any) {
+func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interface{}) (query string, args []any, err error) {
 	return tpl.AnalyzeTPLFromCache(ctx, template, input, ctx.Placeholder())
 }
 
@@ -64,6 +64,6 @@ func (ctx *MssqlContext) Placeholder() tpl.Placeholder {
 	return &mssqlPlaceHolder{ctx: ctx}
 }
 
-func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph tpl.Placeholder) (string, *tpl.ReplaceItem) {
+func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph tpl.Placeholder) (string, *tpl.ReplaceItem, error) {
 	return tpl.DefaultAnalyze(ctx.symbols, template, input, ph)
 }

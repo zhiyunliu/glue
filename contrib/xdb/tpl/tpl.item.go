@@ -1,5 +1,7 @@
 package tpl
 
+import "github.com/zhiyunliu/glue/xdb"
+
 type cacheItem struct {
 	sql           string
 	names         []string
@@ -35,11 +37,19 @@ func (item cacheItem) ClonePlaceHolder() Placeholder {
 	return item.ph.Clone()
 }
 
-func (item cacheItem) build(input DBParam) (execSql string, values []interface{}) {
+func (item cacheItem) build(input DBParam) (execSql string, values []interface{}, err error) {
 	values = make([]interface{}, len(item.names))
 	ph := item.ClonePlaceHolder()
+	var outerrs []xdb.MissParamError
+	var ierr xdb.MissParamError
 	for i := range item.names {
-		_, values[i] = input.Get(item.names[i], ph)
+		_, values[i], ierr = input.Get(item.names[i], ph)
+		if ierr != nil {
+			outerrs = append(outerrs, ierr)
+		}
+	}
+	if len(outerrs) > 0 {
+		return "", values, xdb.NewMissParamsError(outerrs...)
 	}
 
 	rspitem := &ReplaceItem{
@@ -52,8 +62,8 @@ func (item cacheItem) build(input DBParam) (execSql string, values []interface{}
 
 	execSql = item.sql
 	if item.hasReplace {
-		execSql, _ = handleRelaceSymbols(item.sql, input, ph)
+		execSql, _, err = handleRelaceSymbols(item.sql, input, ph)
 	}
 
-	return execSql, values
+	return execSql, values, err
 }

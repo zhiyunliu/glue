@@ -26,59 +26,65 @@ func (d *transWrap) Commit() (err error) {
 	return
 }
 
-func (d *transWrap) Query(ctx context.Context, sql string, input any) (data xdb.Rows, err error) {
-	dbParam, err := internal.ResolveParams(input)
+func (db *transWrap) Query(ctx context.Context, sqls string, input any) (data xdb.Rows, err error) {
+	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return internal.ResolveRows(r)
+	})
 	if err != nil {
 		return
 	}
-
-	query, execArgs := d.tpl.GetSQLContext(sql, dbParam)
-
-	rows, err := d.gromDB.Raw(query, execArgs...).Rows()
-	if err != nil {
-		err = internal.GetError(err, query, execArgs...)
-		return
-	}
-	data, err = internal.ResolveRows(rows)
-	return
-
-}
-
-func (d *transWrap) Multi(ctx context.Context, sql string, input any) (data []xdb.Rows, err error) {
-	dbParam, err := internal.ResolveParams(input)
-	if err != nil {
-		return
-	}
-	query, execArgs := d.tpl.GetSQLContext(sql, dbParam)
-
-	rows, err := d.gromDB.Raw(query, execArgs...).Rows()
-	if err != nil {
-		err = internal.GetError(err, query, execArgs...)
-		return
-	}
-	data, err = internal.ResolveMultiRows(rows)
+	data = tmp.(xdb.Rows)
 	return
 }
 
-func (d *transWrap) First(ctx context.Context, sql string, input any) (data xdb.Row, err error) {
-	rows, err := d.Query(ctx, sql, input)
+func (db *transWrap) Multi(ctx context.Context, sqls string, input any) (data []xdb.Rows, err error) {
+	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return internal.ResolveMultiRows(r)
+	})
 	if err != nil {
 		return
 	}
-	data = rows.Get(0)
+	data = tmp.([]xdb.Rows)
 	return
 }
 
-func (d *transWrap) Scalar(ctx context.Context, sql string, input any) (data interface{}, err error) {
+// func (d *transWrap) First(ctx context.Context, sql string, input any) (data xdb.Row, err error) {
+// 	rows, err := d.Query(ctx, sql, input)
+// 	if err != nil {
+// 		return
+// 	}
+// 	data = rows.Get(0)
+// 	return
+// }
 
-	row, err := d.First(ctx, sql, input)
+func (db *transWrap) First(ctx context.Context, sqls string, input any) (data xdb.Row, err error) {
+	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return internal.ResolveFirstRow(r)
+	})
 	if err != nil {
 		return
 	}
-	if row.Len() == 0 {
-		return nil, nil
-	}
-	data, _ = row.Get(row.Keys()[0])
+	data = tmp.(xdb.Row)
+	return
+}
+
+// func (d *transWrap) Scalar(ctx context.Context, sql string, input any) (data interface{}, err error) {
+
+// 	row, err := d.First(ctx, sql, input)
+// 	if err != nil {
+// 		return
+// 	}
+// 	if row.Len() == 0 {
+// 		return nil, nil
+// 	}
+// 	data, _ = row.Get(row.Keys()[0])
+// 	return
+// }
+
+func (db *transWrap) Scalar(ctx context.Context, sqls string, input any) (data interface{}, err error) {
+	data, err = db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return internal.ResolveScalar(r)
+	})
 	return
 }
 
@@ -88,7 +94,11 @@ func (d *transWrap) Exec(ctx context.Context, sql string, input any) (r xdb.Resu
 	if err != nil {
 		return
 	}
-	query, execArgs := d.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := d.tpl.GetSQLContext(sql, dbParam)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
 
 	tmpDb := d.gromDB.Exec(query, execArgs...)
 	err = tmpDb.Error
@@ -120,7 +130,12 @@ func (db *transWrap) dbQuery(ctx context.Context, sql string, input any, callbac
 		return
 	}
 
-	query, execArgs := db.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
+
 	rows, err := db.gromDB.Raw(query, execArgs...).Rows()
 	if err != nil {
 		err = internal.GetError(err, query, execArgs...)
@@ -136,7 +151,12 @@ func (db *transWrap) dbQueryAs(ctx context.Context, sql string, input any, resul
 		return
 	}
 
-	query, execArgs := db.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
+
 	rows, err := db.gromDB.Raw(query, execArgs...).Rows()
 	if err != nil {
 		err = internal.GetError(err, query, execArgs...)
