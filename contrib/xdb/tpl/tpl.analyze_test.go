@@ -33,7 +33,7 @@ func TestIsNil(t *testing.T) {
 }
 
 func TestDefaultAnalyze(t *testing.T) {
-	var symbols Symbols
+	var symbols SymbolMap
 
 	type args struct {
 		tpl         string

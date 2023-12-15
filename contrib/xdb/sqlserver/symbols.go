@@ -7,10 +7,10 @@ import (
 	"github.com/zhiyunliu/glue/xdb"
 )
 
-func newMssqlSymbols() tpl.Symbols {
+func newMssqlSymbols() tpl.SymbolMap {
 
-	symbols := make(tpl.Symbols)
-	symbols["@"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
+	symbols := tpl.NewSymbolMap()
+	symbols.Store("@", func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
 		propName := tpl.GetPropName(fullKey)
 		if ph, ok := item.NameCache[propName]; ok {
 			return ph, nil
@@ -24,9 +24,9 @@ func newMssqlSymbols() tpl.Symbols {
 
 		item.NameCache[propName] = argName
 		return argName, nil
-	}
+	})
 
-	symbols["&"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
+	symbols.Store("&", func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
 		item.HasAndOper = true
 
 		propName := tpl.GetPropName(fullKey)
@@ -44,8 +44,9 @@ func newMssqlSymbols() tpl.Symbols {
 			return fmt.Sprintf("and %s=%s ", fullKey, argName), nil
 		}
 		return "", nil
-	}
-	symbols["|"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
+	})
+
+	symbols.Store("|", func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
 		item.HasOrOper = true
 
 		propName := tpl.GetPropName(fullKey)
@@ -63,6 +64,7 @@ func newMssqlSymbols() tpl.Symbols {
 			return fmt.Sprintf("or %s=%s ", fullKey, argName), nil
 		}
 		return "", nil
-	}
+	})
+
 	return symbols
 }

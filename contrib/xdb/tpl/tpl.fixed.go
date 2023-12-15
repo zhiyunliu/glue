@@ -4,7 +4,7 @@ package tpl
 type FixedContext struct {
 	name    string
 	prefix  string
-	symbols Symbols
+	symbols SymbolMap
 }
 
 type fixedPlaceHolder struct {
@@ -35,7 +35,7 @@ func NewFixed(name, prefix string) SQLTemplate {
 	return &FixedContext{
 		name:    name,
 		prefix:  prefix,
-		symbols: defaultSymbols,
+		symbols: defaultSymbols.Clone(),
 	}
 }
 
@@ -54,4 +54,8 @@ func (ctx *FixedContext) Placeholder() Placeholder {
 
 func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem, err error) {
 	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
+}
+
+func (ctx *FixedContext) RegisterSymbol(symbol Symbol) error {
+	return ctx.symbols.Register(symbol)
 }

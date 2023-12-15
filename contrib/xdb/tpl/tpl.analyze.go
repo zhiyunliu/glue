@@ -53,8 +53,8 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 	return item.build(input)
 }
 
-func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, placeholder Placeholder) (string, *ReplaceItem, error) {
-	word, _ := regexp.Compile(TotalPattern)
+func DefaultAnalyze(symbols SymbolMap, tpl string, input map[string]interface{}, placeholder Placeholder) (string, *ReplaceItem, error) {
+	word, _ := regexp.Compile(symbols.GetPattern())
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
 		Placeholder: placeholder,
@@ -77,7 +77,7 @@ func DefaultAnalyze(symbols Symbols, tpl string, input map[string]interface{}, p
 		symbol := s[:1]
 		fullKey := s[2 : len(s)-1]
 
-		callback, ok := symbols[symbol]
+		callback, ok := symbols.Load(symbol)
 		if !ok {
 			return s
 		}

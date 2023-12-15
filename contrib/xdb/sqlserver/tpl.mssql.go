@@ -11,7 +11,7 @@ import (
 type MssqlContext struct {
 	name    string
 	prefix  string
-	symbols tpl.Symbols
+	symbols tpl.SymbolMap
 }
 
 type mssqlPlaceHolder struct {
@@ -66,4 +66,8 @@ func (ctx *MssqlContext) Placeholder() tpl.Placeholder {
 
 func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph tpl.Placeholder) (string, *tpl.ReplaceItem, error) {
 	return tpl.DefaultAnalyze(ctx.symbols, template, input, ph)
+}
+
+func (ctx *MssqlContext) RegisterSymbol(symbol tpl.Symbol) error {
+	return ctx.symbols.Register(symbol)
 }

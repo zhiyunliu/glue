@@ -20,8 +20,26 @@ const (
 	ReplacePattern = `\$\{\w*[\.]?\w+\}`
 )
 
+// 自定义匹配模式
+var customPattern string
+
 type SymbolCallback func(DBParam, string, *ReplaceItem) (string, xdb.MissParamError)
-type Symbols map[string]SymbolCallback
+type SymbolMap interface {
+	GetPattern() string
+	Store(name string, callback SymbolCallback)
+	Register(symbol Symbol) error
+	LoadOrStore(name string, callback SymbolCallback) (loaded bool)
+	Delete(name string)
+	Load(name string) (SymbolCallback, bool)
+	Clone() SymbolMap
+}
+
+type Symbol interface {
+	Name() string
+	GetPattern() string
+	Callback(DBParam, string, *ReplaceItem) (string, xdb.MissParamError)
+}
+
 type Placeholder interface {
 	Get(propName string) (argName string, phName string)
 	NamedArg(name string) string
@@ -35,6 +53,7 @@ type SQLTemplate interface {
 	Placeholder() Placeholder
 	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any, err error)
 	AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem, err error)
+	RegisterSymbol(symbol Symbol) error
 }
 
 func init() {
@@ -53,4 +72,13 @@ func GetDBTemplate(name string) (SQLTemplate, error) {
 		return v, nil
 	}
 	return nil, fmt.Errorf("不支持的数据库类型:%s", name)
+}
+
+// RegisterSymbol 给数据库注册语法解析
+func RegisterSymbol(dbProto string, symbol Symbol) error {
+	tmpl, err := GetDBTemplate(dbProto)
+	if err != nil {
+		return err
+	}
+	return tmpl.RegisterSymbol(symbol)
 }
