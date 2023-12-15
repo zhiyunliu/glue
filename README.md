@@ -60,7 +60,72 @@
 ## CRON 定时任务服务
     使用了时间轮算法对任务进行任务派发，通过cron 表达式来计算任务的执行。同时支持多程序主备自动切换功能
 
- 
+## 自定义数据体解析encoding
+
+```golang 
+type urlecoded struct {
+}
+
+func (u urlecoded) Marshal(v interface{}) ([]byte, error) {
+	return nil, nil
+}
+
+func (u *urlecoded) Unmarshal(data []byte, v interface{}) error {
+	values, err := url.ParseQuery(string(data))
+	if err != nil {
+		return err
+	}
+	var mapdata = xtypes.XMap{}
+	for k := range values {
+		mapdata[k] = values.Get(k)
+	}
+	return mapdata.Scan(v)
+}
+
+func (u urlecoded) Name() string {
+	return "x-www-form-urlencoded"
+}
+
+// github.com/zhiyunliu/glue/encoding
+encoding.RegisterCodec(&urlecoded{})
+
+```
+
+
+## 数据库自定义解析字符
+```golang 
+
+type symbol struct{}
+
+func (s *symbol) Name() string {
+	return "#"
+}
+func (s *symbol) GetPattern() string {
+	return `\#\{\w*[\.]?\w+\}`
+}
+func (s *symbol) Callback(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
+	propName := tpl.GetPropName(fullKey)
+	if ph, ok := item.NameCache[propName]; ok {
+		return ph, nil
+	}
+	argName, value, err := input.Get(propName, item.Placeholder)
+	if err != nil {
+		return argName, err
+	}
+	item.Names = append(item.Names, propName)
+	item.Values = append(item.Values, value)
+
+	item.NameCache[propName] = argName
+	return argName, nil
+}
+
+// github.com/zhiyunliu/glue/contrib/xdb
+//注入sqlserver 数据库新的字符解析处理逻辑
+tpl.RegisterSymbol("sqlserver", &symbol{})
+
+```
+
+
 
 # 使用方式
 
