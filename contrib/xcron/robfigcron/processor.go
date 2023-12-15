@@ -189,7 +189,6 @@ func (s *processor) closeMonopolyJobs() {
 func (s *processor) buildFuncJob(job *xcron.Job) cron.FuncJob {
 	req := newRequest(job)
 	return func() {
-		req.ctx = s.ctx
 		s.handle(req)
 	}
 }
