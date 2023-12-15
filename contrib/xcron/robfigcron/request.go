@@ -5,12 +5,15 @@ import (
 	sctx "context"
 	"encoding/json"
 	"io"
+	"sync"
+	"sync/atomic"
 
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/xcron"
 	"github.com/zhiyunliu/golibs/session"
+	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 var _ engine.Request = (*Request)(nil)
@@ -20,11 +23,12 @@ type Request struct {
 	ctx     sctx.Context
 	job     *xcron.Job
 	method  string
-	params  map[string]string
-	header  map[string]string
+	params  xtypes.SMap
+	header  xtypes.SMap
 	body    cbody //map[string]string
 	session string
-	canProc bool
+	canProc uint32
+	mu      sync.Mutex
 }
 
 // NewRequest 构建任务请求
@@ -60,10 +64,16 @@ func (m *Request) GetMethod() string {
 }
 
 func (m *Request) Params() map[string]string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	return m.params
 }
 
 func (m *Request) GetHeader() map[string]string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	return m.header
 }
 
@@ -73,6 +83,9 @@ func (m *Request) Body() []byte {
 }
 
 func (m *Request) GetRemoteAddr() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	return m.header[constants.HeaderRemoteHeader]
 }
 
@@ -84,15 +97,25 @@ func (m *Request) WithContext(ctx sctx.Context) {
 }
 
 func (m *Request) CanProc() bool {
-	if m.canProc {
-		m.canProc = false
+	//0 false,1 true
+	oldv := atomic.LoadUint32(&m.canProc)
+	if oldv == 1 && atomic.CompareAndSwapUint32(&m.canProc, oldv, 0) {
 		return true
 	}
 	return false
+
+	// if m.canProc {
+	// 	m.canProc = false
+	// 	return true
+	// }
+	// return false
 }
 
 func (m *Request) reset() {
-	m.canProc = true
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	atomic.StoreUint32(&m.canProc, 1)
 	m.session = session.Create()
 	//m.ctx = sctx.Background()
 	m.header = make(map[string]string)
