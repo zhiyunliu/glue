@@ -91,7 +91,7 @@ func (consumer *Consumer) doReceive(item *QueueItem) {
 	queueName := item.QueueName
 	concurrency := item.Concurrency
 	if concurrency == 0 {
-		concurrency = queue.DefaultMaxQueueLen //无限制时候，默认500个，如果消息没有正常处理，最多造成1000个消息丢失
+		concurrency = queue.DefaultMaxQueueLen
 	}
 	item.Concurrency = concurrency
 	item.msgChan = make(chan string, concurrency)
@@ -102,6 +102,8 @@ func (consumer *Consumer) doReceive(item *QueueItem) {
 		go consumer.work(item)
 	}
 
+	blockTimeout := time.Duration(item.BlockTimeout) * time.Second
+
 	for {
 		select {
 		case <-consumer.closeCh:
@@ -111,7 +113,7 @@ func (consumer *Consumer) doReceive(item *QueueItem) {
 			close(item.msgChan)
 			return
 		default:
-			cmd := client.BLPop(time.Duration(item.BlockTimeout)*time.Second, queueName)
+			cmd := client.BLPop(blockTimeout, queueName)
 			msgs, err := cmd.Result()
 			if err != nil && err != rds.Nil {
 				time.Sleep(time.Second)
