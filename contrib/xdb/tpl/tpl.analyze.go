@@ -54,7 +54,7 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 }
 
 func DefaultAnalyze(symbols SymbolMap, tpl string, input map[string]interface{}, placeholder Placeholder) (string, *ReplaceItem, error) {
-	word, _ := regexp.Compile(symbols.GetPattern())
+	word := GetPatternRegexp(symbols.GetPattern())
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
 		Placeholder: placeholder,
@@ -100,4 +100,15 @@ func GetPropName(fullKey string) (propName string) {
 		propName = strings.Split(fullKey, ".")[1]
 	}
 	return propName
+}
+
+// 获取模式匹配的正则表达式
+func GetPatternRegexp(pattern string) *regexp.Regexp {
+	tmpregex, ok := tplcache.Load(pattern)
+	if ok {
+		return tmpregex.(*regexp.Regexp)
+	}
+
+	act, _ := tplcache.LoadOrStore(pattern, regexp.MustCompile(pattern))
+	return act.(*regexp.Regexp)
 }

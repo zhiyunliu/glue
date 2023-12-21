@@ -2,14 +2,13 @@ package tpl
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/zhiyunliu/glue/xdb"
 )
 
 // 处理替换符合
 func handleRelaceSymbols(tpl string, input map[string]interface{}, ph Placeholder) (string, bool, error) {
-	word := regexp.MustCompile(ReplacePattern)
+	word := GetPatternRegexp(ReplacePattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
 		Placeholder: ph,
