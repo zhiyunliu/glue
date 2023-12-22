@@ -1,6 +1,7 @@
 package tpl
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -36,16 +37,16 @@ func TestDBParam_Get(t *testing.T) {
 	}
 
 	tests := []paramGetCase{
-		// {name: "1.", key: "int", wantVal: 1},
-		// {name: "2.", key: "string", wantVal: "string"},
-		// {name: "3.", key: "datetime", wantVal: "2023-01-01 00:00:00"},
-		// {name: "4.", key: "decimal", wantVal: "100"},
-		// {name: "5.", key: "int32", wantVal: int32(32)},
-		// {name: "6.", key: "int64", wantVal: int64(64)},
-		// {name: "7.", key: "float32", wantVal: float32(32.1)},
-		// {name: "8.", key: "float64", wantVal: float64(64.2)},
-		// {name: "9.", key: "bool", wantVal: true},
-		// {name: "10.", key: "[]byte", wantVal: []byte("[]byte")},
+		{name: "1.", key: "int", wantVal: 1},
+		{name: "2.", key: "string", wantVal: "string"},
+		{name: "3.", key: "datetime", wantVal: "2023-01-01 00:00:00"},
+		{name: "4.", key: "decimal", wantVal: "100"},
+		{name: "5.", key: "int32", wantVal: int32(32)},
+		{name: "6.", key: "int64", wantVal: int64(64)},
+		{name: "7.", key: "float32", wantVal: float32(32.1)},
+		{name: "8.", key: "float64", wantVal: float64(64.2)},
+		{name: "9.", key: "bool", wantVal: true},
+		{name: "10.", key: "[]byte", wantVal: []byte("[]byte")},
 
 		{name: "11.", key: "array", wantVal: "1,2,3"},
 		{name: "12.", key: "array2", wantVal: "'1','2','3'"},
@@ -62,16 +63,16 @@ func TestDBParam_Get(t *testing.T) {
 }
 
 func callParamGet(t *testing.T, tests []paramGetCase, val DBParam, ph Placeholder) {
-	for _, tt := range tests {
+	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			argName, gotVal, err := val.Get(tt.key, ph)
 			if err != nil {
-				t.Errorf("case %s DBParam.Get() err:%+v", err)
+				t.Errorf("case %s DBParam.Get() err:%+v", tt.name, err)
 			}
 			if !reflect.DeepEqual(gotVal, tt.wantVal) {
 				t.Errorf("case %s DBParam.Get() = %v, want %v", tt.name, gotVal, tt.wantVal)
 			}
-			if argName != tt.wantName {
+			if !(argName == fmt.Sprintf(":%d", i+1) || argName == "?") {
 				t.Errorf("case %s DBParam.Get() = %v, wantName %v", tt.name, argName, tt.wantName)
 			}
 		})

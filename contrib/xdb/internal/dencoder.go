@@ -87,9 +87,10 @@ func boolDecoder(v reflect.Value, val any) error {
 		return nil
 	}
 
-	if rv.Kind() == reflect.Pointer {
-		val = rv.Elem().Interface()
+	for rv.Kind() == reflect.Pointer {
+		rv = rv.Elem()
 	}
+	val = rv.Interface()
 
 	tmpv := xtypes.GetBool(val)
 	if v.Kind() == reflect.Pointer {
@@ -107,6 +108,11 @@ func intDecoder(v reflect.Value, val any) error {
 	if rv.IsZero() {
 		return nil
 	}
+
+	for rv.Kind() == reflect.Pointer {
+		rv = rv.Elem()
+	}
+	val = rv.Interface()
 	intval, err := xtypes.GetInt64(val)
 	if err != nil {
 		return err
@@ -126,7 +132,13 @@ func uintDecoder(v reflect.Value, val any) error {
 	if rv.IsZero() {
 		return nil
 	}
-	int64val, err := xtypes.GetInt64(val)
+
+	for rv.Kind() == reflect.Pointer {
+		rv = rv.Elem()
+	}
+	val = rv.Interface()
+
+	int64val, err := xtypes.GetUint64(val)
 	if err != nil {
 		return err
 	}
@@ -148,6 +160,11 @@ func (bits floatDecoder) dencode(v reflect.Value, val any) error {
 	if rv.IsZero() {
 		return nil
 	}
+	for rv.Kind() == reflect.Pointer {
+		rv = rv.Elem()
+	}
+	val = rv.Interface()
+
 	f64val, err := xtypes.GetFloat64(val)
 	if err != nil {
 		return err
@@ -173,9 +190,10 @@ func stringDecoder(v reflect.Value, val any) error {
 		return nil
 	}
 
-	if rv.Kind() == reflect.Pointer {
-		val = rv.Elem().Interface()
+	for rv.Kind() == reflect.Pointer {
+		rv = rv.Elem()
 	}
+	val = rv.Interface()
 
 	if v.Kind() == reflect.Pointer {
 		tmprv := reflect.New(v.Type().Elem())
