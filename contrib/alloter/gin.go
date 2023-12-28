@@ -461,7 +461,7 @@ func (engine *Engine) HandleContext(c *Context) {
 
 func (engine *Engine) handleHTTPRequest(c *Context) {
 	httpMethod := c.Request.GetMethod()
-	rPath := c.Request.GetService()
+	rPath := c.Request.GetURL().Path
 	unescape := false
 
 	if engine.RemoveExtraSlash {
@@ -507,7 +507,7 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
 	serveError(c, http.StatusNotFound, default404Body)
 }
 
-//HandleRequest 处理外部请求
+// HandleRequest 处理外部请求
 func (engine *Engine) HandleRequest(r IRequest, resp ResponseWriter) (err error) {
 	c := engine.pool.Get().(*Context)
 	c.reset()

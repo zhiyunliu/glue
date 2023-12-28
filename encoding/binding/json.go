@@ -1,16 +1,12 @@
-package json
+package binding
 
 import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/zhiyunliu/glue/encoding"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
-
-// Name is the name registered for the json codec.
-const Name = "json"
 
 var (
 	// MarshalOptions is a configurable JSON format marshaller.
@@ -23,14 +19,10 @@ var (
 	}
 )
 
-func init() {
-	encoding.RegisterCodec(codec{})
-}
-
 // codec is a Codec implementation with json.
-type codec struct{}
+type jsonBinding struct{}
 
-func (codec) Marshal(v interface{}) ([]byte, error) {
+func (jsonBinding) Marshal(v interface{}) ([]byte, error) {
 	switch m := v.(type) {
 	case json.Marshaler:
 		return m.MarshalJSON()
@@ -41,7 +33,7 @@ func (codec) Marshal(v interface{}) ([]byte, error) {
 	}
 }
 
-func (codec) Unmarshal(data []byte, v interface{}) error {
+func (jsonBinding) Unmarshal(data []byte, v interface{}) error {
 	switch m := v.(type) {
 	case json.Unmarshaler:
 		return m.UnmarshalJSON(data)
@@ -62,6 +54,6 @@ func (codec) Unmarshal(data []byte, v interface{}) error {
 	}
 }
 
-func (codec) Name() string {
-	return Name
+func (jsonBinding) Name() string {
+	return "json"
 }

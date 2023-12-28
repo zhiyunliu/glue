@@ -134,6 +134,9 @@ func (e *Server) Attempt() bool {
 
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) (err error) {
+	if e.server == nil {
+		return
+	}
 	err = e.server.Stop(ctx)
 	if err != nil {
 		log.Errorf("CRON Server [%s] stop error: %s", e.name, err.Error())
@@ -159,6 +162,9 @@ func (e *Server) serverPath() string {
 }
 
 func (e *Server) AddJob(jobs ...*xcron.Job) (keys []string, err error) {
+	if e.server == nil {
+		return
+	}
 	keys, err = e.server.AddJob(jobs...)
 	if err != nil {
 		return
@@ -167,6 +173,9 @@ func (e *Server) AddJob(jobs ...*xcron.Job) (keys []string, err error) {
 }
 
 func (e *Server) RemoveJob(key ...string) {
+	if e.server == nil {
+		return
+	}
 	e.server.RemoveJob(key...)
 }
 
@@ -179,5 +188,5 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engi
 }
 
 func (e *Server) Handle(path string, obj interface{}) {
-	e.opts.router.Handle(path, obj, engine.MethodGet)
+	e.opts.router.Handle(path, obj, engine.MethodPost)
 }

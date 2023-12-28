@@ -211,7 +211,8 @@ func ResolveParams(input any) (params xtypes.XMap, err error) {
 	if input == nil {
 		return xtypes.XMap{}, nil
 	}
-	if reflect.ValueOf(input).IsNil() {
+	rv := reflect.ValueOf(input)
+	if rv.Kind() == reflect.Pointer && rv.IsNil() {
 		return xtypes.XMap{}, nil
 	}
 

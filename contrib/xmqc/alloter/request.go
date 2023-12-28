@@ -5,6 +5,7 @@ import (
 	sctx "context"
 	"encoding/json"
 	"io"
+	"net/url"
 	"strconv"
 
 	"github.com/zhiyunliu/glue/constants"
@@ -22,6 +23,7 @@ type Request struct {
 	task *xmqc.Task
 	queue.IMQCMessage
 	method string
+	url    *url.URL
 	params map[string]string
 	header map[string]string
 	body   cbody //map[string]string
@@ -32,7 +34,7 @@ func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request, err error) {
 	r = &Request{
 		IMQCMessage: m,
 		task:        task,
-		method:      engine.MethodGet,
+		method:      engine.MethodPost,
 		params:      make(map[string]string),
 	}
 
@@ -43,10 +45,7 @@ func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request, err error) {
 	r.body = message.Body()
 	r.ctx = sctx.Background()
 	r.header["retry_count"] = strconv.FormatInt(m.RetryCount(), 10)
-
-	if r.header[constants.ContentTypeName] == "" {
-		r.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
-	}
+	r.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
 
 	return r, nil
 }
@@ -59,6 +58,14 @@ func (m *Request) GetName() string {
 // GetService 服务名
 func (m *Request) GetService() string {
 	return m.task.GetService()
+}
+
+// GetService 服务名()
+func (m *Request) GetURL() *url.URL {
+	if m.url == nil {
+		m.url, _ = url.Parse(m.task.GetService())
+	}
+	return m.url
 }
 
 // GetMethod 方法名

@@ -143,6 +143,9 @@ func (e *Server) Start(ctx context.Context) (err error) {
 
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
+	if e.opts.srvCfg.Config.Status == engine.StatusStop {
+		return nil
+	}
 	e.started = false
 	err := e.srv.Shutdown(ctx)
 	if err != nil {

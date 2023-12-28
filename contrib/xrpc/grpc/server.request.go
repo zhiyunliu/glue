@@ -6,6 +6,7 @@ import (
 	sctx "context"
 	"encoding/json"
 	"io"
+	"net/url"
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
@@ -20,6 +21,7 @@ var _ alloter.IRequest = (*serverRequest)(nil)
 type serverRequest struct {
 	ctx    sctx.Context
 	rpcReq *grpcproto.Request
+	url    *url.URL
 	method string
 	params map[string]string
 	header map[string]string
@@ -50,9 +52,17 @@ func (m *serverRequest) GetName() string {
 	return m.rpcReq.Service
 }
 
-// GetService 服务名
+// GetService 服务名()
 func (m *serverRequest) GetService() string {
 	return m.rpcReq.Service
+}
+
+// GetService 服务名()
+func (m *serverRequest) GetURL() *url.URL {
+	if m.url == nil {
+		m.url, _ = url.Parse(m.rpcReq.Service)
+	}
+	return m.url
 }
 
 // GetMethod 方法名

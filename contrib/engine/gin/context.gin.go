@@ -151,6 +151,10 @@ type ginRequest struct {
 	closed  bool
 }
 
+func (r *ginRequest) ContentType() string {
+	return r.gctx.ContentType()
+}
+
 func (r *ginRequest) GetMethod() string {
 	return r.gctx.Request.Method
 }
@@ -232,9 +236,6 @@ func (p *gpath) GetURL() *url.URL {
 }
 
 func (p *gpath) FullPath() string {
-	if p.gctx == nil {
-		fmt.Println("xxx")
-	}
 	return p.gctx.FullPath()
 }
 func (p *gpath) Params() xtypes.SMap {
