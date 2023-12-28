@@ -83,7 +83,7 @@ func TestMssqlContext_AnalyzeTPL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := ctx.AnalyzeTPL(tt.args.template, tt.args.input, tt.args.ph)
+			got, got1, _ := ctx.AnalyzeTPL(tt.args.template, tt.args.input, tt.args.ph)
 			if got != tt.want {
 				t.Errorf("MssqlContext.AnalyzeTPL() got = %v, want %v", got, tt.want)
 			}
