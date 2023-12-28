@@ -8,8 +8,23 @@ import (
 type RequestOption func(*Options)
 
 type Options struct {
-	Header       xtypes.SMap // map[string]string
+	Header       xtypes.SMap
+	Method       string
+	Query        string
 	WaitForReady bool
+}
+
+func WithQuery(query string) RequestOption {
+	return func(o *Options) {
+		o.Query = query
+	}
+}
+func WithMethod(method string) RequestOption {
+	return func(o *Options) {
+		if method != "" {
+			o.Method = method
+		}
+	}
 }
 
 func WithHeaders(header map[string]string) RequestOption {

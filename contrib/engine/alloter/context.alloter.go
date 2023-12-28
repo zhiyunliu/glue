@@ -92,10 +92,9 @@ func (ctx *AlloterContext) Bind(obj interface{}) error {
 func (ctx *AlloterContext) Request() vctx.Request {
 	if ctx.areq.closed {
 		ctx.areq.closed = false
-		reqUrl, _ := url.Parse(ctx.Actx.Request.GetService())
 		ctx.areq.actx = ctx.Actx
 		ctx.areq.vctx = ctx
-		ctx.areq.reqUrl = reqUrl
+		ctx.areq.reqUrl = ctx.Actx.Request.GetURL()
 	}
 	return ctx.areq
 }
@@ -148,6 +147,10 @@ type alloterRequest struct {
 	aquery *aquery
 	abody  *abody
 	closed bool
+}
+
+func (r *alloterRequest) ContentType() string {
+	return r.actx.ContentType()
 }
 
 func (r *alloterRequest) GetMethod() string {
@@ -228,8 +231,9 @@ func (p *apath) GetURL() *url.URL {
 }
 
 func (p *apath) FullPath() string {
-	return p.actx.Request.GetService()
+	return p.actx.FullPath()
 }
+
 func (p *apath) Params() xtypes.SMap {
 	if p.params == nil {
 		p.params = xtypes.SMap{}

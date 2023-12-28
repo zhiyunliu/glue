@@ -137,6 +137,9 @@ func (e *Server) Attempt() bool {
 
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
+	if e.server == nil {
+		return nil
+	}
 	err := e.server.Stop(ctx)
 	if err != nil {
 		log.Errorf("MQC Server [%s] stop error: %s", e.name, err.Error())
@@ -166,7 +169,7 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engi
 }
 
 func (e *Server) Handle(queue string, obj interface{}) {
-	e.opts.router.Handle(xmqc.GetService(queue), obj, engine.MethodGet)
+	e.opts.router.Handle(xmqc.GetService(queue), obj, engine.MethodPost)
 }
 
 func (e *Server) serverPath() string {

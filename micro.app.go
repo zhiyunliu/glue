@@ -5,8 +5,8 @@ import (
 
 	"github.com/zhiyunliu/glue/cli"
 	"github.com/zhiyunliu/glue/compatible"
-	_ "github.com/zhiyunliu/glue/encoding/json"
-	_ "github.com/zhiyunliu/glue/encoding/yaml"
+	_ "github.com/zhiyunliu/glue/encoding/binding"
+	_ "github.com/zhiyunliu/glue/encoding/text"
 
 	_ "github.com/zhiyunliu/glue/contrib/engine/alloter"
 	_ "github.com/zhiyunliu/glue/contrib/engine/gin"

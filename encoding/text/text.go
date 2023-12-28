@@ -11,10 +11,19 @@ const Name = "text"
 
 func init() {
 	encoding.RegisterCodec(codec{})
+	encoding.RegisterCodec(plain{})
+
 }
 
-// codec is a Codec implementation with json.
 type codec struct{}
+
+type plain struct {
+	codec
+}
+
+func (plain) Name() string {
+	return "plain"
+}
 
 func (codec) Marshal(v interface{}) ([]byte, error) {
 	str, _ := v.(string)

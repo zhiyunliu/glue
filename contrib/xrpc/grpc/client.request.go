@@ -41,7 +41,7 @@ func (r *Request) Swap(ctx context.Context, service string, opts ...xrpc.Request
 	//复制请求头
 	hd := ctx.Request().Header()
 
-	opts = append(opts, xrpc.WithHeaders(hd.Values()))
+	opts = append(opts, xrpc.WithHeaders(hd.Values()), xrpc.WithMethod(ctx.Request().GetMethod()), xrpc.WithQuery(ctx.Request().Query().String()))
 
 	// 发送请求
 	return r.Request(ctx.Context(), service, input, opts...)

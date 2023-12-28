@@ -49,22 +49,11 @@ func NewClient(registrar registry.Registrar, setting *clientConfig, reqPath *url
 	return client, nil
 }
 
-// //Request 发送Request请求
-// func (c *Client) Request(ctx context.Context, input interface{}, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
-// 	//处理可选参数
-// 	buff, err := json.Marshal(input)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	opts = append(opts, xrpc.WithContentType(constants.ContentTypeApplicationJSON))
-// 	return c.RequestByString(ctx, buff, opts...)
-// }
-
 // RequestByString 发送Request请求
 func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
 	//处理可选参数
 	o := &xrpc.Options{
+		Method: http.MethodPost,
 		Header: make(map[string]string),
 	}
 	for _, opt := range opts {
@@ -122,10 +111,14 @@ func (c *Client) connect() (err error) {
 }
 
 func (c *Client) clientRequest(ctx context.Context, o *xrpc.Options, input []byte) (response *grpcproto.Response, err error) {
+	servicePath := c.reqPath.Path
+	if len(o.Query) > 0 {
+		servicePath = fmt.Sprintf("%s?%s", servicePath, o.Query)
+	}
 	return c.client.Process(ctx,
 		&grpcproto.Request{
-			Method:  http.MethodPost, //借用http的method
-			Service: c.reqPath.Path,
+			Method:  o.Method, //借用http的method
+			Service: servicePath,
 			Header:  o.Header,
 			Body:    input,
 		},

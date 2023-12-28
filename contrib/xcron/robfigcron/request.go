@@ -5,6 +5,7 @@ import (
 	sctx "context"
 	"encoding/json"
 	"io"
+	"net/url"
 	"sync"
 	"sync/atomic"
 
@@ -23,6 +24,7 @@ type Request struct {
 	ctx     sctx.Context
 	job     *xcron.Job
 	method  string
+	url     *url.URL
 	params  xtypes.SMap
 	header  xtypes.SMap
 	body    cbody //map[string]string
@@ -35,7 +37,7 @@ type Request struct {
 func newRequest(job *xcron.Job) (r *Request) {
 	r = &Request{
 		job:    job,
-		method: engine.MethodGet,
+		method: engine.MethodPost,
 		params: make(map[string]string),
 	}
 
@@ -56,6 +58,14 @@ func (m *Request) GetName() string {
 // GetService 服务名
 func (m *Request) GetService() string {
 	return m.job.GetService()
+}
+
+// GetURL 服务URL
+func (m *Request) GetURL() *url.URL {
+	if m.url == nil {
+		m.url, _ = url.Parse(m.job.GetService())
+	}
+	return m.url
 }
 
 // GetMethod 方法名
@@ -117,7 +127,6 @@ func (m *Request) reset() {
 
 	atomic.StoreUint32(&m.canProc, 1)
 	m.session = session.Create()
-	//m.ctx = sctx.Background()
 	m.header = make(map[string]string)
 	m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
 	m.header[constants.HeaderRequestId] = m.session

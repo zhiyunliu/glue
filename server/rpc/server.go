@@ -129,6 +129,9 @@ func (e *Server) Attempt() bool {
 
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
+	if e.server == nil {
+		return nil
+	}
 	err := e.server.Stop(ctx)
 	if err != nil {
 		log.Errorf("RPC Server [%s] stop error: %s", e.name, err.Error())
@@ -183,6 +186,6 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engi
 	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Handle(path string, obj interface{}) {
-	e.opts.router.Handle(path, obj, engine.MethodPost)
+func (e *Server) Handle(path string, obj interface{}, methods ...engine.Method) {
+	e.opts.router.Handle(path, obj, methods...)
 }
