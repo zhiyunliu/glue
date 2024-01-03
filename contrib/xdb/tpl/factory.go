@@ -13,31 +13,48 @@ var (
 )
 
 const (
-	TotalPattern = `[@]\{\w*[\.]?\w+\}|[&]\{\w*[\.]?\w+\}|[\|]\{\w*[\.]?\w+\}`
+	TotalPattern = `[@]\{\w*[\.]?\w+\}|[&]\{\w*[\.]?\w+\}|[&]\{\w*[\.]?\w+\slike\s?\}|[&]\{\w*[\.]?\w+\s>\s?\}|[&]\{\w*[\.]?\w+\s>=\s?\}|[&]\{\w*[\.]?\w+\s<\s?\}|[&]\{\w*[\.]?\w+\s<=\s?\}|[\|]\{\w*[\.]?\w+\}`
 	// ParamPattern   = `[@]\{\w*[\.]?\w+\}`
 	// AndPattern     = `[&]\{\w*[\.]?\w+\}`
 	// OrPattern      = `[\|]\{\w*[\.]?\w+\}`
 	ReplacePattern = `\$\{\w*[\.]?\w+\}`
+
+	SymbolAt  = "@"
+	SymbolAnd = "&"
+	SymbolOr  = "|"
 )
 
-// 自定义匹配模式
-var customPattern string
-
-type SymbolCallback func(DBParam, string, *ReplaceItem) (string, xdb.MissParamError)
+// 符号回调函数
+type SymbolCallback func(DBParam, string, *ReplaceItem) (string, xdb.MissError)
 type SymbolMap interface {
 	GetPattern() string
-	Store(name string, callback SymbolCallback)
-	Register(symbol Symbol) error
+	//Store(name string, callback SymbolCallback)
+	Register(Symbol) error
+	Operator(Operator) error
+	LoadOperator(oper string) (OperatorCallback, bool)
 	LoadOrStore(name string, callback SymbolCallback) (loaded bool)
 	Delete(name string)
 	Load(name string) (SymbolCallback, bool)
 	Clone() SymbolMap
 }
 
+type OperatorCallback func(string, string, string) string
+
+type OperatorMap interface {
+	LoadOrStore(name string, callback OperatorCallback) (loaded bool)
+	Load(name string) (OperatorCallback, bool)
+	Clone() OperatorMap
+}
+
+type Operator interface {
+	Name() string
+	Callback(string, string, string) string
+}
+
 type Symbol interface {
 	Name() string
 	GetPattern() string
-	Callback(DBParam, string, *ReplaceItem) (string, xdb.MissParamError)
+	Callback(DBParam, string, *ReplaceItem) (string, xdb.MissError)
 }
 
 type Placeholder interface {
@@ -54,6 +71,7 @@ type SQLTemplate interface {
 	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any, err error)
 	AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem, err error)
 	RegisterSymbol(symbol Symbol) error
+	RegisterOperator(Operator) error
 }
 
 func init() {
@@ -81,4 +99,13 @@ func RegisterSymbol(dbProto string, symbol Symbol) error {
 		return err
 	}
 	return tmpl.RegisterSymbol(symbol)
+}
+
+// RegisterSymbol 给数据库注册语法解析
+func RegisterOperator(dbProto string, oper Operator) error {
+	tmpl, err := GetDBTemplate(dbProto)
+	if err != nil {
+		return err
+	}
+	return tmpl.RegisterOperator(oper)
 }

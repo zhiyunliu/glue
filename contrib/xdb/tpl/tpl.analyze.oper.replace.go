@@ -14,7 +14,7 @@ func handleRelaceSymbols(tpl string, input map[string]interface{}, ph Placeholde
 		Placeholder: ph,
 	}
 	hasReplace := false
-	var outerrs []xdb.MissParamError
+	var outerrs []xdb.MissError
 	sql := word.ReplaceAllStringFunc(tpl, func(s string) string {
 		hasReplace = true
 		fullKey := s[2 : len(s)-1]
@@ -30,8 +30,8 @@ func handleRelaceSymbols(tpl string, input map[string]interface{}, ph Placeholde
 	return sql, hasReplace, nil
 }
 
-func replaceSymbols(input DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissParamError) {
-	propName := GetPropName(fullKey)
+func replaceSymbols(input DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissError) {
+	_, propName, _ := GetPropName(fullKey)
 	value, err := input.GetVal(propName)
 	if err != nil {
 		return "", err

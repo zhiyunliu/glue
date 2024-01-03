@@ -2,7 +2,6 @@ package tpl
 
 import (
 	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/zhiyunliu/glue/xdb"
@@ -60,7 +59,7 @@ func DefaultAnalyze(symbols SymbolMap, tpl string, input map[string]interface{},
 		Placeholder: placeholder,
 	}
 
-	var outerrs []xdb.MissParamError
+	var outerrs []xdb.MissError
 
 	//@变量, 将数据放入params中
 	sql := word.ReplaceAllStringFunc(tpl, func(s string) string {
@@ -92,14 +91,6 @@ func DefaultAnalyze(symbols SymbolMap, tpl string, input map[string]interface{},
 	}
 
 	return sql, item, nil
-}
-
-func GetPropName(fullKey string) (propName string) {
-	propName = fullKey
-	if strings.Index(fullKey, ".") > 0 {
-		propName = strings.Split(fullKey, ".")[1]
-	}
-	return propName
 }
 
 // 获取模式匹配的正则表达式

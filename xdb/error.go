@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+const (
+	MissTypeParam = "param"
+	MissTypeOper  = "oper"
+)
+
 type DbError interface {
 	Error() string
 	Inner() error
@@ -13,14 +18,14 @@ type DbError interface {
 	Args() []interface{}
 }
 
-type MissParamError interface {
+type MissError interface {
 	Error() string
-	ParamName() string
+	Type() string
+	Name() string
 }
 
-type MissParamsError interface {
+type MissListError interface {
 	Error() string
-	ParamList() []string
 }
 
 type PanicError interface {
@@ -58,35 +63,79 @@ func (e xMissParamError) Error() string {
 	return fmt.Sprintf("SQL缺少参数:[%s]", e.paramName)
 }
 
-func (e xMissParamError) ParamName() string {
+func (e xMissParamError) Name() string {
 	return e.paramName
 }
 
-func NewMissParamError(name string) MissParamError {
+func (e xMissParamError) Type() string {
+	return MissTypeParam
+}
+
+func NewMissParamError(name string) MissError {
 	return &xMissParamError{
 		paramName: name,
 	}
 }
 
+type xMissOperError struct {
+	operName string
+}
+
+func (e xMissOperError) Error() string {
+	return fmt.Sprintf("缺少Operator定义:[%s]", e.operName)
+}
+
+func (e xMissOperError) Name() string {
+	return e.operName
+}
+
+func (e xMissOperError) Type() string {
+	return MissTypeOper
+}
+
+func NewMissOperError(name string) MissError {
+	return &xMissOperError{
+		operName: name,
+	}
+}
+
 type xMissParamsError struct {
 	paramList []string
+	operList  []string
+	otherList []string
 }
 
 func (e xMissParamsError) Error() string {
-	return fmt.Sprintf("SQL缺少参数:[%s]", strings.Join(e.paramList, ","))
+	msgList := []string{}
+	if len(e.paramList) > 0 {
+		msgList = append(msgList, fmt.Sprintf("SQL缺少参数:[%s]", strings.Join(e.paramList, ",")))
+	}
+	if len(e.operList) > 0 {
+		msgList = append(msgList, fmt.Sprintf("缺少Operator定义:[%s]", strings.Join(e.operList, ",")))
+	}
+	if len(e.otherList) > 0 {
+		msgList = append(msgList, fmt.Sprintf("缺少类型:[%s]", strings.Join(e.otherList, ",")))
+	}
+	return strings.Join(msgList, "\r\n")
 }
 
-func (e xMissParamsError) ParamList() []string {
-	return e.paramList
-}
-
-func NewMissParamsError(errList ...MissParamError) MissParamsError {
-	paramList := make([]string, len(errList))
+func NewMissParamsError(errList ...MissError) MissListError {
+	paramList := []string{}
+	operList := []string{}
+	otherList := []string{}
 	for i := range errList {
-		paramList[i] = errList[i].ParamName()
+		if strings.EqualFold(errList[i].Type(), MissTypeParam) {
+			paramList = append(paramList, errList[i].Name())
+		} else if strings.EqualFold(errList[i].Type(), MissTypeOper) {
+			operList = append(operList, errList[i].Name())
+		} else {
+			otherList = append(otherList, fmt.Sprintf("%s:%s", errList[i].Type(), errList[i].Name()))
+		}
 	}
 	return &xMissParamsError{
 		paramList: paramList,
+		operList:  operList,
+		otherList: otherList,
 	}
 }
 

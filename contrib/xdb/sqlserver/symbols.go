@@ -1,17 +1,15 @@
 package sqlserver
 
 import (
-	"fmt"
-
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
-func newMssqlSymbols() tpl.SymbolMap {
+func newMssqlSymbols(operMap tpl.OperatorMap) tpl.SymbolMap {
 
-	symbols := tpl.NewSymbolMap()
-	symbols.Store("@", func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
-		propName := tpl.GetPropName(fullKey)
+	symbols := tpl.NewSymbolMap(operMap)
+	symbols.LoadOrStore(tpl.SymbolAt, func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
+		_, propName, _ := tpl.GetPropName(fullKey)
 		if ph, ok := item.NameCache[propName]; ok {
 			return ph, nil
 		}
@@ -26,42 +24,50 @@ func newMssqlSymbols() tpl.SymbolMap {
 		return argName, nil
 	})
 
-	symbols.Store("&", func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
+	symbols.LoadOrStore(tpl.SymbolAnd, func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
 		item.HasAndOper = true
 
-		propName := tpl.GetPropName(fullKey)
+		fullField, propName, oper := tpl.GetPropName(fullKey)
+		opercall, ok := operMap.Load(oper)
+		if !ok {
+			return "", xdb.NewMissOperError(oper)
+		}
+
 		if ph, ok := item.NameCache[propName]; ok {
-			return fmt.Sprintf("and %s=%s ", fullKey, ph), nil
+			return opercall(tpl.SymbolAnd, fullField, ph), nil
+			//return fmt.Sprintf("and %s=%s ", fullKey, ph), nil
 		}
-		argName, value, err := input.Get(propName, item.Placeholder)
-		if err != nil {
-			return "", err
-		}
+		argName, value, _ := input.Get(propName, item.Placeholder)
 		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
 			item.NameCache[propName] = argName
-			return fmt.Sprintf("and %s=%s ", fullKey, argName), nil
+			return opercall(tpl.SymbolAnd, fullField, argName), nil
+			//return fmt.Sprintf("and %s=%s ", fullKey, argName), nil
 		}
 		return "", nil
 	})
 
-	symbols.Store("|", func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
+	symbols.LoadOrStore(tpl.SymbolOr, func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
 		item.HasOrOper = true
 
-		propName := tpl.GetPropName(fullKey)
+		fullField, propName, oper := tpl.GetPropName(fullKey)
+		opercall, ok := operMap.Load(oper)
+		if !ok {
+			return "", xdb.NewMissOperError(oper)
+		}
 		if ph, ok := item.NameCache[propName]; ok {
-			return fmt.Sprintf("or %s=%s ", fullKey, ph), nil
+			return opercall(tpl.SymbolOr, fullField, ph), nil
+			//return fmt.Sprintf("or %s=%s ", fullKey, ph), nil
 		}
-		argName, value, err := input.Get(propName, item.Placeholder)
-		if err != nil {
-			return argName, err
-		}
+		argName, value, _ := input.Get(propName, item.Placeholder)
 		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
 			item.NameCache[propName] = argName
-			return fmt.Sprintf("or %s=%s ", fullKey, argName), nil
+
+			return opercall(tpl.SymbolOr, fullField, argName), nil
+			//return fmt.Sprintf("or %s=%s ", fullKey, argName), nil
 		}
 		return "", nil
 	})

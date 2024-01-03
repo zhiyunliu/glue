@@ -62,7 +62,7 @@ func (r *registrarResolver) watcher() {
 		}
 
 		address, err = r.buildAddress(instances)
-		if err != nil || len(address) == 0 {
+		if err != nil {
 			continue
 		}
 		r.clientConn.UpdateState(resolver.State{Addresses: address})

@@ -40,8 +40,8 @@ func (item cacheItem) ClonePlaceHolder() Placeholder {
 func (item cacheItem) build(input DBParam) (execSql string, values []interface{}, err error) {
 	values = make([]interface{}, len(item.names))
 	ph := item.ClonePlaceHolder()
-	var outerrs []xdb.MissParamError
-	var ierr xdb.MissParamError
+	var outerrs []xdb.MissError
+	var ierr xdb.MissError
 	for i := range item.names {
 		_, values[i], ierr = input.Get(item.names[i], ph)
 		if ierr != nil {

@@ -19,7 +19,7 @@ func TestMssqlContext_AnalyzeTPL(t *testing.T) {
 	var ctx *MssqlContext = &MssqlContext{
 		name:    "mssql",
 		prefix:  "p_",
-		symbols: newMssqlSymbols(),
+		symbols: newMssqlSymbols(tpl.DefaultOperator),
 	}
 	var ph tpl.Placeholder = ctx.Placeholder()
 	tests := []struct {
@@ -80,15 +80,72 @@ func TestMssqlContext_AnalyzeTPL(t *testing.T) {
 				HasAndOper:  true,
 				HasOrOper:   true,
 			}},
+
+		{name: "1a.", args: args{template: `select * from a where 1=1 |{like a.out_city_no}`, input: map[string]interface{}{"out_city_no": &tint}, ph: ph},
+			want: "select * from a where 1=1 or a.out_city_no like @p_out_city_no ",
+			want1: &tpl.ReplaceItem{Names: []string{"out_city_no"},
+				Values:      []any{sql.NamedArg{Name: "p_out_city_no", Value: &tint}},
+				NameCache:   map[string]string{"out_city_no": "@p_out_city_no"},
+				Placeholder: ph,
+				HasAndOper:  true,
+				HasOrOper:   true,
+			}},
+		{name: "1b.", args: args{template: `select * from a where 1=1 &{like a.out_city_no}`, input: map[string]interface{}{"out_city_no": &tint}, ph: ph},
+			want: "select * from a where 1=1 and a.out_city_no like @p_out_city_no ",
+			want1: &tpl.ReplaceItem{Names: []string{"out_city_no"},
+				Values:      []any{sql.NamedArg{Name: "p_out_city_no", Value: &tint}},
+				NameCache:   map[string]string{"out_city_no": "@p_out_city_no"},
+				Placeholder: ph,
+				HasAndOper:  true,
+				HasOrOper:   true,
+			}},
+
+		{name: "1c.", args: args{template: `select * from a where 1=1 |{like %a.out_city_no}`, input: map[string]interface{}{"out_city_no": &tint}, ph: ph},
+			want: "select * from a where 1=1 or a.out_city_no like '%'+@p_out_city_no ",
+			want1: &tpl.ReplaceItem{Names: []string{"out_city_no"},
+				Values:      []any{sql.NamedArg{Name: "p_out_city_no", Value: &tint}},
+				NameCache:   map[string]string{"out_city_no": "@p_out_city_no"},
+				Placeholder: ph,
+				HasAndOper:  true,
+				HasOrOper:   true,
+			}},
+		{name: "1d.", args: args{template: `select * from a where 1=1 &{like %a.out_city_no}`, input: map[string]interface{}{"out_city_no": &tint}, ph: ph},
+			want: "select * from a where 1=1 and a.out_city_no like '%'+@p_out_city_no ",
+			want1: &tpl.ReplaceItem{Names: []string{"out_city_no"},
+				Values:      []any{sql.NamedArg{Name: "p_out_city_no", Value: &tint}},
+				NameCache:   map[string]string{"out_city_no": "@p_out_city_no"},
+				Placeholder: ph,
+				HasAndOper:  true,
+				HasOrOper:   true,
+			}},
+
+		{name: "1e.", args: args{template: `select * from a where 1=1 |{like %a.out_city_no%}`, input: map[string]interface{}{"out_city_no": &tint}, ph: ph},
+			want: "select * from a where 1=1 or a.out_city_no like '%'+@p_out_city_no+'%' ",
+			want1: &tpl.ReplaceItem{Names: []string{"out_city_no"},
+				Values:      []any{sql.NamedArg{Name: "p_out_city_no", Value: &tint}},
+				NameCache:   map[string]string{"out_city_no": "@p_out_city_no"},
+				Placeholder: ph,
+				HasAndOper:  true,
+				HasOrOper:   true,
+			}},
+		{name: "1f.", args: args{template: `select * from a where 1=1 &{like %a.out_city_no%}`, input: map[string]interface{}{"out_city_no": &tint}, ph: ph},
+			want: "select * from a where 1=1 and a.out_city_no like '%'+@p_out_city_no+'%' ",
+			want1: &tpl.ReplaceItem{Names: []string{"out_city_no"},
+				Values:      []any{sql.NamedArg{Name: "p_out_city_no", Value: &tint}},
+				NameCache:   map[string]string{"out_city_no": "@p_out_city_no"},
+				Placeholder: ph,
+				HasAndOper:  true,
+				HasOrOper:   true,
+			}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, got1, _ := ctx.AnalyzeTPL(tt.args.template, tt.args.input, tt.args.ph)
 			if got != tt.want {
-				t.Errorf("MssqlContext.AnalyzeTPL() got = %v, want %v", got, tt.want)
+				t.Errorf("MssqlContext.AnalyzeTPL() got[%v], want[%v]", got, tt.want)
 			}
 			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("MssqlContext.AnalyzeTPL() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("MssqlContext.AnalyzeTPL() got1[%v], want[%v]", got1, tt.want1)
 			}
 		})
 	}
