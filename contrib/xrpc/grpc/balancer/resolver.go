@@ -57,12 +57,11 @@ func (r *registrarResolver) watcher() {
 		instances, err := r.registrar.GetService(r.ctx, r.serviceName)
 		if err != nil {
 			log.Errorf("grpc:registrar.GetService=%s,error:%+v", r.serviceName, err)
-
 			continue
 		}
 
 		address, err = r.buildAddress(instances)
-		if err != nil || len(address) == 0 {
+		if err != nil {
 			continue
 		}
 		r.clientConn.UpdateState(resolver.State{Addresses: address})
