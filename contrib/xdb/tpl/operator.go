@@ -20,39 +20,39 @@ var DefaultOperator OperatorMap
 func init() {
 	DefaultOperator = NewOperatorMap()
 	DefaultOperator.LoadOrStore("=", func(symbol, fullkey, argName string) string {
-		return fmt.Sprintf("%s %s=%s ", getConcat(symbol), fullkey, argName)
+		return fmt.Sprintf("%s %s=%s", getConcat(symbol), fullkey, argName)
 	})
 
 	DefaultOperator.LoadOrStore(">", func(symbol, fullkey, argName string) string {
-		return fmt.Sprintf("%s %s>%s ", getConcat(symbol), fullkey, argName)
+		return fmt.Sprintf("%s %s>%s", getConcat(symbol), fullkey, argName)
 	})
 
 	DefaultOperator.LoadOrStore(">=", func(symbol, fullkey, argName string) string {
-		return fmt.Sprintf("%s %s>=%s ", getConcat(symbol), fullkey, argName)
+		return fmt.Sprintf("%s %s>=%s", getConcat(symbol), fullkey, argName)
 	})
 
 	DefaultOperator.LoadOrStore("<", func(symbol, fullkey, argName string) string {
-		return fmt.Sprintf("%s %s<%s ", getConcat(symbol), fullkey, argName)
+		return fmt.Sprintf("%s %s<%s", getConcat(symbol), fullkey, argName)
 	})
 
 	DefaultOperator.LoadOrStore("<=", func(symbol, fullkey, argName string) string {
-		return fmt.Sprintf("%s %s<=%s ", getConcat(symbol), fullkey, argName)
+		return fmt.Sprintf("%s %s<=%s", getConcat(symbol), fullkey, argName)
 	})
 
 	DefaultOperator.LoadOrStore("like", func(symbol, fullkey, argName string) string {
-		return fmt.Sprintf("%s %s like %s ", getConcat(symbol), fullkey, argName)
+		return fmt.Sprintf("%s %s like %s", getConcat(symbol), fullkey, argName)
 	})
 
 	DefaultOperator.LoadOrStore("%like", func(symbol, fullkey, argName string) string {
-		return fmt.Sprintf("%s %s like '%%'+%s ", getConcat(symbol), fullkey, argName)
+		return fmt.Sprintf("%s %s like '%%'+%s", getConcat(symbol), fullkey, argName)
 	})
 
 	DefaultOperator.LoadOrStore("like%", func(symbol, fullkey, argName string) string {
-		return fmt.Sprintf("%s %s like %s+'%%' ", getConcat(symbol), fullkey, argName)
+		return fmt.Sprintf("%s %s like %s+'%%'", getConcat(symbol), fullkey, argName)
 	})
 
 	DefaultOperator.LoadOrStore("%like%", func(symbol, fullkey, argName string) string {
-		return fmt.Sprintf("%s %s like '%%'+%s+'%%' ", getConcat(symbol), fullkey, argName)
+		return fmt.Sprintf("%s %s like '%%'+%s+'%%'", getConcat(symbol), fullkey, argName)
 	})
 
 }

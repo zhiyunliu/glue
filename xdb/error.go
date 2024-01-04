@@ -119,7 +119,7 @@ func (e xMissParamsError) Error() string {
 	return strings.Join(msgList, "\r\n")
 }
 
-func NewMissParamsError(errList ...MissError) MissListError {
+func NewMissListError(errList ...MissError) MissListError {
 	paramList := []string{}
 	operList := []string{}
 	otherList := []string{}

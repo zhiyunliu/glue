@@ -25,7 +25,7 @@ func handleRelaceSymbols(tpl string, input map[string]interface{}, ph Placeholde
 		return tmpv
 	})
 	if len(outerrs) > 0 {
-		return sql, hasReplace, xdb.NewMissParamsError(outerrs...)
+		return sql, hasReplace, xdb.NewMissListError(outerrs...)
 	}
 	return sql, hasReplace, nil
 }

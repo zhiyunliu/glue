@@ -49,7 +49,7 @@ func (item cacheItem) build(input DBParam) (execSql string, values []interface{}
 		}
 	}
 	if len(outerrs) > 0 {
-		return "", values, xdb.NewMissParamsError(outerrs...)
+		return "", values, xdb.NewMissListError(outerrs...)
 	}
 
 	rspitem := &ReplaceItem{

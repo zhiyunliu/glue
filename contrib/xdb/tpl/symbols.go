@@ -177,29 +177,68 @@ func DefaultGetPropName(fullKey string) (fullField, propName, oper string) {
 	fullField = propName
 	idx := strings.Index(propName, " ")
 	if idx < 0 {
+		// <tbl.field,<=tbl.field,>tbl.field,>=tbl.field
+		switch {
+		case strings.HasPrefix(fullField, "<="): //<=tbl.field,<=field
+			propName = strings.TrimPrefix(fullField, "<=")
+			fullField = propName
+			oper = "<="
+		case strings.HasPrefix(fullField, "<"):
+			propName = strings.TrimPrefix(fullField, "<")
+			fullField = propName
+			oper = "<"
+		case strings.HasPrefix(fullField, ">="):
+			propName = strings.TrimPrefix(fullField, ">=")
+			fullField = propName
+			oper = ">="
+		case strings.HasPrefix(fullField, ">"):
+			propName = strings.TrimPrefix(fullField, ">")
+			fullField = propName
+			oper = ">"
+		default:
+			oper = "="
+		}
+
 		if strings.Index(propName, ".") > 0 {
 			propName = strings.Split(propName, ".")[1]
 		}
-		oper = "="
 		return fullField, propName, oper
 	}
 
 	parties := strings.Split(propName, " ")
 
-	oper = parties[0]
-	filed := parties[len(parties)-1]
+	tmpfield := parties[len(parties)-1]
+	fullField = strings.Trim(tmpfield, "%")
+	propName, oper = procLike(tmpfield, parties[0])
 
-	if strings.HasPrefix(filed, "%") {
-		oper = "%" + oper
-	}
-	if strings.HasSuffix(filed, "%") {
-		oper = oper + "%"
-	}
-
-	propName = strings.Trim(filed, "%")
-	fullField = propName
 	if strings.Index(propName, ".") > 0 {
 		propName = strings.Split(propName, ".")[1]
 	}
 	return fullField, propName, oper
+}
+
+func procLike(filed, orgOper string) (propName, oper string) {
+	orgOper = strings.TrimSpace(orgOper)
+	filed = strings.TrimSpace(filed)
+
+	if !strings.EqualFold(orgOper, "like") {
+		oper = orgOper
+		propName = filed
+		return
+	}
+
+	var (
+		prefix string = ""
+		suffix string = ""
+	)
+
+	if strings.HasPrefix(filed, "%") {
+		prefix = "%"
+	}
+	if strings.HasSuffix(filed, "%") {
+		suffix = "%"
+	}
+	oper = prefix + orgOper + suffix
+	propName = strings.Trim(filed, "%")
+	return
 }

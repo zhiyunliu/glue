@@ -25,6 +25,16 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "d.", fullKey: "<    tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<"},
 		{name: "e.", fullKey: "<=    tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<="},
 
+		{name: "0b.", fullKey: ">tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">"},
+		{name: "0c.", fullKey: ">=tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">="},
+		{name: "0d.", fullKey: "<tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<"},
+		{name: "0e.", fullKey: "<=tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<="},
+
+		{name: "01b.", fullKey: ">field", wantFullfield: "field", wantPropName: "field", wantOper: ">"},
+		{name: "01c.", fullKey: ">=field", wantFullfield: "field", wantPropName: "field", wantOper: ">="},
+		{name: "01d.", fullKey: "<field", wantFullfield: "field", wantPropName: "field", wantOper: "<"},
+		{name: "01e.", fullKey: "<=field", wantFullfield: "field", wantPropName: "field", wantOper: "<="},
+
 		{name: "1a.", fullKey: "like   field", wantFullfield: "field", wantPropName: "field", wantOper: "like"},
 		{name: "1b.", fullKey: ">   field", wantFullfield: "field", wantPropName: "field", wantOper: ">"},
 		{name: "1c.", fullKey: ">=   field", wantFullfield: "field", wantPropName: "field", wantOper: ">="},

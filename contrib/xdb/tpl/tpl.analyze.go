@@ -87,7 +87,7 @@ func DefaultAnalyze(symbols SymbolMap, tpl string, input map[string]interface{},
 		return tmpv
 	})
 	if len(outerrs) > 0 {
-		return sql, item, xdb.NewMissParamsError(outerrs...)
+		return sql, item, xdb.NewMissListError(outerrs...)
 	}
 
 	return sql, item, nil
