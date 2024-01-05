@@ -68,3 +68,7 @@ func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph P
 func (ctx *SeqContext) RegisterSymbol(symbol Symbol) error {
 	return ctx.symbols.Register(symbol)
 }
+
+func (ctx *SeqContext) RegisterOperator(oper Operator) error {
+	return ctx.symbols.Operator(oper)
+}

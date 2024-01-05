@@ -12,7 +12,7 @@ import (
 
 type DBParam map[string]interface{}
 
-func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interface{}, err xdb.MissParamError) {
+func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interface{}, err xdb.MissError) {
 	val, err := p.GetVal(name)
 	if err != nil {
 		return
@@ -27,7 +27,7 @@ func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interfa
 	return
 }
 
-func (p DBParam) GetVal(name string) (val interface{}, err xdb.MissParamError) {
+func (p DBParam) GetVal(name string) (val interface{}, err xdb.MissError) {
 	val, ok := p[name]
 	if !ok {
 		err = xdb.NewMissParamError(name)

@@ -47,7 +47,7 @@ func New(name, prefix string) tpl.SQLTemplate {
 	return &MssqlContext{
 		name:    name,
 		prefix:  prefix,
-		symbols: newMssqlSymbols(),
+		symbols: newMssqlSymbols(tpl.DefaultOperator.Clone()),
 	}
 }
 
@@ -70,4 +70,8 @@ func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{
 
 func (ctx *MssqlContext) RegisterSymbol(symbol tpl.Symbol) error {
 	return ctx.symbols.Register(symbol)
+}
+
+func (ctx *MssqlContext) RegisterOperator(oper tpl.Operator) error {
+	return ctx.symbols.Operator(oper)
 }

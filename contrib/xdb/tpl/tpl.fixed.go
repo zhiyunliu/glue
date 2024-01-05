@@ -59,3 +59,7 @@ func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph
 func (ctx *FixedContext) RegisterSymbol(symbol Symbol) error {
 	return ctx.symbols.Register(symbol)
 }
+
+func (ctx *FixedContext) RegisterOperator(oper Operator) error {
+	return ctx.symbols.Operator(oper)
+}
