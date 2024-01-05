@@ -19,7 +19,7 @@ func TestMssqlContext_AnalyzeTPL(t *testing.T) {
 	var ctx *MssqlContext = &MssqlContext{
 		name:    "mssql",
 		prefix:  "p_",
-		symbols: newMssqlSymbols(tpl.DefaultOperator),
+		symbols: newMssqlSymbols(tpl.DefaultOperator.Clone()),
 	}
 	var ph tpl.Placeholder = ctx.Placeholder()
 	tests := []struct {
