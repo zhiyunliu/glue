@@ -32,12 +32,12 @@ type Producer struct {
 }
 
 // NewProducerByConfig 根据配置文件创建一个redis连接
-func NewProducer(config config.Config) (m *Producer, err error) {
+func NewProducer(config config.Config, opts ...queue.Option) (m *Producer, err error) {
 
 	m = &Producer{
 		closeChan: make(chan struct{}),
 	}
-	m.client, err = getRedisClient(config)
+	m.client, err = getRedisClient(config, opts...)
 	if err != nil {
 		return
 	}
@@ -52,16 +52,16 @@ func NewProducer(config config.Config) (m *Producer, err error) {
 	}
 	m.opts = copts
 
-	opts := &redisqueue.ProducerOptions{
+	pdtOpts := &redisqueue.ProducerOptions{
 		StreamMaxLength:      10000,
 		RedisClient:          m.client.UniversalClient,
 		ApproximateMaxLength: copts.ApproximateMaxLength,
 	}
 	if copts.StreamMaxLength > 0 {
-		opts.StreamMaxLength = copts.StreamMaxLength
+		pdtOpts.StreamMaxLength = copts.StreamMaxLength
 	}
 
-	m.producer, err = redisqueue.NewProducerWithOptions(opts)
+	m.producer, err = redisqueue.NewProducerWithOptions(pdtOpts)
 	go m.delayQueue()
 	return
 }
@@ -83,9 +83,9 @@ func (c *Producer) DelayPush(key string, msg queue.Message, delaySeconds int64) 
 	}
 
 	bytes, _ := json.Marshal(map[string]interface{}{
-		"queuekey": key,
-		"header":   msg.Header(),
-		"body":     msg.Body(),
+		queue.QueueKey: key,
+		"header":       msg.Header(),
+		"body":         msg.Body(),
 	})
 
 	uid := strings.ReplaceAll(uuid.New().String(), "-", "")
@@ -184,7 +184,7 @@ func (c *Producer) procDelayItem(uid string) {
 	var data xtypes.XMap = make(map[string]interface{})
 	decoder.Decode(&data)
 
-	key := data.GetString("queuekey")
+	key := data.GetString(queue.QueueKey)
 	c.Push(key, newMsgBody(data))
 
 	c.client.Del(newkey)
@@ -196,8 +196,8 @@ type producerResolver struct {
 func (s *producerResolver) Name() string {
 	return Proto
 }
-func (s *producerResolver) Resolve(setting config.Config) (queue.IMQP, error) {
-	return NewProducer(setting)
+func (s *producerResolver) Resolve(setting config.Config, opts ...queue.Option) (queue.IMQP, error) {
+	return NewProducer(setting, opts...)
 }
 func init() {
 	queue.RegisterProducer(&producerResolver{})

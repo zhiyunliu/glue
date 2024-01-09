@@ -28,7 +28,7 @@ func setDefaultOption() options {
 	return options{
 		srvCfg: &serverConfig{
 			Config: xcron.Config{
-				Proto:  "alloter",
+				Proto:  "robfigcron",
 				Status: engine.StatusStart,
 			},
 		},
@@ -61,5 +61,26 @@ func Log(opts ...log.ServerOption) Option {
 		for i := range opts {
 			opts[i](o.logOpts)
 		}
+	}
+}
+
+// WithDecodeRequestFunc 解析入参
+func WithDecodeRequestFunc(decReq engine.DecodeRequestFunc) Option {
+	return func(o *options) {
+		o.decReq = decReq
+	}
+}
+
+// WithEncodeResponseFunc 编码响应
+func WithEncodeResponseFunc(encResp engine.EncodeResponseFunc) Option {
+	return func(o *options) {
+		o.encResp = encResp
+	}
+}
+
+// WithEncodeErrorFunc 编码错误
+func WithEncodeErrorFunc(encErr engine.EncodeErrorFunc) Option {
+	return func(o *options) {
+		o.encErr = encErr
 	}
 }

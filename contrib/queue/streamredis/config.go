@@ -3,6 +3,7 @@ package streamredis
 import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
+	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/xnet"
 )
 
@@ -15,6 +16,7 @@ type ProductOptions struct {
 }
 
 type ConsumerOptions struct {
+	DeadLetterQueue   string `json:"deadletter_queue"  yaml:"deadletter_queue"`    //开启死信队列
 	Concurrency       int    `json:"concurrency" yaml:"concurrency"`               //并发的消费者数量
 	BufferSize        int    `json:"buffer_size" yaml:"buffer_size"`               //队列长度
 	BlockingTimeout   int    `json:"blocking_timeout" yaml:"blocking_timeout"`     //获取消息阻塞时间秒
@@ -23,7 +25,7 @@ type ConsumerOptions struct {
 	GroupName         string `json:"group_name" yaml:"group_name"`
 }
 
-func getRedisClient(config config.Config) (client *redis.Client, err error) {
+func getRedisClient(config config.Config, opts ...queue.Option) (client *redis.Client, err error) {
 	addr := config.Value("addr").String()
 	protoType, configName, err := xnet.Parse(addr)
 	if err != nil {
@@ -32,6 +34,11 @@ func getRedisClient(config config.Config) (client *redis.Client, err error) {
 	rootCfg := config.Root()
 	queueCfg := rootCfg.Get(protoType).Get(configName)
 
-	client, err = redis.NewByConfig(configName, queueCfg)
+	queueOpts := &queue.Options{}
+	for i := range opts {
+		opts[i](queueOpts)
+	}
+
+	client, err = redis.NewByConfig(configName, queueCfg, queueOpts.CfgData)
 	return
 }

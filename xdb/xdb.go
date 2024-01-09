@@ -27,18 +27,20 @@ type ITrans interface {
 
 // Executer 数据库操作对象集合
 type Executer interface {
-	Query(ctx context.Context, sql string, input map[string]interface{}) (data Rows, err error)
-	Multi(ctx context.Context, sql string, input map[string]interface{}) (data []Rows, err error)
-	First(ctx context.Context, sql string, input map[string]interface{}) (data Row, err error)
-	Scalar(ctx context.Context, sql string, input map[string]interface{}) (data interface{}, err error)
-	Exec(ctx context.Context, sql string, input map[string]interface{}) (r Result, err error)
-	//StoredProc(procName string, input map[string]interface{}) (r Result, err error)
+	Query(ctx context.Context, sql string, input any) (data Rows, err error)
+	Multi(ctx context.Context, sql string, input any) (data []Rows, err error)
+	First(ctx context.Context, sql string, input any) (data Row, err error)
+	Scalar(ctx context.Context, sql string, input any) (data interface{}, err error)
+	Exec(ctx context.Context, sql string, input any) (r Result, err error)
+
+	QueryAs(ctx context.Context, sql string, input any, result any) (err error)
+	FirstAs(ctx context.Context, sql string, input any, result any) (err error)
 }
 
 // dbResover 定义配置文件转换方法
 type Resover interface {
 	Name() string
-	Resolve(connName string, setting config.Config) (interface{}, error)
+	Resolve(connName string, setting config.Config, opts ...Option) (interface{}, error)
 }
 
 var dbResolvers = make(map[string]Resover)
@@ -58,12 +60,12 @@ func Deregister(name string) {
 }
 
 // newDB 根据适配器名称及参数返回配置处理器
-func newDB(connName string, setting config.Config) (interface{}, error) {
+func newDB(connName string, setting config.Config, opts ...Option) (interface{}, error) {
 	val := setting.Value("proto")
 	proto := val.String()
 	resolver, ok := dbResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("db: 未知的协议类型:%s", proto)
 	}
-	return resolver.Resolve(connName, setting)
+	return resolver.Resolve(connName, setting, opts...)
 }

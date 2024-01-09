@@ -32,13 +32,13 @@ func (s *sqliteResolver) Name() string {
 	return s.Proto
 }
 
-func (s *sqliteResolver) Resolve(connName string, setting config.Config) (interface{}, error) {
+func (s *sqliteResolver) Resolve(connName string, setting config.Config, opts ...xdb.Option) (interface{}, error) {
 	cfg := contribxdb.NewConfig(connName)
 	err := setting.Scan(cfg.Cfg)
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	gromDB, err := buildGormDB(s.Proto, cfg)
+	gromDB, err := buildGormDB(s.Proto, cfg, opts...)
 	if err != nil {
 		return nil, err
 	}

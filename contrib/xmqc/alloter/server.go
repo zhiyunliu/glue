@@ -57,7 +57,7 @@ func (e *Server) Serve(ctx context.Context) (err error) {
 	cfg := global.Config.Get(protoType).Get(configName)
 
 	protoType = cfg.Value("proto").String()
-	e.processor, err = newProcessor(ctx, e.engine, protoType, cfg)
+	e.processor, err = newProcessor(ctx, e.engine, protoType, configName, cfg)
 	if err != nil {
 		return
 	}

@@ -28,15 +28,15 @@ type ICache interface {
 	GetImpl() interface{}
 }
 
-//cacheResover 定义配置文件转换方法
+// cacheResover 定义配置文件转换方法
 type cacheResover interface {
 	Name() string
-	Resolve(setting config.Config) (ICache, error)
+	Resolve(setting config.Config, opts ...Option) (ICache, error)
 }
 
 var cacheResolvers = make(map[string]cacheResover)
 
-//RegisterCache 注册配置文件适配器
+// RegisterCache 注册配置文件适配器
 func Register(resolver cacheResover) {
 	proto := resolver.Name()
 	if _, ok := cacheResolvers[proto]; ok {
@@ -45,16 +45,16 @@ func Register(resolver cacheResover) {
 	cacheResolvers[proto] = resolver
 }
 
-//Deregister 清理配置适配器
+// Deregister 清理配置适配器
 func Deregister(name string) {
 	delete(cacheResolvers, name)
 }
 
-//newCache 根据适配器名称及参数返回配置处理器
-func newCache(proto string, setting config.Config) (ICache, error) {
+// newCache 根据适配器名称及参数返回配置处理器
+func newCache(proto string, setting config.Config, opts ...Option) (ICache, error) {
 	resolver, ok := cacheResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("cache: 未知的协议类型:%s", proto)
 	}
-	return resolver.Resolve(setting)
+	return resolver.Resolve(setting, opts...)
 }

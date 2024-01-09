@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	goredis "github.com/go-redis/redis/v7"
+	"github.com/zhiyunliu/glue/dlocker"
 	"github.com/zhiyunliu/golibs/xrandom"
 )
 
@@ -23,7 +24,7 @@ else
 end`
 	leaseCommand = `return redis.call("EXPIRE", KEYS[1], ARGV[1])`
 
-	randomLen = 16
+	//randomLen = 16
 	// 默认超时时间，防止死锁
 	tolerance int = 500 // milliseconds
 )
@@ -39,11 +40,15 @@ type Lock struct {
 }
 
 // NewLock returns a Lock.
-func newLock(client *Redis, key string) *Lock {
+func newLock(client *Redis, key string, opts *dlocker.Options) *Lock {
+	rndval := xrandom.Str(16)
+	if opts.Data != "" {
+		rndval = opts.Data
+	}
 	return &Lock{
 		client: client,
 		key:    key,
-		rndVal: xrandom.Str(randomLen),
+		rndVal: rndval,
 	}
 }
 

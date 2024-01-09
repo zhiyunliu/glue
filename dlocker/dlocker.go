@@ -15,7 +15,7 @@ type DLocker interface {
 }
 
 type DLockerBuilder interface {
-	Build(key string) DLocker
+	Build(key string, opts ...Option) DLocker
 }
 
 // cacheResover 定义配置文件转换方法

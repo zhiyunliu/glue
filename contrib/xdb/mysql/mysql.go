@@ -19,13 +19,13 @@ func (s *mysqlResolver) Name() string {
 	return Proto
 }
 
-func (s *mysqlResolver) Resolve(connName string, setting config.Config) (interface{}, error) {
+func (s *mysqlResolver) Resolve(connName string, setting config.Config, opts ...xdb.Option) (interface{}, error) {
 	cfg := contribxdb.NewConfig(connName)
 	err := setting.Scan(cfg.Cfg)
 	if err != nil {
 		return nil, fmt.Errorf("读取DB配置:%w", err)
 	}
-	return contribxdb.NewDB(Proto, cfg)
+	return contribxdb.NewDB(Proto, cfg, opts...)
 }
 func init() {
 	xdb.Register(&mysqlResolver{})

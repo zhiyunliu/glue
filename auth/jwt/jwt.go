@@ -32,6 +32,7 @@ var (
 	ErrNeedTokenProvider      = errors.Unauthorized("Token provider is missing")
 	ErrSignToken              = errors.Unauthorized("Can not sign token.Is the key correct?")
 	ErrGetKey                 = errors.Unauthorized("Can not get key while signing token")
+	ErrSignMethod             = errors.Unauthorized("error sign method.")
 )
 
 type Option func(map[string]any)
@@ -86,8 +87,14 @@ func Sign(signingMethod string, secret interface{}, data map[string]interface{},
 	}
 
 	method := jwt.GetSigningMethod(signingMethod)
+	if method == nil {
+		return "", ErrSignMethod
+	}
 	token := jwt.NewWithClaims(method, claims)
-	secretBytes, _ := getSecret(secret, claims)
+	secretBytes, err := getSecret(secret, claims)
+	if err != nil {
+		return "", err
+	}
 	return token.SignedString(secretBytes)
 }
 

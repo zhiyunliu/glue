@@ -20,11 +20,11 @@ func TestSqlserverGetSQLContext(t *testing.T) {
 	execParam := map[string]any{"p1": 1}
 
 	//1. check first
-	query, execArgs := template.GetSQLContext(execSql, execParam)
+	query, execArgs, err := template.GetSQLContext(execSql, execParam)
 	checkcase1(t, query, execArgs)
 
 	//1 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase1(t, query, execArgs)
 
 	//-------------------------------------------------------------
@@ -33,11 +33,11 @@ func TestSqlserverGetSQLContext(t *testing.T) {
 	execParam = map[string]any{"p1": 1, "p2": 2}
 
 	//2. check first
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase2(t, query, execArgs)
 
 	//2 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase2(t, query, execArgs)
 
 	//-------------------------------------------------------------
@@ -45,33 +45,33 @@ func TestSqlserverGetSQLContext(t *testing.T) {
 	execParam = map[string]any{"p1": 1}
 
 	//3. check and
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase3(t, execParam, query, execArgs)
 
 	//2 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase3(t, execParam, query, execArgs)
 
 	execParam = map[string]any{"p1": 1, "p2": 2}
 
 	//3. check and
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase3(t, execParam, query, execArgs)
 
 	//2 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase3(t, execParam, query, execArgs)
 
 	execParam = map[string]any{"p1": 1}
 
 	//3. check and
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase3(t, execParam, query, execArgs)
 
 	execParam = map[string]any{"p1": 1, "p2": 2}
 
 	//2 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase3(t, execParam, query, execArgs)
 
 	// -------------------------------------------------------------
@@ -79,33 +79,33 @@ func TestSqlserverGetSQLContext(t *testing.T) {
 	execParam = map[string]any{"p1": 1}
 
 	// 3. check and
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase4(t, execParam, query, execArgs)
 
 	// 2 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase4(t, execParam, query, execArgs)
 
 	execParam = map[string]any{"p1": 1, "p2": 2}
 
 	// 3. check and
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase4(t, execParam, query, execArgs)
 
 	// 2 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase4(t, execParam, query, execArgs)
 
 	execParam = map[string]any{"p1": 1}
 
 	// 3. check and
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase4(t, execParam, query, execArgs)
 
 	execParam = map[string]any{"p1": 1, "p2": 2}
 
 	// 2 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase4(t, execParam, query, execArgs)
 
 	// -------------------------------------------------------------
@@ -113,21 +113,21 @@ func TestSqlserverGetSQLContext(t *testing.T) {
 	execParam = map[string]any{"p1": 1, "p3": []int{1, 2}}
 
 	// 3. check and
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase5(t, execParam, query, execArgs)
 
 	// 2 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase5(t, execParam, query, execArgs)
 
 	execParam = map[string]any{"p1": 1, "p3": []string{"a", "b", "c"}}
 
 	// 3. check and
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase5(t, execParam, query, execArgs)
 
 	// 2 check from cache
-	query, execArgs = template.GetSQLContext(execSql, execParam)
+	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase5(t, execParam, query, execArgs)
 
 }

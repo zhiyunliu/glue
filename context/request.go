@@ -12,4 +12,5 @@ type Request interface {
 	Query() Query
 	Body() Body
 	GetImpl() interface{}
+	ContentType() string
 }

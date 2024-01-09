@@ -5,6 +5,8 @@ import (
 	sctx "context"
 	"encoding/json"
 	"io"
+	"net/url"
+	"time"
 
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/zhiyunliu/glue/constants"
@@ -17,15 +19,17 @@ var _ engine.Request = (*Request)(nil)
 
 // Request 处理任务请求
 type Request struct {
-	ctx     sctx.Context
-	job     *xcron.Job
-	round   *Round
-	method  string
-	params  map[string]string
-	header  map[string]string
-	body    cbody //map[string]string
-	session string
-	canProc bool
+	ctx          sctx.Context
+	job          *xcron.Job
+	round        *Round
+	url          *url.URL
+	method       string
+	params       map[string]string
+	header       map[string]string
+	body         cbody //map[string]string
+	session      string
+	canProc      bool
+	CalcNextTime time.Time
 }
 
 // NewRequest 构建任务请求
@@ -33,9 +37,9 @@ func newRequest(job *xcron.Job) (r *Request, err error) {
 
 	r = &Request{
 		job:    job,
-		method: engine.MethodGet,
+		method: engine.MethodPost,
 		params: make(map[string]string),
-		round:  &Round{},
+		round:  &Round{Job: job},
 	}
 
 	r.reset()
@@ -59,6 +63,14 @@ func (m *Request) GetName() string {
 // GetService 服务名
 func (m *Request) GetService() string {
 	return m.job.GetService()
+}
+
+// GetURL 服务URL
+func (m *Request) GetURL() *url.URL {
+	if m.url == nil {
+		m.url, _ = url.Parse(m.job.GetService())
+	}
+	return m.url
 }
 
 // GetMethod 方法名
@@ -103,9 +115,9 @@ func (m *Request) reset() {
 	m.session = session.Create()
 	//m.ctx = sctx.Background()
 	m.header = make(map[string]string)
-	if m.header[constants.ContentTypeName] == "" {
-		m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
-	}
+	m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
+	m.header[constants.HeaderRequestId] = m.session
+	m.header["x-cron-engine"] = Proto
 }
 
 func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (bool, error) {

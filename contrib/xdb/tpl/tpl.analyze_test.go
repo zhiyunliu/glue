@@ -33,7 +33,7 @@ func TestIsNil(t *testing.T) {
 }
 
 func TestDefaultAnalyze(t *testing.T) {
-	var symbols Symbols
+	var symbols SymbolMap
 
 	type args struct {
 		tpl         string
@@ -50,7 +50,7 @@ func TestDefaultAnalyze(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := DefaultAnalyze(symbols, tt.args.tpl, tt.args.input, tt.args.placeholder)
+			got, got1, _ := DefaultAnalyze(symbols, tt.args.tpl, tt.args.input, tt.args.placeholder)
 			if got != tt.want {
 				t.Errorf("DefaultAnalyze() got = %v, want %v", got, tt.want)
 			}
@@ -62,23 +62,28 @@ func TestDefaultAnalyze(t *testing.T) {
 }
 
 func TestAnalyzeTPLFromCache(t *testing.T) {
-	type args struct {
-		template SQLTemplate
-		tpl      string
-		input    map[string]interface{}
-		ph       Placeholder
-	}
+	var template *FixedContext
+	tmp := NewFixed("test", "?")
+	template = tmp.(*FixedContext)
 	tests := []struct {
 		name       string
-		args       args
+		template   SQLTemplate
+		tpl        string
+		input      map[string]interface{}
+		ph         Placeholder
 		wantSql    string
 		wantValues []any
 	}{
-		{},
+		{
+			name: "1.", template: template, tpl: "f=@{f}", input: map[string]any{"f": "1"}, ph: &fixedPlaceHolder{ctx: template}, wantSql: "f=?", wantValues: []any{"1"},
+		},
+		{
+			name: "2.", template: template, tpl: "f=${f}", input: map[string]any{"f": "1"}, ph: &fixedPlaceHolder{ctx: template}, wantSql: "f=1",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotSql, gotValues := AnalyzeTPLFromCache(tt.args.template, tt.args.tpl, tt.args.input, tt.args.ph)
+			gotSql, gotValues, _ := AnalyzeTPLFromCache(tt.template, tt.tpl, tt.input, tt.ph)
 			if gotSql != tt.wantSql {
 				t.Errorf("AnalyzeTPLFromCache() gotSql = %v, want %v", gotSql, tt.wantSql)
 			}

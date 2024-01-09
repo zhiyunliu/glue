@@ -8,7 +8,8 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
-// 默认最大队列长度 500
+
+// 默认最大队列长度 100
 var DefaultMaxQueueLen = 100
 
 // IQueue 消息队列

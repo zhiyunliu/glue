@@ -11,25 +11,22 @@ const (
 )
 
 type StandardQueue interface {
-	GetQueue(name ...string) (q IQueue)
+	GetQueue(name string, opts ...Option) (q IQueue)
 }
 
-//xQueue queue
+// xQueue queue
 type xQueue struct {
 	c container.Container
 }
 
-//NewStandardQueue 创建queue
+// NewStandardQueue 创建queue
 func NewStandardQueue(c container.Container) StandardQueue {
 	return &xQueue{c: c}
 }
 
-//GetQueue GetQueue
-func (s *xQueue) GetQueue(name ...string) (q IQueue) {
-	realName := _defaultName
-	if len(name) > 0 {
-		realName = name[0]
-	}
+// GetQueue GetQueue
+func (s *xQueue) GetQueue(name string, opts ...Option) (q IQueue) {
+	realName := name
 	if realName == "" {
 		realName = _defaultName
 	}
@@ -38,12 +35,23 @@ func (s *xQueue) GetQueue(name ...string) (q IQueue) {
 		//{"proto":"redis","addr":"redis://localhost"}
 		cfgVal := cfg.Get(TypeNode).Get(realName)
 		protoType := cfgVal.Value("proto").String()
-		return newQueue(protoType, cfgVal)
-	})
+		return newQueue(protoType, cfgVal, opts...)
+	}, s.getUniqueKey(opts...))
 	if err != nil {
 		panic(err)
 	}
 	return obj.(IQueue)
+}
+
+func (s *xQueue) getUniqueKey(opts ...Option) string {
+	if len(opts) == 0 {
+		return ""
+	}
+	tmpCfg := &Options{}
+	for i := range opts {
+		opts[i](tmpCfg)
+	}
+	return tmpCfg.getUniqueKey()
 }
 
 type xBuilder struct{}

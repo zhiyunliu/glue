@@ -2,31 +2,42 @@ package tpl
 
 import (
 	"fmt"
-	"regexp"
+
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 // 处理替换符合
-func handleRelaceSymbols(tpl string, input map[string]interface{}, ph Placeholder) (string, bool) {
-	word := regexp.MustCompile(ReplacePattern)
+func handleRelaceSymbols(tpl string, input map[string]interface{}, ph Placeholder) (string, bool, error) {
+	word := GetPatternRegexp(ReplacePattern)
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
 		Placeholder: ph,
 	}
 	hasReplace := false
+	var outerrs []xdb.MissError
 	sql := word.ReplaceAllStringFunc(tpl, func(s string) string {
 		hasReplace = true
 		fullKey := s[2 : len(s)-1]
-		return replaceSymbols(input, fullKey, item)
+		tmpv, err := replaceSymbols(input, fullKey, item)
+		if err != nil {
+			outerrs = append(outerrs, err)
+		}
+		return tmpv
 	})
-
-	return sql, hasReplace
+	if len(outerrs) > 0 {
+		return sql, hasReplace, xdb.NewMissListError(outerrs...)
+	}
+	return sql, hasReplace, nil
 }
 
-func replaceSymbols(input DBParam, fullKey string, item *ReplaceItem) string {
-	propName := GetPropName(fullKey)
-	value := input.GetVal(propName)
-	if !IsNil(value) {
-		return fmt.Sprintf("%v", value)
+func replaceSymbols(input DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissError) {
+	_, propName, _ := GetPropName(fullKey)
+	value, err := input.GetVal(propName)
+	if err != nil {
+		return "", err
 	}
-	return ""
+	if !IsNil(value) {
+		return fmt.Sprintf("%v", value), nil
+	}
+	return "", nil
 }

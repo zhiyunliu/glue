@@ -2,6 +2,7 @@ package xdb
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"runtime"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/zhiyunliu/glue/contrib/xdb/internal"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
-	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 // DB 数据库操作类
@@ -20,7 +20,7 @@ type xDB struct {
 }
 
 // NewDB 创建DB实例
-func NewDB(proto string, setting *Setting) (obj xdb.IDB, err error) {
+func NewDB(proto string, setting *Setting, opts ...xdb.Option) (obj xdb.IDB, err error) {
 	newCfg, err := xdb.DefaultRefactor(setting.ConnName, setting.Cfg)
 	if err != nil {
 		return
@@ -28,6 +28,11 @@ func NewDB(proto string, setting *Setting) (obj xdb.IDB, err error) {
 	if newCfg != nil {
 		setting.Cfg = newCfg
 	}
+
+	for i := range opts {
+		opts[i](setting.Cfg)
+	}
+
 	conn := setting.Cfg.Conn
 	maxOpen := setting.Cfg.MaxOpen
 	maxIdle := setting.Cfg.MaxIdle
@@ -61,94 +66,82 @@ func (db *xDB) GetImpl() interface{} {
 }
 
 // Query 查询数据
-func (db *xDB) Query(ctx context.Context, sql string, input map[string]interface{}) (rows xdb.Rows, err error) {
-	start := time.Now()
-
-	query, execArgs := db.tpl.GetSQLContext(sql, input)
-
-	debugPrint(ctx, db.cfg, query, execArgs...)
-	data, err := db.db.Query(query, execArgs...)
+func (db *xDB) Query(ctx context.Context, sqls string, input any) (rows xdb.Rows, err error) {
+	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return internal.ResolveRows(r)
+	})
 	if err != nil {
-		return nil, internal.GetError(err, query, execArgs...)
+		return
 	}
-	defer func() {
-		if data != nil {
-			data.Close()
-		}
-	}()
-	rows, err = internal.ResolveRows(data)
-	if err != nil {
-		return nil, internal.GetError(err, query, execArgs...)
-	}
-	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
-
+	rows = tmp.(xdb.Rows)
 	return
 }
 
 // Multi 查询数据(多个数据集)
-func (db *xDB) Multi(ctx context.Context, sql string, input map[string]interface{}) (datasetRows []xdb.Rows, err error) {
-	start := time.Now()
-
-	query, execArgs := db.tpl.GetSQLContext(sql, input)
-
-	debugPrint(ctx, db.cfg, query, execArgs...)
-	sqlRows, err := db.db.Query(query, execArgs...)
+func (db *xDB) Multi(ctx context.Context, sqls string, input any) (datasetRows []xdb.Rows, err error) {
+	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return internal.ResolveMultiRows(r)
+	})
 	if err != nil {
-		return nil, internal.GetError(err, query, execArgs...)
+		return
 	}
-	defer func() {
-		if sqlRows != nil {
-			sqlRows.Close()
-		}
-	}()
-	datasetRows, err = internal.ResolveMultiRows(sqlRows)
-	if err != nil {
-		return nil, internal.GetError(err, query, execArgs...)
-	}
-	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
-
+	datasetRows = tmp.([]xdb.Rows)
 	return
 }
 
-func (db *xDB) First(ctx context.Context, sql string, input map[string]interface{}) (data xdb.Row, err error) {
-	rows, err := db.Query(ctx, sql, input)
+func (db *xDB) First(ctx context.Context, sqls string, input any) (data xdb.Row, err error) {
+	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return internal.ResolveFirstRow(r)
+	})
 	if err != nil {
 		return
 	}
-	if rows.IsEmpty() {
-		data = make(xtypes.XMap)
-		return
-	}
-	data = rows[0]
+	data = tmp.(xdb.Row)
 	return
 }
 
-func (db *xDB) Scalar(ctx context.Context, sql string, input map[string]interface{}) (data interface{}, err error) {
-	rows, err := db.Query(ctx, sql, input)
-	if err != nil {
-		return
-	}
-	if rows.Len() == 0 || len(rows[0]) == 0 {
-		return nil, nil
-	}
-	data, _ = rows[0].Get(rows[0].Keys()[0])
+func (db *xDB) Scalar(ctx context.Context, sqls string, input any) (data interface{}, err error) {
+	data, err = db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return internal.ResolveScalar(r)
+	})
 	return
 }
 
 // Execute 根据包含@名称占位符的语句执行查询语句
-func (db *xDB) Exec(ctx context.Context, sql string, input map[string]interface{}) (r xdb.Result, err error) {
+func (db *xDB) Exec(ctx context.Context, sql string, input any) (r xdb.Result, err error) {
+
+	dbParam, err := internal.ResolveParams(input)
+	if err != nil {
+		return
+	}
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
+
 	start := time.Now()
-
-	query, execArgs := db.tpl.GetSQLContext(sql, input)
-
 	debugPrint(ctx, db.cfg, query, execArgs...)
 	r, err = db.db.Exec(query, execArgs...)
 	if err != nil {
-		return nil, internal.GetError(err, query, execArgs...)
+		return r, internal.GetError(err, query, execArgs...)
 	}
 	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 
 	return
+}
+
+// Query 查询数据
+func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
+	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, val any) error {
+		return internal.ResolveRowsDataResult(r, val)
+	})
+}
+
+func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
+	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, val any) error {
+		return internal.ResolveFirstDataResult(r, val)
+	})
 }
 
 // Begin 创建事务
@@ -199,4 +192,62 @@ func (db *xDB) Transaction(callback xdb.TransactionCallback) (err error) {
 // Close  关闭当前数据库连接
 func (db *xDB) Close() error {
 	return db.db.Close()
+}
+
+func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback internal.DbResolveMapValCallback) (result any, err error) {
+	dbParams, err := internal.ResolveParams(input)
+	if err != nil {
+		return
+	}
+
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
+
+	start := time.Now()
+
+	debugPrint(ctx, db.cfg, query, execArgs...)
+	rows, err := db.db.Query(query, execArgs...)
+	if err != nil {
+		return nil, internal.GetError(err, query, execArgs...)
+	}
+	defer func() {
+		if rows != nil {
+			rows.Close()
+		}
+	}()
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
+	result, err = callback(rows)
+	return
+}
+
+func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any, callback internal.DbResolveResultCallback) (err error) {
+	dbParams, err := internal.ResolveParams(input)
+	if err != nil {
+		return
+	}
+
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
+	if err != nil {
+		err = internal.GetError(err, sql, input)
+		return
+	}
+
+	start := time.Now()
+
+	debugPrint(ctx, db.cfg, query, execArgs...)
+	rows, err := db.db.Query(query, execArgs...)
+	if err != nil {
+		return internal.GetError(err, query, execArgs...)
+	}
+	defer func() {
+		if rows != nil {
+			rows.Close()
+		}
+	}()
+	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
+	err = callback(rows, result)
+	return
 }

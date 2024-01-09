@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/contrib/redis"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/queue"
+	"github.com/zhiyunliu/golibs/xtypes"
 
 	redisqueue "github.com/zhiyunliu/redisqueue/v2"
 
@@ -18,9 +20,14 @@ import (
 
 // Consumer Consumer
 type Consumer struct {
-	queues   cmap.ConcurrentMap
-	consumer *redisqueue.Consumer
-	closeCh  chan struct{}
+	configName       string
+	EnableDeadLetter bool //开启死信队列
+	DeadLetterQueue  string
+	queues           cmap.ConcurrentMap
+	consumer         *redisqueue.Consumer
+	producer         *redisqueue.Producer
+	redisClient      *redis.Client
+	closeCh          chan struct{}
 
 	once   sync.Once
 	config config.Config
@@ -40,10 +47,10 @@ func (q QueueItem) GetConcurrency() int {
 }
 
 // NewConsumerByConfig 创建新的Consumer
-func NewConsumer(config config.Config) (consumer *Consumer, err error) {
+func NewConsumer(configName string, config config.Config) (consumer *Consumer, err error) {
 	consumer = &Consumer{}
+	consumer.configName = configName
 	consumer.config = config
-
 	consumer.closeCh = make(chan struct{})
 	consumer.queues = cmap.New()
 	return
@@ -60,7 +67,9 @@ func (consumer *Consumer) Connect() (err error) {
 	if err != nil {
 		return
 	}
-
+	consumer.EnableDeadLetter = len(copts.DeadLetterQueue) > 0
+	consumer.DeadLetterQueue = copts.DeadLetterQueue
+	consumer.redisClient = client
 	opts := &redisqueue.ConsumerOptions{
 		GroupName:         global.AppName,
 		RedisClient:       client.UniversalClient,
@@ -88,7 +97,10 @@ func (consumer *Consumer) Connect() (err error) {
 	if copts.ReclaimInterval > 0 {
 		opts.ReclaimInterval = time.Duration(copts.ReclaimInterval) * time.Second
 	}
-
+	err = consumer.createProducer()
+	if err != nil {
+		return
+	}
 	consumer.consumer, err = redisqueue.NewConsumerWithOptions(opts)
 	if err != nil {
 		return
@@ -104,6 +116,30 @@ func (consumer *Consumer) Connect() (err error) {
 			}
 		}
 	}()
+	return
+}
+
+func (m *Consumer) createProducer() (err error) {
+	copts := &ProductOptions{
+		DelayQueueName: DELAY_QUEUE_NAME,
+		RangeSeconds:   1800,
+		DelayInterval:  5,
+	}
+	err = m.config.Scan(copts)
+	if err != nil {
+		return
+	}
+
+	pdtOpts := &redisqueue.ProducerOptions{
+		StreamMaxLength:      10000,
+		RedisClient:          m.redisClient.UniversalClient,
+		ApproximateMaxLength: copts.ApproximateMaxLength,
+	}
+	if copts.StreamMaxLength > 0 {
+		pdtOpts.StreamMaxLength = copts.StreamMaxLength
+	}
+
+	m.producer, err = redisqueue.NewProducerWithOptions(pdtOpts)
 	return
 }
 
@@ -141,6 +177,11 @@ func (consumer *Consumer) Start() {
 		tqi := item.Val.(*QueueItem)
 		var confunc redisqueue.ConsumerFunc = func(qi *QueueItem) redisqueue.ConsumerFunc {
 			return func(m *redisqueue.Message) error {
+				if m.RetryCount >= queue.MaxRetrtCount {
+					//todo:写入死信队列
+					consumer.writeToDeadLetter(tqi.QueueName, m.Values)
+					return nil
+				}
 				msg := &redisMessage{message: m.Values, retryCount: m.RetryCount, messageId: m.ID}
 				qi.callback(msg)
 				return msg.Error()
@@ -161,6 +202,21 @@ func (consumer *Consumer) Close() {
 	consumer.consumer.Shutdown()
 }
 
+func (consumer *Consumer) writeToDeadLetter(queue string, vals xtypes.XMap) {
+	if !consumer.EnableDeadLetter {
+		return
+	}
+	if strings.EqualFold(queue, consumer.DeadLetterQueue) {
+		return
+	}
+	deadMsg := make(xtypes.XMap)
+
+	deadMsg["q"] = queue
+	deadMsg["m"] = vals
+
+	consumer.producer.Enqueue(&redisqueue.Message{Stream: consumer.DeadLetterQueue, Values: deadMsg})
+}
+
 type consumeResolver struct {
 }
 
@@ -168,8 +224,8 @@ func (s *consumeResolver) Name() string {
 	return Proto
 }
 
-func (s *consumeResolver) Resolve(setting config.Config) (queue.IMQC, error) {
-	return NewConsumer(setting)
+func (s *consumeResolver) Resolve(configName string, setting config.Config) (queue.IMQC, error) {
+	return NewConsumer(configName, setting)
 }
 func init() {
 	queue.RegisterConsumer(&consumeResolver{})
