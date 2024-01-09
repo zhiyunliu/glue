@@ -32,6 +32,10 @@ func (m *redisMessage) RetryCount() int64 {
 	return m.retryCount
 }
 
+func (m *redisMessage) MessageId() string {
+	return ""
+}
+
 // Ack 确定消息
 func (m *redisMessage) Ack() error {
 	m.err = nil

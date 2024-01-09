@@ -11,6 +11,7 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/xmqc"
+	"github.com/zhiyunliu/golibs/session"
 
 	"github.com/zhiyunliu/glue/queue"
 )
@@ -30,7 +31,7 @@ type Request struct {
 }
 
 // NewRequest 构建任务请求
-func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request, err error) {
+func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request) {
 	r = &Request{
 		IMQCMessage: m,
 		task:        task,
@@ -45,9 +46,17 @@ func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request, err error) {
 	r.body = message.Body()
 	r.ctx = sctx.Background()
 	r.header["retry_count"] = strconv.FormatInt(m.RetryCount(), 10)
+	r.header["x-xmqc-msg-id"] = m.MessageId()
 	r.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
 
-	return r, nil
+	return r
+}
+
+func (m Request) GetSid() string {
+	if m.header[constants.HeaderRequestId] == "" {
+		m.header[constants.HeaderRequestId] = session.Create()
+	}
+	return m.header[constants.HeaderRequestId]
 }
 
 // GetName 获取任务名称
@@ -95,7 +104,6 @@ func (m *Request) Context() sctx.Context {
 }
 func (m *Request) WithContext(ctx sctx.Context) {
 	m.ctx = ctx
-	return
 }
 
 type Body interface {

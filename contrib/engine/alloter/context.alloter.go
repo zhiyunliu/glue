@@ -169,6 +169,10 @@ func (r *alloterRequest) GetClientIP() string {
 	return r.actx.ClientIP()
 }
 
+func (r *alloterRequest) ContentType() string {
+	return r.actx.ContentType()
+}
+
 func (r *alloterRequest) Header() vctx.Header {
 	return xtypes.SMap(r.actx.Request.GetHeader())
 }

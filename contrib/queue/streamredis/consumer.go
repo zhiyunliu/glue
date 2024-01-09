@@ -182,7 +182,7 @@ func (consumer *Consumer) Start() {
 					consumer.writeToDeadLetter(tqi.QueueName, m.Values)
 					return nil
 				}
-				msg := &redisMessage{message: m.Values, retryCount: m.RetryCount}
+				msg := &redisMessage{message: m.Values, retryCount: m.RetryCount, messageId: m.ID}
 				qi.callback(msg)
 				return msg.Error()
 			}

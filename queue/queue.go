@@ -8,6 +8,7 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
+
 // 默认最大队列长度 100
 var DefaultMaxQueueLen = 100
 
@@ -20,6 +21,7 @@ type IQueue interface {
 
 // IMQCMessage  队列消息
 type IMQCMessage interface {
+	MessageId() string
 	RetryCount() int64
 	Ack() error
 	Nack(error) error
