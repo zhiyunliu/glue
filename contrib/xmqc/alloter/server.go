@@ -72,5 +72,5 @@ func (e *Server) Serve(ctx context.Context) (err error) {
 }
 
 func (e *Server) Stop(ctx context.Context) error {
-	return nil
+	return e.processor.Close()
 }

@@ -141,7 +141,7 @@ func (consumer *Consumer) Start() {
 		tqi := item.Val.(*QueueItem)
 		var confunc redisqueue.ConsumerFunc = func(qi *QueueItem) redisqueue.ConsumerFunc {
 			return func(m *redisqueue.Message) error {
-				msg := &redisMessage{message: m.Values, retryCount: m.RetryCount}
+				msg := &redisMessage{message: m.Values, retryCount: m.RetryCount, messageId: m.ID}
 				qi.callback(msg)
 				return msg.Error()
 			}

@@ -166,6 +166,10 @@ func (r *ginRequest) RequestID() string {
 	return r.vctx.Log().SessionID()
 }
 
+func (r *ginRequest) ContentType() string {
+	return r.gctx.ContentType()
+}
+
 func (r *ginRequest) Header() vctx.Header {
 	if r.gheader == nil {
 		r.gheader = map[string]string{}

@@ -9,35 +9,40 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
-//RedisMessage reids消息
+// RedisMessage reids消息
 type redisMessage struct {
 	retryCount int64
+	messageId  string
 	message    map[string]interface{}
 	err        error
 	obj        *MsgBody
 }
 
-func (m *redisMessage) Error() error {
+func (m redisMessage) MessageId() string {
+	return m.messageId
+}
+
+func (m redisMessage) Error() error {
 	return m.err
 }
 
-func (m *redisMessage) RetryCount() int64 {
+func (m redisMessage) RetryCount() int64 {
 	return m.retryCount
 }
 
-//Ack 确定消息
+// Ack 确定消息
 func (m *redisMessage) Ack() error {
 	m.err = nil
 	return nil
 }
 
-//Nack 取消消息
+// Nack 取消消息
 func (m *redisMessage) Nack(err error) error {
 	m.err = err
 	return nil
 }
 
-//original message
+// original message
 func (m *redisMessage) Original() string {
 	if m.obj == nil {
 		m.obj = newMsgBody(m.message)
@@ -45,7 +50,7 @@ func (m *redisMessage) Original() string {
 	return m.obj.String()
 }
 
-//GetMessage 获取消息
+// GetMessage 获取消息
 func (m *redisMessage) GetMessage() queue.Message {
 	if m.obj == nil {
 		m.obj = newMsgBody(m.message)

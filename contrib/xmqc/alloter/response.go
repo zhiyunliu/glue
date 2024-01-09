@@ -27,7 +27,7 @@ type Response struct {
 }
 
 // newResponse 构建任务请求
-func newResponse(task *xmqc.Task, msg queue.IMQCMessage) (r *Response, err error) {
+func newResponse(task *xmqc.Task, msg queue.IMQCMessage) (r *Response) {
 	r = &Response{
 		header: make(xtypes.SMap),
 		size:   noWritten,
@@ -35,7 +35,7 @@ func newResponse(task *xmqc.Task, msg queue.IMQCMessage) (r *Response, err error
 		msg:    msg,
 		//stream: bufio.NewWriter(os.Stdout),
 	}
-	return r, nil
+	return r
 }
 
 func (r *Response) Status() int {

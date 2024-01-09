@@ -131,25 +131,18 @@ func (s *processor) Close() error {
 
 func (s *processor) handleCallback(task *xmqc.Task) func(queue.IMQCMessage) {
 	return func(m queue.IMQCMessage) {
+
 		defer func() {
 			if obj := recover(); obj != nil {
 				log.Panicf("mqc.handleCallback.Queue:%s,data:%s, error:%+v. stack:%s", task.Queue, m.Original(), obj, xstack.GetStack(1))
 			}
 		}()
 
-		req, err := newRequest(task, m)
-		if err != nil {
-			m.Nack(err)
-			panic(err)
-		}
-		req.ctx = s.ctx
-		resp, err := newResponse(task, m)
-		if err != nil {
-			m.Nack(err)
-			panic(err)
-		}
+		req := newRequest(task, m)
+		req.ctx = context.Background()
+		resp := newResponse(task, m)
 
-		err = s.engine.HandleRequest(req, resp)
+		err := s.engine.HandleRequest(req, resp)
 		if err != nil {
 			m.Nack(err)
 			panic(err)
