@@ -57,20 +57,20 @@ func (r *registrarResolver) watcher() {
 		instances, err := r.registrar.GetService(r.ctx, r.serviceName)
 		if err != nil {
 			log.Errorf("grpc:registrar.GetService=%s,error:%+v", r.serviceName, err)
-			continue
 		}
 
-		address, err = r.buildAddress(instances)
-		if err != nil {
-			continue
-		}
+		address = r.buildAddress(instances)
+
 		r.clientConn.UpdateState(resolver.State{Addresses: address})
 	}
 }
 
-func (r *registrarResolver) buildAddress(instances []*registry.ServiceInstance) ([]resolver.Address, error) {
-
+func (r *registrarResolver) buildAddress(instances []*registry.ServiceInstance) []resolver.Address {
 	var addresses = make([]resolver.Address, 0, len(instances))
+	if len(instances) == 0 {
+		return addresses
+	}
+
 	for _, v := range instances {
 		if scheme, ok := v.Metadata["scheme"]; ok && !strings.EqualFold(scheme, "grpc") {
 			continue
@@ -89,7 +89,7 @@ func (r *registrarResolver) buildAddress(instances []*registry.ServiceInstance) 
 		}
 	}
 
-	return addresses, nil
+	return addresses
 }
 
 func (r *registrarResolver) watchRegistrar() {
@@ -106,14 +106,9 @@ func (r *registrarResolver) watchRegistrar() {
 			instances, err := watcher.Next()
 			if err != nil {
 				log.Errorf("grpc:registrar.Watch=%s,error:%+v", r.serviceName, err)
-
 				continue
 			}
-			addresses, err := r.buildAddress(instances)
-			if err != nil {
-
-				continue
-			}
+			addresses := r.buildAddress(instances)
 			r.clientConn.UpdateState(resolver.State{Addresses: addresses})
 		}
 	}
