@@ -8,18 +8,19 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
-//默认最大队列长度 500
+// 默认最大队列长度 500
 var DefaultMaxQueueLen = 100
 
-//IQueue 消息队列
+// IQueue 消息队列
 type IQueue interface {
 	Send(ctx context.Context, key string, value interface{}) error
 	DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error
 	Count(key string) (int64, error)
 }
 
-//IMQCMessage  队列消息
+// IMQCMessage  队列消息
 type IMQCMessage interface {
+	MessageId() string
 	RetryCount() int64
 	Ack() error
 	Nack(error) error
@@ -40,7 +41,7 @@ type Message interface {
 
 type ConsumeCallback func(IMQCMessage)
 
-//IMQC consumer接口
+// IMQC consumer接口
 type IMQC interface {
 	Connect() error
 	Consume(task TaskInfo, callback ConsumeCallback) (err error)
@@ -49,7 +50,7 @@ type IMQC interface {
 	Close()
 }
 
-//IMQP 消息生产
+// IMQP 消息生产
 type IMQP interface {
 	Push(key string, value Message) error
 	DelayPush(key string, value Message, delaySeconds int64) error
@@ -57,7 +58,7 @@ type IMQP interface {
 	Close() error
 }
 
-//IComponentQueue Component Queue
+// IComponentQueue Component Queue
 type IComponentQueue interface {
 	GetQueue(name string) (q IQueue)
 }
