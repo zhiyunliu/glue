@@ -51,6 +51,48 @@ func setDefaultOption() *options {
 	}
 }
 
+// WithAddr 设置服务地址
+func WithAddr(addr string) Option {
+	return func(o *options) {
+		o.srvCfg.Config.Addr = addr
+	}
+}
+
+// WithEngine 设置服务引擎（gin)
+func WithEngine(engine string) Option {
+	return func(o *options) {
+		o.srvCfg.Config.Engine = engine
+	}
+}
+
+// WithReadTimeout 读取超时时间
+func WithReadTimeout(readTimeout uint) Option {
+	return func(o *options) {
+		o.srvCfg.Config.ReadTimeout = readTimeout
+	}
+}
+
+// WithWriteTimeout 写入超时时间
+func WithWriteTimeout(writeTimeout uint) Option {
+	return func(o *options) {
+		o.srvCfg.Config.WriteTimeout = writeTimeout
+	}
+}
+
+// ReadHeaderTimeout 写入超时时间
+func WithReadHeaderTimeout(readHeaderTimeout uint) Option {
+	return func(o *options) {
+		o.srvCfg.Config.ReadHeaderTimeout = readHeaderTimeout
+	}
+}
+
+// WithMaxHeaderBytes 最大头部大小（http.DefaultMaxHeaderBytes untyped int = 1 << 20 )
+func WithMaxHeaderBytes(maxHeaderBytes uint) Option {
+	return func(o *options) {
+		o.srvCfg.Config.MaxHeaderBytes = maxHeaderBytes
+	}
+}
+
 func WithEndHook(f engine.Hook) Option {
 	return func(o *options) {
 		o.endHooks = append(o.endHooks, f)

@@ -40,6 +40,20 @@ func setDefaultOption() *options {
 
 }
 
+// WithAddr 设置服务地址
+func WithAddr(addr string) Option {
+	return func(o *options) {
+		o.srvCfg.Config.Addr = addr
+	}
+}
+
+// WithEngine 设置服务引擎（gin)
+func WithEngine(engine string) Option {
+	return func(o *options) {
+		o.srvCfg.Config.Proto = engine
+	}
+}
+
 func WithEndHook(f engine.Hook) Option {
 	return func(o *options) {
 		o.endHooks = append(o.endHooks, f)
