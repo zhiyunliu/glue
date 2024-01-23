@@ -110,6 +110,35 @@ func (m *Request) CanProc() bool {
 	return false
 }
 
+func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (*monopolyJob, bool, error) {
+	//本身不是独占
+	if !m.job.IsMonopoly() {
+		return nil, false, nil
+	}
+
+	val, ok := monopolyJobs.Get(m.job.GetKey())
+	//独占列表不存在（只存在close的短暂时间）
+	if !ok {
+		return nil, true, nil
+	}
+	mjob := val.(*monopolyJob)
+	isSuc, err := mjob.Acquire()
+	if err != nil {
+		return mjob, true, err
+	}
+	if isSuc {
+		return mjob, false, nil
+	}
+	return mjob, true, nil
+}
+
+func (m *Request) monopolyStart(ctx sctx.Context, mjob *monopolyJob) {
+	if mjob == nil {
+		return
+	}
+	mjob.Start(ctx)
+}
+
 func (m *Request) reset() {
 	m.canProc = true
 	m.session = session.Create()
@@ -118,28 +147,6 @@ func (m *Request) reset() {
 	m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
 	m.header[constants.HeaderRequestId] = m.session
 	m.header["x-cron-engine"] = Proto
-}
-
-func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (bool, error) {
-	//本身不是独占
-	if !m.job.IsMonopoly() {
-		return false, nil
-	}
-
-	val, ok := monopolyJobs.Get(m.job.GetKey())
-	//独占列表不存在（只存在close的短暂时间）
-	if !ok {
-		return true, nil
-	}
-	mjob := val.(*monopolyJob)
-	isSuc, err := mjob.Acquire()
-	if err != nil {
-		return true, err
-	}
-	if isSuc {
-		return false, nil
-	}
-	return true, nil
 }
 
 type Body interface {

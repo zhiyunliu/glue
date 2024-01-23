@@ -225,7 +225,7 @@ func (s *processor) handle(req *Request) {
 		return
 	}
 
-	hasMonopoly, err := req.Monopoly(s.monopolyJobs)
+	mjob, hasMonopoly, err := req.Monopoly(s.monopolyJobs)
 	if err != nil {
 		logger.Errorf("cron.handle.monopoly:%s,service:%s, error:%+v", req.job.Cron, req.job.Service, err)
 		return
@@ -234,6 +234,11 @@ func (s *processor) handle(req *Request) {
 		logger.Warnf("cron.handle.monopoly:%s,service:%s,meta:%+v,key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
 		return
 	}
+	monopolyCtx, cancel := sctx.WithCancel(sctx.Background())
+	req.monopolyStart(monopolyCtx, mjob)
+	defer func() {
+		cancel()
+	}()
 
 	req.ctx = sctx.Background()
 	resp := newResponse()
@@ -246,22 +251,21 @@ func (s *processor) handle(req *Request) {
 
 func (s *processor) execute(idx int) {
 	current := s.slots[idx]
-	resetJobList := []*Request{}
+	resetJob := []string{}
 
 	current.IterCb(func(key string, value interface{}) {
 		jobReq := value.(*Request)
 		if !jobReq.round.CanProc() {
 			return
 		}
+		resetJob = append(resetJob, jobReq.session)
 		if jobReq.CanProc() && !jobReq.job.Disable {
 			go s.handle(jobReq)
 		}
-
-		resetJobList = append(resetJobList, jobReq)
 	})
 
-	for _, jobReq := range resetJobList {
-		current.Remove(jobReq.session)
+	for _, session := range resetJob {
+		current.Remove(session)
 	}
 }
 
@@ -281,4 +285,20 @@ func (j *monopolyJob) Renewal() {
 
 func (j *monopolyJob) Close() {
 	j.locker.Release()
+}
+
+func (j *monopolyJob) Start(ctx sctx.Context) {
+	go func() {
+		//过期时间前一秒执行续约
+		ticker := time.NewTicker(time.Second * time.Duration(j.expire-1))
+		for {
+			select {
+			case <-ticker.C:
+				j.Renewal()
+			case <-ctx.Done():
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 }
