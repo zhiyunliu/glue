@@ -220,7 +220,11 @@ func (s *processor) handle(req *Request) {
 		logger.Warnf("cron.handle.monopoly:%s,service:%s,meta:%+v,key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
 		return
 	}
-	go s.handleMonopolyJobExpire(logger, req.job, done)
+	monopolyCtx, cancel := sctx.WithCancel(sctx.Background())
+	go s.handleMonopolyJobExpire(monopolyCtx, logger, req.job)
+	defer func() {
+		cancel()
+	}()
 
 	req.ctx = sctx.Background()
 	resp := newResponse()
@@ -239,7 +243,7 @@ func (s *processor) handleImmediatelyJob() {
 	}
 }
 
-func (s *processor) handleMonopolyJobExpire(logger log.Logger, job *xcron.Job, done chan struct{}) {
+func (s *processor) handleMonopolyJobExpire(ctx sctx.Context, logger log.Logger, job *xcron.Job) {
 	ticker := time.NewTicker(time.Minute)
 	defer func() {
 		if obj := recover(); obj != nil {
@@ -249,7 +253,7 @@ func (s *processor) handleMonopolyJobExpire(logger log.Logger, job *xcron.Job, d
 	}()
 	for {
 		select {
-		case <-done:
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
 		}
