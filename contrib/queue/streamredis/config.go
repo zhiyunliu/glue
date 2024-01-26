@@ -8,11 +8,9 @@ import (
 )
 
 type ProductOptions struct {
-	DelayQueueName       string `json:"delay_queue_name" yaml:"delay_queue_name"`
-	StreamMaxLength      int64  `json:"stream_max_len" yaml:"stream_max_len"`           //消息队列长度
-	ApproximateMaxLength bool   `json:"approximate_max_len" yaml:"approximate_max_len"` //使用近似队列长度
-	RangeSeconds         int    `json:"range_seconds" yaml:"range_seconds"`
-	DelayInterval        int    `json:"delay_interval" yaml:"delay_interval"`
+	StreamMaxLength      int64 `json:"stream_max_len" yaml:"stream_max_len"`           //消息队列长度
+	ApproximateMaxLength bool  `json:"approximate_max_len" yaml:"approximate_max_len"` //使用近似队列长度
+	DelayInterval        int   `json:"delay_interval" yaml:"delay_interval"`
 }
 
 type ConsumerOptions struct {

@@ -121,9 +121,7 @@ func (consumer *Consumer) Connect() (err error) {
 
 func (m *Consumer) createProducer() (err error) {
 	copts := &ProductOptions{
-		DelayQueueName: DELAY_QUEUE_NAME,
-		RangeSeconds:   1800,
-		DelayInterval:  5,
+		DelayInterval: 2,
 	}
 	err = m.config.Scan(copts)
 	if err != nil {
