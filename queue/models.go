@@ -1,7 +1,6 @@
 package queue
 
 import (
-	"bytes"
 	"encoding/json"
 
 	"github.com/zhiyunliu/glue/constants"
@@ -11,11 +10,10 @@ import (
 )
 
 type MsgWrap struct {
-	HeaderMap xtypes.SMap `json:"header,omitempty"`
-	BodyMap   xtypes.XMap `json:"body"`
-	hasProced bool        `json:"-"`
-	reqid     string      `json:"-"`
-	bodyBytes []byte      `json:"-"`
+	HeaderMap xtypes.SMap     `json:"header,omitempty"`
+	BodyBytes json.RawMessage `json:"body"`
+	hasProced bool            `json:"-"`
+	reqid     string          `json:"-"`
 }
 
 type MsgOption func(m *MsgWrap)
@@ -35,37 +33,44 @@ func WithHeader(key, val string) MsgOption {
 	}
 }
 
-func NewMsg(obj interface{}, opts ...MsgOption) (msg Message, err error) {
+func NewMsg(obj interface{}, opts ...MsgOption) (msg Message) {
 	var bytes []byte
 	switch val := obj.(type) {
 	case []byte:
 		bytes = val
+	case string:
+		bytes = bytesconv.StringToBytes(val)
 	case Message:
-		return val, nil
+		return val
 	default:
-		bytes, err = json.Marshal(obj)
-		if err != nil {
-			return nil, err
-		}
+		bytes, _ = json.Marshal(obj)
 	}
 	tmpmsg := &MsgWrap{
-		bodyBytes: bytes,
+		BodyBytes: bytes,
 	}
 	for i := range opts {
 		opts[i](tmpmsg)
 	}
 
-	return tmpmsg, nil
+	return tmpmsg
 }
 
 func (w *MsgWrap) Header() map[string]string {
 	w.adapterMsg()
 	return w.HeaderMap
 }
-func (w *MsgWrap) Body() map[string]interface{} {
+func (w *MsgWrap) Body() []byte {
 	w.adapterMsg()
-	return w.BodyMap
+	return w.BodyBytes
 
+}
+
+func (w MsgWrap) String() string {
+	return bytesconv.BytesToString(w.BodyBytes)
+}
+
+func (w MsgWrap) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(w)
 }
 
 func (w *MsgWrap) adapterMsg() {
@@ -75,17 +80,9 @@ func (w *MsgWrap) adapterMsg() {
 	if w.HeaderMap == nil {
 		w.HeaderMap = map[string]string{}
 	}
-	w.BodyMap = map[string]interface{}{}
 	w.hasProced = true
 	if w.reqid != "" {
 		w.HeaderMap[constants.HeaderRequestId] = w.reqid
 	}
 	w.HeaderMap[constants.HeaderSourceIp] = global.LocalIp
-	decoder := json.NewDecoder(bytes.NewReader(w.bodyBytes))
-	decoder.UseNumber()
-	decoder.Decode(&w.BodyMap)
-}
-
-func (w *MsgWrap) String() string {
-	return bytesconv.BytesToString(w.bodyBytes)
 }

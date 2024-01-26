@@ -2,12 +2,12 @@ package queue
 
 import (
 	"context"
+	"encoding"
 	"encoding/json"
 
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
-
 
 // 默认最大队列长度 100
 var DefaultMaxQueueLen = 100
@@ -35,8 +35,9 @@ type TaskInfo interface {
 }
 
 type Message interface {
+	encoding.BinaryMarshaler
 	Header() map[string]string
-	Body() map[string]interface{}
+	Body() []byte
 	String() string
 }
 
@@ -65,23 +66,29 @@ type IComponentQueue interface {
 }
 
 type MsgItem struct {
-	HeaderMap xtypes.SMap `json:"header"`
-	BodyMap   xtypes.XMap `json:"body"`
-	strval    string      `json:"-"`
+	HeaderMap xtypes.SMap     `json:"header"`
+	BodyBytes json.RawMessage `json:"body"`
+	ItemBytes json.RawMessage `json:"-"`
 }
 
-func (w *MsgItem) Header() map[string]string {
+func (w MsgItem) MarshalBinary() (data []byte, err error) {
+	if len(w.ItemBytes) > 0 {
+		return w.ItemBytes, nil
+	}
+	return json.Marshal(w)
+}
+
+func (w MsgItem) Header() map[string]string {
 	return w.HeaderMap
 }
 
-func (w *MsgItem) Body() map[string]interface{} {
-	return w.BodyMap
+func (w MsgItem) Body() []byte {
+	return w.BodyBytes
 }
 
 func (w *MsgItem) String() string {
-	if w.strval == "" {
-		bytes, _ := json.Marshal(w)
-		w.strval = bytesconv.BytesToString(bytes)
+	if len(w.ItemBytes) == 0 {
+		w.ItemBytes, _ = json.Marshal(w)
 	}
-	return w.strval
+	return bytesconv.BytesToString(w.ItemBytes)
 }

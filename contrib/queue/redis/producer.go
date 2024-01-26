@@ -1,14 +1,12 @@
 package redis
 
 import (
-	"encoding/json"
 	"sync"
 
 	rds "github.com/go-redis/redis/v7"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
 	"github.com/zhiyunliu/glue/queue"
-	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
 const (
@@ -46,13 +44,7 @@ func NewProducer(config config.Config, opts ...queue.Option) (m *Producer, err e
 
 // Push 向存于 key 的列表的尾部插入所有指定的值
 func (c *Producer) Push(key string, msg queue.Message) error {
-	bytes, _ := json.Marshal(map[string]interface{}{
-		"header": msg.Header(),
-		"body":   msg.Body(),
-	})
-
-	_, err := c.client.RPush(key, bytesconv.BytesToString(bytes)).Result()
-	return err
+	return c.client.RPush(key, msg).Err()
 }
 
 // Push 向存于 key 的列表的尾部插入所有指定的值
@@ -62,7 +54,6 @@ func (c *Producer) DelayPush(key string, msg queue.Message, delaySeconds int64) 
 	}
 
 	return c.appendDelay(key, msg, delaySeconds)
-
 }
 
 // Pop 移除并且返回 key 对应的 list 的第一个元素。

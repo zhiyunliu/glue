@@ -2,7 +2,6 @@ package queue
 
 import (
 	"errors"
-	"fmt"
 
 	"context"
 
@@ -31,11 +30,7 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 		return q.q.Push(key, msg)
 	}
 
-	msg, err := NewMsg(value)
-	if err != nil {
-		return fmt.Errorf("queue.Send:%s,Error:%w", key, err)
-	}
-
+	msg := NewMsg(value)
 	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
 	msg.Header()[constants.HeaderSourceName] = global.AppName
 	return q.q.Push(key, msg)
@@ -45,19 +40,9 @@ func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, de
 		return q.q.DelayPush(key, msg, delaySeconds)
 	}
 
-	msg, err := NewMsg(value)
-	if err != nil {
-		return fmt.Errorf("queue.Send:%s,Error:%w", key, err)
-	}
-	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
-	msg.Header()[constants.HeaderSourceName] = global.AppName
+	msg := NewMsg(value)
 	return q.q.DelayPush(key, msg, delaySeconds)
 }
-
-// //Pop 从队列中获取一个消息
-// func (q *queue) Pop(key string) (string, error) {
-// 	return q.q.Pop(key)
-// }
 
 // Count 队列中消息个数
 func (q *queue) Count(key string) (int64, error) {

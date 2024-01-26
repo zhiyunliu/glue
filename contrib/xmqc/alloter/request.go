@@ -27,7 +27,7 @@ type Request struct {
 	url    *url.URL
 	params map[string]string
 	header map[string]string
-	body   cbody //map[string]string
+	body   cbody
 }
 
 // NewRequest 构建任务请求
@@ -91,8 +91,7 @@ func (m *Request) GetHeader() map[string]string {
 }
 
 func (m *Request) Body() []byte {
-	bytes, _ := json.Marshal(m.body)
-	return bytes
+	return m.body
 }
 
 func (m *Request) GetRemoteAddr() string {
@@ -111,20 +110,12 @@ type Body interface {
 	Scan(obj interface{}) error
 }
 
-type cbody map[string]interface{}
+type cbody []byte
 
 func (b cbody) Read(p []byte) (n int, err error) {
-	bodyBytes, err := json.Marshal(b)
-	if err != nil {
-		return 0, err
-	}
-	return bytes.NewReader(bodyBytes).Read(p)
+	return bytes.NewReader(b).Read(p)
 }
 
 func (b cbody) Scan(obj interface{}) error {
-	bytes, err := json.Marshal(b)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(bytes, obj)
+	return json.Unmarshal(b, obj)
 }

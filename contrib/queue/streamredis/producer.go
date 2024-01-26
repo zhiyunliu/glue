@@ -61,7 +61,7 @@ func NewProducer(config config.Config, opts ...queue.Option) (m *Producer, err e
 func (c *Producer) Push(key string, msg queue.Message) error {
 	vals := map[string]interface{}{
 		"header": xtypes.SMap(msg.Header()),
-		"body":   xtypes.XMap(msg.Body()),
+		"body":   msg.Body(),
 	}
 	//RPush(key, bytesconv.BytesToString(bytes)).Result()
 	return c.producer.Enqueue(&redisqueue.Message{Stream: key, Values: vals})

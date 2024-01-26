@@ -9,10 +9,13 @@ import (
 
 	rds "github.com/go-redis/redis/v7"
 
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/redis"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
+	"github.com/zhiyunliu/golibs/xtypes"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -73,14 +76,8 @@ func (p delayProcess) Start(done chan struct{}) {
 }
 
 func (p delayProcess) AppendMessage(msg queue.Message, delaySeconds int64) (err error) {
-
-	bytes, _ := json.Marshal(map[string]interface{}{
-		"header": msg.Header(),
-		"body":   msg.Body(),
-	})
-
 	newScore := time.Now().Unix() + delaySeconds
-	err = p.client.ZAdd(p.delayQueue, &rds.Z{Score: float64(newScore), Member: string(bytes)}).Err()
+	err = p.client.ZAdd(p.delayQueue, &rds.Z{Score: float64(newScore), Member: msg}).Err()
 	return
 }
 
@@ -103,10 +100,15 @@ func (p *delayProcess) procDelayQueue() (msg queue.Message, err error) {
 	}
 	val := valList[0].(string)
 
-	msgItem := &queue.MsgItem{}
+	msgItem := &queue.MsgItem{
+		HeaderMap: make(xtypes.SMap),
+	}
 	err = json.Unmarshal(bytesconv.StringToBytes(val), &msgItem)
 	if err != nil {
 		err = fmt.Errorf("Unmarshal:%s,err:%+v", val, err)
+		return
 	}
+	msgItem.HeaderMap[constants.HeaderSourceIp] = global.LocalIp
+	msgItem.HeaderMap[constants.HeaderSourceName] = global.AppName
 	return msgItem, err
 }
