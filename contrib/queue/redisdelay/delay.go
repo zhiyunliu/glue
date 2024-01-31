@@ -56,7 +56,7 @@ func (p delayProcess) Start(done chan struct{}) {
 			case <-done:
 				return nil
 			default:
-				msg, err := p.procDelayQueue()
+				msgList, err := p.procDelayQueue()
 				if err == _noneDelayData {
 					time.Sleep(delayInterval)
 					continue
@@ -66,7 +66,7 @@ func (p delayProcess) Start(done chan struct{}) {
 					time.Sleep(delayInterval)
 					continue
 				}
-				err = p.callback(p.orgQueue, msg)
+				err = p.callback(p.orgQueue, msgList...)
 				if err != nil {
 					log.Error("redisdelay.delayProcess", p.orgQueue, err)
 				}
@@ -81,7 +81,7 @@ func (p delayProcess) AppendMessage(msg queue.Message, delaySeconds int64) (err 
 	return
 }
 
-func (p *delayProcess) procDelayQueue() (msg queue.Message, err error) {
+func (p *delayProcess) procDelayQueue() (msgList []queue.Message, err error) {
 	if p.scriptHash == "" {
 		p.scriptHash, err = p.client.ScriptLoad(DelayProcessScript).Result()
 		if err != nil {
@@ -98,17 +98,25 @@ func (p *delayProcess) procDelayQueue() (msg queue.Message, err error) {
 	if len(valList) == 0 {
 		return nil, _noneDelayData
 	}
-	val := valList[0].(string)
 
-	msgItem := &queue.MsgItem{
-		HeaderMap: make(xtypes.SMap),
+	msgList = make([]queue.Message, 0, len(valList))
+
+	for i := range valList {
+		val := valList[i].(string)
+
+		msgItem := &queue.MsgItem{
+			HeaderMap: make(xtypes.SMap),
+		}
+		//可能会丢消息
+		err = json.Unmarshal(bytesconv.StringToBytes(val), &msgItem)
+		if err != nil {
+			log.Errorf("queue:%s,Unmarshal:%s,err:%+v", p.orgQueue, val, err)
+			continue
+		}
+		msgItem.HeaderMap[constants.HeaderSourceIp] = global.LocalIp
+		msgItem.HeaderMap[constants.HeaderSourceName] = global.AppName
+		msgList = append(msgList, msgItem)
 	}
-	err = json.Unmarshal(bytesconv.StringToBytes(val), &msgItem)
-	if err != nil {
-		err = fmt.Errorf("Unmarshal:%s,err:%+v", val, err)
-		return
-	}
-	msgItem.HeaderMap[constants.HeaderSourceIp] = global.LocalIp
-	msgItem.HeaderMap[constants.HeaderSourceName] = global.AppName
-	return msgItem, err
+
+	return msgList, nil
 }
