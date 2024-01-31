@@ -8,9 +8,7 @@ import (
 )
 
 type ProductOptions struct {
-	DelayQueueName string `json:"delay_queue_name" yaml:"delay_queue_name"`
-	RangeSeconds   int    `json:"range_seconds" yaml:"range_seconds"`
-	DelayInterval  int    `json:"delay_interval" yaml:"delay_interval"`
+	DelayInterval int `json:"delay_interval" yaml:"delay_interval"`
 }
 
 func getRedisClient(config config.Config, opts ...queue.Option) (client *redis.Client, err error) {

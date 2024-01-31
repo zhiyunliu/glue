@@ -15,7 +15,7 @@ type redisMessage struct {
 	messageId  string
 	message    map[string]interface{}
 	err        error
-	obj        *MsgBody
+	obj        *queue.MsgItem
 }
 
 func (m redisMessage) MessageId() string {
@@ -58,16 +58,9 @@ func (m *redisMessage) GetMessage() queue.Message {
 	return m.obj
 }
 
-type MsgBody struct {
-	msg       []byte      `json:"-"`
-	HeaderMap xtypes.SMap `json:"header"`
-	BodyMap   xtypes.XMap `json:"body"`
-}
-
-func newMsgBody(msg map[string]interface{}) *MsgBody {
-	body := &MsgBody{
+func newMsgBody(msg map[string]interface{}) *queue.MsgItem {
+	body := &queue.MsgItem{
 		HeaderMap: make(xtypes.SMap),
-		BodyMap:   make(xtypes.XMap),
 	}
 	switch val := msg["header"].(type) {
 	case string:
@@ -81,25 +74,14 @@ func newMsgBody(msg map[string]interface{}) *MsgBody {
 	}
 
 	switch val := msg["body"].(type) {
+	case []byte:
+		body.BodyBytes = val
 	case string:
-		json.Unmarshal([]byte(val), &body.BodyMap)
-	case map[string]interface{}:
-		body.BodyMap.Merge(val)
+		body.BodyBytes = bytesconv.StringToBytes(val)
 	default:
 
 	}
 
-	body.msg, _ = json.Marshal(body)
+	body.ItemBytes, _ = json.Marshal(body)
 	return body
-}
-
-func (m *MsgBody) Header() map[string]string {
-	return m.HeaderMap
-}
-func (m *MsgBody) Body() map[string]interface{} {
-	return m.BodyMap
-}
-
-func (m *MsgBody) String() string {
-	return bytesconv.BytesToString(m.msg)
 }

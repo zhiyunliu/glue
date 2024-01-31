@@ -3,7 +3,7 @@ module github.com/zhiyunliu/glue
 go 1.18
 
 require (
-	github.com/zhiyunliu/golibs v0.1.27
+	github.com/zhiyunliu/golibs v0.1.33
 	github.com/zhiyunliu/redisqueue/v2 v2.2.2
 )
 
@@ -30,6 +30,7 @@ require (
 	github.com/urfave/cli v1.22.9
 	go.opentelemetry.io/otel v1.9.0
 	go.opentelemetry.io/otel/trace v1.9.0
+	golang.org/x/sync v0.2.0
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
@@ -69,7 +70,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/sync v0.2.0 // indirect
 	google.golang.org/genproto v0.0.0-20200825200019-8632dd797987 // indirect
 )
 
@@ -93,7 +93,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4
 	github.com/google/btree v1.1.2 // indirect
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.3.0 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect

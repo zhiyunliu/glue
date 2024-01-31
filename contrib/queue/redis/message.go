@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
@@ -15,7 +14,7 @@ import (
 type redisMessage struct {
 	retryCount int64
 	message    string
-	obj        *MsgBody
+	objMsg     queue.Message
 	err        error
 }
 
@@ -55,56 +54,32 @@ func (m *redisMessage) Original() string {
 
 // GetMessage 获取消息
 func (m *redisMessage) GetMessage() queue.Message {
-	if m.obj == nil {
-		m.obj = newMsgBody(m.message)
+	if m.objMsg == nil {
+		m.objMsg = newMsgBody(m.message)
 	}
-	return m.obj
+	return m.objMsg
 }
 
 func (m *redisMessage) PlusRetryCount() queue.Message {
-	if m.obj == nil {
-		m.obj = newMsgBody(m.message)
+	if m.objMsg == nil {
+		m.objMsg = newMsgBody(m.message)
 	}
 	m.retryCount++
-	m.obj.HeaderMap["retry_count"] = strconv.FormatInt(m.retryCount, 10)
-	return m.obj
+	m.objMsg.Header()["retry_count"] = strconv.FormatInt(m.retryCount, 10)
+	return m.objMsg
 }
 
-type MsgBody struct {
-	msg       string      `json:"-"`
-	QueueKey  string      `json:"qk,omitempty"`
-	HeaderMap xtypes.SMap `json:"header,omitempty"`
-	BodyMap   xtypes.XMap `json:"body,omitempty"`
-}
-
-func newMsgBody(msg string) *MsgBody {
-	if !json.Valid(bytesconv.StringToBytes(msg)) {
+func newMsgBody(msg string) queue.Message {
+	msgBytes := bytesconv.StringToBytes(msg)
+	if !json.Valid(msgBytes) {
 		panic(fmt.Errorf("msg data is invalid json format.:%s", msg))
 	}
-	body := &MsgBody{
-		msg:       msg,
+	msgItem := &queue.MsgItem{
 		HeaderMap: make(xtypes.SMap),
-		BodyMap:   make(xtypes.XMap),
 	}
-	decoder := json.NewDecoder(strings.NewReader(msg))
-	decoder.UseNumber()
-	decoder.Decode(body)
-	return body
-}
-
-func (m *MsgBody) Header() map[string]string {
-	return m.HeaderMap
-}
-func (m *MsgBody) Body() map[string]interface{} {
-	return m.BodyMap
-}
-
-func (m MsgBody) String() string {
-	return m.msg
-}
-
-func (m MsgBody) MarshalBinary() (data []byte, err error) {
-	return json.Marshal(m)
+	msgItem.ItemBytes = msgBytes
+	json.Unmarshal(msgBytes, msgItem)
+	return msgItem
 }
 
 type deadMsg struct {
