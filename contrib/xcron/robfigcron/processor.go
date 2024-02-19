@@ -13,6 +13,7 @@ import (
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/standard"
 	"github.com/zhiyunliu/glue/xcron"
+	"github.com/zhiyunliu/golibs/xlist"
 	"github.com/zhiyunliu/golibs/xstack"
 )
 
@@ -24,7 +25,7 @@ type processor struct {
 	jobs            cmap.ConcurrentMap
 	monopolyJobs    cmap.ConcurrentMap
 	routerEngine    *alloter.Engine
-	immediatelyJobs []cron.FuncJob
+	immediatelyJobs *xlist.List
 	cronStdEngine   *cron.Cron
 	cronSecEngine   *cron.Cron
 }
@@ -38,13 +39,14 @@ type procJob struct {
 // NewProcessor 创建processor
 func newProcessor(ctx sctx.Context, engine *alloter.Engine) (p *processor, err error) {
 	p = &processor{
-		ctx:           ctx,
-		closeChan:     make(chan struct{}),
-		jobs:          cmap.New(),
-		monopolyJobs:  cmap.New(),
-		routerEngine:  engine,
-		cronStdEngine: cron.New(),
-		cronSecEngine: cron.New(cron.WithSeconds()),
+		ctx:             ctx,
+		closeChan:       make(chan struct{}),
+		jobs:            cmap.New(),
+		monopolyJobs:    cmap.New(),
+		routerEngine:    engine,
+		cronStdEngine:   cron.New(),
+		cronSecEngine:   cron.New(cron.WithSeconds()),
+		immediatelyJobs: xlist.NewList(),
 	}
 	return p, nil
 }
@@ -56,7 +58,7 @@ func (s *processor) Items() map[string]interface{} {
 
 // Start 所有任务
 func (s *processor) Start() error {
-	s.handleImmediatelyJob()
+	go s.handleImmediatelyJob()
 	go s.cronStdEngine.Run()
 	go s.cronSecEngine.Run()
 
@@ -83,7 +85,7 @@ func (s *processor) Add(jobs ...*xcron.Job) (err error) {
 		}
 		funcJob := s.buildFuncJob(t)
 		if t.IsImmediately() {
-			s.immediatelyJobs = append(s.immediatelyJobs, funcJob)
+			s.immediatelyJobs.Append(funcJob)
 		}
 
 		if jobId, err := curEngine.AddJob(t.Cron, funcJob); err != nil {
@@ -236,10 +238,26 @@ func (s *processor) handle(req *Request) {
 }
 
 func (s *processor) handleImmediatelyJob() {
-	for i := range s.immediatelyJobs {
-		go func(idx int) {
-			s.immediatelyJobs[idx]()
-		}(i)
+	ticker := time.NewTicker(time.Second)
+	for {
+		select {
+		case <-s.closeChan:
+			return
+		case <-ticker.C:
+
+		}
+
+		if s.immediatelyJobs.IsEmpty() {
+			continue
+		}
+
+		s.immediatelyJobs.Iter(func(idx int, node *xlist.Node) bool {
+			if funcJob, ok := node.Value.(cron.FuncJob); ok {
+				go funcJob()
+			}
+			s.immediatelyJobs.Remove(node)
+			return true
+		})
 	}
 }
 
