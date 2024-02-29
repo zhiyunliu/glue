@@ -26,7 +26,9 @@ type Observer func(string, Value)
 type Config interface {
 	Load() error
 	Source(sources ...Source) error
+	// Deprecated: As of Go v0.5.3, this function simply calls [ScanTo].
 	Scan(v interface{}) error
+	ScanTo(v interface{}) error
 	Value(key string) Value
 	Watch(key string, o Observer) error
 	Close() error
@@ -166,7 +168,16 @@ func (c *config) Value(key string) Value {
 	return &emptyValue{err: buildKeyNotFoundError(key)}
 }
 
+// Deprecated: As of Go v0.5.3, this function simply calls [ScanTo].
 func (c *config) Scan(v interface{}) error {
+	data, err := c.reader.Source()
+	if err != nil {
+		return err
+	}
+	return unmarshalJSON(data, v)
+}
+
+func (c *config) ScanTo(v interface{}) error {
 	data, err := c.reader.Source()
 	if err != nil {
 		return err
