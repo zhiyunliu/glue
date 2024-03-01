@@ -32,6 +32,8 @@ type IMQCMessage interface {
 type TaskInfo interface {
 	GetQueue() string
 	GetConcurrency() int
+	GetVisibilityTimeout() int
+	GetBufferSize() int
 }
 
 type Message interface {

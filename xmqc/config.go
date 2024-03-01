@@ -12,22 +12,31 @@ type Config struct {
 }
 
 type Task struct {
-	Queue       string            `json:"queue"`
-	Service     string            `json:"service,omitempty"`
-	Disable     bool              `json:"disable"`
-	Concurrency int               `json:"concurrency,omitempty"`
-	Timeout     int               `json:"timeout"`
-	Meta        metadata.Metadata `json:"meta,omitempty"`
+	Queue             string            `json:"queue"`
+	Service           string            `json:"service,omitempty"`
+	Disable           bool              `json:"disable"`
+	Concurrency       int               `json:"concurrency,omitempty"`
+	BufferSize        int               `json:"BufferSize,omitempty"`
+	VisibilityTimeout int               `json:"visibility_timeout"`
+	Meta              metadata.Metadata `json:"meta,omitempty"`
 }
 
 type TaskList []*Task
 
-func (t *Task) GetQueue() string {
+func (t Task) GetQueue() string {
 	return t.Queue
 }
 
-func (t *Task) GetConcurrency() int {
+func (t Task) GetConcurrency() int {
 	return t.Concurrency
+}
+
+func (s Task) GetVisibilityTimeout() int {
+	return s.VisibilityTimeout
+}
+
+func (s Task) GetBufferSize() int {
+	return s.BufferSize
 }
 
 func (t *Task) GetService() string {

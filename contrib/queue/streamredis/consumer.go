@@ -34,16 +34,27 @@ type Consumer struct {
 }
 
 type QueueItem struct {
-	QueueName   string
-	Concurrency int //等于0 ，代表不限制
-	callback    queue.ConsumeCallback
+	QueueName         string
+	Concurrency       int
+	BufferSize        int
+	VisibilityTimeout time.Duration
+	callback          queue.ConsumeCallback
 }
 
 func (q QueueItem) GetQueue() string {
 	return q.QueueName
 }
+
 func (q QueueItem) GetConcurrency() int {
 	return q.Concurrency
+}
+
+func (s QueueItem) GetVisibilityTimeout() time.Duration {
+	return s.VisibilityTimeout
+}
+
+func (s QueueItem) GetBufferSize() int {
+	return s.BufferSize
 }
 
 // NewConsumerByConfig 创建新的Consumer
@@ -63,7 +74,7 @@ func (consumer *Consumer) Connect() (err error) {
 		return
 	}
 	copts := &ConsumerOptions{}
-	err = consumer.config.Scan(copts)
+	err = consumer.config.ScanTo(copts)
 	if err != nil {
 		return
 	}
@@ -123,7 +134,7 @@ func (m *Consumer) createProducer() (err error) {
 	copts := &ProductOptions{
 		DelayInterval: 2,
 	}
-	err = m.config.Scan(copts)
+	err = m.config.ScanTo(copts)
 	if err != nil {
 		return
 	}
@@ -152,9 +163,11 @@ func (consumer *Consumer) Consume(task queue.TaskInfo, callback queue.ConsumeCal
 	}
 
 	item := &QueueItem{
-		QueueName:   queueName,
-		Concurrency: task.GetConcurrency(),
-		callback:    callback,
+		QueueName:         queueName,
+		Concurrency:       task.GetConcurrency(),
+		BufferSize:        task.GetBufferSize(),
+		VisibilityTimeout: time.Duration(task.GetVisibilityTimeout()) * time.Second,
+		callback:          callback,
 	}
 	if item.Concurrency == 0 {
 		item.Concurrency = queue.DefaultMaxQueueLen
