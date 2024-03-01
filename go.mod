@@ -133,4 +133,4 @@ require (
 
 //replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
 
-//replace github.com/zhiyunliu/redisqueue/v2 => ../../../github.com/zhiyunliu/redisqueue
+replace github.com/zhiyunliu/redisqueue/v2 => ../../../github.com/zhiyunliu/redisqueue

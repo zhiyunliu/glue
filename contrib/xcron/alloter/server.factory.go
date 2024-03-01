@@ -20,7 +20,7 @@ func (s *serverResolver) Resolve(name string,
 	cfg config.Config,
 	opts ...engine.Option) (xcron.Server, error) {
 	setval := &serverConfig{}
-	err := cfg.Scan(setval)
+	err := cfg.ScanTo(setval)
 	if err != nil {
 		return nil, fmt.Errorf("读取xcron配置[%s]错误%w", cfg.Path(), err)
 	}

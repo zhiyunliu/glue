@@ -61,7 +61,7 @@ func (e *Server) Config(cfg config.Config) {
 		return
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.srvCfg)
+	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).ScanTo(e.opts.srvCfg)
 }
 
 // Start 开始

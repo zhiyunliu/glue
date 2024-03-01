@@ -35,7 +35,7 @@ func NewProducer(config config.Config, opts ...queue.Option) (m *Producer, err e
 	m.opts = &ProductOptions{
 		DelayInterval: 2,
 	}
-	err = config.Scan(m.opts)
+	err = config.ScanTo(m.opts)
 	if err != nil {
 		return
 	}

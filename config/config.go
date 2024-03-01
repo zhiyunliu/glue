@@ -170,11 +170,7 @@ func (c *config) Value(key string) Value {
 
 // Deprecated: As of Go v0.5.3, this function simply calls [ScanTo].
 func (c *config) Scan(v interface{}) error {
-	data, err := c.reader.Source()
-	if err != nil {
-		return err
-	}
-	return unmarshalJSON(data, v)
+	return c.ScanTo(v)
 }
 
 func (c *config) ScanTo(v interface{}) error {

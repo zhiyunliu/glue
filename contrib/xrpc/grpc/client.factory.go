@@ -24,7 +24,7 @@ func (s *clientResolver) Resolve(name string, cfg config.Config) (xrpc.Client, e
 		Balancer:    roundrobin.Name,
 		ConnTimeout: 10,
 	}
-	err := cfg.Scan(setval)
+	err := cfg.ScanTo(setval)
 	if err != nil {
 		return nil, fmt.Errorf("读取grpc配置:%w", err)
 	}

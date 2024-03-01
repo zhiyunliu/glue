@@ -70,7 +70,7 @@ func (e *Server) Config(cfg config.Config) {
 		return
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(e.serverPath()).Scan(e.opts.srvCfg)
+	cfg.Get(e.serverPath()).ScanTo(e.opts.srvCfg)
 }
 
 // Start 开始

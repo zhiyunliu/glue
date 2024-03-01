@@ -13,7 +13,7 @@ func (l wrap) Load() error {
 
 // Deprecated: As of Go v0.5.3, this function simply calls [ScanTo].
 func (l wrap) Scan(v interface{}) error {
-	return l.rootConfig.Value(l.curkey).Scan(v)
+	return l.ScanTo(v)
 }
 
 func (l wrap) ScanTo(v interface{}) error {

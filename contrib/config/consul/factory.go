@@ -19,7 +19,7 @@ func (f *consulFactory) Name() string {
 
 func (f *consulFactory) Create(cfg config.Config) (config.Source, error) {
 	cltCfg := &clientConfig{}
-	cfg.Scan(cltCfg)
+	cfg.ScanTo(cltCfg)
 
 	config := consulapi.DefaultConfig()
 	config.Address = cltCfg.Addr

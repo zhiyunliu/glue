@@ -22,7 +22,7 @@ func (s *serverResolver) Resolve(name string,
 	setval := &serverConfig{
 		Config: &xrpc.Config{},
 	}
-	err := cfg.Scan(setval)
+	err := cfg.ScanTo(setval)
 	if err != nil {
 		return nil, fmt.Errorf("读取grpc配置[%s]错误%w", cfg.Path(), err)
 	}
