@@ -9,7 +9,7 @@ import (
 	"net/url"
 
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/golibs/xtypes"
+	"github.com/zhiyunliu/golibs/xreflect"
 )
 
 type formBinding struct{}
@@ -20,7 +20,7 @@ func (formBinding) Name() string {
 }
 
 func (formBinding) Marshal(v interface{}) ([]byte, error) {
-	mapVal, err := xtypes.AnyToMap(v)
+	mapVal, err := xreflect.AnyToMap(v)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (formPostBinding) Name() string {
 }
 
 func (formPostBinding) Marshal(v interface{}) ([]byte, error) {
-	mapVal, err := xtypes.AnyToMap(v)
+	mapVal, err := xreflect.AnyToMap(v)
 	if err != nil {
 		return nil, err
 	}

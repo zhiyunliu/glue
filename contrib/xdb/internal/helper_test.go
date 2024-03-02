@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zhiyunliu/golibs/xreflect"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -259,7 +260,7 @@ func Test_fillRowToStruct(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		fields     *structFields
+		fields     *xreflect.StructFields
 		reflectVal reflect.Value
 		result     any
 		vals       []any
@@ -292,11 +293,11 @@ func Test_fillRowToStruct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.reflectVal = reflect.ValueOf(tt.result)
-			tt.fields = cachedTypeFields(tt.reflectVal.Type())
+			tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
 
-			cols := make([]string, len(tt.fields.list))
-			for i, k := range tt.fields.list {
-				cols[i] = k.name
+			cols := make([]string, len(tt.fields.List))
+			for i, k := range tt.fields.List {
+				cols[i] = k.Name
 			}
 
 			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, tt.vals); (err != nil) != tt.wantErr {
@@ -314,7 +315,7 @@ func Test_fillRowToStruct_Scanner(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		fields     *structFields
+		fields     *xreflect.StructFields
 		reflectVal reflect.Value
 		result     any
 		vals       []any
@@ -327,11 +328,11 @@ func Test_fillRowToStruct_Scanner(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.reflectVal = reflect.ValueOf(tt.result)
-			tt.fields = cachedTypeFields(tt.reflectVal.Type())
+			tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
 
-			cols := make([]string, len(tt.fields.list))
-			for i, k := range tt.fields.list {
-				cols[i] = k.name
+			cols := make([]string, len(tt.fields.List))
+			for i, k := range tt.fields.List {
+				cols[i] = k.Name
 			}
 
 			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, tt.vals); (err != nil) != tt.wantErr {
@@ -348,7 +349,7 @@ func Benchmark_fillRowToStruct(b *testing.B) {
 
 	tt := struct {
 		name       string
-		fields     *structFields
+		fields     *xreflect.StructFields
 		reflectVal reflect.Value
 		result     any
 		vals       []any
@@ -377,39 +378,15 @@ func Benchmark_fillRowToStruct(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 
 		tt.reflectVal = reflect.ValueOf(tt.result)
-		tt.fields = cachedTypeFields(tt.reflectVal.Type())
+		tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
 
-		cols := make([]string, len(tt.fields.list))
-		for i, k := range tt.fields.list {
-			cols[i] = k.name
+		cols := make([]string, len(tt.fields.List))
+		for i, k := range tt.fields.List {
+			cols[i] = k.Name
 		}
 
 		if err := scanInToStruct(tt.fields, tt.reflectVal, cols, tt.vals); (err != nil) != tt.wantErr {
 			b.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
 		}
 	}
-}
-
-func Test_Map(t *testing.T) {
-	type val struct {
-		Map *map[string]any `json:"map"`
-	}
-	result := &val{}
-	reflectVal := reflect.ValueOf(result)
-
-	fields := cachedTypeFields(reflectVal.Type())
-
-	for i := range fields.list {
-		ftype := fields.list[i].typ
-
-		mapval := reflect.MakeMap(reflect.MapOf(ftype.Key(), ftype.Elem()))
-		rv1 := reflect.New(ftype)
-		mapval.SetMapIndex(reflect.ValueOf("aaaa"), reflect.ValueOf("bbb"))
-		rv1.Elem().Set(mapval)
-
-		fv := reflectVal.Elem().Field(fields.list[i].index)
-		fv.Set(rv1)
-
-	}
-
 }

@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"github.com/zhiyunliu/glue/xdb"
+	"github.com/zhiyunliu/golibs/xreflect"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -99,7 +100,7 @@ func ResolveFirstDataResult(rows *sql.Rows, result any) (err error) {
 		}
 
 	case reflect.Struct:
-		fields := cachedTypeFields(reflect.Indirect(rv).Type())
+		fields := xreflect.CachedTypeFields(reflect.Indirect(rv).Type())
 
 		columnTypes, _ := rows.ColumnTypes()
 		columns, _ := rows.Columns()
@@ -253,12 +254,12 @@ func analyzeParamFields(input any) (params xtypes.XMap, err error) {
 		return params, fmt.Errorf("只能接收struct; 实际是 %s", refval.Kind().String())
 	}
 
-	fields := cachedTypeFields(refval.Type())
+	fields := xreflect.CachedTypeFields(refval.Type())
 
-	for i := range fields.list {
-		f := &fields.list[i]
-		fv := refval.Field(f.index)
-		params[f.name] = f.encoder(fv)
+	for i := range fields.List {
+		f := &fields.List[i]
+		fv := refval.Field(f.Index)
+		params[f.Name] = f.Encoder(fv)
 	}
 	return
 }
@@ -303,30 +304,27 @@ func scanIntoMap(mapValue reflect.Value, values []interface{}, columnTypes []str
 }
 
 // 填充数据到结构体
-func scanInToStruct(fields *structFields, rv reflect.Value, cols []string, vals []any) (err error) {
+func scanInToStruct(fields *xreflect.StructFields, rv reflect.Value, cols []string, vals []any) (err error) {
 
 	if rv.Kind() != reflect.Pointer || rv.IsNil() {
 		return &xdb.InvalidArgTypeError{Type: rv.Type()}
 	}
 
-	if rv.CanConvert(structScannerType) {
-		scanner := rv.Interface().(xdb.StructScanner)
-		err = scanner.StructScan(vals...)
-		return
+	//获取最终的struct 类型
+	for rv.Kind() == reflect.Pointer {
+		rv = rv.Elem()
 	}
-
-	rv = rv.Elem()
 
 	for i := range cols {
 		col := cols[i]
-		field, ok := fields.exactName[col]
+		field, ok := fields.ExactName[col]
 		if !ok {
 			continue
 		}
-		fv := rv.Field(field.index)
-		err = field.dencoder(fv, reflect.Indirect(reflect.ValueOf(vals[i])).Interface())
+		fv := rv.Field(field.Index)
+		err = field.Dencoder(fv, reflect.Indirect(reflect.ValueOf(vals[i])).Interface())
 		if err != nil {
-			err = xdb.NewError(fmt.Errorf("field:%s,val:%+v,err:%w", field.name, vals[i], err), "", nil)
+			err = xdb.NewError(fmt.Errorf("field:%s,val:%+v,err:%w", field.Name, vals[i], err), "", nil)
 			return
 		}
 	}
@@ -361,7 +359,7 @@ func resolveRowsToStruct(rows *sql.Rows, itemType reflect.Type) (reflectResults 
 		itemType = itemType.Elem()
 	}
 
-	fields := cachedTypeFields(itemType)
+	fields := xreflect.CachedTypeFields(itemType)
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))

@@ -9,14 +9,6 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
-type MapScanner interface {
-	MapScan(val any) error
-}
-
-type StructScanner interface {
-	StructScan(vals ...any) error
-}
-
 type Result = sql.Result
 
 // Row 单行数据
