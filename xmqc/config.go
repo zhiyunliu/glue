@@ -16,7 +16,7 @@ type Task struct {
 	Service           string            `json:"service,omitempty"`
 	Disable           bool              `json:"disable"`
 	Concurrency       int               `json:"concurrency,omitempty"`
-	BufferSize        int               `json:"BufferSize,omitempty"`
+	BufferSize        int               `json:"buffersize,omitempty"`
 	VisibilityTimeout int               `json:"visibility_timeout"`
 	Meta              metadata.Metadata `json:"meta,omitempty"`
 }
