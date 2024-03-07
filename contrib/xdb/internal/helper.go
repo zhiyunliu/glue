@@ -322,10 +322,17 @@ func scanInToStruct(fields *xreflect.StructFields, rv reflect.Value, cols []stri
 			continue
 		}
 		fv := rv.Field(field.Index)
-		err = field.Dencoder(fv, reflect.Indirect(reflect.ValueOf(vals[i])).Interface())
-		if err != nil {
-			err = xdb.NewError(fmt.Errorf("field:%s,val:%+v,err:%w", field.Name, vals[i], err), "", nil)
-			return
+
+		vrf := reflect.ValueOf(vals[i])
+		for vrf.Kind() == reflect.Ptr {
+			vrf = vrf.Elem()
+		}
+		if vrf.IsValid() && vrf.CanInterface() {
+			err = field.Dencoder(fv, vrf.Interface())
+			if err != nil {
+				err = xdb.NewError(fmt.Errorf("field:%s,val:%+v,err:%w", field.Name, vals[i], err), "", nil)
+				return
+			}
 		}
 	}
 	return nil
