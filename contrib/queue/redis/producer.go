@@ -9,10 +9,6 @@ import (
 	"github.com/zhiyunliu/glue/queue"
 )
 
-const (
-	DELAY_QUEUE_NAME = "glue:delayqueue:list"
-)
-
 // Producer memcache配置文件
 type Producer struct {
 	opts          *ProductOptions
