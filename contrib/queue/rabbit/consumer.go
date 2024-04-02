@@ -1,15 +1,14 @@
-package redis
+package rabbit
 
 import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
-	rds "github.com/go-redis/redis/v7"
+	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/contrib/redis"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/queue"
 
 	cmap "github.com/orcaman/concurrent-map"
@@ -20,7 +19,7 @@ type Consumer struct {
 	configName       string
 	EnableDeadLetter bool //开启死信队列
 	DeadLetterQueue  string
-	client           *redis.Client
+	client           *rabbitClient
 	queues           cmap.ConcurrentMap
 	closeCh          chan struct{}
 	once             sync.Once
@@ -29,13 +28,11 @@ type Consumer struct {
 }
 
 type QueueItem struct {
-	QueueName    string
-	Concurrency  int //等于0 ，代表不限制
-	BlockTimeout int
-
+	QueueName        string
+	taskInfo         queue.TaskInfo
 	closeMsgChanLock *sync.Once
 	unconsumeChan    chan struct{}
-	msgChan          chan string
+	msgChan          chan *amqp.Delivery
 	callback         queue.ConsumeCallback
 }
 
@@ -57,16 +54,24 @@ func NewConsumer(configName string, config config.Config) (consumer *Consumer, e
 }
 
 // Connect  连接服务器
-func (consumer *Consumer) Connect() (err error) {
-	consumer.client, err = getRedisClient(consumer.config)
-	consumer.DeadLetterQueue = consumer.config.Value("deadletter_queue").String()
-	consumer.EnableDeadLetter = len(consumer.DeadLetterQueue) > 0
+func (c *Consumer) Connect() (err error) {
+	c.client, err = getRabbitClient(c.config)
+	if err != nil {
+		return err
+	}
+	err = c.client.ExchangeDeclare()
+	if err != nil {
+		return err
+	}
+
+	c.DeadLetterQueue = c.config.Value("deadletter_queue").String()
+	c.EnableDeadLetter = len(c.DeadLetterQueue) > 0
 	return
 }
 
 // Consume 注册消费信息
-func (consumer *Consumer) Consume(task queue.TaskInfo, callback queue.ConsumeCallback) (err error) {
-	queue := task.GetQueue()
+func (consumer *Consumer) Consume(taskInfo queue.TaskInfo, callback queue.ConsumeCallback) (err error) {
+	queue := taskInfo.GetQueue()
 	if strings.EqualFold(queue, "") {
 		return fmt.Errorf("队列名字不能为空")
 	}
@@ -75,8 +80,7 @@ func (consumer *Consumer) Consume(task queue.TaskInfo, callback queue.ConsumeCal
 	}
 	item := &QueueItem{
 		QueueName:        queue,
-		Concurrency:      task.GetConcurrency(),
-		BlockTimeout:     2,
+		taskInfo:         taskInfo,
 		unconsumeChan:    make(chan struct{}),
 		callback:         callback,
 		closeMsgChanLock: &sync.Once{},
@@ -87,22 +91,23 @@ func (consumer *Consumer) Consume(task queue.TaskInfo, callback queue.ConsumeCal
 }
 
 func (consumer *Consumer) doReceive(item *QueueItem) {
-	client := consumer.client
-	queueName := item.QueueName
-	concurrency := item.Concurrency
+
+	concurrency := item.taskInfo.GetConcurrency()
 	if concurrency == 0 {
 		concurrency = queue.DefaultMaxQueueLen
 	}
-	item.Concurrency = concurrency
-	item.msgChan = make(chan string, concurrency)
+	item.msgChan = make(chan *amqp.Delivery, concurrency)
 
 	consumer.wg.Add(concurrency)
 
-	for i := 0; i < item.Concurrency; i++ {
+	for i := 0; i < concurrency; i++ {
 		go consumer.work(item)
 	}
 
-	blockTimeout := time.Duration(item.BlockTimeout) * time.Second
+	msgChan, err := consumer.client.Consume(item.QueueName, global.AppName, item.taskInfo.GetMeta())
+	if err != nil {
+		return
+	}
 
 	for {
 		select {
@@ -112,19 +117,11 @@ func (consumer *Consumer) doReceive(item *QueueItem) {
 		case <-item.unconsumeChan:
 			close(item.msgChan)
 			return
-		default:
-			cmd := client.BLPop(blockTimeout, queueName)
-			msgs, err := cmd.Result()
-			if err != nil && err != rds.Nil {
-				time.Sleep(time.Second)
-				continue
+		case msgItem, ok := <-msgChan:
+			if !ok {
+				return
 			}
-			hasData := len(msgs) > 0
-			if !hasData {
-				continue
-			}
-			ndata := msgs[len(msgs)-1]
-			item.msgChan <- ndata
+			item.msgChan <- &msgItem
 		}
 	}
 }
@@ -134,31 +131,16 @@ func (consumer *Consumer) stopReceive(item *QueueItem) {
 }
 
 func (consumer *Consumer) work(item *QueueItem) {
-	defer func() {
-		for data := range item.msgChan {
-			//回填消息队列数据
-			consumer.client.LPush(item.QueueName, data)
-		}
-		consumer.wg.Done()
-	}()
-	for {
-		select {
-		case msg := <-item.msgChan:
-			rdsMsg := &redisMessage{message: msg}
-			item.callback(rdsMsg)
-			if rdsMsg.err != nil {
-				//超过最大次数
-				if rdsMsg.RetryCount() >= queue.MaxRetrtCount {
-					consumer.writeToDeadLetter(item.QueueName, msg)
-					continue
-				}
-				obj := rdsMsg.PlusRetryCount()
-				consumer.client.RPush(item.QueueName, obj)
+	defer consumer.wg.Done()
+	for msg := range item.msgChan {
+		rdsMsg := &rabbitMessage{message: msg}
+		item.callback(rdsMsg)
+		if rdsMsg.err != nil {
+			//超过最大次数
+			if rdsMsg.RetryCount() >= queue.MaxRetrtCount {
+				consumer.writeToDeadLetter(item.QueueName, msg)
+				continue
 			}
-		case <-consumer.closeCh:
-			return
-		case <-item.unconsumeChan:
-			return
 		}
 	}
 }
@@ -175,7 +157,7 @@ func (consumer *Consumer) Unconsume(queue string) {
 }
 
 // Start 启动
-func (consumer *Consumer) Start() error {
+func (consumer *Consumer) Start() (err error) {
 	for item := range consumer.queues.IterBuffered() {
 		func(qitem *QueueItem) {
 			go consumer.doReceive(qitem)
@@ -185,19 +167,17 @@ func (consumer *Consumer) Start() error {
 }
 
 // Close 关闭当前连接
-func (consumer *Consumer) Close() error {
-	consumer.once.Do(func() {
-		close(consumer.closeCh)
+func (c *Consumer) Close() (err error) {
+	c.once.Do(func() {
+		c.client.Close()
+		close(c.closeCh)
 	})
 	//等等所有的关闭完成
-	consumer.wg.Wait()
-	if consumer.client == nil {
-		return nil
-	}
-	return consumer.client.Close()
+	c.wg.Wait()
+	return
 }
 
-func (consumer *Consumer) writeToDeadLetter(queue string, msg string) {
+func (consumer *Consumer) writeToDeadLetter(queue string, msg *amqp.Delivery) {
 	if !consumer.EnableDeadLetter {
 		return
 	}
@@ -205,7 +185,8 @@ func (consumer *Consumer) writeToDeadLetter(queue string, msg string) {
 	if strings.EqualFold(queue, consumer.DeadLetterQueue) {
 		return
 	}
-	consumer.client.RPush(consumer.DeadLetterQueue, deadMsg{Queue: queue, Msg: msg})
+	//todo:处理死信内容的写入
+	//consumer.client.RPush(consumer.DeadLetterQueue, deadMsg{Queue: queue, Msg: msg})
 }
 
 type consumeResolver struct {

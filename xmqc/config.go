@@ -39,6 +39,10 @@ func (s Task) GetBufferSize() int {
 	return s.BufferSize
 }
 
+func (s Task) GetMeta() metadata.Metadata {
+	return s.Meta
+}
+
 func (t *Task) GetService() string {
 	if t.Service != "" {
 		return t.Service

@@ -26,6 +26,7 @@ require (
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/pelletier/go-toml/v2 v2.0.8
 	github.com/prometheus/client_golang v1.16.0
+	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.22.8
 	github.com/stretchr/testify v1.8.3

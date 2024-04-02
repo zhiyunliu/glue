@@ -5,6 +5,7 @@ import (
 	"encoding"
 	"encoding/json"
 
+	"github.com/zhiyunliu/glue/metadata"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
@@ -16,7 +17,7 @@ var DefaultMaxQueueLen = 100
 type IQueue interface {
 	Send(ctx context.Context, key string, value interface{}) error
 	DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error
-	Count(key string) (int64, error)
+	//Count(key string) (int64, error)
 }
 
 // IMQCMessage  队列消息
@@ -34,6 +35,7 @@ type TaskInfo interface {
 	GetConcurrency() int
 	GetVisibilityTimeout() int
 	GetBufferSize() int
+	GetMeta() metadata.Metadata
 }
 
 type Message interface {
@@ -50,15 +52,15 @@ type IMQC interface {
 	Connect() error
 	Consume(task TaskInfo, callback ConsumeCallback) (err error)
 	Unconsume(queue string)
-	Start()
-	Close()
+	Start() error
+	Close() error
 }
 
 // IMQP 消息生产
 type IMQP interface {
 	Push(key string, value Message) error
 	DelayPush(key string, value Message, delaySeconds int64) error
-	Count(key string) (int64, error)
+	//Count(key string) (int64, error)
 	Close() error
 }
 

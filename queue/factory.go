@@ -44,10 +44,10 @@ func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, de
 	return q.q.DelayPush(key, msg, delaySeconds)
 }
 
-// Count 队列中消息个数
-func (q *queue) Count(key string) (int64, error) {
-	return q.q.Count(key)
-}
+// // Count 队列中消息个数
+// func (q *queue) Count(key string) (int64, error) {
+// 	return q.q.Count(key)
+// }
 
 func (q *queue) Close() error {
 	return q.q.Close()
