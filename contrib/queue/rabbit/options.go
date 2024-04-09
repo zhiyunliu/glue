@@ -4,12 +4,12 @@ import "github.com/zhiyunliu/glue/queue"
 
 type options struct {
 	queue.Options
-	Addr        string `json:"addr,omitempty"  valid:"required" `
-	VirtualHost string `json:"virtual_host,omitempty"`
-	//BindKey      string `json:"bind_key,omitempty"`
-	Exchange     string `json:"exchange,omitempty"`
-	ExchangeType string `json:"exchange_type,omitempty"`
-	ConnName     string `json:"conn_name,omitempty"`
+	Addr          string `json:"addr,omitempty"  valid:"required" `
+	VirtualHost   string `json:"virtual_host,omitempty"`
+	DelayExchange string `json:"delay_exchange,omitempty"`
+	Exchange      string `json:"exchange,omitempty"`
+	ExchangeType  string `json:"exchange_type,omitempty"`
+	ConnName      string `json:"conn_name,omitempty"`
 
 	//Properties map[string]any `json:"properties"`
 }

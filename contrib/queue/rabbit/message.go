@@ -38,13 +38,13 @@ func (m *rabbitMessage) MessageId() string {
 // Ack 确定消息
 func (m *rabbitMessage) Ack() error {
 	m.err = nil
-	return m.message.Ack(false)
+	return nil //	m.message.Ack(false)
 }
 
 // Nack 取消消息
 func (m *rabbitMessage) Nack(err error) error {
 	m.err = err
-	return m.message.Nack(false, true)
+	return nil //m.message.Nack(false, true)
 }
 
 // original message

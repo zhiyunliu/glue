@@ -8,7 +8,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/queue"
 
 	cmap "github.com/orcaman/concurrent-map"
@@ -50,15 +49,17 @@ func NewConsumer(configName string, config config.Config) (consumer *Consumer, e
 
 	consumer.closeCh = make(chan struct{})
 	consumer.queues = cmap.New()
+
+	consumer.client, err = getRabbitClient(config)
+	if err != nil {
+		return consumer, err
+	}
 	return
 }
 
 // Connect  连接服务器
 func (c *Consumer) Connect() (err error) {
-	c.client, err = getRabbitClient(c.config)
-	if err != nil {
-		return err
-	}
+
 	err = c.client.ExchangeDeclare()
 	if err != nil {
 		return err
@@ -104,7 +105,7 @@ func (consumer *Consumer) doReceive(item *QueueItem) {
 		go consumer.work(item)
 	}
 
-	msgChan, err := consumer.client.Consume(item.QueueName, global.AppName, item.taskInfo.GetMeta())
+	msgChan, err := consumer.client.Consume(item.QueueName, item.taskInfo.GetMeta())
 	if err != nil {
 		return
 	}
@@ -117,11 +118,8 @@ func (consumer *Consumer) doReceive(item *QueueItem) {
 		case <-item.unconsumeChan:
 			close(item.msgChan)
 			return
-		case msgItem, ok := <-msgChan:
-			if !ok {
-				return
-			}
-			item.msgChan <- &msgItem
+		case msgItem := <-msgChan:
+			item.msgChan <- msgItem
 		}
 	}
 }
