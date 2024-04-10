@@ -97,6 +97,8 @@ func getRabbitClient(config config.Config, opts ...queue.Option) (client *rabbit
 		return nil, err
 	}
 
+	clientCache.Store(addr, client)
+
 	go client.watchConn()
 	return
 }
@@ -142,10 +144,6 @@ func (c *rabbitClient) watchConn() {
 			return
 		}
 
-		if locker, ok := c.canRunCheck.Load(canRunCheckKey); ok {
-			<-locker.(chan struct{})
-			continue
-		}
 		c.reconnect()
 	}
 }
