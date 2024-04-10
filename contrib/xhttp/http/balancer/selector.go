@@ -58,6 +58,9 @@ func (r *httpSelector) Close() {
 
 // ResolveNow resolves immediately
 func (r *httpSelector) resolveNow() {
+	if r.registrar == nil {
+		return
+	}
 	instances, err := r.registrar.GetService(r.ctx, r.serviceName)
 	if err != nil {
 		log.Errorf("http:registrar.GetService=%s,error:%+v", r.serviceName, err)
