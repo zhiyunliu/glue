@@ -35,12 +35,6 @@ type QueueItem struct {
 	callback         queue.ConsumeCallback
 }
 
-func (qi *QueueItem) CloseMsgChan() {
-	qi.closeMsgChanLock.Do(func() {
-		close(qi.msgChan)
-	})
-}
-
 // NewConsumerByConfig 创建新的Consumer
 func NewConsumer(configName string, config config.Config) (consumer *Consumer, err error) {
 	consumer = &Consumer{}
