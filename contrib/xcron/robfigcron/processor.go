@@ -148,12 +148,12 @@ func (s *processor) checkIsMonopoly(j *xcron.Job) (err error) {
 }
 
 func (s *processor) reset(req *Request) (err error) {
-	err = s.releaseMonopolyJob(req.job)
+	err = s.resetMonopolyJob(req.job)
 	req.reset()
 	return
 }
 
-func (s *processor) releaseMonopolyJob(job *xcron.Job) (err error) {
+func (s *processor) resetMonopolyJob(job *xcron.Job) (err error) {
 	//根据执行后，重置下一次的独占时间
 	if !job.IsMonopoly() {
 		return
@@ -164,7 +164,7 @@ func (s *processor) releaseMonopolyJob(job *xcron.Job) (err error) {
 	}
 	mjob := val.(*monopolyJob)
 	nextSecs := mjob.job.CalcExpireSeconds()
-	err = mjob.locker.Renewal(nextSecs)
+	err = mjob.locker.Renewal(nextSecs) //执行完成后，将锁延期到下次执行。保障没有其他的执行
 	return
 }
 
