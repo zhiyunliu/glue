@@ -62,7 +62,10 @@ func (e *Server) Serve(ctx context.Context) (err error) {
 }
 
 func (e *Server) Stop(ctx context.Context) error {
-	return e.processor.Close()
+	if e.processor != nil {
+		return e.processor.Close()
+	}
+	return nil
 }
 
 func (e *Server) AddJob(jobs ...*xcron.Job) (keys []string, err error) {

@@ -102,7 +102,11 @@ func (e *Server) Start(ctx context.Context) (err error) {
 
 	go func() {
 		e.started = true
-		errChan <- e.server.Serve(e.ctx)
+		serveErr := e.server.Serve(e.ctx) //存在1s内，服务没有启动的可能性
+		if serveErr != nil {
+			log.Errorf("MQC Server [%s] Serve error: %s", e.name, serveErr.Error())
+		}
+		errChan <- serveErr
 		close(done)
 	}()
 
