@@ -2,6 +2,7 @@ package queue
 
 import (
 	"errors"
+	"strings"
 
 	"context"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/zhiyunliu/glue/global"
 )
 
-var Nil error = errors.New("Queue Nil")
+var Nil error = errors.New("queue nil")
 
 // queue 对输入KEY进行封装处理
 type queue struct {
@@ -26,6 +27,9 @@ func newQueue(proto string, cfg config.Config, opts ...Option) (IQueue, error) {
 
 // Send 发送消息
 func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
+	if len(strings.TrimSpace(key)) == 0 {
+		return errors.New("queue.Send,queue name can't be empty")
+	}
 	msg, ok := value.(Message)
 	if !ok {
 		msg = NewMsg(value)
@@ -36,6 +40,9 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 	return q.q.Push(key, msg)
 }
 func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error {
+	if len(strings.TrimSpace(key)) == 0 {
+		return errors.New("queue.DelaySend,queue name can't be empty")
+	}
 	if msg, ok := value.(Message); ok {
 		return q.q.DelayPush(key, msg, delaySeconds)
 	}
