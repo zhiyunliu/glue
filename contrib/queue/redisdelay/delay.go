@@ -47,7 +47,7 @@ func NewProcessor(client *redis.Client, orgQueue string, delayInterval int, call
 
 }
 
-func (p delayProcess) Start(done chan struct{}) {
+func (p delayProcess) Start(done chan struct{}) error {
 	p.groups.Go(func() error {
 		delayInterval := time.Second * time.Duration(p.delayInterval)
 
@@ -73,6 +73,7 @@ func (p delayProcess) Start(done chan struct{}) {
 			}
 		}
 	})
+	return nil
 }
 
 func (p delayProcess) AppendMessage(msg queue.Message, delaySeconds int64) (err error) {

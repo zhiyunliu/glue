@@ -11,13 +11,14 @@ var Nil = redis.Nil
 
 // Client redis客户端
 type Client struct {
+	configName string
 	redis.UniversalClient
 	opts *Options
 }
 
 // NewByOpts 构建客户端
 func NewByOpts(configName string, opts ...Option) (r *Client, err error) {
-	redisOpts := newOpts()
+	redisOpts := defaultRedisOpts()
 	if Refactor != nil {
 		redisOpts, err = Refactor(configName, redisOpts)
 		if err != nil {
@@ -32,7 +33,7 @@ func NewByOpts(configName string, opts ...Option) (r *Client, err error) {
 
 // NewByConfig 构建客户端
 func NewByConfig(configName string, setting config.Config, mapCfg map[string]any) (r *Client, err error) {
-	redisOpts := newOpts()
+	redisOpts := defaultRedisOpts()
 	setting.ScanTo(redisOpts)
 	if Refactor != nil {
 		redisOpts, err = Refactor(configName, redisOpts)
@@ -43,7 +44,7 @@ func NewByConfig(configName string, setting config.Config, mapCfg map[string]any
 	return newRedis(configName, redisOpts, mapCfg)
 }
 
-func newOpts() *Options {
+func defaultRedisOpts() *Options {
 	return &Options{
 		DialTimeout:  5,
 		ReadTimeout:  5,
@@ -57,7 +58,9 @@ func newRedis(configName string, opts *Options, mapCfg map[string]any) (r *Clien
 		WithMapConfig(mapCfg)(opts)
 	}
 
-	r = &Client{}
+	r = &Client{
+		configName: configName,
+	}
 	r.opts = opts
 
 	ropts := &redis.UniversalOptions{

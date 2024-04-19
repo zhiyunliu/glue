@@ -183,7 +183,7 @@ func (consumer *Consumer) Unconsume(queue string) {
 	consumer.queues.Remove(queue)
 }
 
-func (consumer *Consumer) Start() {
+func (consumer *Consumer) Start() error {
 	for item := range consumer.queues.IterBuffered() {
 		tqi := item.Val.(*QueueItem)
 		var confunc redisqueue.ConsumerFunc = func(qi *QueueItem) redisqueue.ConsumerFunc {
@@ -202,15 +202,17 @@ func (consumer *Consumer) Start() {
 	}
 
 	go consumer.consumer.Run()
+	return nil
 }
 
 // Close 关闭当前连接
-func (consumer *Consumer) Close() {
+func (consumer *Consumer) Close() error {
 	consumer.once.Do(func() {
 		close(consumer.closeCh)
 	})
 
 	consumer.consumer.Shutdown()
+	return nil
 }
 
 func (consumer *Consumer) writeToDeadLetter(queue string, vals xtypes.XMap) {

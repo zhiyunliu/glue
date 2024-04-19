@@ -89,6 +89,8 @@ func (e *Server) Serve(ctx context.Context) (err error) {
 }
 
 func (e *Server) Stop(ctx context.Context) error {
-	e.srv.GracefulStop()
+	if e.srv != nil {
+		e.srv.GracefulStop()
+	}
 	return nil
 }

@@ -22,6 +22,12 @@ type Options struct {
 	CfgData map[string]any
 }
 
+func DefaultOptions() *Options {
+	return &Options{
+		CfgData: make(map[string]any),
+	}
+}
+
 func (c Options) getUniqueKey() string {
 	var changefields xtypes.XMap = c.CfgData
 	keys := changefields.Keys()
@@ -49,14 +55,14 @@ func WithOption(key string, val any) Option {
 	}
 }
 
-func WithDBIndex(idx int) Option {
-	return func(m *Options) {
-		m.setVal("db", idx)
-	}
-}
+// func WithDBIndex(idx int) Option {
+// 	return func(m *Options) {
+// 		m.setVal("db", idx)
+// 	}
+// }
 
-func WithPoolSize(size int) Option {
-	return func(m *Options) {
-		m.setVal("pool_size", size)
-	}
-}
+// func WithPoolSize(size int) Option {
+// 	return func(m *Options) {
+// 		m.setVal("pool_size", size)
+// 	}
+// }

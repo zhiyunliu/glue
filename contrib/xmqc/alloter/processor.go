@@ -57,8 +57,10 @@ func (s *processor) Start() error {
 		return err
 	}
 	_, err := s.Resume()
-	s.consumer.Start()
-	return err
+	if err != nil {
+		return err
+	}
+	return s.consumer.Start()
 }
 
 // Add 添加队列信息
@@ -149,6 +151,5 @@ func (s *processor) handleCallback(task *xmqc.Task) func(queue.IMQCMessage) {
 			m.Nack(err)
 			panic(err)
 		}
-		resp.Flush()
 	}
 }
