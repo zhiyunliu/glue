@@ -13,7 +13,7 @@ const TypeNode = "xhttp"
 const _defaultName = "default"
 
 type StandardHttp interface {
-	GetHttp(name ...string) (c Client)
+	GetHttp(name string) (c Client)
 }
 
 type Client interface {
@@ -26,28 +26,24 @@ type Client interface {
 
 type Body = httputil.Body
 
-//xHttp 服务
+// xHttp 服务
 type xHttp struct {
 	container container.Container
 }
 
-//NewXhttp 服务代理
+// NewXhttp 服务代理
 func NewXhttp(container container.Container) StandardHttp {
 	return &xHttp{
 		container: container,
 	}
 }
 
-//GetRPC 获取缓存操作对象
-func (s *xHttp) GetHttp(name ...string) (c Client) {
+// GetRPC 获取缓存操作对象
+func (s *xHttp) GetHttp(name string) (c Client) {
 	realName := _defaultName
 	if len(name) > 0 {
-		realName = name[0]
+		realName = name
 	}
-	if realName == "" {
-		realName = _defaultName
-	}
-
 	obj, err := s.container.GetOrCreate(TypeNode, realName, func(cfg config.Config) (interface{}, error) {
 		dbcfg := cfg.Get(TypeNode).Get(realName)
 		return newXhttp(realName, dbcfg)

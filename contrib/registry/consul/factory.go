@@ -24,7 +24,7 @@ func (f *consulFactory) Create(cfg config.Config) (registry.Registrar, error) {
 		HealthCheckInterval: 5,
 	}
 
-	err := cfg.Scan(opts)
+	err := cfg.ScanTo(opts)
 	if err != nil {
 		err = fmt.Errorf("consul config error :%+v", err)
 		return nil, err

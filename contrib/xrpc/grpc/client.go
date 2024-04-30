@@ -14,12 +14,13 @@ import (
 	"github.com/zhiyunliu/glue/xrpc"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 )
 
 type Client struct {
 	registrar       registry.Registrar
-	setting         *setting
+	setting         *clientConfig
 	reqPath         *url.URL
 	conn            *grpc.ClientConn
 	client          grpcproto.GRPCClient
@@ -30,7 +31,7 @@ type Client struct {
 }
 
 // NewClient 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
-func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL) (*Client, error) {
+func NewClient(registrar registry.Registrar, setting *clientConfig, reqPath *url.URL) (*Client, error) {
 	client := &Client{
 		registrar: registrar,
 		setting:   setting,
@@ -48,22 +49,11 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 	return client, nil
 }
 
-// //Request 发送Request请求
-// func (c *Client) Request(ctx context.Context, input interface{}, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
-// 	//处理可选参数
-// 	buff, err := json.Marshal(input)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	opts = append(opts, xrpc.WithContentType(constants.ContentTypeApplicationJSON))
-// 	return c.RequestByString(ctx, buff, opts...)
-// }
-
 // RequestByString 发送Request请求
 func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
 	//处理可选参数
 	o := &xrpc.Options{
+		Method: http.MethodPost,
 		Header: make(map[string]string),
 	}
 	for _, opt := range opts {
@@ -106,7 +96,7 @@ func (c *Client) connect() (err error) {
 	ctx, _ := context.WithTimeout(context.Background(), time.Duration(c.setting.ConnTimeout)*time.Second)
 	c.conn, err = grpc.DialContext(ctx,
 		c.reqPath.String(),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultServiceConfig(string(c.setting.ServerConfig)),
 		//grpc.WithBalancerName(c.setting.Balancer),
 		grpc.WithResolvers(c.balancerBuilder),
@@ -121,10 +111,14 @@ func (c *Client) connect() (err error) {
 }
 
 func (c *Client) clientRequest(ctx context.Context, o *xrpc.Options, input []byte) (response *grpcproto.Response, err error) {
+	servicePath := c.reqPath.Path
+	if len(o.Query) > 0 {
+		servicePath = fmt.Sprintf("%s?%s", servicePath, o.Query)
+	}
 	return c.client.Process(ctx,
 		&grpcproto.Request{
-			Method:  http.MethodPost, //借用http的method
-			Service: c.reqPath.Path,
+			Method:  o.Method, //借用http的method
+			Service: servicePath,
 			Header:  o.Header,
 			Body:    input,
 		},

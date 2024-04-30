@@ -15,18 +15,18 @@ type DLocker interface {
 }
 
 type DLockerBuilder interface {
-	Build(key string) DLocker
+	Build(key string, opts ...Option) DLocker
 }
 
-//cacheResover 定义配置文件转换方法
+// cacheResover 定义配置文件转换方法
 type xResover interface {
 	Name() string
-	Resolve(setting config.Config) (DLockerBuilder, error)
+	Resolve(configName string, setting config.Config) (DLockerBuilder, error)
 }
 
 var lockerResolvers = make(map[string]xResover)
 
-//RegisterCache 注册配置文件适配器
+// RegisterCache 注册配置文件适配器
 func Register(resolver xResover) {
 	proto := resolver.Name()
 	if _, ok := lockerResolvers[proto]; ok {
@@ -35,16 +35,16 @@ func Register(resolver xResover) {
 	lockerResolvers[proto] = resolver
 }
 
-//Deregister 清理配置适配器
+// Deregister 清理配置适配器
 func Deregister(name string) {
 	delete(lockerResolvers, name)
 }
 
-//newCache 根据适配器名称及参数返回配置处理器
-func newXLocker(proto string, setting config.Config) (DLockerBuilder, error) {
+// newCache 根据适配器名称及参数返回配置处理器
+func newXLocker(proto, configName string, setting config.Config) (DLockerBuilder, error) {
 	resolver, ok := lockerResolvers[proto]
 	if !ok {
 		return nil, fmt.Errorf("dlocker: 未知的协议类型:%s", proto)
 	}
-	return resolver.Resolve(setting)
+	return resolver.Resolve(configName, setting)
 }

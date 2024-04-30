@@ -14,8 +14,8 @@ const _defaultName = "default"
 
 // StandardDB
 type StandardDB interface {
-	GetDB(name ...string) (q IDB)
-	GetImpl(name ...string) interface{}
+	GetDB(name string, opts ...Option) (q IDB)
+	GetImpl(name string, opts ...Option) interface{}
 }
 
 // StandardDB
@@ -28,18 +28,16 @@ func NewStandardDB(container container.Container) StandardDB {
 	return &xDB{container: container}
 }
 
-func (s *xDB) GetImpl(name ...string) interface{} {
-	realName := _defaultName
-	if len(name) > 0 {
-		realName = name[0]
-	}
+func (s *xDB) GetImpl(name string, opts ...Option) interface{} {
+	realName := name
 	if realName == "" {
 		realName = _defaultName
 	}
+
 	obj, err := s.container.GetOrCreate(DbTypeNode, realName, func(cfg config.Config) (interface{}, error) {
 		dbcfg := cfg.Get(DbTypeNode).Get(realName)
-		return newDB(realName, dbcfg)
-	})
+		return newDB(realName, dbcfg, opts...)
+	}, s.getUniqueKey(opts...))
 	if err != nil {
 		panic(err)
 	}
@@ -47,9 +45,20 @@ func (s *xDB) GetImpl(name ...string) interface{} {
 }
 
 // GetDB
-func (s *xDB) GetDB(name ...string) (q IDB) {
-	obj := s.GetImpl(name...)
+func (s *xDB) GetDB(name string, opts ...Option) (q IDB) {
+	obj := s.GetImpl(name, opts...)
 	return obj.(IDB)
+}
+
+func (s *xDB) getUniqueKey(opts ...Option) string {
+	if len(opts) == 0 {
+		return ""
+	}
+	tmpCfg := &Config{}
+	for i := range opts {
+		opts[i](tmpCfg)
+	}
+	return tmpCfg.getUniqueKey()
 }
 
 type xBuilder struct{}

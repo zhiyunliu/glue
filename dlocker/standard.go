@@ -8,22 +8,22 @@ import (
 
 const TypeNode = "dlocker"
 
-//StandardLocker cache
+// StandardLocker cache
 type StandardLocker interface {
 	GetDLocker() (q DLockerBuilder)
 }
 
-//StandardLocker lock
+// StandardLocker lock
 type xLocker struct {
 	c container.Container
 }
 
-//NewStandardLocker 创建 lock
+// NewStandardLocker 创建 lock
 func NewStandardLocker(c container.Container) StandardLocker {
 	return &xLocker{c: c}
 }
 
-//GetDLocker GetDLocker
+// GetDLocker GetDLocker
 func (s *xLocker) GetDLocker() (q DLockerBuilder) {
 	obj, err := s.c.GetOrCreate(TypeNode, TypeNode, func(cfg config.Config) (interface{}, error) {
 		cfgVal := cfg.Value(TypeNode).String()
@@ -33,7 +33,7 @@ func (s *xLocker) GetDLocker() (q DLockerBuilder) {
 			return nil, err
 		}
 		cacheCfg := cfg.Get(protoType).Get(configName)
-		return newXLocker(protoType, cacheCfg)
+		return newXLocker(protoType, configName, cacheCfg)
 	})
 	if err != nil {
 		panic(err)

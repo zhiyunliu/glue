@@ -1,58 +1,76 @@
 package sqlserver
 
 import (
-	"fmt"
-
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/xdb"
 )
 
-func newMssqlSymbols() tpl.Symbols {
+func newMssqlSymbols(operMap tpl.OperatorMap) tpl.SymbolMap {
 
-	symbols := make(tpl.Symbols)
-	symbols["@"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
-		propName := tpl.GetPropName(fullKey)
+	symbols := tpl.NewSymbolMap(operMap)
+	symbols.LoadOrStore(tpl.SymbolAt, func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
+		_, propName, _ := tpl.GetPropName(fullKey)
 		if ph, ok := item.NameCache[propName]; ok {
-			return ph
+			return ph, nil
 		}
-		argName, value := input.Get(propName, item.Placeholder)
+		argName, value, err := input.Get(propName, item.Placeholder)
+		if err != nil {
+			return argName, err
+		}
 		item.Names = append(item.Names, propName)
 		item.Values = append(item.Values, value)
 
 		item.NameCache[propName] = argName
-		return argName
-	}
+		return argName, nil
+	})
 
-	symbols["&"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
+	symbols.LoadOrStore(tpl.SymbolAnd, func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
 		item.HasAndOper = true
 
-		propName := tpl.GetPropName(fullKey)
-		if ph, ok := item.NameCache[propName]; ok {
-			return fmt.Sprintf("and %s=%s ", fullKey, ph)
+		fullField, propName, oper := tpl.GetPropName(fullKey)
+		opercall, ok := operMap.Load(oper)
+		if !ok {
+			return "", xdb.NewMissOperError(oper)
 		}
-		argName, value := input.Get(propName, item.Placeholder)
+
+		if ph, ok := item.NameCache[propName]; ok {
+			return opercall(tpl.SymbolAnd, fullField, ph), nil
+			//return fmt.Sprintf("and %s=%s ", fullKey, ph), nil
+		}
+		argName, value, _ := input.Get(propName, item.Placeholder)
 		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
 			item.NameCache[propName] = argName
-			return fmt.Sprintf("and %s=%s ", fullKey, argName)
+			return opercall(tpl.SymbolAnd, fullField, argName), nil
+			//return fmt.Sprintf("and %s=%s ", fullKey, argName), nil
 		}
-		return ""
-	}
-	symbols["|"] = func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) string {
+		return "", nil
+	})
+
+	symbols.LoadOrStore(tpl.SymbolOr, func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
 		item.HasOrOper = true
 
-		propName := tpl.GetPropName(fullKey)
-		if ph, ok := item.NameCache[propName]; ok {
-			return fmt.Sprintf("or %s=%s ", fullKey, ph)
+		fullField, propName, oper := tpl.GetPropName(fullKey)
+		opercall, ok := operMap.Load(oper)
+		if !ok {
+			return "", xdb.NewMissOperError(oper)
 		}
-		argName, value := input.Get(propName, item.Placeholder)
+		if ph, ok := item.NameCache[propName]; ok {
+			return opercall(tpl.SymbolOr, fullField, ph), nil
+			//return fmt.Sprintf("or %s=%s ", fullKey, ph), nil
+		}
+		argName, value, _ := input.Get(propName, item.Placeholder)
 		if !tpl.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
 			item.NameCache[propName] = argName
-			return fmt.Sprintf("or %s=%s ", fullKey, argName)
+
+			return opercall(tpl.SymbolOr, fullField, argName), nil
+			//return fmt.Sprintf("or %s=%s ", fullKey, argName), nil
 		}
-		return ""
-	}
+		return "", nil
+	})
+
 	return symbols
 }

@@ -2,8 +2,9 @@ package cron
 
 import (
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
-	"github.com/zhiyunliu/glue/server"
+	"github.com/zhiyunliu/glue/xcron"
 )
 
 // Option 参数设置类型
@@ -11,30 +12,31 @@ type Option func(*options)
 
 type options struct {
 	serviceName string
-	setting     *Setting
+	srvCfg      *serverConfig
 	logOpts     *log.Options
-	router      *server.RouterGroup
+	router      *engine.RouterGroup
 	config      config.Config
-	decReq      server.DecodeRequestFunc
-	encResp     server.EncodeResponseFunc
-	encErr      server.EncodeErrorFunc
+	decReq      engine.DecodeRequestFunc
+	encResp     engine.EncodeResponseFunc
+	encErr      engine.EncodeErrorFunc
 
-	startedHooks []server.Hook
-	endHooks     []server.Hook
+	startedHooks []engine.Hook
+	endHooks     []engine.Hook
 }
 
 func setDefaultOption() options {
 	return options{
-		setting: &Setting{
-			Config: Config{
-				Status: server.StatusStart,
+		srvCfg: &serverConfig{
+			Config: xcron.Config{
+				Proto:  "robfigcron",
+				Status: engine.StatusStart,
 			},
 		},
 		logOpts: &log.Options{},
-		decReq:  server.DefaultRequestDecoder,
-		encResp: server.DefaultResponseEncoder,
-		encErr:  server.DefaultErrorEncoder,
-		router:  server.NewRouterGroup(""),
+		decReq:  engine.DefaultRequestDecoder,
+		encResp: engine.DefaultResponseEncoder,
+		encErr:  engine.DefaultErrorEncoder,
+		router:  engine.NewRouterGroup(""),
 	}
 
 }
@@ -59,5 +61,26 @@ func Log(opts ...log.ServerOption) Option {
 		for i := range opts {
 			opts[i](o.logOpts)
 		}
+	}
+}
+
+// WithDecodeRequestFunc 解析入参
+func WithDecodeRequestFunc(decReq engine.DecodeRequestFunc) Option {
+	return func(o *options) {
+		o.decReq = decReq
+	}
+}
+
+// WithEncodeResponseFunc 编码响应
+func WithEncodeResponseFunc(encResp engine.EncodeResponseFunc) Option {
+	return func(o *options) {
+		o.encResp = encResp
+	}
+}
+
+// WithEncodeErrorFunc 编码错误
+func WithEncodeErrorFunc(encErr engine.EncodeErrorFunc) Option {
+	return func(o *options) {
+		o.encErr = encErr
 	}
 }

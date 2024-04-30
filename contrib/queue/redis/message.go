@@ -3,75 +3,90 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
+	"strconv"
 
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
-//RedisMessage reids消息
+// RedisMessage reids消息
 type redisMessage struct {
-	message string
-	obj     *MsgBody
+	retryCount int64
+	message    string
+	objMsg     queue.Message
+	err        error
 }
 
 func (m *redisMessage) RetryCount() int64 {
-	return 0
+	if m.retryCount > 0 {
+		return m.retryCount
+	}
+	rtyCnt := m.GetMessage().Header()["retry_count"]
+	if rtyCnt == "" {
+		return m.retryCount
+	}
+	val, _ := strconv.ParseInt(rtyCnt, 10, 32)
+	m.retryCount = val
+	return m.retryCount
 }
 
-//Ack 确定消息
+func (m *redisMessage) MessageId() string {
+	return ""
+}
+
+// Ack 确定消息
 func (m *redisMessage) Ack() error {
+	m.err = nil
 	return nil
 }
 
-//Nack 取消消息
-func (m *redisMessage) Nack(error) error {
+// Nack 取消消息
+func (m *redisMessage) Nack(err error) error {
+	m.err = err
 	return nil
 }
 
-//original message
+// original message
 func (m *redisMessage) Original() string {
 	return m.message
 }
 
-//GetMessage 获取消息
+// GetMessage 获取消息
 func (m *redisMessage) GetMessage() queue.Message {
-	if m.obj == nil {
-		m.obj = newMsgBody(m.message)
+	if m.objMsg == nil {
+		m.objMsg = newMsgBody(m.message)
 	}
-	return m.obj
+	return m.objMsg
 }
 
-type MsgBody struct {
-	msg       string      `json:"-"`
-	QueueKey  string      `json:"queuekey"`
-	HeaderMap xtypes.SMap `json:"header"`
-	BodyMap   xtypes.XMap `json:"body"`
+func (m *redisMessage) PlusRetryCount() queue.Message {
+	if m.objMsg == nil {
+		m.objMsg = newMsgBody(m.message)
+	}
+	m.retryCount++
+	m.objMsg.Header()["retry_count"] = strconv.FormatInt(m.retryCount, 10)
+	return m.objMsg
 }
 
-func newMsgBody(msg string) *MsgBody {
-	if !json.Valid(bytesconv.StringToBytes(msg)) {
+func newMsgBody(msg string) queue.Message {
+	msgBytes := bytesconv.StringToBytes(msg)
+	if !json.Valid(msgBytes) {
 		panic(fmt.Errorf("msg data is invalid json format.:%s", msg))
 	}
-	body := &MsgBody{
-		msg:       msg,
+	msgItem := &queue.MsgItem{
 		HeaderMap: make(xtypes.SMap),
-		BodyMap:   make(xtypes.XMap),
 	}
-	decoder := json.NewDecoder(strings.NewReader(msg))
-	decoder.UseNumber()
-	decoder.Decode(body)
-	return body
+	msgItem.ItemBytes = msgBytes
+	json.Unmarshal(msgBytes, msgItem)
+	return msgItem
 }
 
-func (m *MsgBody) Header() map[string]string {
-	return m.HeaderMap
-}
-func (m *MsgBody) Body() map[string]interface{} {
-	return m.BodyMap
+type deadMsg struct {
+	Queue string `json:"q"`
+	Msg   string `json:"m"`
 }
 
-func (m *MsgBody) String() string {
-	return m.msg
+func (m deadMsg) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(m)
 }

@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	goredis "github.com/go-redis/redis/v7"
+	"github.com/zhiyunliu/glue/dlocker"
 	"github.com/zhiyunliu/golibs/xrandom"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -21,9 +25,9 @@ end`
 else
     return 0
 end`
-	leaseCommand = `return redis.call("EXPIRE", KEYS[1], ARGV[1])`
+	leaseCommand = `return redis.call("PEXPIRE", KEYS[1], ARGV[1])`
 
-	randomLen = 16
+	//randomLen = 16
 	// 默认超时时间，防止死锁
 	tolerance int = 500 // milliseconds
 )
@@ -35,15 +39,28 @@ type Lock struct {
 	// 锁key
 	key string
 	// 锁value，防止锁被别人获取到
-	rndVal string
+	rndVal      string
+	opts        *dlocker.Options
+	state       atomic.Bool
+	releaseChan chan struct{}
+	group       errgroup.Group
 }
 
 // NewLock returns a Lock.
-func newLock(client *Redis, key string) *Lock {
+func newLock(client *Redis, key string, opts *dlocker.Options) *Lock {
+	var rndval string
+	if opts.Data != "" {
+		rndval = opts.Data
+	} else {
+		rndval = xrandom.Str(16)
+	}
 	return &Lock{
-		client: client,
-		key:    key,
-		rndVal: xrandom.Str(randomLen),
+		client:      client,
+		key:         key,
+		rndVal:      rndval,
+		opts:        opts,
+		releaseChan: make(chan struct{}, 1),
+		group:       errgroup.Group{},
 	}
 }
 
@@ -54,11 +71,10 @@ func (rl *Lock) Acquire(expire int) (bool, error) {
 	if expire <= 0 {
 		return false, fmt.Errorf("expire 参数必须大于0")
 	}
-	expire = expire*1000 + tolerance //换算成毫秒
 	// 获取过期时间
 	// 默认锁过期时间为500ms，防止死锁
 	resp, err := rl.client.Eval(lockCommand, []string{rl.key}, []string{
-		rl.rndVal, strconv.Itoa(expire),
+		rl.rndVal, strconv.Itoa(expire*1000 + tolerance), //换算成毫秒
 	})
 	if err == goredis.Nil {
 		return false, nil
@@ -70,6 +86,9 @@ func (rl *Lock) Acquire(expire int) (bool, error) {
 
 	reply, ok := resp.(string)
 	if ok && strings.EqualFold(reply, "OK") {
+		if rl.opts.AutoRenewal {
+			rl.autoRenewalCallback(expire)
+		}
 		return true, nil
 	}
 	return false, nil
@@ -88,15 +107,34 @@ func (rl *Lock) Release() (bool, error) {
 		return false, nil
 	}
 
-	return reply == 1, nil
+	succ := reply == 1
+	if succ && rl.opts.AutoRenewal {
+		old := rl.state.Load()
+		if !old {
+			return succ, nil
+		}
+		//确认没有变动
+		if !rl.state.CompareAndSwap(old, false) {
+			return succ, nil
+		}
+
+		select {
+		case rl.releaseChan <- struct{}{}:
+		default:
+		}
+	}
+
+	return succ, nil
 }
 
 // 单位：秒
 // 续约
 func (rl *Lock) Renewal(expire int) error {
-	resp, err := rl.client.Eval(leaseCommand, []string{rl.key}, []string{strconv.Itoa(expire)})
+	resp, err := rl.client.Eval(leaseCommand, []string{rl.key}, []string{
+		strconv.Itoa(expire*1000 + tolerance),
+	})
 	if err != nil {
-		return err
+		return fmt.Errorf("expire %+v,err:%+v", resp, err)
 	}
 
 	_, ok := resp.(int64)
@@ -104,5 +142,31 @@ func (rl *Lock) Renewal(expire int) error {
 		return fmt.Errorf("expire %+v", resp)
 	}
 
+	return nil
+}
+
+func (rl *Lock) autoRenewalCallback(expire int) error {
+	old := rl.state.Load()
+	//原值已经在锁定中
+	if old {
+		return nil
+	}
+
+	//确认没有变动
+	if !rl.state.CompareAndSwap(old, true) {
+		return nil
+	}
+	rl.group.Go(func() error {
+		ticker := time.NewTicker(time.Second * time.Duration(expire))
+		for {
+			select {
+			case <-ticker.C:
+				rl.Renewal(expire)
+			case <-rl.releaseChan:
+				rl.state.Store(false)
+				return nil
+			}
+		}
+	})
 	return nil
 }

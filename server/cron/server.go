@@ -7,19 +7,22 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
+	_ "github.com/zhiyunliu/glue/contrib/xcron/alloter"
+	_ "github.com/zhiyunliu/glue/contrib/xcron/robfigcron"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/transport"
+	"github.com/zhiyunliu/glue/xcron"
 )
 
 type Server struct {
-	name      string
-	processor *processor
-	ctx       context.Context
-	opts      options
-	started   bool
+	name    string
+	server  xcron.Server
+	ctx     context.Context
+	opts    options
+	started bool
 }
 
 var _ transport.Server = (*Server)(nil)
@@ -67,20 +70,28 @@ func (e *Server) Config(cfg config.Config) {
 		return
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
+	cfg.Get(e.serverPath()).ScanTo(e.opts.srvCfg)
 }
 
 // Start 开始
-func (e *Server) Start(ctx context.Context) error {
-
-	if e.opts.setting.Config.Status == server.StatusStop {
+func (e *Server) Start(ctx context.Context) (err error) {
+	if e.opts.srvCfg.Config.Status == engine.StatusStop {
 		return nil
 	}
-
 	e.ctx = transport.WithServerContext(ctx, e)
-	err := e.newProcessor()
+	e.server, err = xcron.NewServer(e.opts.srvCfg.Config.Proto,
+		e.opts.router,
+		e.opts.config.Get(e.serverPath()),
+		engine.WithConfig(e.opts.config),
+		engine.WithLogOptions(e.opts.logOpts),
+		engine.WithSrvType(e.Type()),
+		engine.WithSrvName(e.Name()),
+		engine.WithErrorEncoder(e.opts.encErr),
+		engine.WithRequestDecoder(e.opts.decReq),
+		engine.WithResponseEncoder(e.opts.encResp),
+	)
 	if err != nil {
-		return err
+		return
 	}
 
 	errChan := make(chan error, 1)
@@ -89,7 +100,11 @@ func (e *Server) Start(ctx context.Context) error {
 	done := make(chan struct{})
 	go func() {
 		e.started = true
-		errChan <- e.processor.Start()
+		serveErr := e.server.Serve(e.ctx) //存在1s内，服务没有启动的可能性
+		if serveErr != nil {
+			log.Errorf("CRON Server [%s] Serve error: %s", e.name, serveErr.Error())
+		}
+		errChan <- serveErr
 		close(done)
 	}()
 
@@ -122,9 +137,11 @@ func (e *Server) Attempt() bool {
 }
 
 // Shutdown 停止
-func (e *Server) Stop(ctx context.Context) error {
-
-	err := e.processor.Close()
+func (e *Server) Stop(ctx context.Context) (err error) {
+	if e.server == nil {
+		return
+	}
+	err = e.server.Stop(ctx)
 	if err != nil {
 		log.Errorf("CRON Server [%s] stop error: %s", e.name, err.Error())
 		return err
@@ -144,43 +161,36 @@ func (e *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-func (e *Server) newProcessor() error {
-	var err error
-	e.processor, err = newProcessor(e.opts.config)
-	if err != nil {
-		return err
-	}
-
-	err = e.processor.Add(e.opts.setting.Jobs...)
-	if err != nil {
-		return err
-	}
-	e.registryEngineRoute()
-	return nil
+func (e *Server) serverPath() string {
+	return fmt.Sprintf("servers.%s", e.Name())
 }
 
-func (e *Server) AddJob(jobs ...*Job) error {
-	err := e.processor.Add(jobs...)
-	if err != nil {
-		return err
+func (e *Server) AddJob(jobs ...*xcron.Job) (keys []string, err error) {
+	if e.server == nil {
+		return
 	}
-	e.registryEngineRoute()
-	return nil
+	keys, err = e.server.AddJob(jobs...)
+	if err != nil {
+		return
+	}
+	return
 }
-func (e *Server) ResetRoute() {
-	e.opts.router = server.NewRouterGroup("")
+
+func (e *Server) RemoveJob(key ...string) {
+	if e.server == nil {
+		return
+	}
+	e.server.RemoveJob(key...)
 }
-func (e *Server) RemoveJob(key string) {
-	e.processor.Remove(key)
-}
+
 func (e *Server) Use(middlewares ...middleware.Middleware) {
 	e.opts.router.Use(middlewares...)
 }
 
-func (e *Server) Group(group string, middlewares ...middleware.Middleware) *server.RouterGroup {
+func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engine.RouterGroup {
 	return e.opts.router.Group(group, middlewares...)
 }
 
 func (e *Server) Handle(path string, obj interface{}) {
-	e.opts.router.Handle(path, obj, server.MethodGet)
+	e.opts.router.Handle(path, obj, engine.MethodPost)
 }

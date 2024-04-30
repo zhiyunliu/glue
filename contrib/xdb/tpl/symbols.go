@@ -4,15 +4,99 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"regexp"
+	"strings"
+	"sync"
+
+	"github.com/zhiyunliu/glue/xdb"
 )
 
-var defaultSymbols Symbols
+// 根据表达式获取
+var GetPropName func(fullKey string) (field, propName, oper string)
 
 func init() {
-	defaultSymbols = make(Symbols)
-	defaultSymbols["@"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
-		propName := GetPropName(fullKey)
-		argName, value := input.Get(propName, item.Placeholder)
+	GetPropName = DefaultGetPropName
+}
+
+type symbolsMap struct {
+	pattern string
+	syncMap *sync.Map
+	operMap OperatorMap
+}
+
+func NewSymbolMap(operMap OperatorMap) SymbolMap {
+	return &symbolsMap{
+		pattern: TotalPattern,
+		syncMap: &sync.Map{},
+		operMap: operMap,
+	}
+}
+
+func (m *symbolsMap) GetPattern() string {
+	return m.pattern
+}
+
+func (m *symbolsMap) Register(symbol Symbol) error {
+	loaded := m.LoadOrStore(symbol.Name(), symbol.Callback)
+	if loaded {
+		return nil
+	}
+	pattern := strings.TrimSpace(symbol.GetPattern())
+	if pattern != "" {
+		_, err := regexp.Compile(pattern)
+		if err != nil {
+			return fmt.Errorf("表达式:%s,不是有效的正则,%w", pattern, err)
+		}
+		m.pattern = m.pattern + "|" + pattern
+	}
+	return nil
+}
+
+func (m *symbolsMap) Operator(oper Operator) error {
+	if oper == nil {
+		return nil
+	}
+	m.operMap.LoadOrStore(oper.Name(), oper.Callback)
+	return nil
+}
+
+func (m *symbolsMap) LoadOrStore(name string, callback SymbolCallback) (loaded bool) {
+	_, loaded = m.syncMap.LoadOrStore(name, callback)
+	return
+}
+
+func (m *symbolsMap) LoadOperator(oper string) (callback OperatorCallback, loaded bool) {
+	callback, loaded = m.operMap.Load(oper)
+	return
+}
+func (m *symbolsMap) Delete(name string) {
+	m.syncMap.Delete(name)
+}
+
+func (m *symbolsMap) Load(name string) (SymbolCallback, bool) {
+	callback, ok := m.syncMap.Load(name)
+	return callback.(SymbolCallback), ok
+}
+
+func (m *symbolsMap) Clone() SymbolMap {
+	clone := NewSymbolMap(m.operMap.Clone())
+	m.syncMap.Range(func(key, value any) bool {
+		clone.LoadOrStore(key.(string), value.(SymbolCallback))
+		return true
+	})
+	return clone
+}
+
+var defaultSymbols SymbolMap //  Symbols
+
+func init() {
+	defaultSymbols = NewSymbolMap(DefaultOperator)
+	defaultSymbols.LoadOrStore(SymbolAt, func(input DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissError) {
+		_, propName, _ := GetPropName(fullKey)
+		argName, value, err := input.Get(propName, item.Placeholder)
+		if err != nil {
+			return "", err
+		}
 		if !IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
@@ -20,32 +104,47 @@ func init() {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, nil)
 		}
-		return argName
-	}
+		return argName, nil
+	})
 
-	defaultSymbols["&"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
-		propName := GetPropName(fullKey)
-		argName, value := input.Get(propName, item.Placeholder)
+	defaultSymbols.LoadOrStore(SymbolAnd, func(input DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissError) {
 		item.HasAndOper = true
-		if !IsNil(value) {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, value)
-			return fmt.Sprintf(" and %s=%s", fullKey, argName)
-		}
-		return ""
-	}
-	defaultSymbols["|"] = func(input DBParam, fullKey string, item *ReplaceItem) string {
-		propName := GetPropName(fullKey)
-		argName, value := input.Get(propName, item.Placeholder)
-		item.HasOrOper = true
-		if !IsNil(value) {
-			item.Names = append(item.Names, propName)
-			item.Values = append(item.Values, value)
-			return fmt.Sprintf(" or %s=%s", fullKey, argName)
-		}
-		return ""
-	}
 
+		fullField, propName, oper := GetPropName(fullKey)
+		opercall, ok := defaultSymbols.LoadOperator(oper)
+		if !ok {
+			return "", xdb.NewMissOperError(oper)
+		}
+
+		argName, value, _ := input.Get(propName, item.Placeholder)
+		if !IsNil(value) {
+			item.Names = append(item.Names, propName)
+			item.Values = append(item.Values, value)
+			return opercall(SymbolAnd, fullField, argName), nil
+			//return fmt.Sprintf(" and %s=%s", fullKey, argName), nil
+		}
+		return "", nil
+	})
+
+	defaultSymbols.LoadOrStore(SymbolOr, func(input DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissError) {
+		item.HasOrOper = true
+
+		fullField, propName, oper := GetPropName(fullKey)
+		opercall, ok := defaultSymbols.LoadOperator(oper)
+		if !ok {
+			return "", xdb.NewMissOperError(oper)
+		}
+
+		argName, value, _ := input.Get(propName, item.Placeholder)
+
+		if !IsNil(value) {
+			item.Names = append(item.Names, propName)
+			item.Values = append(item.Values, value)
+			return opercall(SymbolOr, fullField, argName), nil
+			//return fmt.Sprintf(" or %s=%s", fullKey, argName), nil
+		}
+		return "", nil
+	})
 }
 
 func IsNil(input interface{}) bool {
@@ -70,4 +169,76 @@ func IsNil(input interface{}) bool {
 		return rv.IsNil()
 	}
 	return false
+}
+
+// field, tbl.field , tbl.field like , tbl.field >=
+func DefaultGetPropName(fullKey string) (fullField, propName, oper string) {
+	propName = strings.TrimSpace(fullKey)
+	fullField = propName
+	idx := strings.Index(propName, " ")
+	if idx < 0 {
+		// <tbl.field,<=tbl.field,>tbl.field,>=tbl.field
+		switch {
+		case strings.HasPrefix(fullField, "<="): //<=tbl.field,<=field
+			propName = strings.TrimPrefix(fullField, "<=")
+			fullField = propName
+			oper = "<="
+		case strings.HasPrefix(fullField, "<"):
+			propName = strings.TrimPrefix(fullField, "<")
+			fullField = propName
+			oper = "<"
+		case strings.HasPrefix(fullField, ">="):
+			propName = strings.TrimPrefix(fullField, ">=")
+			fullField = propName
+			oper = ">="
+		case strings.HasPrefix(fullField, ">"):
+			propName = strings.TrimPrefix(fullField, ">")
+			fullField = propName
+			oper = ">"
+		default:
+			oper = "="
+		}
+
+		if strings.Index(propName, ".") > 0 {
+			propName = strings.Split(propName, ".")[1]
+		}
+		return fullField, propName, oper
+	}
+
+	parties := strings.Split(propName, " ")
+
+	tmpfield := parties[len(parties)-1]
+	fullField = strings.Trim(tmpfield, "%")
+	propName, oper = procLike(tmpfield, parties[0])
+
+	if strings.Index(propName, ".") > 0 {
+		propName = strings.Split(propName, ".")[1]
+	}
+	return fullField, propName, oper
+}
+
+func procLike(filed, orgOper string) (propName, oper string) {
+	orgOper = strings.TrimSpace(orgOper)
+	filed = strings.TrimSpace(filed)
+
+	if !strings.EqualFold(orgOper, "like") {
+		oper = orgOper
+		propName = filed
+		return
+	}
+
+	var (
+		prefix string = ""
+		suffix string = ""
+	)
+
+	if strings.HasPrefix(filed, "%") {
+		prefix = "%"
+	}
+	if strings.HasSuffix(filed, "%") {
+		suffix = "%"
+	}
+	oper = prefix + orgOper + suffix
+	propName = strings.Trim(filed, "%")
+	return
 }

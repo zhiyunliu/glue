@@ -10,27 +10,24 @@ const (
 	_defaultName = "default"
 )
 
-//StandardCache cache
+// StandardCache cache
 type StandardCache interface {
-	GetCache(name ...string) (q ICache)
+	GetCache(name string, opts ...Option) (q ICache)
 }
 
-//StandardCache cache
+// StandardCache cache
 type xCache struct {
 	c container.Container
 }
 
-//NewStandardCache 创建cache
+// NewStandardCache 创建cache
 func NewStandardCache(c container.Container) StandardCache {
 	return &xCache{c: c}
 }
 
-//GetCaches GetCaches
-func (s *xCache) GetCache(name ...string) (q ICache) {
-	realName := _defaultName
-	if len(name) > 0 {
-		realName = name[0]
-	}
+// GetCaches GetCaches
+func (s *xCache) GetCache(name string, opts ...Option) (q ICache) {
+	realName := name
 	if realName == "" {
 		realName = _defaultName
 	}
@@ -38,13 +35,23 @@ func (s *xCache) GetCache(name ...string) (q ICache) {
 		//{"proto":"redis","addr":"redis://localhost"}
 		cfgVal := cfg.Get(TypeNode).Get(realName)
 		protoType := cfgVal.Value("proto").String()
-		return newCache(protoType, cfgVal)
-
-	})
+		return newCache(protoType, cfgVal, opts...)
+	}, s.getUniqueKey(opts...))
 	if err != nil {
 		panic(err)
 	}
 	return obj.(ICache)
+}
+
+func (s *xCache) getUniqueKey(opts ...Option) string {
+	if len(opts) == 0 {
+		return ""
+	}
+	tmpCfg := &Options{}
+	for i := range opts {
+		opts[i](tmpCfg)
+	}
+	return tmpCfg.getUniqueKey()
 }
 
 type xBuilder struct{}

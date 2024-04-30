@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/server"
 	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/xnet"
 )
@@ -61,34 +61,38 @@ func (e *Server) Config(cfg config.Config) {
 		return
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).Scan(e.opts.setting)
+	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).ScanTo(e.opts.srvCfg)
 }
 
 // Start 开始
 func (e *Server) Start(ctx context.Context) (err error) {
-	if e.opts.setting.Config.Status == server.StatusStop {
+	if e.opts.srvCfg.Config.Status == engine.StatusStop {
 		return nil
 	}
-	e.opts.setting.Config.Addr, err = xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.opts.setting.Config.Addr)
+	e.opts.srvCfg.Config.Addr, err = xnet.GetAvaliableAddr(log.DefaultLogger, global.LocalIp, e.opts.srvCfg.Config.Addr)
 	if err != nil {
 		return err
 	}
 
 	e.ctx = transport.WithServerContext(ctx, e)
 	e.started = true
-	e.registryEngineRoute()
 
-	lsr, err := net.Listen("tcp", e.opts.setting.Config.Addr)
+	err = e.resoverEngineRoute()
+	if err != nil {
+		return
+	}
+
+	lsr, err := net.Listen("tcp", e.opts.srvCfg.Config.Addr)
 	if err != nil {
 		return err
 	}
 
 	e.srv = &http.Server{
 		Handler:           e.opts.handler,
-		ReadTimeout:       time.Duration(e.opts.setting.Config.ReadTimeout) * time.Second,
-		ReadHeaderTimeout: time.Duration(e.opts.setting.Config.ReadHeaderTimeout) * time.Second,
-		WriteTimeout:      time.Duration(e.opts.setting.Config.WriteTimeout) * time.Second,
-		MaxHeaderBytes:    int(e.opts.setting.Config.MaxHeaderBytes),
+		ReadTimeout:       time.Duration(e.opts.srvCfg.Config.ReadTimeout) * time.Second,
+		ReadHeaderTimeout: time.Duration(e.opts.srvCfg.Config.ReadHeaderTimeout) * time.Second,
+		WriteTimeout:      time.Duration(e.opts.srvCfg.Config.WriteTimeout) * time.Second,
+		MaxHeaderBytes:    int(e.opts.srvCfg.Config.MaxHeaderBytes),
 	}
 	if len(e.opts.endHooks) > 0 {
 		endHook := func() {
@@ -105,11 +109,15 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	e.srv.BaseContext = func(_ net.Listener) context.Context {
 		return e.ctx
 	}
-	log.Infof("API Server [%s] listening on %s", e.name, e.opts.setting.Config.Addr)
+	log.Infof("API Server [%s] listening on %s", e.name, e.opts.srvCfg.Config.Addr)
 	errChan := make(chan error, 1)
 	done := make(chan struct{})
 	go func() {
-		errChan <- e.srv.Serve(lsr)
+		serveErr := e.srv.Serve(lsr) //存在1s内，服务没有启动的可能性
+		if serveErr != nil {
+			log.Errorf("API Server [%s] Serve error: %s", e.name, serveErr.Error())
+		}
+		errChan <- serveErr
 		close(done)
 	}()
 
@@ -139,6 +147,9 @@ func (e *Server) Start(ctx context.Context) (err error) {
 
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
+	if e.opts.srvCfg.Config.Status == engine.StatusStop {
+		return nil
+	}
 	e.started = false
 	err := e.srv.Shutdown(ctx)
 	if err != nil {
@@ -168,9 +179,9 @@ func (e *Server) Attempt() bool {
 }
 
 func (e *Server) buildEndpoint() *url.URL {
-	host, port, err := xnet.ExtractHostPort(e.opts.setting.Config.Addr)
+	host, port, err := xnet.ExtractHostPort(e.opts.srvCfg.Config.Addr)
 	if err != nil {
-		panic(fmt.Errorf("API Server Addr:%s 配置错误", e.opts.setting.Config.Addr))
+		panic(fmt.Errorf("API Server Addr:%s 配置错误", e.opts.srvCfg.Config.Addr))
 	}
 	if host == "" {
 		host = global.LocalIp
@@ -182,11 +193,11 @@ func (e *Server) Use(middlewares ...middleware.Middleware) {
 	e.opts.router.Use(middlewares...)
 }
 
-func (e *Server) Group(group string, middlewares ...middleware.Middleware) *server.RouterGroup {
+func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engine.RouterGroup {
 	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Handle(path string, obj interface{}, methods ...server.Method) {
+func (e *Server) Handle(path string, obj interface{}, methods ...engine.Method) {
 	e.opts.router.Handle(path, obj, methods...)
 }
 

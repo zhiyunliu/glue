@@ -60,7 +60,280 @@
 ## CRON 定时任务服务
     使用了时间轮算法对任务进行任务派发，通过cron 表达式来计算任务的执行。同时支持多程序主备自动切换功能
 
- 
+
+## 自定义服务
+
+实现以下接口即可
+
+```golang 
+
+import (
+	_ "github.com/zhiyunliu/glue/transport"
+	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/config"
+
+) 
+
+// Server is transport server.
+type Server interface {
+	Name() string
+	Type() string
+	Start(context.Context) error
+	Stop(context.Context) error
+	Config(cfg config.Config)
+}
+
+//
+
+type demoServer struct{}
+
+func (d demoServer) Name() string{
+	return "demo"
+}
+
+
+func (d demoServer) Type() string{
+	return "demo"
+}
+
+
+func (d demoServer) Start(context.Context) error{
+	return nil 
+}
+
+
+func (d demoServer) Stop(context.Context) error{
+	return nil 
+}
+
+func (d demoServer) Config(cfg config.Config){
+	return  
+}
+
+
+func main() {
+
+	app := glue.NewApp( glue.Server(&demoServer{}))//装载自定义服务
+	app.Start()
+}
+
+
+```
+
+## 自定义数据体解析encoding
+
+```golang 
+type urlecoded struct {
+}
+
+func (u urlecoded) Marshal(v interface{}) ([]byte, error) {
+	return nil, nil
+}
+
+func (u *urlecoded) Unmarshal(data []byte, v interface{}) error {
+	values, err := url.ParseQuery(string(data))
+	if err != nil {
+		return err
+	}
+	var mapdata = xtypes.XMap{}
+	for k := range values {
+		mapdata[k] = values.Get(k)
+	}
+	return mapdata.Scan(v)
+}
+
+func (u urlecoded) Name() string {
+	return "x-www-form-urlencoded"
+}
+
+// github.com/zhiyunliu/glue/encoding
+encoding.RegisterCodec(&urlecoded{})
+
+```
+
+## 自定义数据解析方法 WithDecodeRequestFunc
+
+```golang 
+
+样例（cron,mqc,rpc 有同样的方法）：
+ 	apiSrv := api.New("cronserver", api.WithDecodeRequestFunc(func(ctx context.Context, obj interface{}) error {
+		//解析数据
+	}))
+
+```
+
+
+# SQL解析支持
+
+
+
+## 数据库自定义解析字符
+```golang 
+
+type symbol struct{}
+
+func (s *symbol) Name() string {
+	return "#"
+}
+func (s *symbol) GetPattern() string {
+	return `\#\{\w*[\.]?\w+\}`
+}
+func (s *symbol) Callback(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
+	propName := tpl.GetPropName(fullKey)
+	if ph, ok := item.NameCache[propName]; ok {
+		return ph, nil
+	}
+	argName, value, err := input.Get(propName, item.Placeholder)
+	if err != nil {
+		return argName, err
+	}
+	item.Names = append(item.Names, propName)
+	item.Values = append(item.Values, value)
+
+	item.NameCache[propName] = argName
+	return argName, nil
+}
+
+// github.com/zhiyunliu/glue/contrib/xdb
+//注入sqlserver 数据库新的字符解析处理逻辑
+tpl.RegisterSymbol("sqlserver", &symbol{})
+
+```
+
+
+## 参数化支持
+
+
+```sql
+@{field} 
+
+如：
+select * from table t where t.name = @{name}  
+select * from table t where t.name = @{t.name}  
+解析结果：
+select * from table t where t.name = @p_name
+
+```
+
+
+## & 符合链接
+
+将参数进行and链接，如果参数值不存在或者为空将不会生成and条件
+```sql
+&{field} ， &{t.field}
+
+如： 
+select * from table t where t.id = @{id} &{name} 
+select * from table t where t.id = @{id} &{t.name} 
+
+解析结果：
+select * from table t where t.id = @p_id and name = @p_name --参数存在
+select * from table t where t.id = @p_id and t.name = @p_name --参数存在
+或者
+select * from table t where t.id = @p_id --参数不存在或者为空,空字符
+
+```
+
+## | 符合链接
+
+将参数进行or链接，如果参数值不存在或者为空将不会生成or条件
+
+```sql
+|{field} 
+
+如：  
+select * from table t where t.id = @{id} |{name} 
+select * from table t where t.id = @{id} |{t.name} 
+
+解析结果：
+ select * from table t where t.id = @p_id or name = @p_name --参数存在
+ select * from table t where t.id = @p_id or t.name = @p_name --参数存在
+ 或者
+select * from table t where t.id = @p_id --参数不存在或者为空,空字符
+
+```
+
+## 原文替换
+```sql
+${field} 
+如：select * from table t where t.id = ${id} 
+
+解析结果：
+select * from table t where t.id = 123 --123是id的参数值
+
+```
+
+## like 支持
+
+```sql
+&{like field} ，&{like %field}， &{like field%} ，&{like %field%}
+&{like t.field} ，&{like %t.field}， &{like t.field%} ，&{like %t.field%}
+|{like field} ，|{like %field}， |{like field%} ，|{like %field%}
+|{like t.field} ，|{like %t.field}， |{like t.field%} ，|{like %t.field%}
+
+样例： 
+select * from table t where t.id = @{id} &{like name} 
+select * from table t where t.id = @{id} &{like %name}
+select * from table t where t.id = @{id} &{like name%}
+select * from table t where t.id = @{id} &{like %name%}
+
+select * from table t where t.id = @{id} |{like name} 
+select * from table t where t.id = @{id} |{like %name}
+select * from table t where t.id = @{id} |{like name%}
+select * from table t where t.id = @{id} |{like %name%}
+
+
+解析结果：
+select * from table t where t.id = @p_id and name like @p_name
+select * from table t where t.id = @p_id and name like '%'+@p_name
+select * from table t where t.id = @p_id and name like @p_name+'%'
+select * from table t where t.id = @p_id and name like '%'+@p_name+'%'
+
+select * from table t where t.id = @p_id or name like @p_name
+select * from table t where t.id = @p_id or name like '%'+@p_name
+select * from table t where t.id = @p_id or name like @p_name+'%'
+select * from table t where t.id = @p_id or name like '%'+@p_name+'%'
+
+```
+
+## 运算符支持（>,>=,<,<=）
+
+```sql
+
+&{> field} ,&{>= field}, &{< field} ,&{<= field}
+&{> t.field} ,&{>= t.field}, &{< t.field} ,&{<= t.field}
+
+----类似
+|{> field} ,|{>= field}, |{< field} ,|{<= field}
+|{> t.field} ,|{>= t.field}, |{< t.field} ,|{<= t.field}
+
+
+样例： 
+select * from table t where t.id = @{id} &{> name} 
+select * from table t where t.id = @{id} &{>= name}
+select * from table t where t.id = @{id} &{< name}
+select * from table t where t.id = @{id} &{<= name}
+
+select * from table t where t.id = @{id} &{> t.name} 
+select * from table t where t.id = @{id} &{>= t.name}
+select * from table t where t.id = @{id} &{< t.name}
+select * from table t where t.id = @{id} &{<= t.name}
+
+
+解析结果：
+select * from table t where t.id = @p_id and name > @p_name
+select * from table t where t.id = @p_id and name >= @p_name
+select * from table t where t.id = @p_id and name < @p_name
+select * from table t where t.id = @p_id and name <= @p_name
+
+select * from table t where t.id = @p_id and t.name > @p_name
+select * from table t where t.id = @p_id and t.name >= @p_name
+select * from table t where t.id = @p_id and t.name < @p_name
+select * from table t where t.id = @p_id and t.name <= @p_name
+
+``` 
+
+
 
 # 使用方式
 

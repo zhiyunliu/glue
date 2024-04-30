@@ -1,9 +1,6 @@
 package rpc
 
-import (
-	"github.com/zhiyunliu/glue/middleware"
-	"github.com/zhiyunliu/glue/server"
-)
+import "github.com/zhiyunliu/glue/xrpc"
 
 /*```
 	"rpc":{
@@ -15,14 +12,6 @@ import (
 
 const Type string = "rpc"
 
-type Setting struct {
-	Config      Config              `json:"config" yaml:"config"`
-	Middlewares []middleware.Config `json:"middlewares"  yaml:"middlewares"`
-}
-
-type Config struct {
-	Addr           string        `json:"addr"`
-	Status         server.Status `json:"status"`
-	MaxRecvMsgSize int           `json:"max_recv_msg_size"`
-	MaxSendMsgSize int           `json:"max_send_msg_size"`
+type serverConfig struct {
+	Config xrpc.Config `json:"config" yaml:"config"`
 }

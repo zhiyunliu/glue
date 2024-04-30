@@ -15,13 +15,13 @@ func init() {
 	_cache = cmap.New()
 }
 
-//IFactory 注册中心构建器
+// IFactory 注册中心构建器
 type Factory interface {
 	Name() string
 	Create(config.Config) (Registrar, error)
 }
 
-//Register 添加注册中心工厂对象
+// Register 添加注册中心工厂对象
 func Register(factory Factory) {
 	if factory == nil {
 		panic(fmt.Errorf("registry: factory is nil"))
@@ -42,6 +42,9 @@ func GetRegistrarName(cfg config.Config) string {
 func GetRegistrar(cfg config.Config) (Registrar, error) {
 
 	cfgVal := GetRegistrarName(cfg)
+	if cfgVal == "" {
+		return nil, fmt.Errorf("registry未配置")
+	}
 	tmpVal := _cache.Upsert(cfgVal, nil, func(exist bool, valueInMap, newValue interface{}) interface{} {
 		if exist {
 			return valueInMap

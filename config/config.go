@@ -26,10 +26,13 @@ type Observer func(string, Value)
 type Config interface {
 	Load() error
 	Source(sources ...Source) error
+	// Deprecated: As of Go v0.5.3, this function simply calls [ScanTo].
 	Scan(v interface{}) error
+	ScanTo(v interface{}) error
 	Value(key string) Value
 	Watch(key string, o Observer) error
 	Close() error
+	Path() string
 	Get(key string) Config
 	Root() Config
 }
@@ -40,6 +43,7 @@ type config struct {
 	cached    sync.Map
 	observers sync.Map
 	watchers  []Watcher
+	curkey    string
 	//	log       log.Logger
 }
 
@@ -55,8 +59,13 @@ func New(opts ...Option) Config {
 	}
 	return &config{
 		opts:   o,
+		curkey: "",
 		reader: newReader(o),
 	}
+}
+
+func (c *config) Path() string {
+	return c.curkey
 }
 
 func (c *config) Get(key string) Config {
@@ -159,7 +168,12 @@ func (c *config) Value(key string) Value {
 	return &emptyValue{err: buildKeyNotFoundError(key)}
 }
 
+// Deprecated: As of Go v0.5.3, this function simply calls [ScanTo].
 func (c *config) Scan(v interface{}) error {
+	return c.ScanTo(v)
+}
+
+func (c *config) ScanTo(v interface{}) error {
 	data, err := c.reader.Source()
 	if err != nil {
 		return err

@@ -8,7 +8,7 @@ import (
 type SeqContext struct {
 	name    string
 	prefix  string
-	symbols Symbols
+	symbols SymbolMap
 }
 
 type seqPlaceHolder struct {
@@ -44,7 +44,7 @@ func NewSeq(name, prefix string) SQLTemplate {
 	return &SeqContext{
 		name:    name,
 		prefix:  prefix,
-		symbols: defaultSymbols,
+		symbols: defaultSymbols.Clone(),
 	}
 }
 
@@ -53,7 +53,7 @@ func (ctx SeqContext) Name() string {
 }
 
 // GetSQLContext 获取查询串
-func (ctx *SeqContext) GetSQLContext(tpl string, input map[string]interface{}) (sql string, args []any) {
+func (ctx *SeqContext) GetSQLContext(tpl string, input map[string]interface{}) (sql string, args []any, err error) {
 	return AnalyzeTPLFromCache(ctx, tpl, input, ctx.Placeholder())
 }
 
@@ -61,6 +61,14 @@ func (ctx *SeqContext) Placeholder() Placeholder {
 	return &seqPlaceHolder{ctx: ctx, idx: 0}
 }
 
-func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem) {
+func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem, err error) {
 	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
+}
+
+func (ctx *SeqContext) RegisterSymbol(symbol Symbol) error {
+	return ctx.symbols.Register(symbol)
+}
+
+func (ctx *SeqContext) RegisterOperator(oper Operator) error {
+	return ctx.symbols.Operator(oper)
 }

@@ -29,7 +29,7 @@ func (s *httpResolver) Resolve(name string, cfg config.Config) (xhttp.Client, er
 		IdleConnTimeout:     90,
 		TLSHandshakeTimeout: 10,
 	}
-	err := cfg.Scan(setval)
+	err := cfg.ScanTo(setval)
 	if err != nil {
 		return nil, fmt.Errorf("读取http配置:%w", err)
 	}

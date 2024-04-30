@@ -71,7 +71,7 @@ func (r xResover) Resolve(name string, config config.Config) (metrics.Provider, 
 			Labels:    []string{"kind", "path"},
 		},
 	}
-	config.Scan(&configOpts)
+	config.ScanTo(&configOpts)
 
 	counter := prometheus.NewCounterVec(configOpts.GetCounter())
 	histogram := prometheus.NewHistogramVec(configOpts.GetHistogram())

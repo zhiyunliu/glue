@@ -1,12 +1,16 @@
 package alloter
 
-import "context"
+import (
+	"context"
+	"net/url"
+)
 
 type IRequest interface {
 	Context() context.Context
-	WithContext(context.Context) IRequest
+	WithContext(context.Context)
 	GetName() string
-	GetService() string
+	//GetService() string
+	GetURL() *url.URL
 	GetMethod() string
 	Params() map[string]string
 	GetHeader() map[string]string
