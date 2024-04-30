@@ -209,3 +209,24 @@ func (r *Registry) resolve(ss *serviceSet) error {
 
 	return nil
 }
+func (r *Registry) GetAllServicesInfo(ctx context.Context) (list registry.ServiceList, err error) {
+	tmplist, err := r.cli.GetAllServicesInfo(ctx)
+	if err != nil {
+		err = fmt.Errorf("GetAllServicesInfo %w", err)
+		return
+	}
+
+	list.Count = int64(len(tmplist))
+	list.NameList = make([]string, list.Count)
+
+	var idx = 0
+	for k := range tmplist {
+		list.NameList[idx] = k
+		idx++
+	}
+	return
+}
+
+func (r *Registry) GetImpl() any {
+	return r.cli.cli
+}

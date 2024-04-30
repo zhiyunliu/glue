@@ -41,16 +41,16 @@ func New(cli naming_client.INamingClient, opts *options) (r *Registry) {
 }
 
 // Register the registration.
-func (r *Registry) Name() string {
+func (r Registry) Name() string {
 	return "nacos"
 }
 
-func (r *Registry) ServerConfigs() string {
+func (r Registry) ServerConfigs() string {
 	return r.opts.serverConfigs
 }
 
 // Register the registration.
-func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) error {
+func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) error {
 	if si.Name == "" {
 		return fmt.Errorf("nacos: serviceInstance.name can not be empty")
 	}
@@ -96,7 +96,7 @@ func (r *Registry) Register(_ context.Context, si *registry.ServiceInstance) err
 }
 
 // Deregister the registration.
-func (r *Registry) Deregister(_ context.Context, service *registry.ServiceInstance) error {
+func (r Registry) Deregister(_ context.Context, service *registry.ServiceInstance) error {
 	if service == nil {
 		return nil
 	}
@@ -128,12 +128,12 @@ func (r *Registry) Deregister(_ context.Context, service *registry.ServiceInstan
 }
 
 // Watch creates a watcher according to the service name.
-func (r *Registry) Watch(ctx context.Context, serviceName string) (registry.Watcher, error) {
+func (r Registry) Watch(ctx context.Context, serviceName string) (registry.Watcher, error) {
 	return newWatcher(ctx, r.cli, serviceName, r.opts.Group, []string{r.opts.Cluster})
 }
 
 // GetService return the service instances in memory according to the service name.
-func (r *Registry) GetService(_ context.Context, serviceName string) ([]*registry.ServiceInstance, error) {
+func (r Registry) GetService(_ context.Context, serviceName string) ([]*registry.ServiceInstance, error) {
 	res, err := r.cli.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: serviceName,
 		GroupName:   r.opts.Group,
@@ -163,4 +163,21 @@ func (r *Registry) GetService(_ context.Context, serviceName string) ([]*registr
 		})
 	}
 	return items, nil
+}
+
+func (r Registry) GetAllServicesInfo(ctx context.Context) (list registry.ServiceList, err error) {
+	tmplist, err := r.cli.GetAllServicesInfo(vo.GetAllServiceInfoParam{})
+	if err != nil {
+		err = fmt.Errorf("GetAllServicesInfo %w", err)
+		return
+	}
+
+	list.Count = tmplist.Count
+	list.NameList = make([]string, len(tmplist.Doms))
+	copy(list.NameList, tmplist.Doms)
+	return
+}
+
+func (r Registry) GetImpl() any {
+	return r.cli
 }
