@@ -18,6 +18,10 @@ type Registrar interface {
 	GetService(ctx context.Context, serviceName string) ([]*ServiceInstance, error)
 	// Watch creates a watcher according to the service name.
 	Watch(ctx context.Context, serviceName string) (Watcher, error)
+
+	GetAllServicesInfo(ctx context.Context) (ServiceList, error)
+
+	GetImpl() any
 }
 
 // Watcher is service watcher.
@@ -44,4 +48,9 @@ type ServiceInstance struct {
 type ServerItem struct {
 	ServiceName string
 	EndpointURL string //scheme://host:port/path
+}
+
+type ServiceList struct {
+	Count    int64    `json:"count"`
+	NameList []string `json:"name_list"`
 }
