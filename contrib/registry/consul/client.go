@@ -170,3 +170,9 @@ func (c *Client) Deregister(_ context.Context, serviceID string) error {
 	c.cancel()
 	return c.cli.Agent().ServiceDeregister(serviceID)
 }
+
+// Services is used to query for all known services
+func (c *Client) GetAllServicesInfo(_ context.Context) (list map[string][]string, err error) {
+	list, _, err = c.cli.Catalog().Services(&api.QueryOptions{})
+	return list, err
+}
