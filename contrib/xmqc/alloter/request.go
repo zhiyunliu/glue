@@ -35,7 +35,7 @@ func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request) {
 	r = &Request{
 		IMQCMessage: m,
 		task:        task,
-		method:      engine.MethodPost,
+		method:      string(engine.MethodPost),
 		params:      make(map[string]string),
 	}
 
