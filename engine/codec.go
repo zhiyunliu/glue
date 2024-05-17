@@ -73,8 +73,11 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 		resp := ctx.Response()
 
 		resp.Status(entity.StatusCode())
-		for k, v := range entity.Header() {
-			resp.Header(k, v)
+		header := entity.Header()
+		if len(header) > 0 {
+			for k, v := range header {
+				resp.Header(k, v)
+			}
 		}
 		bytes, err := entity.Body()
 		if err != nil {

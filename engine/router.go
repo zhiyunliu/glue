@@ -146,9 +146,7 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, opts 
 }
 
 func (group *RouterGroup) combineHandlers(middlewares ...middleware.Middleware) []middleware.Middleware {
-	finalSize := len(group.middlewares) + len(middlewares)
-
-	mergedHandlers := make([]middleware.Middleware, finalSize)
+	mergedHandlers := make([]middleware.Middleware, len(group.middlewares)+len(middlewares))
 	copy(mergedHandlers, group.middlewares)
 	copy(mergedHandlers[len(group.middlewares):], middlewares)
 	return mergedHandlers

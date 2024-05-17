@@ -19,8 +19,10 @@ type Registrar interface {
 	// Watch creates a watcher according to the service name.
 	Watch(ctx context.Context, serviceName string) (Watcher, error)
 
+	// GetAllServicesInfo return all services in memory.
 	GetAllServicesInfo(ctx context.Context) (ServiceList, error)
 
+	// GetImpl return the implementation of the registrar.
 	GetImpl() any
 }
 
