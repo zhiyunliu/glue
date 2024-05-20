@@ -25,6 +25,12 @@ type DataEncoder interface {
 	Render(ctx context.Context) error
 }
 
+type ResponseEntity interface {
+	StatusCode() int
+	Header() map[string]string
+	Body() (bytes []byte, err error)
+}
+
 // DecodeRequestFunc is decode request func.
 type DecodeRequestFunc func(context.Context, interface{}) error
 
@@ -37,7 +43,7 @@ type EncodeErrorFunc func(context.Context, error)
 // DefaultRequestDecoder decodes the request body to object.
 func DefaultRequestDecoder(ctx context.Context, v interface{}) (err error) {
 	var data []byte
-	if strings.EqualFold(MethodGet, ctx.Request().GetMethod()) {
+	if strings.EqualFold(string(MethodGet), ctx.Request().GetMethod()) {
 		data = []byte(ctx.Request().Query().String())
 	} else {
 		data, err = io.ReadAll(ctx.Request().Body())
@@ -57,10 +63,30 @@ func DefaultRequestDecoder(ctx context.Context, v interface{}) (err error) {
 }
 
 // DefaultResponseEncoder encodes the object to the HTTP response.
-func DefaultResponseEncoder(ctx context.Context, v interface{}) error {
+func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 	if render, ok := v.(DataEncoder); ok {
 		return render.Render(ctx)
 	}
+
+	//判定对象是否实现了响应体接口
+	if entity, ok := v.(ResponseEntity); ok {
+		resp := ctx.Response()
+
+		resp.Status(entity.StatusCode())
+		header := entity.Header()
+		if len(header) > 0 {
+			for k, v := range header {
+				resp.Header(k, v)
+			}
+		}
+		bytes, err := entity.Body()
+		if err != nil {
+			return err
+		}
+		err = resp.WriteBytes(bytes)
+		return err
+	}
+
 	var codec encoding.Codec
 	if _, ok := v.(string); ok {
 		codec = encoding.GetCodec(text.Name)
@@ -74,7 +100,6 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) error {
 	}
 	ctx.Response().Header(ContentTypeName, httputil.ContentType(codec.Name()))
 	err = ctx.Response().WriteBytes(data)
-
 	return err
 }
 

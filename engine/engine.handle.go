@@ -43,18 +43,19 @@ func execRegistry(engine AdapterEngine, group *RouterGroup, defaultMiddlewares [
 	}
 }
 
-func procHandler(engine AdapterEngine, group *router.Group, middlewares ...middleware.Middleware) {
+func procHandler(engine AdapterEngine, group *RouterWrapper, middlewares ...middleware.Middleware) {
 	for method, v := range group.Services {
 		engine.Handle(method, group.GetReallyPath(), func(ctx context.Context) {
 			var (
-				code     int    = http.StatusOK
-				kind            = ctx.ServerType()
-				fullPath string = ctx.Request().Path().FullPath()
+				code      int    = http.StatusOK
+				kind             = ctx.ServerType()
+				fullPath  string = ctx.Request().Path().FullPath()
+				logMethod string = ctx.Request().GetMethod()
 			)
-			opts := getLogOptions(ctx)
+			logOpts := getLogOptions(ctx)
 			startTime := time.Now()
 
-			ctx.Log().Infof("%s.req %s %s from:%s %s", kind, ctx.Request().GetMethod(), fullPath, ctx.Request().GetClientIP(), extractReq(opts, ctx.Request()))
+			ctx.Log().Infof("%s.req %s %s from:%s %s", kind, logMethod, fullPath, ctx.Request().GetClientIP(), extractReq(ctx.Request(), logOpts, group.opts))
 
 			resp := middleware.Chain(middlewares...)(engineHandler(group, v))(ctx)
 			engine.Write(ctx, resp)
@@ -69,19 +70,19 @@ func procHandler(engine AdapterEngine, group *router.Group, middlewares ...middl
 
 			level, errInfo := extractError(err)
 			if level == log.LevelError {
-				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractResp(opts, ctx), errInfo)
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, group.opts), errInfo)
 			} else {
-				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, ctx.Request().GetMethod(), fullPath, code, time.Since(startTime).String(), extractResp(opts, ctx))
+				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, group.opts))
 			}
 
 		})
 	}
 	for i := range group.Children {
-		procHandler(engine, group.Children[i], middlewares...)
+		procHandler(engine, &RouterWrapper{Group: group.Children[i], opts: group.opts}, middlewares...)
 	}
 }
 
-func engineHandler(group *router.Group, unit *router.Unit) middleware.Handler {
+func engineHandler(group *RouterWrapper, unit *router.Unit) middleware.Handler {
 
 	return func(hctx context.Context) interface{} {
 
@@ -116,28 +117,28 @@ func engineHandler(group *router.Group, unit *router.Unit) middleware.Handler {
 }
 
 // extractArgs returns the string of the req
-func extractReq(opts *log.Options, req context.Request) string {
+func extractReq(req context.Request, logopts *log.Options, rotps *RouterOptions) string {
 	res := ""
 	if len(req.Query().Values()) > 0 {
 		res = req.Query().String()
 	}
-	if opts.WithRequest && !opts.IsExclude(req.Path().FullPath()) {
+	if logopts.WithRequest && !(rotps.ExcludeLogReq || logopts.IsExclude(req.Path().FullPath())) {
 		res += "|"
-		res += extractBody(opts, req)
+		res += extractBody(req)
 	}
 	return res
 }
 
 // extractArgs returns the string of the req
-func extractBody(opts *log.Options, req context.Request) string {
+func extractBody(req context.Request) string {
 	if req.Body().Len() > 0 {
 		return bytesconv.BytesToString(req.Body().Bytes())
 	}
 	return ""
 }
 
-func extractResp(opts *log.Options, ctx context.Context) string {
-	if opts.WithResponse && !opts.IsExclude(ctx.Request().Path().FullPath()) {
+func extractResp(ctx context.Context, logopts *log.Options, ropts *RouterOptions) string {
+	if logopts.WithResponse && !(ropts.ExcludeLogResp || logopts.IsExclude(ctx.Request().Path().FullPath())) {
 		return bytesconv.BytesToString(ctx.Response().ResponseBytes())
 	}
 	return ""

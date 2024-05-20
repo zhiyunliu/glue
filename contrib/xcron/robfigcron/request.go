@@ -37,7 +37,7 @@ type Request struct {
 func newRequest(job *xcron.Job) (r *Request) {
 	r = &Request{
 		job:    job,
-		method: engine.MethodPost,
+		method: string(engine.MethodPost),
 		params: make(map[string]string),
 	}
 

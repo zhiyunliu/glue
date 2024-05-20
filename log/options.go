@@ -44,6 +44,7 @@ func WithResponse() ServerOption {
 	}
 }
 
+// Deprecated: use func (e *Server) Handle(path string, obj interface{}, opts ...engine.RouterOption) 中Opts代替
 func Excludes(excludes ...string) ServerOption {
 	return func(opt *Options) {
 		opt.Excludes = excludes
