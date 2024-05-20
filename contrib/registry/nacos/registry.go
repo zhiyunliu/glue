@@ -166,7 +166,11 @@ func (r Registry) GetService(_ context.Context, serviceName string) ([]*registry
 }
 
 func (r Registry) GetAllServicesInfo(ctx context.Context) (list registry.ServiceList, err error) {
-	tmplist, err := r.cli.GetAllServicesInfo(vo.GetAllServiceInfoParam{})
+	tmplist, err := r.cli.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+		GroupName: r.opts.Group,
+		PageNo:    1,
+		PageSize:  10000, //默认不超过10000个服务
+	})
 	if err != nil {
 		err = fmt.Errorf("GetAllServicesInfo %w", err)
 		return
