@@ -64,10 +64,19 @@ func (m *redisMessage) PlusRetryCount() queue.Message {
 	if m.objMsg == nil {
 		m.objMsg = newMsgBody(m.message)
 	}
+
+	newMsg := &queue.MsgItem{
+		HeaderMap: m.objMsg.Header(),
+		BodyBytes: m.objMsg.Body(),
+	}
+
 	m.retryCount++
-	m.objMsg.Header()["retry_count"] = strconv.FormatInt(m.retryCount, 10)
-	return m.objMsg
+	newMsg.HeaderMap["retry_count"] = strconv.FormatInt(m.retryCount, 10)
+	return newMsg
 }
+
+//{"user_id":123}
+//{"header":{},"body":{"user_id":123}}
 
 func newMsgBody(msg string) queue.Message {
 	msgBytes := bytesconv.StringToBytes(msg)
@@ -76,8 +85,9 @@ func newMsgBody(msg string) queue.Message {
 	}
 	msgItem := &queue.MsgItem{
 		HeaderMap: make(xtypes.SMap),
+		BodyBytes: msgBytes,
 	}
-	msgItem.ItemBytes = msgBytes
+	// msgItem.ItemBytes = msgBytes
 	json.Unmarshal(msgBytes, msgItem)
 	return msgItem
 }
