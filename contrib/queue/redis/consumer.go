@@ -144,15 +144,15 @@ func (consumer *Consumer) work(item *QueueItem) {
 		case msg := <-item.msgChan:
 			rdsMsg := &redisMessage{message: msg}
 			item.callback(rdsMsg)
-			if rdsMsg.err != nil {
-				//超过最大次数
-				if rdsMsg.RetryCount() >= queue.MaxRetrtCount {
-					consumer.writeToDeadLetter(item.QueueName, msg)
-					continue
-				}
-				obj := rdsMsg.PlusRetryCount()
-				consumer.client.RPush(item.QueueName, obj)
-			}
+			// if rdsMsg.err != nil {
+			// 	//超过最大次数
+			// 	if rdsMsg.RetryCount() >= queue.MaxRetrtCount {
+			// 		consumer.writeToDeadLetter(item.QueueName, msg)
+			// 		continue
+			// 	}
+			// 	obj := rdsMsg.PlusRetryCount()
+			// 	consumer.client.RPush(item.QueueName, obj)
+			// }
 		case <-consumer.closeCh:
 			return
 		case <-item.unconsumeChan:
