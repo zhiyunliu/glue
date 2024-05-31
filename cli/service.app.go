@@ -206,8 +206,9 @@ func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
 			}
 			e := r.Endpoint()
 			endpoints = append(endpoints, registry.ServerItem{
-				ServiceName: r.ServiceName(),
-				EndpointURL: e.String(),
+				ServiceName:    r.ServiceName(),
+				EndpointURL:    e.String(),
+				RouterPathList: r.RouterPathList(),
 			})
 		}
 	}

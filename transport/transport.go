@@ -20,6 +20,7 @@ type Server interface {
 type Endpointer interface {
 	ServiceName() string
 	Endpoint() *url.URL
+	RouterPathList() []string
 }
 
 // Header is the storage medium used by a Header.

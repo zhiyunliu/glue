@@ -50,7 +50,11 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 
 	opts.serverConfigs = strings.Join(addrs, ",")
 
-	return New(namingClient, opts), nil
+	if len(opts.Group) == 0 {
+		opts.Group = constant.DEFAULT_GROUP
+	}
+
+	return New(namingClient, ncp, opts), nil
 
 }
 

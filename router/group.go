@@ -176,5 +176,11 @@ func (g *Group) IsValid() error {
 	return nil
 }
 func (g *Group) GetReallyPath() string {
-	return fmt.Sprint("/", strings.Trim(g.rootPath, "/"), "/", strings.Trim(g.Path, "/"))
+	prefix := strings.Trim(g.rootPath, "/")
+	path := strings.Trim(g.Path, "/")
+
+	if prefix != "" {
+		return "/" + prefix + "/" + path
+	}
+	return "/" + path
 }

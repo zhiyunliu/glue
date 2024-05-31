@@ -2,12 +2,17 @@ package nacos
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
+	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
 	"github.com/zhiyunliu/glue/registry"
@@ -27,15 +32,18 @@ type options struct {
 
 // Registry is nacos registry.
 type Registry struct {
-	opts *options
-	cli  naming_client.INamingClient
+	opts        *options
+	ncp         *vo.NacosClientParam
+	cli         naming_client.INamingClient
+	nacosServer *nacos_server.NacosServer
 }
 
 // New new a nacos registry.
-func New(cli naming_client.INamingClient, opts *options) (r *Registry) {
+func New(cli naming_client.INamingClient, ncp *vo.NacosClientParam, opts *options) (r *Registry) {
 
 	return &Registry{
 		opts: opts,
+		ncp:  ncp,
 		cli:  cli,
 	}
 }
@@ -54,6 +62,8 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 	if si.Name == "" {
 		return fmt.Errorf("nacos: serviceInstance.name can not be empty")
 	}
+	srvMap := map[string][]string{}
+
 	for _, item := range si.Endpoints {
 		u, err := url.Parse(item.EndpointURL)
 		if err != nil {
@@ -90,7 +100,11 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 		if e != nil {
 			return fmt.Errorf("RegisterInstance err %v,%v", e, item.EndpointURL)
 		}
+		srvMap[item.ServiceName] = append(srvMap[item.ServiceName], item.RouterPathList...)
+	}
 
+	for srv, list := range srvMap {
+		r.updateServiceMetadata(srv, list)
 	}
 	return nil
 }
@@ -184,4 +198,66 @@ func (r Registry) GetAllServicesInfo(ctx context.Context) (list registry.Service
 
 func (r Registry) GetImpl() any {
 	return r.cli
+}
+
+func (r *Registry) getNacosServer() (nacosServer *nacos_server.NacosServer, err error) {
+	if r.nacosServer != nil {
+		return r.nacosServer, nil
+	}
+	var (
+		clientCfg  constant.ClientConfig   = *r.ncp.ClientConfig
+		serverCfgs []constant.ServerConfig = r.ncp.ServerConfigs
+	)
+
+	nc := r.cli.(*naming_client.NamingClient).INacosClient
+
+	httpAgent, err := nc.GetHttpAgent()
+	if err != nil {
+		return nil, err
+	}
+
+	nacosServer, err = nacos_server.NewNacosServer(serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
+	if err != nil {
+		return nil, err
+	}
+	r.nacosServer = nacosServer
+
+	return nacosServer, nil
+}
+
+func (r *Registry) getSecurityMap(clientConfig *constant.ClientConfig) map[string]string {
+	result := make(map[string]string, 2)
+	if len(clientConfig.AccessKey) != 0 && len(clientConfig.SecretKey) != 0 {
+		result[constant.KEY_ACCESS_KEY] = clientConfig.AccessKey
+		result[constant.KEY_SECRET_KEY] = clientConfig.SecretKey
+	}
+	return result
+}
+
+func (r *Registry) updateServiceMetadata(serviceName string, routerList []string) (err error) {
+	if len(routerList) == 0 {
+		return nil
+	}
+	nacosServer, err := r.getNacosServer()
+	if err != nil {
+		return err
+	}
+	sort.Strings(routerList)
+	srv := map[string]string{}
+	for i, path := range routerList {
+		srv[fmt.Sprintf("router_%d", i+1)] = path
+	}
+
+	bytes, _ := json.Marshal(srv)
+
+	//	serviceName=aaa&groupName=DEFAULT_GROUP&namespaceId=
+	param := make(map[string]string)
+	param["namespaceId"] = r.ncp.ClientConfig.NamespaceId
+	param["groupName"] = r.opts.Group
+	param["serviceName"] = serviceName
+	param["metadata"] = string(bytes)
+	param["protectThreshold"] = "0"
+	//查看是否存在
+	_, err = nacosServer.ReqApi(constant.SERVICE_INFO_PATH, param, http.MethodPut, r.getSecurityMap(r.ncp.ClientConfig))
+	return err
 }

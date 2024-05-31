@@ -173,6 +173,11 @@ func (s *Server) Endpoint() *url.URL {
 	return s.endpoint
 }
 
+// 获取树形的路径列表
+func (s *Server) RouterPathList() []string {
+	return s.opts.router.GetTreePathList()
+}
+
 // Attempt 判断是否可以启动
 func (e *Server) Attempt() bool {
 	return !e.started

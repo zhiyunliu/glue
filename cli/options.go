@@ -111,6 +111,12 @@ func StartedHook(hook func(context.Context) error) Option {
 	}
 }
 
+func RegistrarTimeout(timeout int64) Option {
+	return func(o *Options) {
+		o.RegistrarTimeout = time.Second * time.Duration(timeout)
+	}
+}
+
 type AppMode string
 
 const (

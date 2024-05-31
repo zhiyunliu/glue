@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/zhiyunliu/glue/log"
@@ -161,4 +162,28 @@ func (group *RouterGroup) calculateAbsolutePath(relativePath string) string {
 	}
 
 	return path.Join(group.basePath, relativePath)
+}
+
+type treePathResult struct {
+	list []string
+}
+
+func (group *RouterGroup) GetTreePathList() []string {
+	rst := &treePathResult{}
+	collect(group, rst)
+
+	sort.Strings(rst.list)
+
+	return rst.list
+}
+
+func collect(group *RouterGroup, rst *treePathResult) {
+
+	for _, v := range group.ServiceGroups {
+		rst.list = append(rst.list, v.GetReallyPath())
+	}
+
+	for i := range group.Children {
+		collect(group.Children[i], rst)
+	}
 }

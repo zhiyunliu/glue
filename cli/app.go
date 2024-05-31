@@ -14,13 +14,13 @@ import (
 
 const options_key string = "options_key"
 
-//App  cli app
+// App  cli app
 type App struct {
 	cliApp  *cli.App
 	options *Options
 }
 
-//Start 启动应用程序
+// Start 启动应用程序
 func (a *App) Start() error {
 	a.cliApp.Commands = GetCmds(a.options)
 	a.cliApp.Metadata = make(map[string]interface{})
@@ -28,7 +28,7 @@ func (a *App) Start() error {
 	return a.cliApp.Run(os.Args)
 }
 
-//New 创建app
+// New 创建app
 func New(opts ...Option) *App {
 
 	app := &App{options: &Options{

@@ -48,8 +48,9 @@ type ServiceInstance struct {
 }
 
 type ServerItem struct {
-	ServiceName string
-	EndpointURL string //scheme://host:port/path
+	ServiceName    string
+	EndpointURL    string //scheme://host:port/path
+	RouterPathList []string
 }
 
 type ServiceList struct {
