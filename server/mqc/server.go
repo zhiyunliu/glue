@@ -16,6 +16,10 @@ import (
 	"github.com/zhiyunliu/glue/xmqc"
 )
 
+const (
+	Port = 1988
+)
+
 type Server struct {
 	name    string
 	server  xmqc.Server
@@ -61,7 +65,7 @@ func (s *Server) ServiceName() string {
 }
 
 func (e *Server) Endpoint() *url.URL {
-	return transport.NewEndpoint(e.Type(), fmt.Sprintf("%s:%d", global.LocalIp, 1987))
+	return transport.NewEndpoint(e.Type(), fmt.Sprintf("%s:%d", global.LocalIp, Port))
 }
 
 func (e *Server) Config(cfg config.Config) {

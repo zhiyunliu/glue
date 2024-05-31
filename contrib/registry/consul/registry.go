@@ -227,6 +227,10 @@ func (r *Registry) GetAllServicesInfo(ctx context.Context) (list registry.Servic
 	return
 }
 
+func (r *Registry) GetServiceRouterList(ctx context.Context, serviceName string) ([]string, error) {
+	return []string{}, fmt.Errorf("not implemented")
+}
+
 func (r *Registry) GetImpl() any {
 	return r.cli.cli
 }

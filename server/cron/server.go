@@ -17,6 +17,10 @@ import (
 	"github.com/zhiyunliu/glue/xcron"
 )
 
+const (
+	Port = 1987
+)
+
 type Server struct {
 	name    string
 	server  xcron.Server
@@ -58,7 +62,7 @@ func (s *Server) ServiceName() string {
 }
 
 func (e *Server) Endpoint() *url.URL {
-	return transport.NewEndpoint("cron", fmt.Sprintf("%s:%d", global.LocalIp, 1987))
+	return transport.NewEndpoint("cron", fmt.Sprintf("%s:%d", global.LocalIp, Port))
 }
 
 func (e *Server) Type() string {

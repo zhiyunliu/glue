@@ -22,6 +22,9 @@ type Registrar interface {
 	// GetAllServicesInfo return all services in memory.
 	GetAllServicesInfo(ctx context.Context) (ServiceList, error)
 
+	// GetServiceRouterList return the service router path.
+	GetServiceRouterList(ctx context.Context, serviceName string) ([]string, error)
+
 	// GetImpl return the implementation of the registrar.
 	GetImpl() any
 }
