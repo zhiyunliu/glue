@@ -45,40 +45,43 @@ func execRegistry(engine AdapterEngine, group *RouterGroup, defaultMiddlewares [
 
 func procHandler(engine AdapterEngine, group *RouterWrapper, middlewares ...middleware.Middleware) {
 	for method, v := range group.Services {
-		engine.Handle(method, group.GetReallyPath(), func(ctx context.Context) {
-			var (
-				code      int    = http.StatusOK
-				kind             = ctx.ServerType()
-				fullPath  string = ctx.Request().Path().FullPath()
-				logMethod string = ctx.Request().GetMethod()
-			)
-			logOpts := getLogOptions(ctx)
-			startTime := time.Now()
-
-			ctx.Log().Infof("%s.req %s %s from:%s %s", kind, logMethod, fullPath, ctx.Request().GetClientIP(), extractReq(ctx.Request(), logOpts, group.opts))
-
-			resp := middleware.Chain(middlewares...)(engineHandler(group, v))(ctx)
-			engine.Write(ctx, resp)
-			var err error
-			if rerr, ok := resp.(error); ok {
-				err = rerr
-			}
-			code = ctx.Response().GetStatusCode()
-			if se := errors.FromError(err); se != nil {
-				code = se.Code
-			}
-
-			level, errInfo := extractError(err)
-			if level == log.LevelError {
-				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, group.opts), errInfo)
-			} else {
-				ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, group.opts))
-			}
-
-		})
+		engine.Handle(method, group.GetReallyPath(), buildHandler(engine, group, middlewares, v))
 	}
 	for i := range group.Children {
 		procHandler(engine, &RouterWrapper{Group: group.Children[i], opts: group.opts}, middlewares...)
+	}
+}
+
+func buildHandler(engine AdapterEngine, group *RouterWrapper, middlewares []middleware.Middleware, v *router.Unit) HandlerFunc {
+	return func(ctx context.Context) {
+		var (
+			code      int    = http.StatusOK
+			kind             = ctx.ServerType()
+			fullPath  string = ctx.Request().Path().GetURL().Path
+			logMethod string = ctx.Request().GetMethod()
+		)
+		logOpts := getLogOptions(ctx)
+		startTime := time.Now()
+
+		ctx.Log().Infof("%s.req %s %s from:%s %s", kind, logMethod, fullPath, ctx.Request().GetClientIP(), extractReq(ctx.Request(), logOpts, group.opts))
+
+		resp := middleware.Chain(middlewares...)(engineHandler(group, v))(ctx)
+		engine.Write(ctx, resp)
+		var err error
+		if rerr, ok := resp.(error); ok {
+			err = rerr
+		}
+		code = ctx.Response().GetStatusCode()
+		if se := errors.FromError(err); se != nil {
+			code = se.Code
+		}
+
+		level, errInfo := extractError(err)
+		if level == log.LevelError {
+			ctx.Log().Logf(level, "%s.resp %s %s %d %s %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, group.opts), errInfo)
+		} else {
+			ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, group.opts))
+		}
 	}
 }
 
