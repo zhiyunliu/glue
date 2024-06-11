@@ -51,3 +51,11 @@ func Excludes(excludes ...string) ServerOption {
 		opt.pathMatcher = xpath.NewMatch(excludes, xpath.WithCache(false))
 	}
 }
+
+type ConfigOption = xlog.ConfigOption
+
+var (
+	WithConfigPath  = xlog.WithConfigPath
+	WithLayout      = xlog.WithLayout
+	WithConcurrency = xlog.WithConcurrency
+)

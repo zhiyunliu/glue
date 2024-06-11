@@ -108,15 +108,16 @@ func (ctx *AlloterContext) Response() vctx.Response {
 }
 func (ctx *AlloterContext) Log() log.Logger {
 	if ctx.logger == nil {
-		logger, ok := log.FromContext(ctx.Context())
+		orgCtx := ctx.Context()
+		logger, ok := log.FromContext(orgCtx)
 		if !ok {
 			xreqId := ctx.Actx.GetHeader(constants.HeaderRequestId)
 			if xreqId == "" {
 				xreqId = session.Create()
 				ctx.Actx.Header(constants.HeaderRequestId, xreqId)
 			}
-			logger = log.New(log.WithName("alloter"), log.WithSid(xreqId), log.WithSrvType(ctx.opts.SrvType))
-			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
+			logger = log.New(orgCtx, log.WithName("alloter"), log.WithSid(xreqId), log.WithSrvType(ctx.opts.SrvType))
+			ctx.ResetContext(log.WithContext(orgCtx, logger))
 		}
 		ctx.logger = logger
 	}

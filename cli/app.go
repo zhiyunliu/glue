@@ -21,7 +21,15 @@ type App struct {
 }
 
 // Start 启动应用程序
-func (a *App) Start() error {
+func (a *App) Start() (err error) {
+	opts := []log.ConfigOption{
+		log.WithConcurrency(runtime.NumCPU()),
+	}
+	err = log.Config(append(opts, a.options.logOpts...)...)
+	if err != nil {
+		return fmt.Errorf("app.start log.config;err:%+v", err)
+	}
+
 	a.cliApp.Commands = GetCmds(a.options)
 	a.cliApp.Metadata = make(map[string]interface{})
 	a.cliApp.Metadata[options_key] = a.options
@@ -31,21 +39,20 @@ func (a *App) Start() error {
 // New 创建app
 func New(opts ...Option) *App {
 
-	app := &App{options: &Options{
-		RegistrarTimeout: 10 * time.Second,
-		StopTimeout:      10 * time.Second,
-		logConcurrency:   runtime.NumCPU(),
-		setting: &appSetting{
-			//TraceAddr: _defaultTraceAddr,
-			Mode:    _defaultAppmode,
-			IpMask:  _defaultIpMask,
-			Options: make(map[string]interface{}),
+	app := &App{
+		options: &Options{
+			RegistrarTimeout: 10 * time.Second,
+			StopTimeout:      10 * time.Second,
+			setting: &appSetting{
+				Mode:    _defaultAppmode,
+				IpMask:  _defaultIpMask,
+				Options: make(map[string]interface{}),
+			},
 		},
-	}}
+	}
 	for _, opt := range opts {
 		opt(app.options)
 	}
-	log.Concurrency(app.options.logConcurrency)
 	fileName := xfile.GetNameWithoutExt(os.Args[0])
 	if global.AppName == "" {
 		global.AppName = fileName

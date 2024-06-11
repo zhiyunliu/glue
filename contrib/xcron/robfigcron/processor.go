@@ -200,7 +200,7 @@ func (s *processor) handle(req *Request) {
 	if !req.CanProc() {
 		return
 	}
-	logger := log.New(log.WithSid(req.session))
+	logger := log.New(req.Context(), log.WithSid(req.session))
 
 	done := make(chan struct{})
 	defer func() {

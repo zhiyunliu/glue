@@ -33,7 +33,8 @@ var (
 	TraceAddr           = cli.TraceAddr
 	ServiceDependencies = cli.ServiceDependencies
 	ServiceOption       = cli.ServiceOption
-	LogConcurrency      = cli.LogConcurrency
+	LogParams           = cli.LogParams
 	StartingHook        = cli.StartingHook
 	StartedHook         = cli.StartedHook
+	Command             = cli.Command
 )
