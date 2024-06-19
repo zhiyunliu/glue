@@ -258,7 +258,7 @@ func analyzeParamFields(input any) (params xtypes.XMap, err error) {
 
 	for i := range fields.List {
 		f := &fields.List[i]
-		fv := refval.Field(f.Index)
+		fv := xreflect.GetRealReflectVal(f, refval) //refval.Field(f.Index)
 		params[f.Name] = f.Encoder(fv)
 	}
 	return
@@ -271,7 +271,7 @@ func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
 			t = columnType.ScanType()
 		}
 		if t != nil {
-			values[idx] = reflect.New(reflect.PtrTo(t)).Interface()
+			values[idx] = reflect.New(reflect.PointerTo(t)).Interface()
 		} else {
 			values[idx] = new(interface{})
 		}
@@ -321,7 +321,7 @@ func scanInToStruct(fields *xreflect.StructFields, rv reflect.Value, cols []stri
 		if !ok {
 			continue
 		}
-		fv := rv.Field(field.Index)
+		fv := xreflect.GetRealReflectVal(field, rv) //		fv := rv.Field(field.Index)
 
 		vrf := reflect.ValueOf(vals[i])
 		for vrf.Kind() == reflect.Ptr {
