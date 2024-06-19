@@ -3,6 +3,7 @@ package log
 import (
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xlog"
+	_ "github.com/zhiyunliu/golibs/xlog/appenders"
 )
 
 var (
@@ -29,6 +30,8 @@ func SetBuilder(builder Builder) {
 	}
 	defaultBuilder = builder
 	DefaultLogger = defaultBuilder.Build(xlog.WithName("default"), xlog.WithSid(session.Create()))
+
+	xlog.Config()
 }
 
 type wraper struct {
