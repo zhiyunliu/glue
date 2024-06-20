@@ -10,6 +10,14 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
+var (
+	ptrInt *int = new(int)
+)
+
+func init() {
+	*ptrInt = 3
+}
+
 type dbparam struct {
 	A string
 }
@@ -147,6 +155,25 @@ func Test_analyzeParamFields(t *testing.T) {
 			"obj3": "obj3",
 			"obj4": "obj4",
 		}, wantErr: false},
+		{name: "3.", input: &anonymousB{
+			IAPtr:          ptrInt,
+			anonymousInner: &anonymousInner{Str: "str", Int: 1},
+		},
+			wantParams: map[string]any{
+				"iaptr": int64(3),
+				"str":   "str",
+				"int":   int64(1),
+			},
+			wantErr: false,
+		},
+		{name: "4.", input: &anonymousB{
+			IAPtr: ptrInt,
+		},
+			wantParams: map[string]any{
+				"iaptr": int64(3),
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -337,6 +364,122 @@ func Test_fillRowToStruct_Scanner(t *testing.T) {
 
 			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, tt.vals); (err != nil) != tt.wantErr {
 				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+type anonymousA struct {
+	anonymousInner
+	AStr string `json:"astr"`
+	AInt int    `json:"aint"`
+}
+
+type anonymousB struct {
+	IAPtr *int `json:"iaptr"`
+	*anonymousInner
+}
+
+type anonymousInner struct {
+	Str string `json:"str"`
+	Int int    `json:"int"`
+}
+
+func Test_fillRowToStruct_anonymousA(t *testing.T) {
+	var (
+		testVal1 *anonymousA = &anonymousA{}
+		ptrInt   *int        = new(int)
+	)
+	*ptrInt = 3
+	tests := []struct {
+		name       string
+		fields     *xreflect.StructFields
+		reflectVal reflect.Value
+		result     any
+		vals       map[string]any
+		wantErr    bool
+		wantVal    *anonymousA
+	}{
+		{name: "1.", result: testVal1,
+			vals: map[string]any{
+				"str":  "strval",
+				"int":  2,
+				"astr": "astrval",
+				"aint": 12,
+			},
+			wantVal: &anonymousA{AStr: "astrval", AInt: 12, anonymousInner: anonymousInner{Str: "strval", Int: 2}},
+			wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.reflectVal = reflect.ValueOf(tt.result)
+			tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
+
+			vals := make([]any, len(tt.fields.List))
+			cols := make([]string, len(tt.fields.List))
+			for i, k := range tt.fields.List {
+				cols[i] = k.Name
+				vals[i] = tt.vals[cols[i]]
+			}
+
+			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
+				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(tt.result, tt.wantVal) {
+				t.Errorf("fillRowToStruct() DeepEqual Got= %v, wantVal %v", tt.result, tt.wantVal)
+			}
+		})
+	}
+}
+
+func Test_fillRowToStruct_anonymousB(t *testing.T) {
+	var (
+		testVal1 *anonymousB = &anonymousB{anonymousInner: &anonymousInner{}}
+		ptrInt   *int        = new(int)
+	)
+	*ptrInt = 3
+
+	//json.Unmarshal([]byte(`{"iaptr":3,"str":"aaa","int":1}`), testVal1)
+
+	tests := []struct {
+		name       string
+		fields     *xreflect.StructFields
+		reflectVal reflect.Value
+		result     any
+		vals       map[string]any
+		wantErr    bool
+		wantVal    *anonymousB
+	}{
+		{name: "1.", result: testVal1,
+			vals: map[string]any{
+				"iaptr": 3,
+				"str":   "strval",
+				"int":   2,
+				"astr":  "astrval",
+				"aint":  12,
+			},
+			wantVal: &anonymousB{IAPtr: ptrInt, anonymousInner: &anonymousInner{Str: "strval", Int: 2}},
+			wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.reflectVal = reflect.ValueOf(tt.result)
+			tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
+
+			vals := make([]any, len(tt.fields.List))
+			cols := make([]string, len(tt.fields.List))
+			for i, k := range tt.fields.List {
+				cols[i] = k.Name
+				vals[i] = tt.vals[cols[i]]
+			}
+
+			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
+				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(tt.result, tt.wantVal) {
+				t.Errorf("fillRowToStruct() DeepEqual Got= %v, wantVal %v", tt.result, tt.wantVal)
 			}
 		})
 	}
