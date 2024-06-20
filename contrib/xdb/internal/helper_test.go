@@ -342,25 +342,27 @@ func Test_fillRowToStruct_Scanner(t *testing.T) {
 	}
 }
 
+type anonymousInnerA struct {
+	AStr string `json:"astr"`
+	AInt int    `json:"aint"`
+}
+
 type anonymousInner struct {
+	anonymousInnerA
 	Str string `json:"str"`
 	Int int    `json:"int"`
 }
 type anonymous struct {
-	//IAPtr *int `json:"iaptr"`
+	IAPtr *int `json:"iaptr"`
 	anonymousInner
 }
 
 func Test_fillRowToStruct_anonymous(t *testing.T) {
 	var (
 		testVal1 *anonymous = &anonymous{}
+		ptrInt   *int       = new(int)
 	)
-
-	// err := json.Unmarshal([]byte(`{"iaptr":2,"int":1,"str":"strval"}`), testVal1)
-	// if err != nil {
-	// 	t.Error(err)
-	// }
-
+	*ptrInt = 3
 	tests := []struct {
 		name       string
 		fields     *xreflect.StructFields
@@ -368,12 +370,18 @@ func Test_fillRowToStruct_anonymous(t *testing.T) {
 		result     any
 		vals       map[string]any
 		wantErr    bool
+		wantVal    *anonymous
 	}{
-		{name: "1.", result: testVal1, vals: map[string]any{
-			"iaptr": 3,
-			"str":   "strval",
-			"int":   2,
-		}, wantErr: false},
+		{name: "1.", result: testVal1,
+			vals: map[string]any{
+				"iaptr": 3,
+				"str":   "strval",
+				"int":   2,
+				"astr":  "astrval",
+				"aint":  12,
+			},
+			wantVal: &anonymous{IAPtr: ptrInt, anonymousInner: anonymousInner{Str: "strval", Int: 2, anonymousInnerA: anonymousInnerA{AStr: "astrval", AInt: 12}}},
+			wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -389,6 +397,10 @@ func Test_fillRowToStruct_anonymous(t *testing.T) {
 
 			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
 				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(tt.result, tt.wantVal) {
+				t.Errorf("fillRowToStruct() DeepEqual Got= %v, wantVal %v", tt.result, tt.wantVal)
 			}
 		})
 	}
