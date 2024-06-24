@@ -206,10 +206,10 @@ func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
 			}
 			e := r.Endpoint()
 			endpoints = append(endpoints, registry.ServerItem{
-				ServiceName:    r.ServiceName(),
-				EndpointURL:    e.String(),
-				RouterPathList: r.RouterPathList(),
+				ServiceName: r.ServiceName(),
+				EndpointURL: e.String(),
 			})
+			global.ServerRouterPathList.Store(r.ServiceName(), r.RouterPathList())
 		}
 	}
 	if app.traceEndpoint != nil {

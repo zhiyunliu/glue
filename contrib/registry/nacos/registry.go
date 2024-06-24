@@ -2,22 +2,16 @@ package nacos
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
-	"net/http"
 	"net/url"
-	"sort"
 	"strconv"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
 	"github.com/zhiyunliu/glue/registry"
-	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/golibs/xencoding/base64"
 )
 
 var (
@@ -64,7 +58,6 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 	if si.Name == "" {
 		return fmt.Errorf("nacos: serviceInstance.name can not be empty")
 	}
-	srvMap := map[string][]string{}
 
 	for _, item := range si.Endpoints {
 		u, err := url.Parse(item.EndpointURL)
@@ -102,12 +95,8 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 		if e != nil {
 			return fmt.Errorf("RegisterInstance err %v,%v", e, item.EndpointURL)
 		}
-		srvMap[item.ServiceName] = append(srvMap[item.ServiceName], item.RouterPathList...)
 	}
 
-	for srv, list := range srvMap {
-		r.updateServiceMetadata(srv, list)
-	}
 	return nil
 }
 
@@ -198,109 +187,6 @@ func (r Registry) GetAllServicesInfo(ctx context.Context) (list registry.Service
 	return
 }
 
-func (r *Registry) GetServiceRouterList(_ context.Context, serviceName string) ([]string, error) {
-	return r.getServiceMetadata(serviceName)
-}
-
 func (r Registry) GetImpl() any {
 	return r.cli
-}
-
-func (r *Registry) getNacosServer() (nacosServer *nacos_server.NacosServer, err error) {
-	if r.nacosServer != nil {
-		return r.nacosServer, nil
-	}
-	var (
-		clientCfg  constant.ClientConfig   = *r.ncp.ClientConfig
-		serverCfgs []constant.ServerConfig = r.ncp.ServerConfigs
-	)
-
-	nc := r.cli.(*naming_client.NamingClient).INacosClient
-
-	httpAgent, err := nc.GetHttpAgent()
-	if err != nil {
-		return nil, err
-	}
-
-	nacosServer, err = nacos_server.NewNacosServer(serverCfgs, clientCfg, httpAgent, clientCfg.TimeoutMs, clientCfg.Endpoint)
-	if err != nil {
-		return nil, err
-	}
-	r.nacosServer = nacosServer
-
-	return nacosServer, nil
-}
-
-func (r *Registry) getSecurityMap(clientConfig *constant.ClientConfig) map[string]string {
-	result := make(map[string]string, 2)
-	if len(clientConfig.AccessKey) != 0 && len(clientConfig.SecretKey) != 0 {
-		result[constant.KEY_ACCESS_KEY] = clientConfig.AccessKey
-		result[constant.KEY_SECRET_KEY] = clientConfig.SecretKey
-	}
-	return result
-}
-
-func (r *Registry) updateServiceMetadata(serviceName string, routerList []string) (err error) {
-	if len(routerList) == 0 {
-		return nil
-	}
-	nacosServer, err := r.getNacosServer()
-	if err != nil {
-		return err
-	}
-	sort.Strings(routerList)
-
-	routerBytes, _ := json.Marshal(routerList)
-
-	srv := map[string]string{
-		"router_list": base64.Encode(routerBytes),
-	}
-	metadataBytes, _ := json.Marshal(srv)
-
-	//	serviceName=aaa&groupName=DEFAULT_GROUP&namespaceId=
-	param := make(map[string]string)
-	param["namespaceId"] = r.ncp.ClientConfig.NamespaceId
-	param["groupName"] = r.opts.Group
-	param["serviceName"] = serviceName
-	param["metadata"] = string(metadataBytes)
-	param["protectThreshold"] = "0"
-	//查看是否存在
-	_, err = nacosServer.ReqApi(constant.SERVICE_INFO_PATH, param, http.MethodPut, r.getSecurityMap(r.ncp.ClientConfig))
-	return err
-}
-
-func (r *Registry) getServiceMetadata(serviceName string) (routerList []string, err error) {
-
-	nacosServer, err := r.getNacosServer()
-	if err != nil {
-		err = fmt.Errorf("get nacos server err %w", err)
-		return
-	}
-
-	//	serviceName=aaa&groupName=DEFAULT_GROUP&namespaceId=
-	param := make(map[string]string)
-	param["namespaceId"] = r.ncp.ClientConfig.NamespaceId
-	param["groupName"] = r.opts.Group
-	param["serviceName"] = serviceName
-	param["protectThreshold"] = "0"
-	//查看是否存在
-	resp, err := nacosServer.ReqApi(constant.SERVICE_INFO_PATH, param, http.MethodGet, r.getSecurityMap(r.ncp.ClientConfig))
-	if err != nil {
-		err = fmt.Errorf("req nacos server err %w", err)
-		return
-	}
-	if len(resp) == 0 {
-		return
-	}
-	srvInfo := ServiceCatalogInfo{}
-
-	json.Unmarshal(bytesconv.StringToBytes(resp), &srvInfo)
-	orgRouterList := srvInfo.Metadata["router_list"]
-	if len(orgRouterList) == 0 {
-		return
-	}
-
-	orgByte, _ := base64.Decode(orgRouterList)
-	json.Unmarshal(orgByte, &routerList)
-	return
 }

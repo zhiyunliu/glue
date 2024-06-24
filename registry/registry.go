@@ -22,9 +22,6 @@ type Registrar interface {
 	// GetAllServicesInfo return all services in memory.
 	GetAllServicesInfo(ctx context.Context) (ServiceList, error)
 
-	// GetServiceRouterList return the service router path.
-	GetServiceRouterList(ctx context.Context, serviceName string) ([]string, error)
-
 	// GetImpl return the implementation of the registrar.
 	GetImpl() any
 }
@@ -51,9 +48,8 @@ type ServiceInstance struct {
 }
 
 type ServerItem struct {
-	ServiceName    string
-	EndpointURL    string //scheme://host:port/path
-	RouterPathList []string
+	ServiceName string
+	EndpointURL string //scheme://host:port/path
 }
 
 type ServiceList struct {
