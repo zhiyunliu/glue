@@ -256,13 +256,10 @@ func analyzeParamFields(input any) (params xtypes.XMap, err error) {
 
 	fields := xreflect.CachedTypeFields(refval.Type())
 
-	for i := range fields.List {
-		f := &fields.List[i]
-		fv := xreflect.GetRealReflectVal(f, refval) //refval.Field(f.Index)
-		if !fv.IsValid() {
-			continue
+	for _, f := range fields.ExactName {
+		if val, ok := f.Encoder(refval); ok {
+			params[f.Name] = val
 		}
-		params[f.Name] = f.Encoder(fv)
 	}
 	return
 }
@@ -320,25 +317,22 @@ func scanInToStruct(fields *xreflect.StructFields, rv reflect.Value, cols []stri
 
 	for i := range cols {
 		col := cols[i]
-		field, ok := fields.ExactName[col]
-		if !ok {
-			continue
-		}
-		fv := xreflect.GetRealReflectVal(field, rv) //		fv := rv.Field(field.Index)
-		if !fv.IsValid() {
-			continue
-		}
+		//	field, ok := fields.ExactName[col]
+
 		vrf := reflect.ValueOf(vals[i])
 		for vrf.Kind() == reflect.Ptr {
 			vrf = vrf.Elem()
 		}
-		if vrf.IsValid() && vrf.CanInterface() {
-			err = field.Dencoder(fv, vrf.Interface())
-			if err != nil {
-				err = xdb.NewError(fmt.Errorf("field:%s,val:%+v,err:%w", field.Name, vals[i], err), "", nil)
-				return
-			}
+
+		if !(vrf.IsValid() && vrf.CanInterface()) {
+			continue
 		}
+		err = fields.Dencode(rv, col, vrf.Interface())
+		if err != nil {
+			err = xdb.NewError(fmt.Errorf("field:%s,val:%+v,err:%w", col, vals[i], err), "", nil)
+			return
+		}
+
 	}
 	return nil
 }
