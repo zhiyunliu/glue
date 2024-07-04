@@ -1,6 +1,8 @@
 package prometheus
 
 import (
+	"fmt"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/zhiyunliu/glue/config"
 	collector "github.com/zhiyunliu/glue/contrib/metrics/prometheus/collector"
@@ -11,7 +13,9 @@ const (
 	Proto = "prometheus"
 )
 
-var _ metrics.Provider = &xProvider{}
+var (
+	_ metrics.Provider = &xProvider{}
+)
 
 type xProvider struct {
 	counter  metrics.Counter
@@ -48,6 +52,9 @@ func (r xResover) Name() string {
 }
 func (r xResover) Resolve(name string, config config.Config) (metrics.Provider, error) {
 	configOpts := prometheusConfig{
+		Gateway: &gateway{
+			Interval: 15,
+		},
 		Counter: &counterOpts{
 			Namespace: "server",
 			Subsystem: "requests",
@@ -81,6 +88,11 @@ func (r xResover) Resolve(name string, config config.Config) (metrics.Provider, 
 	prometheus.MustRegister(histogram)
 	prometheus.MustRegister(gauge)
 
+	procCounter := buildProcCollector()
+	prometheus.MustRegister(procCounter)
+
+	configOpts.StartPush(counter, histogram, gauge, procCounter)
+
 	return &xProvider{
 		counter:  NewCounter(counter),
 		observer: NewHistogram(histogram),
@@ -89,15 +101,15 @@ func (r xResover) Resolve(name string, config config.Config) (metrics.Provider, 
 }
 
 // 只需要初始化一次的collector
-func initCollector() {
+func buildProcCollector() prometheus.Collector {
 	pc, err := collector.NewProcessCollector()
 	if err != nil {
+		err = fmt.Errorf("NewProcessCollector;err:%w", err)
 		panic(err)
 	}
-	prometheus.MustRegister(pc)
+	return pc
 }
 
 func init() {
-	initCollector()
 	metrics.Register(&xResover{})
 }

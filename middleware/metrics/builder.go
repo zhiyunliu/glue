@@ -17,6 +17,6 @@ func (xBuilder) Name() string {
 }
 func (xBuilder) Build(cfg *middleware.Config) middleware.Middleware {
 	mCfg := &Config{}
-	encoding.GetCodec(cfg.Data.Codec).Unmarshal(cfg.Data.Data, &mCfg)
+	encoding.GetCodec(cfg.Data.Codec).Unmarshal(cfg.Data.Data, mCfg)
 	return serverByConfig(mCfg)
 }

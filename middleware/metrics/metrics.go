@@ -44,11 +44,11 @@ type options struct {
 }
 
 func Server(opts ...Option) middleware.Middleware {
-	op := options{}
+	op := &options{}
 	for _, o := range opts {
-		o(&op)
+		o(op)
 	}
-	return serverByOptions(&op)
+	return serverByOptions(op)
 }
 
 func serverByConfig(cfg *Config) middleware.Middleware {

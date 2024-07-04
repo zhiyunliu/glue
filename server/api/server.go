@@ -30,6 +30,7 @@ var _ transport.Server = (*Server)(nil)
 
 // New 实例化
 func New(name string, opts ...Option) *Server {
+	global.HasApi = true
 	s := &Server{
 		name: name,
 		opts: setDefaultOption(),
