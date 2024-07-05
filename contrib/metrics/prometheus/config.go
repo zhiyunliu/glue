@@ -112,11 +112,20 @@ func (c *prometheusConfig) StartPush(collectors ...prometheus.Collector) {
 		}
 
 		for range ticker.C {
-			// 将指标推送到 Pushgateway
-			if err := pusher.Push(); err != nil {
-				log.Panicf("Could not push metrics to Pushgateway: %v", err)
-			}
+			c.execPush(pusher)
 		}
 		return nil
 	})
+}
+
+func (c *prometheusConfig) execPush(pusher *push.Pusher) {
+	defer func() {
+		if obj := recover(); obj != nil {
+			log.Panicf("Push metrics to Pushgateway: %v", obj)
+		}
+	}()
+	// 将指标推送到 Pushgateway
+	if err := pusher.Push(); err != nil {
+		log.Warnf("Could not push metrics to Pushgateway: %v", err)
+	}
 }
