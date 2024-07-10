@@ -156,6 +156,7 @@ func ResolveScalar(rows *sql.Rows) (val any, err error) {
 }
 
 func ResolveFirstRow(rows *sql.Rows) (dataRows xdb.Row, err error) {
+	dataRows = xdb.NewRow()
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))
