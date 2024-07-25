@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/zhiyunliu/glue/contrib/xdb/internal"
+	"github.com/zhiyunliu/glue/contrib/xdb/implement"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 )
@@ -15,7 +15,7 @@ import (
 // DB 数据库操作类
 type xDB struct {
 	cfg *Setting
-	db  internal.ISysDB
+	db  implement.ISysDB
 	tpl tpl.SQLTemplate
 }
 
@@ -58,7 +58,7 @@ func NewDB(proto string, setting *Setting, opts ...xdb.Option) (obj xdb.IDB, err
 	if err != nil {
 		return
 	}
-	dbobj.db, err = internal.NewSysDB(proto, conn, maxOpen, maxIdle, time.Duration(maxLifeTime)*time.Second)
+	dbobj.db, err = implement.NewSysDB(proto, conn, maxOpen, maxIdle, time.Duration(maxLifeTime)*time.Second)
 	return dbobj, err
 }
 func (db *xDB) GetImpl() interface{} {
@@ -68,7 +68,7 @@ func (db *xDB) GetImpl() interface{} {
 // Query 查询数据
 func (db *xDB) Query(ctx context.Context, sqls string, input any) (rows xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return internal.ResolveRows(r)
+		return implement.ResolveRows(r)
 	})
 	if err != nil {
 		return
@@ -80,7 +80,7 @@ func (db *xDB) Query(ctx context.Context, sqls string, input any) (rows xdb.Rows
 // Multi 查询数据(多个数据集)
 func (db *xDB) Multi(ctx context.Context, sqls string, input any) (datasetRows []xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return internal.ResolveMultiRows(r)
+		return implement.ResolveMultiRows(r)
 	})
 	if err != nil {
 		return
@@ -91,7 +91,7 @@ func (db *xDB) Multi(ctx context.Context, sqls string, input any) (datasetRows [
 
 func (db *xDB) First(ctx context.Context, sqls string, input any) (data xdb.Row, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return internal.ResolveFirstRow(r)
+		return implement.ResolveFirstRow(r)
 	})
 	if err != nil {
 		return
@@ -102,7 +102,7 @@ func (db *xDB) First(ctx context.Context, sqls string, input any) (data xdb.Row,
 
 func (db *xDB) Scalar(ctx context.Context, sqls string, input any) (data interface{}, err error) {
 	data, err = db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return internal.ResolveScalar(r)
+		return implement.ResolveScalar(r)
 	})
 	return
 }
@@ -110,13 +110,13 @@ func (db *xDB) Scalar(ctx context.Context, sqls string, input any) (data interfa
 // Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xDB) Exec(ctx context.Context, sql string, input any) (r xdb.Result, err error) {
 
-	dbParam, err := internal.ResolveParams(input)
+	dbParam, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
 	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
 	if err != nil {
-		err = internal.GetError(err, sql, input)
+		err = implement.GetError(err, sql, input)
 		return
 	}
 
@@ -124,7 +124,7 @@ func (db *xDB) Exec(ctx context.Context, sql string, input any) (r xdb.Result, e
 	debugPrint(ctx, db.cfg, query, execArgs...)
 	r, err = db.db.Exec(query, execArgs...)
 	if err != nil {
-		return r, internal.GetError(err, query, execArgs...)
+		return r, implement.GetError(err, query, execArgs...)
 	}
 	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 
@@ -134,13 +134,13 @@ func (db *xDB) Exec(ctx context.Context, sql string, input any) (r xdb.Result, e
 // Query 查询数据
 func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, val any) error {
-		return internal.ResolveRowsDataResult(r, val)
+		return implement.ResolveRowsDataResult(r, val)
 	})
 }
 
 func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, val any) error {
-		return internal.ResolveFirstDataResult(r, val)
+		return implement.ResolveFirstDataResult(r, val)
 	})
 }
 
@@ -194,15 +194,15 @@ func (db *xDB) Close() error {
 	return db.db.Close()
 }
 
-func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback internal.DbResolveMapValCallback) (result any, err error) {
-	dbParams, err := internal.ResolveParams(input)
+func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback) (result any, err error) {
+	dbParams, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
 
 	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
 	if err != nil {
-		err = internal.GetError(err, sql, input)
+		err = implement.GetError(err, sql, input)
 		return
 	}
 
@@ -211,7 +211,7 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback inte
 	debugPrint(ctx, db.cfg, query, execArgs...)
 	rows, err := db.db.Query(query, execArgs...)
 	if err != nil {
-		return nil, internal.GetError(err, query, execArgs...)
+		return nil, implement.GetError(err, query, execArgs...)
 	}
 	defer func() {
 		if rows != nil {
@@ -223,15 +223,15 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback inte
 	return
 }
 
-func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any, callback internal.DbResolveResultCallback) (err error) {
-	dbParams, err := internal.ResolveParams(input)
+func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback) (err error) {
+	dbParams, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
 
 	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
 	if err != nil {
-		err = internal.GetError(err, sql, input)
+		err = implement.GetError(err, sql, input)
 		return
 	}
 
@@ -240,7 +240,7 @@ func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any,
 	debugPrint(ctx, db.cfg, query, execArgs...)
 	rows, err := db.db.Query(query, execArgs...)
 	if err != nil {
-		return internal.GetError(err, query, execArgs...)
+		return implement.GetError(err, query, execArgs...)
 	}
 	defer func() {
 		if rows != nil {

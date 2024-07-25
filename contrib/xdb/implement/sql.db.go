@@ -1,4 +1,4 @@
-package internal
+package implement
 
 import (
 	"database/sql"
@@ -7,7 +7,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/golibs/xtypes"
+)
+
+var (
+	_ xdb.DbConn = &sysDB{}
 )
 
 var nameMap = xtypes.SMap{
@@ -62,6 +67,10 @@ func NewSysDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime t
 		return nil, fmt.Errorf("NewSysDB.Ping.proto:%s,conn=%s,error:%w", proto, conn, err)
 	}
 	return obj, nil
+}
+
+func (db *sysDB) GetSqlDB() *sql.DB {
+	return db.db
 }
 
 // Query 执行SQL查询语句

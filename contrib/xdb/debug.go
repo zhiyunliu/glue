@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zhiyunliu/glue/contrib/xdb/internal"
+	"github.com/zhiyunliu/glue/contrib/xdb/implement"
 	"github.com/zhiyunliu/glue/log"
 )
 
@@ -17,7 +17,7 @@ func debugPrint(ctx context.Context, setting *Setting, query string, args ...int
 			logger = log.DefaultLogger
 		}
 		builder := strings.Builder{}
-		args = internal.Unwrap(args...)
+		args = implement.Unwrap(args...)
 		idx := 1
 		for _, v := range args {
 			if na, ok := v.(sql.NamedArg); ok {
