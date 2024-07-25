@@ -18,6 +18,42 @@ func init() {
 	DefaultBuilder = &defaultBuilderWrap{}
 	Register(DefaultBuilder)
 	DefaultLogger = DefaultBuilder.Build(context.Background(), xlog.WithName("default"), xlog.WithSid(session.Create()))
+
+	xlog.RegistryFormater("@uid", func(e *xlog.Event, isJson bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		uid := e.Tags["uid"]
+		if uid == "" {
+			return ""
+		}
+		return "[" + uid + "]"
+	})
+
+	xlog.RegistryFormater("@cip", func(e *xlog.Event, isJson bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		cip := e.Tags["cip"]
+		if cip == "" {
+			return ""
+		}
+		return "[" + cip + "]"
+	})
+
+	xlog.RegistryFormater("uid", func(e *xlog.Event, isJson bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		return e.Tags["uid"]
+	})
+
+	xlog.RegistryFormater("cip", func(e *xlog.Event, isJson bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		return e.Tags["cip"]
+	})
 }
 
 type Wraper struct {

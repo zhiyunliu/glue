@@ -116,7 +116,17 @@ func (ctx *AlloterContext) Log() log.Logger {
 				xreqId = session.Create()
 				ctx.Actx.Header(constants.HeaderRequestId, xreqId)
 			}
-			logger = log.New(orgCtx, log.WithName("alloter"), log.WithSid(xreqId), log.WithSrvType(ctx.opts.SrvType))
+
+			cip := ctx.Request().GetClientIP()
+			uid := ctx.Actx.GetHeader(constants.AUTH_USER_ID)
+
+			logger = log.New(orgCtx, log.WithName("alloter"),
+				log.WithSid(xreqId),
+				log.WithSrvType(ctx.opts.SrvType),
+				log.WithField("cip", cip),
+				log.WithField("uid", uid),
+			)
+
 			ctx.ResetContext(log.WithContext(orgCtx, logger))
 		}
 		ctx.logger = logger

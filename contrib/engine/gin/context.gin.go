@@ -116,7 +116,16 @@ func (ctx *GinContext) Log() log.Logger {
 				xreqId = session.Create()
 				ctx.Gctx.Header(constants.HeaderRequestId, xreqId)
 			}
-			logger = log.New(orgCtx, log.WithName("gin"), log.WithSid(xreqId), log.WithSrvType(ctx.opts.SrvType))
+
+			cip := ctx.Request().GetClientIP()
+			uid := ctx.Gctx.GetHeader(constants.AUTH_USER_ID)
+
+			logger = log.New(orgCtx, log.WithName("gin"),
+				log.WithSid(xreqId),
+				log.WithSrvType(ctx.opts.SrvType),
+				log.WithField("cip", cip),
+				log.WithField("uid", uid),
+			)
 			ctx.ResetContext(log.WithContext(orgCtx, logger))
 		}
 		ctx.logger = logger
