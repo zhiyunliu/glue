@@ -117,14 +117,13 @@ func (ctx *GinContext) Log() log.Logger {
 				ctx.Gctx.Header(constants.HeaderRequestId, xreqId)
 			}
 
-			cip := ctx.Request().GetClientIP()
-			uid := ctx.Gctx.GetHeader(constants.AUTH_USER_ID)
-
 			logger = log.New(orgCtx, log.WithName("gin"),
 				log.WithSid(xreqId),
 				log.WithSrvType(ctx.opts.SrvType),
-				log.WithField("cip", cip),
-				log.WithField("uid", uid),
+				log.WithField("src_name", ctx.Request().GetHeader(constants.HeaderSourceName)),
+				log.WithField("src_ip", ctx.Request().GetHeader(constants.HeaderSourceIp)),
+				log.WithField("cip", ctx.Request().GetClientIP()),
+				log.WithField("uid", ctx.Gctx.GetHeader(constants.AUTH_USER_ID)),
 			)
 			ctx.ResetContext(log.WithContext(orgCtx, logger))
 		}

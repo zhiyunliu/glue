@@ -117,14 +117,13 @@ func (ctx *AlloterContext) Log() log.Logger {
 				ctx.Actx.Header(constants.HeaderRequestId, xreqId)
 			}
 
-			cip := ctx.Request().GetClientIP()
-			uid := ctx.Actx.GetHeader(constants.AUTH_USER_ID)
-
 			logger = log.New(orgCtx, log.WithName("alloter"),
 				log.WithSid(xreqId),
 				log.WithSrvType(ctx.opts.SrvType),
-				log.WithField("cip", cip),
-				log.WithField("uid", uid),
+				log.WithField("src_name", ctx.Request().GetHeader(constants.HeaderSourceName)),
+				log.WithField("src_ip", ctx.Request().GetHeader(constants.HeaderSourceIp)),
+				log.WithField("cip", ctx.Request().GetClientIP()),
+				log.WithField("uid", ctx.Actx.GetHeader(constants.AUTH_USER_ID)),
 			)
 
 			ctx.ResetContext(log.WithContext(orgCtx, logger))
@@ -341,9 +340,6 @@ func (q *abody) loadBody() (err error) {
 	if len(q.bodyBytes) == 0 && !q.hasRead {
 		q.hasRead = true
 		q.bodyBytes = q.actx.Request.Body()
-		if err != nil {
-			return err
-		}
 		q.reader = bytes.NewReader(q.bodyBytes)
 	}
 	return nil

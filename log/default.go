@@ -19,7 +19,7 @@ func init() {
 	Register(DefaultBuilder)
 	DefaultLogger = DefaultBuilder.Build(context.Background(), xlog.WithName("default"), xlog.WithSid(session.Create()))
 
-	xlog.RegistryFormater("@uid", func(e *xlog.Event, isJson bool) string {
+	xlog.RegistryFormater("@uid", func(e *xlog.Event, _ bool) string {
 		if e.Tags == nil {
 			return ""
 		}
@@ -30,7 +30,7 @@ func init() {
 		return "[" + uid + "]"
 	})
 
-	xlog.RegistryFormater("@cip", func(e *xlog.Event, isJson bool) string {
+	xlog.RegistryFormater("@cip", func(e *xlog.Event, _ bool) string {
 		if e.Tags == nil {
 			return ""
 		}
@@ -41,19 +41,57 @@ func init() {
 		return "[" + cip + "]"
 	})
 
-	xlog.RegistryFormater("uid", func(e *xlog.Event, isJson bool) string {
+	xlog.RegistryFormater("uid", func(e *xlog.Event, _ bool) string {
 		if e.Tags == nil {
 			return ""
 		}
 		return e.Tags["uid"]
 	})
 
-	xlog.RegistryFormater("cip", func(e *xlog.Event, isJson bool) string {
+	xlog.RegistryFormater("cip", func(e *xlog.Event, _ bool) string {
 		if e.Tags == nil {
 			return ""
 		}
 		return e.Tags["cip"]
 	})
+	//----------------------------------
+
+	xlog.RegistryFormater("@src_name", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		src_name := e.Tags["src_name"]
+		if src_name == "" {
+			return ""
+		}
+		return "[" + src_name + "]"
+	})
+
+	xlog.RegistryFormater("@src_ip", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		src_ip := e.Tags["src_ip"]
+		if src_ip == "" {
+			return ""
+		}
+		return "[" + src_ip + "]"
+	})
+
+	xlog.RegistryFormater("src_name", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		return e.Tags["src_name"]
+	})
+
+	xlog.RegistryFormater("src_ip", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		return e.Tags["src_ip"]
+	})
+
 }
 
 type Wraper struct {
