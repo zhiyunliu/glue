@@ -160,6 +160,7 @@ func (db *dbWrap) dbQuery(ctx context.Context, sql string, input any, callback i
 		err = implement.GetError(err, query, execArgs...)
 		return
 	}
+	defer rows.Close()
 	result, err = callback(rows)
 	return
 
@@ -182,6 +183,7 @@ func (db *dbWrap) dbQueryAs(ctx context.Context, sql string, input any, result a
 		err = implement.GetError(err, query, execArgs...)
 		return
 	}
+	defer rows.Close()
 	err = callback(rows, result)
 	return
 }

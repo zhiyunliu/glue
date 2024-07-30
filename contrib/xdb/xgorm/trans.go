@@ -141,6 +141,7 @@ func (db *transWrap) dbQuery(ctx context.Context, sql string, input any, callbac
 		err = implement.GetError(err, query, execArgs...)
 		return
 	}
+	defer rows.Close()
 	result, err = callback(rows)
 	return
 }
@@ -162,6 +163,7 @@ func (db *transWrap) dbQueryAs(ctx context.Context, sql string, input any, resul
 		err = implement.GetError(err, query, execArgs...)
 		return
 	}
+	defer rows.Close()
 	err = callback(rows, result)
 	return
 }
