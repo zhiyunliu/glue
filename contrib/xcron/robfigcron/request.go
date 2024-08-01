@@ -134,26 +134,26 @@ func (m *Request) reset() {
 	m.header["x-cron-job-key"] = m.job.GetKey()
 }
 
-func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (bool, error) {
+func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (bool, string, error) {
 	//本身不是独占
 	if !m.job.IsMonopoly() {
-		return false, nil
+		return false, "", nil
 	}
 
 	val, ok := monopolyJobs.Get(m.job.GetKey())
 	//独占列表不存在（只存在close的短暂时间）
 	if !ok {
-		return true, nil
+		return true, "", nil
 	}
 	mjob := val.(*monopolyJob)
 	isSuc, err := mjob.Acquire()
 	if err != nil {
-		return true, err
+		return true, "", err
 	}
 	if isSuc {
-		return false, nil
+		return false, "", nil
 	}
-	return true, nil
+	return true, mjob.lockKey, nil
 }
 
 type Body interface {
