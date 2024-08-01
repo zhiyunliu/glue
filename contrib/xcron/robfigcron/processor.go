@@ -142,6 +142,7 @@ func (s *processor) checkIsMonopoly(j *xcron.Job) (err error) {
 		lockBuilder := sdlocker.GetDLocker()
 		lockKey := fmt.Sprintf("cron:dlocker:%s:%s", global.AppName, j.GetKey())
 		locker := lockBuilder.Build(lockKey, dlocker.WithData(j.GetLockData()))
+		j.DlockKey = lockKey
 		return &monopolyJob{
 			lockKey: lockKey,
 			job:     j,
@@ -218,13 +219,13 @@ func (s *processor) handle(req *Request) {
 		close(done)
 	}()
 
-	hasMonopoly, lockKey, err := req.Monopoly(s.monopolyJobs)
+	hasMonopoly, err := req.Monopoly(s.monopolyJobs)
 	if err != nil {
 		logger.Errorf("cron.handle.monopoly:%s,service:%s, error:%+v", req.job.Cron, req.job.Service, err)
 		return
 	}
 	if hasMonopoly {
-		logger.Warnf("cron.handle.monopoly:%s,service:%s,meta:%+v,lockKey=%s", req.job.Cron, req.job.Service, req.job.Meta, lockKey)
+		logger.Warnf("cron.handle.monopoly:%s,service:%s,meta:%+v,lockKey=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.DlockKey)
 		return
 	}
 	monopolyCtx, cancel := sctx.WithCancel(sctx.Background())
@@ -270,7 +271,7 @@ func (s *processor) handleMonopolyJobExpire(ctx sctx.Context, logger log.Logger,
 	ticker := time.NewTicker(time.Minute)
 	defer func() {
 		if obj := recover(); obj != nil {
-			logger.Panicf("cron.jobexpire:%s,service:%s,meta:%+v,recover:%s, stack:%s", job.Cron, job.Service, job.Meta, job.GetKey(), xstack.GetStack(1))
+			logger.Panicf("cron.jobexpire:%s,service:%s,meta:%+v,recover:%s, stack:%s", job.Cron, job.Service, job.Meta, job.DlockKey, xstack.GetStack(1))
 		}
 		ticker.Stop()
 	}()
@@ -282,7 +283,7 @@ func (s *processor) handleMonopolyJobExpire(ctx sctx.Context, logger log.Logger,
 		}
 		err := s.renewalMonopolyJob(job)
 		if err != nil {
-			logger.Errorf("cron.jobexpire:%s,service:%s,meta:%+v,renewal.key=%s", job.Cron, job.Service, job.Meta, job.GetKey())
+			logger.Errorf("cron.jobexpire:%s,service:%s,meta:%+v,renewal.key=%s", job.Cron, job.Service, job.Meta, job.DlockKey)
 		}
 	}
 }
