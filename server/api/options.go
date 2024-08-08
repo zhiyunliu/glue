@@ -43,7 +43,7 @@ func setDefaultOption() *options {
 		},
 		logOpts: &log.Options{
 			WithSource:  &[]bool{true}[0],
-			WithHeaders: []string{constants.HeaderAuthorization, constants.HeaderReferer, constants.HeaderXForwardedFor},
+			WithHeaders: constants.DefaultHeaders,
 		},
 		static:       make(map[string]Static),
 		startedHooks: make([]engine.Hook, 0),

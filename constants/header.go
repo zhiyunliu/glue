@@ -12,3 +12,7 @@ const (
 	HeaderAuthorization = "Authorization"
 	HeaderReferer       = "Referer"
 )
+
+var (
+	DefaultHeaders = []string{HeaderXForwardedFor, HeaderReferer}
+)

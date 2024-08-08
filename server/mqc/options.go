@@ -36,7 +36,7 @@ func setDefaultOption() *options {
 		},
 		logOpts: &log.Options{
 			WithSource:  &[]bool{true}[0],
-			WithHeaders: []string{constants.HeaderAuthorization, constants.HeaderReferer, constants.HeaderXForwardedFor},
+			WithHeaders: constants.DefaultHeaders,
 		},
 		decReq:  engine.DefaultRequestDecoder,
 		encResp: engine.DefaultResponseEncoder,

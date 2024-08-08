@@ -170,6 +170,10 @@ func getLogOptions(ctx context.Context) *log.Options {
 	return logCtx.LogOptions()
 }
 
+var (
+	_SrcHeaders = []string{constants.HeaderSourceIp, constants.HeaderSourceName}
+)
+
 func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper, header context.Header) {
 	if header.IsEmpty() {
 		return
@@ -184,10 +188,20 @@ func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 	}
 
 	if printSource {
-		srcIp := header.Get(constants.HeaderSourceIp)
-		srcApp := header.Get(constants.HeaderSourceName)
-		if len(srcIp) > 0 || len(srcApp) > 0 {
-			logger.Infof("srcinfo:%s:%s,%s:%s", constants.HeaderSourceIp, srcIp, constants.HeaderSourceName, srcApp)
+		builder := bytes.Buffer{}
+		for _, key := range _SrcHeaders {
+			v := header.Get(key)
+			if len(v) <= 0 {
+				continue
+			}
+			builder.WriteString("<")
+			builder.WriteString(key)
+			builder.WriteString("=")
+			builder.WriteString(v)
+			builder.WriteString(">")
+		}
+		if builder.Len() > 0 {
+			logger.Infof("<reqsrcinfo>:%s", builder.String())
 		}
 	}
 }
@@ -197,20 +211,27 @@ func printHeader(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 		return
 	}
 	//打印请求头
-	var headers = logOpts.WithHeaders
+	var headers = append(make([]string, 0, len(logOpts.WithHeaders)), logOpts.WithHeaders...)
 	if len(group.opts.WithHeaders) > 0 {
-		headers = group.opts.WithHeaders
+		headers = append(headers, group.opts.WithHeaders...)
 	}
 
 	if len(headers) > 0 {
 		builder := bytes.Buffer{}
 		for _, key := range headers {
+			v := header.Get(key)
+			if len(v) <= 0 {
+				continue
+			}
+			builder.WriteString("<")
 			builder.WriteString(key)
-			builder.WriteString(":")
-			builder.WriteString(header.Get(key))
-			builder.WriteString("\n")
+			builder.WriteString("=")
+			builder.WriteString(v)
+			builder.WriteString(">")
 		}
-		logger.Infof("header:%s", builder.String())
+		if builder.Len() > 0 {
+			logger.Infof("<reqheader>:%s", builder.String())
+		}
 	}
 }
 
