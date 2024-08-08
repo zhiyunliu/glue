@@ -1,9 +1,11 @@
 package engine
 
 import (
+	"bytes"
 	"net/http"
 	"time"
 
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/router"
@@ -62,8 +64,12 @@ func buildHandler(engine AdapterEngine, group *RouterWrapper, middlewares []midd
 		)
 		logOpts := getLogOptions(ctx)
 		startTime := time.Now()
+		header := ctx.Request().Header()
 
 		ctx.Log().Infof("%s.req %s %s from:%s %s", kind, logMethod, fullPath, ctx.Request().GetClientIP(), extractReq(ctx.Request(), logOpts, group.opts))
+
+		printSource(ctx.Log(), logOpts, group, header)
+		printHeader(ctx.Log(), logOpts, group, header)
 
 		resp := middleware.Chain(middlewares...)(engineHandler(group, v))(ctx)
 		engine.Write(ctx, resp)
@@ -164,6 +170,54 @@ func getLogOptions(ctx context.Context) *log.Options {
 	return logCtx.LogOptions()
 }
 
+func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper, header context.Header) {
+	if header.IsEmpty() {
+		return
+	}
+	var printSource bool = false
+	//打印服务源
+	if logOpts.WithSource != nil {
+		printSource = *logOpts.WithSource
+	}
+	if group.opts.WithSource != nil {
+		printSource = *group.opts.WithSource
+	}
+
+	if printSource {
+		srcIp := header.Get(constants.HeaderSourceIp)
+		srcApp := header.Get(constants.HeaderSourceName)
+		if len(srcIp) > 0 || len(srcApp) > 0 {
+			logger.Infof("srcinfo:%s:%s,%s:%s", constants.HeaderSourceIp, srcIp, constants.HeaderSourceName, srcApp)
+		}
+	}
+}
+
+func printHeader(logger innerLogger, logOpts *log.Options, group *RouterWrapper, header context.Header) {
+	if header.IsEmpty() {
+		return
+	}
+	//打印请求头
+	var headers = logOpts.WithHeaders
+	if len(group.opts.WithHeaders) > 0 {
+		headers = group.opts.WithHeaders
+	}
+
+	if len(headers) > 0 {
+		builder := bytes.Buffer{}
+		for _, key := range headers {
+			builder.WriteString(key)
+			builder.WriteString(":")
+			builder.WriteString(header.Get(key))
+			builder.WriteString("\n")
+		}
+		logger.Infof("header:%s", builder.String())
+	}
+}
+
 type LogContext interface {
 	LogOptions() *log.Options
+}
+
+type innerLogger interface {
+	Infof(string, ...any)
 }

@@ -184,8 +184,9 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engi
 	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Handle(queue string, obj interface{}) {
-	e.opts.router.Handle(xmqc.GetService(queue), obj, engine.MethodPost)
+func (e *Server) Handle(queue string, obj interface{}, opts ...engine.RouterOption) {
+	newopts := append(opts, engine.MethodPost)
+	e.opts.router.Handle(xmqc.GetService(queue), obj, newopts...)
 }
 
 func (e *Server) serverPath() string {

@@ -203,6 +203,7 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engi
 	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Handle(path string, obj interface{}) {
-	e.opts.router.Handle(path, obj, engine.MethodPost)
+func (e *Server) Handle(path string, obj interface{}, opts ...engine.RouterOption) {
+	newopts := append(opts, engine.MethodPost)
+	e.opts.router.Handle(path, obj, newopts...)
 }
