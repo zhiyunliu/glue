@@ -104,9 +104,15 @@ type httpEngine struct {
 func (e *httpEngine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	e.engine.ServeHTTP(w, req)
 }
+
 func (e *httpEngine) StaticFile(relativePath string, filepath string) {
 	e.engine.StaticFile(relativePath, filepath)
 }
+
 func (e *httpEngine) Static(relativePath string, root string) {
 	e.engine.Static(relativePath, root)
+}
+
+func (e *httpEngine) StaticFS(relativePath string, fs http.FileSystem) {
+	e.engine.StaticFS(relativePath, fs)
 }

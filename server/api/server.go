@@ -211,9 +211,14 @@ func (e *Server) Handle(path string, obj interface{}, opts ...engine.RouterOptio
 }
 
 func (e *Server) StaticFile(path, filepath string) {
-	e.opts.static[path] = Static{RouterPath: path, FilePath: filepath, IsFile: true}
+	e.opts.static[path] = Static{RouterPath: path, FilePath: filepath}
 }
 
 func (e *Server) Static(path, root string) {
-	e.opts.static[path] = Static{RouterPath: path, FilePath: root, IsFile: false}
+	e.opts.static[path] = Static{RouterPath: path, DirPath: root}
+}
+
+// hfs=http.Dir , http.FS
+func (e *Server) StaticFS(path string, hfs http.FileSystem) {
+	e.opts.static[path] = Static{RouterPath: path, FileSystem: hfs}
 }
