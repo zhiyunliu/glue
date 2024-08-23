@@ -150,9 +150,19 @@ func ResolveScalar(rows *sql.Rows) (val any, err error) {
 			return
 		}
 		val = values[0]
-		return val, nil
 	}
-	return
+	if val == nil {
+		return
+	}
+	rv := reflect.ValueOf(val)
+	for !rv.IsZero() && rv.Type().Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+
+	if rv.CanInterface() {
+		return rv.Interface(), nil
+	}
+	return nil, nil
 }
 
 func ResolveFirstRow(rows *sql.Rows) (dataRows xdb.Row, err error) {
