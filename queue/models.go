@@ -46,6 +46,7 @@ func NewMsg(obj interface{}, opts ...MsgOption) (msg Message) {
 		bytes, _ = json.Marshal(obj)
 	}
 	tmpmsg := &MsgWrap{
+		HeaderMap: make(xtypes.SMap),
 		BodyBytes: bytes,
 	}
 	for i := range opts {

@@ -13,6 +13,8 @@ import (
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
+	gluesid "github.com/zhiyunliu/glue/session"
+
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
@@ -116,6 +118,7 @@ func (ctx *AlloterContext) Log() log.Logger {
 				xreqId = session.Create()
 				ctx.Actx.Header(constants.HeaderRequestId, xreqId)
 			}
+			orgCtx = gluesid.WithContext(orgCtx, xreqId)
 
 			logger = log.New(orgCtx, log.WithName("alloter"),
 				log.WithSid(xreqId),
