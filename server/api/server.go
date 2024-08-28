@@ -115,7 +115,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	done := make(chan struct{})
 	go func() {
 		serveErr := e.srv.Serve(lsr) //存在1s内，服务没有启动的可能性
-		if serveErr != nil {
+		if serveErr != nil && serveErr != http.ErrServerClosed {
 			log.Errorf("API Server [%s] Serve error: %s", e.name, serveErr.Error())
 		}
 		errChan <- serveErr
