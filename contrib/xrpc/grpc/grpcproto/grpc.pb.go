@@ -99,9 +99,9 @@ type Response struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
+   
 	Status int32             `protobuf:"varint,1,opt,name=status,proto3" json:"status,omitempty"`                                                                                        //状态码
-	Header map[string]string `protobuf:"bytes,2,rep,name=header,proto3" json:"header,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` //返回头信息，map[string]string
+	Headers map[string]string `protobuf:"bytes,2,rep,name=header,proto3" json:"header,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` //返回头信息，map[string]string
 	Result []byte            `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`                                                                                         //返回结果，default=json,according to content-type
 }
 
@@ -135,27 +135,6 @@ func (x *Response) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Response.ProtoReflect.Descriptor instead.
 func (*Response) Descriptor() ([]byte, []int) {
 	return file_grpc_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Response) GetStatus() int32 {
-	if x != nil {
-		return x.Status
-	}
-	return 0
-}
-
-func (x *Response) GetHeader() map[string]string {
-	if x != nil {
-		return x.Header
-	}
-	return nil
-}
-
-func (x *Response) GetResult() []byte {
-	if x != nil {
-		return x.Result
-	}
-	return nil
 }
 
 var File_grpc_proto protoreflect.FileDescriptor

@@ -47,7 +47,7 @@ func (s *processor) Process(ctx context.Context, request *grpcproto.Request) (re
 	//处理响应内容
 	response.Status = int32(resp.Status())
 	response.Result = resp.buffer.Bytes()
-	response.Header = resp.Header()
+	response.Headers = resp.Header()
 	return response, nil
 
 }
