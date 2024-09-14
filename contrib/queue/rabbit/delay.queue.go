@@ -1,6 +1,7 @@
 package rabbit
 
 import (
+	"context"
 	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -9,7 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (p *Producer) appendDelay(orgQueue string, msg queue.Message, delaySeconds int64) (err error) {
+func (p *Producer) appendDelay(ctx context.Context, orgQueue string, msg queue.Message, delaySeconds int64) (err error) {
 
 	tmpProcessor, ok := p.delayQueueMap.Load(orgQueue)
 	if !ok {
@@ -22,15 +23,15 @@ func (p *Producer) appendDelay(orgQueue string, msg queue.Message, delaySeconds 
 		}
 		tmpProcessor = actual
 	}
-	return tmpProcessor.(queue.DelayProcessor).AppendMessage(msg, delaySeconds)
+	return tmpProcessor.(queue.DelayProcessor).AppendMessage(ctx, msg, delaySeconds)
 }
 
-func (p *Producer) BatchPush(key string, msgList ...queue.Message) error {
+func (p *Producer) BatchPush(ctx context.Context, key string, msgList ...queue.Message) error {
 	if len(msgList) == 0 {
 		return nil
 	}
 	for i := range msgList {
-		if err := p.Push(key, msgList[i]); err != nil {
+		if err := p.Push(ctx, key, msgList[i]); err != nil {
 			return err
 		}
 	}
@@ -38,7 +39,6 @@ func (p *Producer) BatchPush(key string, msgList ...queue.Message) error {
 }
 
 func (p *Producer) newProcessor(orgQueue string, callback queue.DelayCallback) queue.DelayProcessor {
-
 	return &delayProcess{
 		client:     p.client,
 		callback:   callback,
@@ -89,10 +89,10 @@ func (p delayProcess) Start(done chan struct{}) (err error) {
 	return
 }
 
-func (p delayProcess) AppendMessage(msg queue.Message, delaySeconds int64) (err error) {
+func (p delayProcess) AppendMessage(ctx context.Context, msg queue.Message, delaySeconds int64) (err error) {
 
 	opts := p.client.options
 
-	err = p.client.DelayPublish(p.orgQueue, opts.DelayExchange, msg, delaySeconds)
+	err = p.client.DelayPublish(ctx, p.orgQueue, opts.DelayExchange, msg, delaySeconds)
 	return
 }

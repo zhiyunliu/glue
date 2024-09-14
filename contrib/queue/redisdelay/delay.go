@@ -1,13 +1,14 @@
 package redisdelay
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
-	rds "github.com/go-redis/redis/v7"
+	rds "github.com/redis/go-redis/v9"
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/redis"
@@ -66,7 +67,7 @@ func (p delayProcess) Start(done chan struct{}) error {
 					time.Sleep(delayInterval)
 					continue
 				}
-				err = p.callback(p.orgQueue, msgList...)
+				err = p.callback(context.Background(), p.orgQueue, msgList...)
 				if err != nil {
 					log.Error("redisdelay.delayProcess", p.orgQueue, err)
 				}
@@ -76,21 +77,21 @@ func (p delayProcess) Start(done chan struct{}) error {
 	return nil
 }
 
-func (p delayProcess) AppendMessage(msg queue.Message, delaySeconds int64) (err error) {
+func (p delayProcess) AppendMessage(ctx context.Context, msg queue.Message, delaySeconds int64) (err error) {
 	newScore := time.Now().Unix() + delaySeconds
-	err = p.client.ZAdd(p.delayQueue, &rds.Z{Score: float64(newScore), Member: msg}).Err()
+	err = p.client.ZAdd(ctx, p.delayQueue, rds.Z{Score: float64(newScore), Member: msg}).Err()
 	return
 }
 
 func (p *delayProcess) procDelayQueue() (msgList []queue.Message, err error) {
 	if p.scriptHash == "" {
-		p.scriptHash, err = p.client.ScriptLoad(DelayProcessScript).Result()
+		p.scriptHash, err = p.client.ScriptLoad(context.Background(), DelayProcessScript).Result()
 		if err != nil {
 			err = fmt.Errorf("ScriptLoad:%s,err:%+v", DelayProcessScript, err)
 			return
 		}
 	}
-	tmpValList, err := p.client.EvalSha(p.scriptHash, []string{p.delayQueue}, time.Now().Unix()).Result()
+	tmpValList, err := p.client.EvalSha(context.Background(), p.scriptHash, []string{p.delayQueue}, time.Now().Unix()).Result()
 	if err != nil {
 		err = fmt.Errorf("EvalSha:%s,err:%+v", DelayProcessScript, err)
 		return

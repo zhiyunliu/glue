@@ -1,13 +1,14 @@
 package redis
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
 
-	goredis "github.com/go-redis/redis/v7"
+	goredis "github.com/redis/go-redis/v9"
 	"github.com/zhiyunliu/glue/dlocker"
 	"github.com/zhiyunliu/golibs/xrandom"
 	"golang.org/x/sync/errgroup"
@@ -72,13 +73,13 @@ func newLock(client *Redis, key string, opts *dlocker.Options) *Lock {
 // Acquire acquires the lock.
 // 单位：秒
 // 加锁
-func (rl *Lock) Acquire(expire int) (bool, error) {
+func (rl *Lock) Acquire(ctx context.Context, expire int) (bool, error) {
 	if expire <= 0 {
 		return false, fmt.Errorf("expire 参数必须大于0")
 	}
 	// 获取过期时间
 	// 默认锁过期时间为500ms，防止死锁
-	resp, err := rl.client.Eval(lockCommand, []string{rl.key}, []string{
+	resp, err := rl.client.Eval(ctx, lockCommand, []string{rl.key}, []string{
 		rl.rndVal, strconv.Itoa(expire*1000 + tolerance), //换算成毫秒
 	})
 	if err == goredis.Nil {
@@ -101,8 +102,8 @@ func (rl *Lock) Acquire(expire int) (bool, error) {
 
 // Release releases the lock.
 // 释放锁
-func (rl *Lock) Release() (bool, error) {
-	resp, err := rl.client.Eval(delCommand, []string{rl.key}, []string{rl.rndVal})
+func (rl *Lock) Release(ctx context.Context) (bool, error) {
+	resp, err := rl.client.Eval(ctx, delCommand, []string{rl.key}, []string{rl.rndVal})
 	if err != nil {
 		return false, err
 	}
@@ -134,8 +135,8 @@ func (rl *Lock) Release() (bool, error) {
 
 // 单位：秒
 // 续约
-func (rl *Lock) Renewal(expire int) error {
-	resp, err := rl.client.Eval(leaseCommand, []string{rl.key}, []string{
+func (rl *Lock) Renewal(ctx context.Context, expire int) error {
+	resp, err := rl.client.Eval(ctx, leaseCommand, []string{rl.key}, []string{
 		rl.rndVal,
 		strconv.Itoa(expire*1000 + tolerance),
 	})
@@ -167,7 +168,7 @@ func (rl *Lock) autoRenewalCallback(expire int) error {
 		for {
 			select {
 			case <-ticker.C:
-				rl.Renewal(expire)
+				rl.Renewal(context.Background(), expire)
 			case <-rl.releaseChan:
 				rl.state.Store(false)
 				return nil

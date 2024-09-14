@@ -1,6 +1,7 @@
 package dlocker
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/zhiyunliu/glue/config"
@@ -8,10 +9,10 @@ import (
 
 type DLocker interface {
 	//expire 秒
-	Acquire(expire int) (bool, error)
-	Release() (bool, error)
+	Acquire(ctx context.Context, expire int) (bool, error)
+	Release(ctx context.Context) (bool, error)
 	//expire 秒
-	Renewal(expire int) error
+	Renewal(ctx context.Context, expire int) error
 }
 
 type DLockerBuilder interface {

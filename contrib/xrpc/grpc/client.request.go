@@ -85,7 +85,7 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	client := tmpClient.(*Client)
 	nopts := make([]xrpc.RequestOption, 0, len(opts)+2)
 	nopts = append(nopts, opts...)
-	nopts = append(nopts, xrpc.WithSourceName(global.AppName))
+	nopts = append(nopts, xrpc.WithSourceName())
 
 	if logger, ok := log.FromContext(ctx); ok {
 		nopts = append(nopts, xrpc.WithXRequestID(logger.SessionID()))

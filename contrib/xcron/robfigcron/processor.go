@@ -1,6 +1,7 @@
 package robfigcron
 
 import (
+	"context"
 	sctx "context"
 	"fmt"
 	"sync"
@@ -170,7 +171,7 @@ func (s *processor) releaseMonopolyJob(job *xcron.Job) (err error) {
 	}
 	mjob := val.(*monopolyJob)
 	nextSecs := mjob.job.CalcExpireSeconds()
-	err = mjob.locker.Renewal(nextSecs)
+	err = mjob.locker.Renewal(context.Background(), nextSecs)
 	return
 }
 
@@ -183,7 +184,7 @@ func (s *processor) renewalMonopolyJob(job *xcron.Job) (err error) {
 		return
 	}
 	mjob := val.(*monopolyJob)
-	err = mjob.locker.Renewal(mjob.expire)
+	err = mjob.locker.Renewal(context.Background(), mjob.expire)
 	return
 }
 
@@ -296,13 +297,13 @@ type monopolyJob struct {
 }
 
 func (j *monopolyJob) Acquire() (bool, error) {
-	return j.locker.Acquire(j.expire)
+	return j.locker.Acquire(context.Background(), j.expire)
 }
 
 func (j *monopolyJob) Renewal() {
-	j.locker.Renewal(j.expire)
+	j.locker.Renewal(context.Background(), j.expire)
 }
 
 func (j *monopolyJob) Close() {
-	j.locker.Release()
+	j.locker.Release(context.Background())
 }

@@ -1,12 +1,13 @@
 package redis
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	rds "github.com/go-redis/redis/v7"
+	rds "github.com/redis/go-redis/v9"
 
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
@@ -107,7 +108,7 @@ func (consumer *Consumer) doReceive(item *QueueItem) {
 			close(item.msgChan)
 			return
 		default:
-			cmd := client.BLPop(blockTimeout, queueName)
+			cmd := client.BLPop(context.Background(), blockTimeout, queueName)
 			msgs, err := cmd.Result()
 			if err != nil && err != rds.Nil {
 				time.Sleep(time.Second)
@@ -131,7 +132,7 @@ func (consumer *Consumer) work(item *QueueItem) {
 	defer func() {
 		for data := range item.msgChan {
 			//回填消息队列数据
-			consumer.client.LPush(item.QueueName, data)
+			consumer.client.LPush(context.Background(), item.QueueName, data)
 		}
 		consumer.wg.Done()
 	}()
@@ -202,7 +203,7 @@ func (consumer *Consumer) writeToDeadLetter(queue string, msg string) {
 	if strings.EqualFold(queue, consumer.DeadLetterQueue) {
 		return
 	}
-	consumer.client.RPush(consumer.DeadLetterQueue, deadMsg{Queue: queue, Msg: msg})
+	consumer.client.RPush(context.Background(), consumer.DeadLetterQueue, deadMsg{Queue: queue, Msg: msg})
 }
 
 type consumeResolver struct {

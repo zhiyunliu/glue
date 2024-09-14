@@ -1,11 +1,13 @@
 package streamredis
 
 import (
+	"context"
+
 	"github.com/zhiyunliu/glue/contrib/queue/redisdelay"
 	"github.com/zhiyunliu/glue/queue"
 )
 
-func (p *Producer) appendDelay(orgQueue string, msg queue.Message, delaySeconds int64) (err error) {
+func (p *Producer) appendDelay(ctx context.Context, orgQueue string, msg queue.Message, delaySeconds int64) (err error) {
 
 	tmpProcessor, ok := p.delayQueueMap.Load(orgQueue)
 	if !ok {
@@ -17,15 +19,15 @@ func (p *Producer) appendDelay(orgQueue string, msg queue.Message, delaySeconds 
 		}
 		tmpProcessor = actual
 	}
-	return tmpProcessor.(queue.DelayProcessor).AppendMessage(msg, delaySeconds)
+	return tmpProcessor.(queue.DelayProcessor).AppendMessage(ctx, msg, delaySeconds)
 }
 
-func (p *Producer) BatchPush(key string, msgList ...queue.Message) error {
+func (p *Producer) BatchPush(ctx context.Context, key string, msgList ...queue.Message) error {
 	if len(msgList) == 0 {
 		return nil
 	}
 	for i := range msgList {
-		if err := p.Push(key, msgList[i]); err != nil {
+		if err := p.Push(ctx, key, msgList[i]); err != nil {
 			return err
 		}
 	}

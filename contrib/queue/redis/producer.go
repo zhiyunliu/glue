@@ -1,12 +1,16 @@
 package redis
 
 import (
+	"context"
 	"sync"
 
-	rds "github.com/go-redis/redis/v7"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
 	"github.com/zhiyunliu/glue/queue"
+)
+
+var (
+	_ queue.IMQP = (*Producer)(nil)
 )
 
 // Producer memcache配置文件
@@ -39,31 +43,17 @@ func NewProducer(config config.Config, opts ...queue.Option) (m *Producer, err e
 }
 
 // Push 向存于 key 的列表的尾部插入所有指定的值
-func (c *Producer) Push(key string, msg queue.Message) error {
-	return c.client.RPush(key, msg).Err()
+func (c *Producer) Push(ctx context.Context, key string, msg queue.Message) error {
+	return c.client.RPush(ctx, key, msg).Err()
 }
 
 // Push 向存于 key 的列表的尾部插入所有指定的值
-func (c *Producer) DelayPush(key string, msg queue.Message, delaySeconds int64) error {
+func (c *Producer) DelayPush(ctx context.Context, key string, msg queue.Message, delaySeconds int64) error {
 	if delaySeconds <= 0 {
-		return c.Push(key, msg)
+		return c.Push(ctx, key, msg)
 	}
 
-	return c.appendDelay(key, msg, delaySeconds)
-}
-
-// Pop 移除并且返回 key 对应的 list 的第一个元素。
-func (c *Producer) Pop(key string) (string, error) {
-	r, err := c.client.LPop(key).Result()
-	if err != nil && err == rds.Nil {
-		return "", queue.Nil
-	}
-	return r, err
-}
-
-// Count 获取列表中的元素个数
-func (c *Producer) Count(key string) (int64, error) {
-	return c.client.LLen(key).Result()
+	return c.appendDelay(ctx, key, msg, delaySeconds)
 }
 
 // Close 释放资源

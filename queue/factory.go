@@ -31,36 +31,58 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 	if len(strings.TrimSpace(key)) == 0 {
 		return errors.New("queue.Send,queue name can't be empty")
 	}
-	msg, ok := value.(Message)
-	if !ok {
-		msg = NewMsg(value)
-	}
-
-	if sid, ok := session.FromContext(ctx); ok {
-		msg.Header()[constants.HeaderRequestId] = sid
+	msg, err := q.buildMessage(ctx, value)
+	if err != nil {
+		return err
 	}
 
 	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
 	msg.Header()[constants.HeaderSourceName] = global.AppName
-	return q.q.Push(key, msg)
+	return q.q.Push(ctx, key, msg)
 }
+
+func (q *queue) BatchSend(ctx context.Context, key string, values ...interface{}) error {
+	if len(strings.TrimSpace(key)) == 0 {
+		return errors.New("queue.BatchSend,queue name can't be empty")
+	}
+	msgList := make([]Message, 0, len(values))
+	for i := range values {
+		msg, err := q.buildMessage(ctx, values[i])
+		if err != nil {
+			return err
+		}
+		msgList[i] = msg
+	}
+
+	return q.q.BatchPush(ctx, key, msgList...)
+}
+
 func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error {
 	if len(strings.TrimSpace(key)) == 0 {
 		return errors.New("queue.DelaySend,queue name can't be empty")
 	}
-	sid, sok := session.FromContext(ctx)
-	if msg, ok := value.(Message); ok {
-		if sok {
-			msg.Header()[constants.HeaderRequestId] = sid
-		}
-		return q.q.DelayPush(key, msg, delaySeconds)
+	msg, err := q.buildMessage(ctx, value)
+	if err != nil {
+		return err
+	}
+	return q.q.DelayPush(ctx, key, msg, delaySeconds)
+}
+
+func (q *queue) buildMessage(ctx context.Context, value any) (msg Message, err error) {
+	if value == nil {
+		err = errors.New("queue:value can't be null")
+		return
 	}
 
-	msg := NewMsg(value)
-	if sok {
+	msg, ok := value.(Message)
+	if !ok {
+		msg = NewMsg(value)
+	}
+	if sid, ok := session.FromContext(ctx); ok {
 		msg.Header()[constants.HeaderRequestId] = sid
 	}
-	return q.q.DelayPush(key, msg, delaySeconds)
+
+	return msg, nil
 }
 
 // // Count 队列中消息个数

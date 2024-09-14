@@ -1,6 +1,7 @@
 package rabbit
 
 import (
+	"context"
 	"sync"
 
 	"github.com/zhiyunliu/glue/config"
@@ -29,17 +30,17 @@ func NewProducer(config config.Config, opts ...queue.Option) (m *Producer, err e
 }
 
 // Push 向存于 key 的列表的尾部插入所有指定的值
-func (c *Producer) Push(key string, msg queue.Message) (err error) {
-	return c.client.Publish(key, msg)
+func (c *Producer) Push(ctx context.Context, key string, msg queue.Message) (err error) {
+	return c.client.Publish(ctx, key, msg)
 }
 
 // Push 向存于 key 的列表的尾部插入所有指定的值
-func (c *Producer) DelayPush(key string, msg queue.Message, delaySeconds int64) error {
+func (c *Producer) DelayPush(ctx context.Context, key string, msg queue.Message, delaySeconds int64) error {
 	if delaySeconds <= 0 {
-		return c.Push(key, msg)
+		return c.Push(ctx, key, msg)
 	}
 
-	return c.appendDelay(key, msg, delaySeconds)
+	return c.appendDelay(ctx, key, msg, delaySeconds)
 }
 
 // Close 释放资源

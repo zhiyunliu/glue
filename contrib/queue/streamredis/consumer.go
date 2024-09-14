@@ -1,6 +1,7 @@
 package streamredis
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -227,7 +228,7 @@ func (consumer *Consumer) writeToDeadLetter(queue string, vals xtypes.XMap) {
 	deadMsg["q"] = queue
 	deadMsg["m"] = vals
 
-	consumer.producer.Enqueue(&redisqueue.Message{Stream: consumer.DeadLetterQueue, Values: deadMsg})
+	consumer.producer.Enqueue(context.Background(), &redisqueue.Message{Stream: consumer.DeadLetterQueue, Values: deadMsg})
 }
 
 type consumeResolver struct {
