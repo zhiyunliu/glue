@@ -22,7 +22,7 @@ type options struct {
 }
 
 var (
-	_defaultName = "gel.tracer"
+	_defaultName = "glue.tracer"
 )
 
 // WithTracerName with tracer name.
