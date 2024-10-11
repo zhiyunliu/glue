@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
-		return cli.Command{
+	RegisterFunc(func(cfg *Options) *cli.Command {
+		return &cli.Command{
 			Name:   "restart",
 			Usage:  "重启服务",
 			Flags:  getFlags(cfg),

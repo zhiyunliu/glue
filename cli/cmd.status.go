@@ -3,12 +3,12 @@ package cli
 import (
 	svc "github.com/kardianos/service"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
-		return cli.Command{
+	RegisterFunc(func(cfg *Options) *cli.Command {
+		return &cli.Command{
 			Name:   "status",
 			Usage:  "查询状态，查询服务器运行、停止状态",
 			Flags:  getFlags(cfg),

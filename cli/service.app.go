@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/kardianos/service"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/config/file"
 	"github.com/zhiyunliu/glue/global"

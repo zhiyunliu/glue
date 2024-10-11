@@ -3,16 +3,16 @@ package cli
 import (
 	"os"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
+	RegisterFunc(func(cfg *Options) *cli.Command {
 		flags := getFlags(cfg)
-		return cli.Command{
+		return &cli.Command{
 			Name:  "run",
 			Usage: "运行服务,以前台方式运行服务。通过终端输出日志，终端关闭后服务自动退出。",
-			Flags: append(flags, cli.BoolFlag{
+			Flags: append(flags, &cli.BoolFlag{
 				Name:  "nostd",
 				Usage: `关闭std输出`,
 			}),
@@ -21,7 +21,7 @@ func init() {
 	})
 }
 
-//doRun 服务启动
+// doRun 服务启动
 func doRun(c *cli.Context) (err error) {
 
 	srv, err := getService(c, os.Args[2:]...)

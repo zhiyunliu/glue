@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/xfile"
@@ -79,11 +79,11 @@ func New(opts ...Option) *App {
 		global.Usage,
 	)
 	app.cliApp.Usage = global.Usage
-	cli.HelpFlag = cli.BoolFlag{
+	cli.HelpFlag = &cli.BoolFlag{
 		Name:  "help,h",
 		Usage: "查看帮助信息",
 	}
-	cli.VersionFlag = cli.BoolFlag{
+	cli.VersionFlag = &cli.BoolFlag{
 		Name:  "version,v",
 		Usage: "查看版本信息",
 	}
@@ -91,6 +91,7 @@ func New(opts ...Option) *App {
 	app.cliApp.ExitErrHandler = func(ctx *cli.Context, err error) {
 		log.Error(err)
 		log.Close()
+		time.Sleep(time.Second) //暂停1s,刷新所有日志数据
 	}
 	return app
 }
