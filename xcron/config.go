@@ -31,6 +31,7 @@ type Job struct {
 	schedule            cron.Schedule     `json:"-"`
 	immediatelyExecuted bool              `json:"-"`
 	tmpKey              string            `json:"-"`
+	DlockKey            string            `json:"-"`
 }
 
 func (t *Job) GetKey() string {

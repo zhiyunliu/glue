@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 )
@@ -40,7 +41,10 @@ func setDefaultOption() *options {
 				MaxHeaderBytes:    http.DefaultMaxHeaderBytes,
 			},
 		},
-		logOpts:      &log.Options{},
+		logOpts: &log.Options{
+			WithSource:  &[]bool{true}[0],
+			WithHeaders: constants.DefaultHeaders,
+		},
 		static:       make(map[string]Static),
 		startedHooks: make([]engine.Hook, 0),
 		endHooks:     make([]engine.Hook, 0),

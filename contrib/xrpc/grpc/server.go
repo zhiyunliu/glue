@@ -85,7 +85,12 @@ func (e *Server) Serve(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	return e.srv.Serve(lsr)
+
+	err = e.srv.Serve(lsr)
+	if err != nil && err != grpc.ErrServerStopped {
+		return err
+	}
+	return nil
 }
 
 func (e *Server) Stop(ctx context.Context) error {

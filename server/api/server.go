@@ -30,6 +30,7 @@ var _ transport.Server = (*Server)(nil)
 
 // New 实例化
 func New(name string, opts ...Option) *Server {
+	global.HasApi = true
 	s := &Server{
 		name: name,
 		opts: setDefaultOption(),
@@ -114,7 +115,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	done := make(chan struct{})
 	go func() {
 		serveErr := e.srv.Serve(lsr) //存在1s内，服务没有启动的可能性
-		if serveErr != nil {
+		if serveErr != nil && serveErr != http.ErrServerClosed {
 			log.Errorf("API Server [%s] Serve error: %s", e.name, serveErr.Error())
 		}
 		errChan <- serveErr
@@ -173,6 +174,14 @@ func (s *Server) Endpoint() *url.URL {
 	return s.endpoint
 }
 
+// 获取树形的路径列表
+func (s *Server) RouterPathList() transport.RouterList {
+	return engine.RouterList{
+		ServerType: s.Type(),
+		PathList:   s.opts.router.GetTreePathList(),
+	}
+}
+
 // Attempt 判断是否可以启动
 func (e *Server) Attempt() bool {
 	return !e.started
@@ -197,14 +206,19 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engi
 	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Handle(path string, obj interface{}, methods ...engine.Method) {
-	e.opts.router.Handle(path, obj, methods...)
+func (e *Server) Handle(path string, obj interface{}, opts ...engine.RouterOption) {
+	e.opts.router.Handle(path, obj, opts...)
 }
 
 func (e *Server) StaticFile(path, filepath string) {
-	e.opts.static[path] = Static{RouterPath: path, FilePath: filepath, IsFile: true}
+	e.opts.static[path] = Static{RouterPath: path, FilePath: filepath}
 }
 
 func (e *Server) Static(path, root string) {
-	e.opts.static[path] = Static{RouterPath: path, FilePath: root, IsFile: false}
+	e.opts.static[path] = Static{RouterPath: path, DirPath: root}
+}
+
+// hfs=http.Dir , http.FS
+func (e *Server) StaticFS(path string, hfs http.FileSystem) {
+	e.opts.static[path] = Static{RouterPath: path, FileSystem: hfs}
 }

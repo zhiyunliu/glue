@@ -11,6 +11,7 @@ import (
 	"github.com/zhiyunliu/glue/encoding"
 	"github.com/zhiyunliu/glue/encoding/text"
 	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/httputil"
 )
 
@@ -25,6 +26,12 @@ type DataEncoder interface {
 	Render(ctx context.Context) error
 }
 
+type ResponseEntity interface {
+	StatusCode() int
+	Header() map[string]string
+	Body() (bytes []byte, err error)
+}
+
 // DecodeRequestFunc is decode request func.
 type DecodeRequestFunc func(context.Context, interface{}) error
 
@@ -37,7 +44,7 @@ type EncodeErrorFunc func(context.Context, error)
 // DefaultRequestDecoder decodes the request body to object.
 func DefaultRequestDecoder(ctx context.Context, v interface{}) (err error) {
 	var data []byte
-	if strings.EqualFold(MethodGet, ctx.Request().GetMethod()) {
+	if strings.EqualFold(string(MethodGet), ctx.Request().GetMethod()) {
 		data = []byte(ctx.Request().Query().String())
 	} else {
 		data, err = io.ReadAll(ctx.Request().Body())
@@ -57,10 +64,30 @@ func DefaultRequestDecoder(ctx context.Context, v interface{}) (err error) {
 }
 
 // DefaultResponseEncoder encodes the object to the HTTP response.
-func DefaultResponseEncoder(ctx context.Context, v interface{}) error {
+func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 	if render, ok := v.(DataEncoder); ok {
 		return render.Render(ctx)
 	}
+
+	//判定对象是否实现了响应体接口
+	if entity, ok := v.(ResponseEntity); ok {
+		resp := ctx.Response()
+
+		resp.Status(entity.StatusCode())
+		header := entity.Header()
+		if len(header) > 0 {
+			for k, v := range header {
+				resp.Header(k, v)
+			}
+		}
+		bytes, err := entity.Body()
+		if err != nil {
+			return err
+		}
+		err = resp.WriteBytes(bytes)
+		return err
+	}
+
 	var codec encoding.Codec
 	if _, ok := v.(string); ok {
 		codec = encoding.GetCodec(text.Name)
@@ -74,22 +101,48 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) error {
 	}
 	ctx.Response().Header(ContentTypeName, httputil.ContentType(codec.Name()))
 	err = ctx.Response().WriteBytes(data)
-
 	return err
 }
 
 // DefaultErrorEncoder encodes the error to the HTTP response.
 func DefaultErrorEncoder(ctx context.Context, err error) {
+	if render, ok := err.(DataEncoder); ok {
+		render.Render(ctx)
+		return
+	}
+	resp := ctx.Response()
+
+	//判定对象是否实现了响应体接口
+	if entity, ok := err.(ResponseEntity); ok {
+
+		resp.Status(entity.StatusCode())
+		header := entity.Header()
+		if len(header) > 0 {
+			for k, v := range header {
+				resp.Header(k, v)
+			}
+		}
+		bytes, err := entity.Body()
+		if err != nil {
+			resp.Status(http.StatusInternalServerError)
+			resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
+			return
+		}
+		resp.WriteBytes(bytes)
+		return
+	}
+
 	se := errors.FromError(err)
 	codec, _ := CodecForRequest(ctx, "Accept", "")
 	body, err := codec.Marshal(se)
 	if err != nil {
-		ctx.Response().Status(500)
+		resp.Status(http.StatusInternalServerError)
+		resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
 		return
 	}
-	ctx.Response().Header(ContentTypeName, httputil.ContentType(codec.Name()))
-	ctx.Response().Status(se.Code)
-	ctx.Response().WriteBytes(body)
+	resp.Header(ContentTypeName, httputil.ContentType(codec.Name()))
+	resp.Status(se.Code)
+	resp.WriteBytes(body)
 }
 
 // CodecForRequest get encoding.Codec via http.Request

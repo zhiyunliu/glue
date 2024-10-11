@@ -37,10 +37,17 @@ func (e *Server) resoverEngineRoute() (err error) {
 	}
 
 	for _, s := range e.opts.static {
-		if s.IsFile {
+		if s.FileSystem != nil {
+			httpEngine.StaticFS(s.RouterPath, s.FileSystem)
+			continue
+		}
+		if len(s.FilePath) > 0 {
 			httpEngine.StaticFile(s.RouterPath, s.FilePath)
-		} else {
-			httpEngine.Static(s.RouterPath, s.FilePath)
+			continue
+		}
+		if len(s.DirPath) > 0 {
+			httpEngine.Static(s.RouterPath, s.DirPath)
+			continue
 		}
 	}
 	engine.RegistryEngineRoute(adapterEngine, e.opts.router)

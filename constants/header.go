@@ -1,8 +1,18 @@
 package constants
 
 const (
-	HeaderRequestId    = "x-request-id"
-	HeaderRemoteHeader = "x-remote-addr"
-	HeaderSourceIp     = "x-src-ip"
-	HeaderSourceName   = "x-src-name"
+	HeaderRequestId    = "X-Request-Id"
+	HeaderRemoteHeader = "X-Remote-Addr"
+	HeaderSourceIp     = "X-Src-Ip"
+	HeaderSourceName   = "X-Src-Name"
+)
+
+const (
+	HeaderXForwardedFor = "X-Forwarded-For"
+	HeaderAuthorization = "Authorization"
+	HeaderReferer       = "Referer"
+)
+
+var (
+	DefaultHeaders = []string{HeaderXForwardedFor, HeaderReferer}
 )

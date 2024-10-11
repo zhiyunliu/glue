@@ -1,4 +1,4 @@
-package internal
+package implement
 
 import (
 	"encoding/json"
@@ -9,6 +9,14 @@ import (
 	"github.com/zhiyunliu/golibs/xreflect"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
+
+var (
+	ptrInt *int = new(int)
+)
+
+func init() {
+	*ptrInt = 3
+}
 
 type dbparam struct {
 	A string
@@ -147,6 +155,39 @@ func Test_analyzeParamFields(t *testing.T) {
 			"obj3": "obj3",
 			"obj4": "obj4",
 		}, wantErr: false},
+		{name: "3.", input: &anonymousB{
+			IAPtr:          ptrInt,
+			anonymousInner: &anonymousInner{Str: "str", Int: 1},
+		},
+			wantParams: map[string]any{
+				"iaptr": int64(3),
+				"str":   "str",
+				"int":   int64(0),
+			},
+			wantErr: false,
+		},
+		{name: "4.", input: &anonymousB{
+			IAPtr: ptrInt,
+			Int:   2,
+		},
+			wantParams: map[string]any{
+				"iaptr": int64(3),
+				"int":   int64(2),
+			},
+			wantErr: false,
+		},
+		{name: "5.", input: &anonymousB{
+			IAPtr:          ptrInt,
+			Int:            2,
+			anonymousInner: &anonymousInner{Str: "str", Int: 1},
+		},
+			wantParams: map[string]any{
+				"iaptr": int64(3),
+				"int":   int64(2),
+				"str":   "str",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -263,30 +304,45 @@ func Test_fillRowToStruct(t *testing.T) {
 		fields     *xreflect.StructFields
 		reflectVal reflect.Value
 		result     any
-		vals       []any
+		vals       map[string]any
 		wantErr    bool
 	}{
-		{name: "1.", result: testVal1, vals: []any{
-			true, 1, 2, 3, 4, 1.1, 2.2, "str",
-			[]byte{65, 66},
-			[]int{1, 2},
-			[]float32{3.1, 4.2},
-			"impl", "notimpl",
-			"mapstr", "mapany",
-			`{"xmap":"1"}`,
-			`{"smap":"2"}`,
-			`[{"xmap":"1"},{"smap":"2"}]`,
-			[]uint8{1, 2, 3},
-			"any",
-			[]byte("10.2"),
-			[]byte("10.3"),
-			true, 11, 12, 13, 14, 2.1, 2.2, "abc",
-			///////////"mapstrptr", "mapanyptr",
-			"implptr",
-			time.Now(),
-			time.Now(),
-			"mapanyptr",
-			`{"xmapptr":"1"}`,
+		{name: "1.", result: testVal1, vals: map[string]any{
+			"bool":      true,
+			"ia":        1,
+			"ib":        2,
+			"ic":        3,
+			"iu":        4,
+			"fa":        1.1,
+			"fb":        2.2,
+			"str":       "str",
+			"bytes":     []byte{65, 66},
+			"ints":      []int{1, 2},
+			"floats":    []float32{3.1, 4.2},
+			"impl":      "impl",
+			"notimpl":   "notimpl",
+			"mapstr":    "mapstr",
+			"mapany":    "mapany",
+			"xmap":      `{"xmap":"1"}`,
+			"smap":      `{"smap":"2"}`,
+			"xmaps":     `[{"xmap":"1"},{"smap":"2"}]`,
+			"binary":    []uint8{1, 2, 3},
+			"any":       "any",
+			"dec":       []byte("10.2"),
+			"decptr":    []byte("10.3"),
+			"boolptr":   true,
+			"iaptr":     11,
+			"ibptr":     12,
+			"icptr":     13,
+			"iuptr":     14,
+			"faptr":     2.1,
+			"fbptr":     2.2,
+			"strptr":    "abc",
+			"implptr":   "implptr",
+			"time":      time.Now(),
+			"timeptr":   time.Now(),
+			"mapanyptr": "mapanyptr",
+			"xmapptr":   `{"xmapptr":"1"}`,
 		}, wantErr: false},
 	}
 
@@ -296,11 +352,13 @@ func Test_fillRowToStruct(t *testing.T) {
 			tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
 
 			cols := make([]string, len(tt.fields.List))
+			vals := make([]any, len(tt.fields.List))
 			for i, k := range tt.fields.List {
 				cols[i] = k.Name
+				vals[i] = tt.vals[k.Name]
 			}
 
-			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, tt.vals); (err != nil) != tt.wantErr {
+			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
 				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -342,6 +400,130 @@ func Test_fillRowToStruct_Scanner(t *testing.T) {
 	}
 }
 
+type anonymousA struct {
+	anonymousInner
+	AStr string `json:"astr"`
+	AInt int    `json:"aint"`
+}
+
+type anonymousB struct {
+	IAPtr *int `json:"iaptr"`
+	Int   int  `json:"int"`
+	*anonymousInner
+}
+
+type anonymousInner struct {
+	Str string `json:"str"`
+	Int int    `json:"int"`
+}
+
+func Test_fillRowToStruct_anonymousA(t *testing.T) {
+
+	b := anonymousB{anonymousInner: &anonymousInner{}}
+
+	json.Unmarshal([]byte(`{"iaptr":1,"int":2,"str":"str"}`), &b)
+
+	var (
+		testVal1 *anonymousA = &anonymousA{}
+		ptrInt   *int        = new(int)
+	)
+	*ptrInt = 3
+	tests := []struct {
+		name       string
+		fields     *xreflect.StructFields
+		reflectVal reflect.Value
+		result     any
+		vals       map[string]any
+		wantErr    bool
+		wantVal    *anonymousA
+	}{
+		{name: "1.", result: testVal1,
+			vals: map[string]any{
+				"str":  "strval",
+				"int":  2,
+				"astr": "astrval",
+				"aint": 12,
+			},
+			wantVal: &anonymousA{AStr: "astrval", AInt: 12, anonymousInner: anonymousInner{Str: "strval", Int: 2}},
+			wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.reflectVal = reflect.ValueOf(tt.result)
+			tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
+
+			vals := make([]any, len(tt.fields.List))
+			cols := make([]string, len(tt.fields.List))
+			for i, k := range tt.fields.List {
+				cols[i] = k.Name
+				vals[i] = tt.vals[cols[i]]
+			}
+
+			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
+				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(tt.result, tt.wantVal) {
+				t.Errorf("fillRowToStruct() DeepEqual Got= %v, wantVal %v", tt.result, tt.wantVal)
+			}
+		})
+	}
+}
+
+func Test_fillRowToStruct_anonymousB(t *testing.T) {
+	var (
+		testVal1 *anonymousB = &anonymousB{anonymousInner: &anonymousInner{}}
+		ptrInt   *int        = new(int)
+	)
+	*ptrInt = 3
+
+	//json.Unmarshal([]byte(`{"iaptr":3,"str":"aaa","int":1}`), testVal1)
+
+	tests := []struct {
+		name       string
+		fields     *xreflect.StructFields
+		reflectVal reflect.Value
+		result     any
+		vals       map[string]any
+		wantErr    bool
+		wantVal    *anonymousB
+	}{
+		{name: "1.", result: testVal1,
+			vals: map[string]any{
+				"iaptr": 3,
+				"str":   "strval",
+				"int":   2,
+				"astr":  "astrval",
+				"aint":  12,
+			},
+			wantVal: &anonymousB{IAPtr: ptrInt, Int: 2, anonymousInner: &anonymousInner{Str: "strval", Int: 2}},
+			wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.reflectVal = reflect.ValueOf(tt.result)
+			tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
+
+			vals := make([]any, len(tt.fields.List))
+			cols := make([]string, len(tt.fields.List))
+			i := 0
+			for _, k := range tt.fields.ExactName {
+				cols[i] = k.Name
+				vals[i] = tt.vals[k.Name]
+				i++
+			}
+
+			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
+				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if !reflect.DeepEqual(tt.result, tt.wantVal) {
+				t.Errorf("fillRowToStruct() DeepEqual Got= %v, wantVal %v", tt.result, tt.wantVal)
+			}
+		})
+	}
+}
+
 func Benchmark_fillRowToStruct(b *testing.B) {
 	var (
 		testVal1 *val = &val{}
@@ -352,27 +534,44 @@ func Benchmark_fillRowToStruct(b *testing.B) {
 		fields     *xreflect.StructFields
 		reflectVal reflect.Value
 		result     any
-		vals       []any
+		vals       map[string]any
 		wantErr    bool
-	}{name: "1.", result: testVal1, vals: []any{
-		true, 1, 2, 3, 4, 1.1, 2.2, "str",
-		[]byte{65, 66}, []int{1, 2},
-		"impl", "notimpl",
-		"mapstr", "mapany",
-		`{"xmap":"1"}`,
-		`{"smap":"2"}`,
-		`[{"xmap":"1"},{"smap":"2"}]`,
-		[]uint8{1, 2, 3},
-		"any",
-		[]byte("10.2"),
-		[]byte("10.3"),
-		true, 11, 12, 13, 14, 2.1, 2.2, "abc",
-		///////////"mapstrptr", "mapanyptr",
-		"implptr",
-		time.Now(),
-		time.Now(),
-		"mapanyptr",
-		`{"xmapptr":"1"}`,
+	}{name: "1.", result: testVal1, vals: map[string]any{
+		"bool":      true,
+		"ia":        1,
+		"ib":        2,
+		"ic":        3,
+		"iu":        4,
+		"fa":        1.1,
+		"fb":        2.2,
+		"str":       "str",
+		"bytes":     []byte{65, 66},
+		"ints":      []int{1, 2},
+		"floats":    []float32{1.0, 2.0},
+		"impl":      "impl",
+		"notimpl":   "notimpl",
+		"mapstr":    "mapstr",
+		"mapany":    "mapany",
+		"xmap":      `{"xmap":"1"}`,
+		"smap":      `{"smap":"2"}`,
+		"xmaps":     `[{"xmap":"1"},{"smap":"2"}]`,
+		"binary":    []uint8{1, 2, 3},
+		"any":       "any",
+		"dec":       []byte("10.2"),
+		"decptr":    []byte("10.3"),
+		"boolptr":   true,
+		"iaptr":     11,
+		"ibptr":     12,
+		"icptr":     13,
+		"iuptr":     14,
+		"faptr":     2.1,
+		"fbptr":     2.2,
+		"strptr":    "abc",
+		"implptr":   "implptr",
+		"time":      time.Now(),
+		"timeptr":   time.Now(),
+		"mapanyptr": "mapanyptr",
+		"xmapptr":   `{"xmapptr":"1"}`,
 	}, wantErr: false}
 
 	for i := 0; i < b.N; i++ {
@@ -381,11 +580,13 @@ func Benchmark_fillRowToStruct(b *testing.B) {
 		tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
 
 		cols := make([]string, len(tt.fields.List))
+		vals := make([]any, len(cols))
 		for i, k := range tt.fields.List {
 			cols[i] = k.Name
+			vals[i] = tt.vals[k.Name]
 		}
 
-		if err := scanInToStruct(tt.fields, tt.reflectVal, cols, tt.vals); (err != nil) != tt.wantErr {
+		if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
 			b.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
 		}
 	}

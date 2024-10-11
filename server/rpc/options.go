@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/xrpc"
@@ -31,7 +32,10 @@ func setDefaultOption() *options {
 				Status: engine.StatusStart,
 			},
 		},
-		logOpts: &log.Options{},
+		logOpts: &log.Options{
+			WithSource:  &[]bool{true}[0],
+			WithHeaders: constants.DefaultHeaders,
+		},
 		decReq:  engine.DefaultRequestDecoder,
 		encResp: engine.DefaultResponseEncoder,
 		encErr:  engine.DefaultErrorEncoder,

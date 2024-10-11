@@ -9,6 +9,7 @@ import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/session"
 )
 
 var Nil error = errors.New("queue nil")
@@ -35,6 +36,10 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 		msg = NewMsg(value)
 	}
 
+	if sid, ok := session.FromContext(ctx); ok {
+		msg.Header()[constants.HeaderRequestId] = sid
+	}
+
 	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
 	msg.Header()[constants.HeaderSourceName] = global.AppName
 	return q.q.Push(key, msg)
@@ -43,11 +48,18 @@ func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, de
 	if len(strings.TrimSpace(key)) == 0 {
 		return errors.New("queue.DelaySend,queue name can't be empty")
 	}
+	sid, sok := session.FromContext(ctx)
 	if msg, ok := value.(Message); ok {
+		if sok {
+			msg.Header()[constants.HeaderRequestId] = sid
+		}
 		return q.q.DelayPush(key, msg, delaySeconds)
 	}
 
 	msg := NewMsg(value)
+	if sok {
+		msg.Header()[constants.HeaderRequestId] = sid
+	}
 	return q.q.DelayPush(key, msg, delaySeconds)
 }
 

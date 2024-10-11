@@ -1,6 +1,8 @@
 package xdb
 
 import (
+	"database/sql"
+
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/container"
 )
@@ -16,6 +18,10 @@ const _defaultName = "default"
 type StandardDB interface {
 	GetDB(name string, opts ...Option) (q IDB)
 	GetImpl(name string, opts ...Option) interface{}
+}
+
+type DbConn interface {
+	GetSqlDB() *sql.DB
 }
 
 // StandardDB

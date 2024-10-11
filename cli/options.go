@@ -5,7 +5,9 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/urfave/cli"
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/transport"
 )
@@ -23,11 +25,11 @@ type Options struct {
 	StartingHooks    []func(ctx context.Context) error
 	StartedHooks     []func(ctx context.Context) error
 
-	logConcurrency int
-	setting        *appSetting
-	configSources  []config.Source
-	cmdConfigFile  string
-	logPath        string
+	logOpts       []log.ConfigOption
+	setting       *appSetting
+	configSources []config.Source
+	cmdConfigFile string
+	logPath       string
 }
 
 // Option 配置选项
@@ -91,9 +93,9 @@ func ServiceDependencies(dependencies ...string) Option {
 }
 
 // ServiceDependencies
-func LogConcurrency(concurrency int) Option {
+func LogParams(opts ...log.ConfigOption) Option {
 	return func(o *Options) {
-		o.logConcurrency = concurrency
+		o.logOpts = opts
 	}
 }
 
@@ -108,6 +110,18 @@ func StartingHook(hook func(context.Context) error) Option {
 func StartedHook(hook func(context.Context) error) Option {
 	return func(o *Options) {
 		o.StartedHooks = append(o.StartedHooks, hook)
+	}
+}
+
+func RegistrarTimeout(timeout int64) Option {
+	return func(o *Options) {
+		o.RegistrarTimeout = time.Second * time.Duration(timeout)
+	}
+}
+
+func Command(cmd cli.Command) Option {
+	return func(o *Options) {
+		cmds = append(cmds, cmd)
 	}
 }
 

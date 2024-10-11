@@ -44,11 +44,11 @@ type options struct {
 }
 
 func Server(opts ...Option) middleware.Middleware {
-	op := options{}
+	op := &options{}
 	for _, o := range opts {
-		o(&op)
+		o(op)
 	}
-	return serverByOptions(&op)
+	return serverByOptions(op)
 }
 
 func serverByConfig(cfg *Config) middleware.Middleware {
@@ -81,18 +81,20 @@ func serverByOptions(op *options) middleware.Middleware {
 			}
 
 			reply = handler(ctx)
-			if rerr, ok := reply.(error); ok {
+
+			if respErr, ok := reply.(errors.RespError); ok {
+				code = respErr.GetCode()
+				if code == 0 {
+					code = ctx.Response().GetStatusCode()
+				}
+			} else if rerr, ok := reply.(error); ok {
 				code = http.StatusInternalServerError
 				if se := errors.FromError(rerr); se != nil {
 					code = int(se.Code)
 				}
-			} else {
-				if respErr, ok := reply.(errors.RespError); ok {
-					code = respErr.GetCode()
-				}
-				if code == 0 {
-					code = ctx.Response().GetStatusCode()
-				}
+			}
+			if code == 0 {
+				code = http.StatusOK
 			}
 
 			if op.counter != nil {

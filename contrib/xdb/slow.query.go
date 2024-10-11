@@ -2,9 +2,10 @@ package xdb
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/zhiyunliu/glue/contrib/xdb/internal"
+	"github.com/zhiyunliu/glue/contrib/xdb/implement"
 )
 
 // 打印慢sql
@@ -19,5 +20,5 @@ func printSlowQuery(ctx context.Context, setting *Setting, timeRange time.Durati
 	if setting.slowThreshold <= 0 || timeRange < setting.slowThreshold {
 		return
 	}
-	setting.logger.Log(ctx, timeRange.Milliseconds(), query, internal.Unwrap(args...)...)
+	setting.logger.Log(ctx, timeRange.Milliseconds(), fmt.Sprintf("[%s] %s", setting.ConnName, query), implement.Unwrap(args...)...)
 }

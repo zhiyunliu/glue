@@ -1,5 +1,6 @@
 package constants
 
 const (
-	Default = "default"
+	Default      = "default"
+	AUTH_USER_ID = "X-Auth-User-Id"
 )

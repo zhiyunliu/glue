@@ -1,6 +1,8 @@
 package log
 
 import (
+	"context"
+
 	"github.com/zhiyunliu/golibs/xlog"
 )
 
@@ -8,7 +10,7 @@ const _DEFAULT_BUILDER = "default"
 
 type Builder interface {
 	Name() string
-	Build(...Option) Logger
+	Build(context.Context, ...Option) Logger
 	Close()
 }
 
@@ -19,10 +21,9 @@ func (b *defaultBuilderWrap) Name() string {
 	return _DEFAULT_BUILDER
 }
 
-func (b *defaultBuilderWrap) Build(opts ...Option) Logger {
-
-	return &wraper{
-		xloger: xlog.New(opts...),
+func (b *defaultBuilderWrap) Build(ctx context.Context, opts ...Option) Logger {
+	return &Wraper{
+		Logger: xlog.GetLogger(opts...),
 	}
 }
 

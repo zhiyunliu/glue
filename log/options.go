@@ -18,8 +18,10 @@ type Option = xlog.Option
 type ServerOption func(opt *Options)
 
 type Options struct {
-	WithRequest  bool
-	WithResponse bool
+	WithRequest  bool     //打印请求参数
+	WithResponse bool     //打印响应内容
+	WithHeaders  []string //打印请求头
+	WithSource   *bool    //打印请求源
 	Excludes     []string
 	pathMatcher  *xpath.Match
 }
@@ -44,9 +46,30 @@ func WithResponse() ServerOption {
 	}
 }
 
+func WithHeaders(keys ...string) ServerOption {
+	return func(opt *Options) {
+		opt.WithHeaders = keys
+	}
+}
+
+func WithSource(include bool) ServerOption {
+	return func(opt *Options) {
+		opt.WithSource = &include
+	}
+}
+
+// Deprecated: use func (e *Server) Handle(path string, obj interface{}, opts ...engine.RouterOption) 中Opts代替
 func Excludes(excludes ...string) ServerOption {
 	return func(opt *Options) {
 		opt.Excludes = excludes
 		opt.pathMatcher = xpath.NewMatch(excludes, xpath.WithCache(false))
 	}
 }
+
+type ConfigOption = xlog.ConfigOption
+
+var (
+	WithConfigPath  = xlog.WithConfigPath
+	WithLayout      = xlog.WithLayout
+	WithConcurrency = xlog.WithConcurrency
+)

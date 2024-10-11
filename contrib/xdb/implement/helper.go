@@ -1,4 +1,4 @@
-package internal
+package implement
 
 import (
 	"database/sql"
@@ -150,12 +150,23 @@ func ResolveScalar(rows *sql.Rows) (val any, err error) {
 			return
 		}
 		val = values[0]
-		return val, nil
 	}
-	return
+	if val == nil {
+		return
+	}
+	rv := reflect.ValueOf(val)
+	for !rv.IsZero() && rv.Type().Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+
+	if rv.CanInterface() {
+		return rv.Interface(), nil
+	}
+	return nil, nil
 }
 
 func ResolveFirstRow(rows *sql.Rows) (dataRows xdb.Row, err error) {
+	dataRows = xdb.NewRow()
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))
@@ -256,10 +267,10 @@ func analyzeParamFields(input any) (params xtypes.XMap, err error) {
 
 	fields := xreflect.CachedTypeFields(refval.Type())
 
-	for i := range fields.List {
-		f := &fields.List[i]
-		fv := refval.Field(f.Index)
-		params[f.Name] = f.Encoder(fv)
+	for _, f := range fields.ExactName {
+		if val, ok := f.Encoder(refval); ok {
+			params[f.Name] = val
+		}
 	}
 	return
 }
@@ -271,7 +282,7 @@ func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
 			t = columnType.ScanType()
 		}
 		if t != nil {
-			values[idx] = reflect.New(reflect.PtrTo(t)).Interface()
+			values[idx] = reflect.New(reflect.PointerTo(t)).Interface()
 		} else {
 			values[idx] = new(interface{})
 		}
@@ -317,23 +328,22 @@ func scanInToStruct(fields *xreflect.StructFields, rv reflect.Value, cols []stri
 
 	for i := range cols {
 		col := cols[i]
-		field, ok := fields.ExactName[col]
-		if !ok {
-			continue
-		}
-		fv := rv.Field(field.Index)
+		//	field, ok := fields.ExactName[col]
 
 		vrf := reflect.ValueOf(vals[i])
 		for vrf.Kind() == reflect.Ptr {
 			vrf = vrf.Elem()
 		}
-		if vrf.IsValid() && vrf.CanInterface() {
-			err = field.Dencoder(fv, vrf.Interface())
-			if err != nil {
-				err = xdb.NewError(fmt.Errorf("field:%s,val:%+v,err:%w", field.Name, vals[i], err), "", nil)
-				return
-			}
+
+		if !(vrf.IsValid() && vrf.CanInterface()) {
+			continue
 		}
+		err = fields.Dencode(rv, col, vrf.Interface())
+		if err != nil {
+			err = xdb.NewError(fmt.Errorf("field:%s,val:%+v,err:%w", col, vals[i], err), "", nil)
+			return
+		}
+
 	}
 	return nil
 }

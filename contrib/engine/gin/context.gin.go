@@ -13,6 +13,8 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
+	gluesid "github.com/zhiyunliu/glue/session"
+
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xtypes"
 
@@ -108,15 +110,25 @@ func (ctx *GinContext) Response() vctx.Response {
 }
 func (ctx *GinContext) Log() log.Logger {
 	if ctx.logger == nil {
-		logger, ok := log.FromContext(ctx.Context())
+		orgCtx := ctx.Context()
+		logger, ok := log.FromContext(orgCtx)
 		if !ok {
 			xreqId := ctx.Gctx.GetHeader(constants.HeaderRequestId)
 			if xreqId == "" {
 				xreqId = session.Create()
 				ctx.Gctx.Header(constants.HeaderRequestId, xreqId)
 			}
-			logger = log.New(log.WithName("gin"), log.WithSid(xreqId), log.WithSrvType(ctx.opts.SrvType))
-			ctx.ResetContext(log.WithContext(ctx.Context(), logger))
+			orgCtx = gluesid.WithContext(orgCtx, xreqId)
+
+			logger = log.New(orgCtx, log.WithName("gin"),
+				log.WithSid(xreqId),
+				log.WithSrvType(ctx.opts.SrvType),
+				log.WithField("src_name", ctx.Request().GetHeader(constants.HeaderSourceName)),
+				log.WithField("src_ip", ctx.Request().GetHeader(constants.HeaderSourceIp)),
+				log.WithField("cip", ctx.Request().GetClientIP()),
+				log.WithField("uid", ctx.Gctx.GetHeader(constants.AUTH_USER_ID)),
+			)
+			ctx.ResetContext(log.WithContext(orgCtx, logger))
 		}
 		ctx.logger = logger
 	}

@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
+	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
 	"github.com/zhiyunliu/glue/registry"
@@ -27,15 +28,18 @@ type options struct {
 
 // Registry is nacos registry.
 type Registry struct {
-	opts *options
-	cli  naming_client.INamingClient
+	opts        *options
+	ncp         *vo.NacosClientParam
+	cli         naming_client.INamingClient
+	nacosServer *nacos_server.NacosServer
 }
 
 // New new a nacos registry.
-func New(cli naming_client.INamingClient, opts *options) (r *Registry) {
+func New(cli naming_client.INamingClient, ncp *vo.NacosClientParam, opts *options) (r *Registry) {
 
 	return &Registry{
 		opts: opts,
+		ncp:  ncp,
 		cli:  cli,
 	}
 }
@@ -54,6 +58,7 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 	if si.Name == "" {
 		return fmt.Errorf("nacos: serviceInstance.name can not be empty")
 	}
+
 	for _, item := range si.Endpoints {
 		u, err := url.Parse(item.EndpointURL)
 		if err != nil {
@@ -90,8 +95,8 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 		if e != nil {
 			return fmt.Errorf("RegisterInstance err %v,%v", e, item.EndpointURL)
 		}
-
 	}
+
 	return nil
 }
 
@@ -166,7 +171,11 @@ func (r Registry) GetService(_ context.Context, serviceName string) ([]*registry
 }
 
 func (r Registry) GetAllServicesInfo(ctx context.Context) (list registry.ServiceList, err error) {
-	tmplist, err := r.cli.GetAllServicesInfo(vo.GetAllServiceInfoParam{})
+	tmplist, err := r.cli.GetAllServicesInfo(vo.GetAllServiceInfoParam{
+		GroupName: r.opts.Group,
+		PageNo:    1,
+		PageSize:  10000, //默认不超过10000个服务
+	})
 	if err != nil {
 		err = fmt.Errorf("GetAllServicesInfo %w", err)
 		return

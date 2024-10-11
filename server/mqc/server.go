@@ -16,6 +16,10 @@ import (
 	"github.com/zhiyunliu/glue/xmqc"
 )
 
+const (
+	Port = 1988
+)
+
 type Server struct {
 	name    string
 	server  xmqc.Server
@@ -61,7 +65,7 @@ func (s *Server) ServiceName() string {
 }
 
 func (e *Server) Endpoint() *url.URL {
-	return transport.NewEndpoint(e.Type(), fmt.Sprintf("%s:%d", global.LocalIp, 1987))
+	return transport.NewEndpoint(e.Type(), fmt.Sprintf("%s:%d", global.LocalIp, Port))
 }
 
 func (e *Server) Config(cfg config.Config) {
@@ -134,6 +138,14 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	return nil
 }
 
+// 获取树形的路径列表
+func (s *Server) RouterPathList() transport.RouterList {
+	return engine.RouterList{
+		ServerType: s.Type(),
+		PathList:   s.opts.router.GetTreePathList(),
+	}
+}
+
 // Attempt 判断是否可以启动
 func (e *Server) Attempt() bool {
 	return !e.started
@@ -172,8 +184,9 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engi
 	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Handle(queue string, obj interface{}) {
-	e.opts.router.Handle(xmqc.GetService(queue), obj, engine.MethodPost)
+func (e *Server) Handle(queue string, obj interface{}, opts ...engine.RouterOption) {
+	newopts := append(opts, engine.MethodPost)
+	e.opts.router.Handle(xmqc.GetService(queue), obj, newopts...)
 }
 
 func (e *Server) serverPath() string {

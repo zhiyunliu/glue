@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/zhiyunliu/glue/log"
@@ -12,50 +13,68 @@ import (
 
 type Method string
 
+func (m Method) String() string {
+	return string(m)
+}
+
+func (m Method) Apply(opts *RouterOptions) {
+	opts.Methods = append(opts.Methods, string(m))
+}
+
 const (
-	MethodPost   = "POST"
-	MethodGet    = "GET"
-	MethodPut    = "PUT"
-	MethodDelete = "DELETE"
+	MethodPost   Method = "POST"
+	MethodGet    Method = "GET"
+	MethodPut    Method = "PUT"
+	MethodDelete Method = "DELETE"
 )
 
-var methodMap = map[string]bool{
-	MethodGet:    true,
-	MethodPost:   true,
-	MethodPut:    true,
-	MethodDelete: true,
+var methodMap = map[Method]Method{
+	MethodGet:    MethodGet,
+	MethodPost:   MethodPost,
+	MethodPut:    MethodPut,
+	MethodDelete: MethodDelete,
 }
 
-func adjustMethods(methods ...Method) []Method {
+func adjustMethods(methods ...string) []string {
 	if len(methods) == 0 {
-		return []Method{MethodGet, MethodPost, MethodPut, MethodDelete}
+		return []string{string(MethodGet), string(MethodPost), string(MethodPut), string(MethodDelete)}
 	}
-	result := []Method{}
+	resultMap := map[Method]struct{}{}
 	for _, v := range methods {
-		if !isValidMethod(v) {
-			continue
+		if mth, ok := isValidMethod(v); ok {
+			resultMap[mth] = struct{}{}
 		}
-		result = append(result, v)
 	}
-	return result
+	result := make([]string, len(resultMap))
+	i := 0
+	for k := range resultMap {
+		result[i] = string(k)
+		i++
+	}
+	return methods
 }
 
-func isValidMethod(method Method) bool {
-	_, ok := methodMap[strings.ToUpper(string(method))]
-	return ok
+func isValidMethod(orgMethod string) (method Method, ok bool) {
+	method, ok = methodMap[Method(strings.ToUpper(orgMethod))]
+	return
+}
+
+type RouterWrapper struct {
+	*router.Group
+	opts *RouterOptions
 }
 
 type RouterGroup struct {
 	basePath      string
 	middlewares   []middleware.Middleware
-	ServiceGroups map[string]*router.Group
+	ServiceGroups map[string]*RouterWrapper
 	Children      map[string]*RouterGroup
 }
 
 func NewRouterGroup(basePath string) *RouterGroup {
 	return &RouterGroup{
 		basePath:      basePath,
-		ServiceGroups: make(map[string]*router.Group),
+		ServiceGroups: make(map[string]*RouterWrapper),
 		Children:      make(map[string]*RouterGroup),
 	}
 }
@@ -79,7 +98,7 @@ func (group *RouterGroup) Group(relativePath string, middlewares ...middleware.M
 	child := &RouterGroup{
 		middlewares:   group.combineHandlers(middlewares...),
 		basePath:      group.calculateAbsolutePath(relativePath),
-		ServiceGroups: make(map[string]*router.Group),
+		ServiceGroups: make(map[string]*RouterWrapper),
 		Children:      make(map[string]*RouterGroup),
 	}
 	group.Children[relativePath] = child
@@ -102,15 +121,15 @@ func (group *RouterGroup) BasePath() string {
 // This function is intended for bulk loading and to allow the usage of less
 // frequently used, non-standardized or custom methods (e.g. for internal
 // communication with a proxy).
-func (group *RouterGroup) Handle(relativePath string, handler interface{}, methods ...Method) {
-	methods = adjustMethods(methods...)
-
-	mths := make([]string, len(methods))
-	for i := range methods {
-		mths[i] = string(methods[i])
+func (group *RouterGroup) Handle(relativePath string, handler interface{}, opts ...RouterOption) {
+	ropts := &RouterOptions{}
+	for _, opt := range opts {
+		opt.Apply(ropts)
 	}
+	methods := ropts.Methods
 
-	svcGroup, err := router.ReflectHandle(group.basePath, relativePath, handler, mths...)
+	methods = adjustMethods(methods...)
+	svcGroup, err := router.ReflectHandle(group.basePath, relativePath, handler, methods...)
 	if err != nil {
 		log.Error(err)
 		return
@@ -121,13 +140,14 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, metho
 		log.Error(fmt.Errorf("存在相同路径注册:%s", absolutePath))
 		return
 	}
-	group.ServiceGroups[relativePath] = svcGroup
+	group.ServiceGroups[relativePath] = &RouterWrapper{
+		Group: svcGroup,
+		opts:  ropts,
+	}
 }
 
 func (group *RouterGroup) combineHandlers(middlewares ...middleware.Middleware) []middleware.Middleware {
-	finalSize := len(group.middlewares) + len(middlewares)
-
-	mergedHandlers := make([]middleware.Middleware, finalSize)
+	mergedHandlers := make([]middleware.Middleware, len(group.middlewares)+len(middlewares))
 	copy(mergedHandlers, group.middlewares)
 	copy(mergedHandlers[len(group.middlewares):], middlewares)
 	return mergedHandlers
@@ -142,4 +162,28 @@ func (group *RouterGroup) calculateAbsolutePath(relativePath string) string {
 	}
 
 	return path.Join(group.basePath, relativePath)
+}
+
+type treePathResult struct {
+	list []string
+}
+
+func (group *RouterGroup) GetTreePathList() []string {
+	rst := &treePathResult{}
+	collect(group, rst)
+
+	sort.Strings(rst.list)
+
+	return rst.list
+}
+
+func collect(group *RouterGroup, rst *treePathResult) {
+
+	for _, v := range group.ServiceGroups {
+		rst.list = append(rst.list, v.GetReallyPath())
+	}
+
+	for i := range group.Children {
+		collect(group.Children[i], rst)
+	}
 }

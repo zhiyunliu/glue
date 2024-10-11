@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,6 +14,8 @@ var (
 		"named process cpu percentage",
 		[]string{"processname"},
 		nil)
+
+	_ prometheus.Collector = &NamedProcessCollector{}
 )
 
 type (
@@ -22,16 +25,14 @@ type (
 	}
 )
 
-func NewProcessCollector() (p *NamedProcessCollector, err error) {
-
+func NewProcessCollector() (p prometheus.Collector, err error) {
 	processes, err := process.Processes()
 	if err != nil {
+		err = fmt.Errorf("process.Processes;err:%w", err)
 		return
 	}
 	curPid := os.Getpid()
-	if err != nil {
-		return
-	}
+
 	var curProcess *process.Process
 	for _, p := range processes {
 		if p.Pid == int32(curPid) {
@@ -41,6 +42,7 @@ func NewProcessCollector() (p *NamedProcessCollector, err error) {
 	}
 	name, err := curProcess.Name()
 	if err != nil {
+		err = fmt.Errorf("Process.Name();err:%w", err)
 		return
 	}
 	p = &NamedProcessCollector{

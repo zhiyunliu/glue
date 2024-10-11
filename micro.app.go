@@ -1,12 +1,14 @@
 package glue
 
 import (
+	"context"
 	_ "net/http/pprof"
 
 	"github.com/zhiyunliu/glue/cli"
 	"github.com/zhiyunliu/glue/compatible"
 	_ "github.com/zhiyunliu/glue/encoding/binding"
 	_ "github.com/zhiyunliu/glue/encoding/text"
+	"github.com/zhiyunliu/glue/global"
 
 	_ "github.com/zhiyunliu/glue/contrib/engine/alloter"
 	_ "github.com/zhiyunliu/glue/contrib/engine/gin"
@@ -26,9 +28,14 @@ func NewApp(opts ...Option) (m *MicroApp) {
 }
 
 // Start 启动服务器
-func (m *MicroApp) Start() error {
-
-	return m.cliApp.Start()
+func (m *MicroApp) Start() (err error) {
+	var cancel context.CancelFunc
+	global.Ctx, cancel = context.WithCancel(context.Background())
+	err = m.cliApp.Start()
+	if cancel != nil {
+		cancel()
+	}
+	return
 }
 
 // Close 关闭服务器

@@ -209,6 +209,7 @@ func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
 				ServiceName: r.ServiceName(),
 				EndpointURL: e.String(),
 			})
+			global.ServerRouterPathList.Store(r.ServiceName(), r.RouterPathList())
 		}
 	}
 	if app.traceEndpoint != nil {

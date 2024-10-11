@@ -37,7 +37,7 @@ func newRequest(job *xcron.Job) (r *Request, err error) {
 
 	r = &Request{
 		job:    job,
-		method: engine.MethodPost,
+		method: string(engine.MethodPost),
 		params: make(map[string]string),
 		round:  &Round{Job: job},
 	}

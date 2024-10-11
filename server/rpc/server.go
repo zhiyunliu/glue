@@ -126,6 +126,14 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	return nil
 }
 
+// 获取树形的路径列表
+func (s *Server) RouterPathList() transport.RouterList {
+	return engine.RouterList{
+		ServerType: s.Type(),
+		PathList:   s.opts.router.GetTreePathList(),
+	}
+}
+
 // Attempt 判断是否可以启动
 func (e *Server) Attempt() bool {
 	return !e.started
@@ -190,6 +198,6 @@ func (e *Server) Group(group string, middlewares ...middleware.Middleware) *engi
 	return e.opts.router.Group(group, middlewares...)
 }
 
-func (e *Server) Handle(path string, obj interface{}, methods ...engine.Method) {
-	e.opts.router.Handle(path, obj, methods...)
+func (e *Server) Handle(path string, obj interface{}, opts ...engine.RouterOption) {
+	e.opts.router.Handle(path, obj, opts...)
 }

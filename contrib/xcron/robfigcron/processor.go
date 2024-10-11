@@ -10,6 +10,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/dlocker"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/standard"
 	"github.com/zhiyunliu/glue/xcron"
@@ -138,10 +139,15 @@ func (s *processor) checkIsMonopoly(j *xcron.Job) (err error) {
 		if exist {
 			return valueInMap
 		}
+		lockBuilder := sdlocker.GetDLocker()
+		lockKey := fmt.Sprintf("cron:dlocker:%s:%s", global.AppName, j.GetKey())
+		locker := lockBuilder.Build(lockKey, dlocker.WithData(j.GetLockData()))
+		j.DlockKey = lockKey
 		return &monopolyJob{
-			job:    j,
-			locker: sdlocker.GetDLocker().Build(fmt.Sprintf("glue:cron:locker:%s", j.GetKey()), dlocker.WithData(j.GetLockData())),
-			expire: 300, //默认300秒
+			lockKey: lockKey,
+			job:     j,
+			locker:  locker,
+			expire:  300, //默认300秒
 		}
 	})
 	return nil
@@ -200,7 +206,7 @@ func (s *processor) handle(req *Request) {
 	if !req.CanProc() {
 		return
 	}
-	logger := log.New(log.WithSid(req.session))
+	logger := log.New(req.Context(), log.WithSid(req.session))
 
 	done := make(chan struct{})
 	defer func() {
@@ -219,7 +225,7 @@ func (s *processor) handle(req *Request) {
 		return
 	}
 	if hasMonopoly {
-		logger.Warnf("cron.handle.monopoly:%s,service:%s,meta:%+v,key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
+		logger.Warnf("cron.handle.monopoly:%s,service:%s,meta:%+v,lockKey=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.DlockKey)
 		return
 	}
 	monopolyCtx, cancel := sctx.WithCancel(sctx.Background())
@@ -265,7 +271,7 @@ func (s *processor) handleMonopolyJobExpire(ctx sctx.Context, logger log.Logger,
 	ticker := time.NewTicker(time.Minute)
 	defer func() {
 		if obj := recover(); obj != nil {
-			logger.Panicf("cron.jobexpire:%s,service:%s,meta:%+v,recover:%s, stack:%s", job.Cron, job.Service, job.Meta, job.GetKey(), xstack.GetStack(1))
+			logger.Panicf("cron.jobexpire:%s,service:%s,meta:%+v,recover:%s, stack:%s", job.Cron, job.Service, job.Meta, job.DlockKey, xstack.GetStack(1))
 		}
 		ticker.Stop()
 	}()
@@ -277,15 +283,16 @@ func (s *processor) handleMonopolyJobExpire(ctx sctx.Context, logger log.Logger,
 		}
 		err := s.renewalMonopolyJob(job)
 		if err != nil {
-			logger.Errorf("cron.jobexpire:%s,service:%s,meta:%+v,renewal.key=%s", job.Cron, job.Service, job.Meta, job.GetKey())
+			logger.Errorf("cron.jobexpire:%s,service:%s,meta:%+v,renewal.key=%s", job.Cron, job.Service, job.Meta, job.DlockKey)
 		}
 	}
 }
 
 type monopolyJob struct {
-	job    *xcron.Job
-	locker dlocker.DLocker
-	expire int
+	lockKey string
+	job     *xcron.Job
+	locker  dlocker.DLocker
+	expire  int
 }
 
 func (j *monopolyJob) Acquire() (bool, error) {

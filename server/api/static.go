@@ -1,7 +1,10 @@
 package api
 
+import "net/http"
+
 type Static struct {
 	RouterPath string
 	FilePath   string
-	IsFile     bool
+	DirPath    string
+	FileSystem http.FileSystem
 }

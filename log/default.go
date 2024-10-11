@@ -1,110 +1,173 @@
 package log
 
 import (
+	"context"
+
 	"github.com/zhiyunliu/golibs/session"
 	"github.com/zhiyunliu/golibs/xlog"
+	_ "github.com/zhiyunliu/golibs/xlog/appenders"
 )
 
 var (
 	DefaultLogger  Logger
-	defaultBuilder Builder
+	DefaultBuilder Builder
 	//logpool        sync.Pool
 )
 
 func init() {
-	defaultBuilder = &defaultBuilderWrap{}
-	Register(defaultBuilder)
-	SetBuilder(defaultBuilder)
-	// logpool = sync.Pool{
-	// 	New: func() interface{} {
-	// 		return &wraper{}
-	// 	},
-	// }
+	DefaultBuilder = &defaultBuilderWrap{}
+	Register(DefaultBuilder)
+	DefaultLogger = DefaultBuilder.Build(context.Background(), xlog.WithName("default"), xlog.WithSid(session.Create()))
+
+	xlog.RegistryFormater("@uid", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		uid := e.Tags["uid"]
+		if uid == "" {
+			return ""
+		}
+		return "[" + uid + "]"
+	})
+
+	xlog.RegistryFormater("@cip", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		cip := e.Tags["cip"]
+		if cip == "" {
+			return ""
+		}
+		return "[" + cip + "]"
+	})
+
+	xlog.RegistryFormater("uid", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		return e.Tags["uid"]
+	})
+
+	xlog.RegistryFormater("cip", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		return e.Tags["cip"]
+	})
+	//----------------------------------
+
+	xlog.RegistryFormater("@src_name", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		src_name := e.Tags["src_name"]
+		if src_name == "" {
+			return ""
+		}
+		return "[" + src_name + "]"
+	})
+
+	xlog.RegistryFormater("@src_ip", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		src_ip := e.Tags["src_ip"]
+		if src_ip == "" {
+			return ""
+		}
+		return "[" + src_ip + "]"
+	})
+
+	xlog.RegistryFormater("src_name", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		return e.Tags["src_name"]
+	})
+
+	xlog.RegistryFormater("src_ip", func(e *xlog.Event, _ bool) string {
+		if e.Tags == nil {
+			return ""
+		}
+		return e.Tags["src_ip"]
+	})
+
 }
 
-// 设置日志的builder
-func SetBuilder(builder Builder) {
-	if builder == nil {
-		return
-	}
-	defaultBuilder = builder
-	DefaultLogger = defaultBuilder.Build(xlog.WithName("default"), xlog.WithSid(session.Create()))
+type Wraper struct {
+	Logger xlog.Logger
 }
 
-type wraper struct {
-	xloger xlog.Logger
+func (l *Wraper) Name() string {
+	return l.Logger.Name()
 }
 
-func (l *wraper) Name() string {
-	return l.xloger.Name()
+func (l *Wraper) Close() {
+	l.Logger.Close()
+}
+func (l *Wraper) Log(level Level, args ...interface{}) {
+	l.Logger.Log(level, args...)
 }
 
-func (l *wraper) Close() {
-	l.xloger.Close()
-}
-func (l *wraper) Log(level Level, args ...interface{}) {
-	l.xloger.Log(level, args...)
+func (l *Wraper) SessionID() string {
+	return l.Logger.SessionID()
 }
 
-func (l *wraper) SessionID() string {
-	return l.xloger.SessionID()
+func (l *Wraper) Logf(level Level, format string, args ...interface{}) {
+	l.Logger.Logf(level, format, args...)
 }
 
-func (l *wraper) Logf(level Level, format string, args ...interface{}) {
-	l.xloger.Logf(level, format, args...)
-}
-
-func (l *wraper) Info(args ...interface{}) {
+func (l *Wraper) Info(args ...interface{}) {
 	l.Log(LevelInfo, args...)
 
 }
 
-func (l *wraper) Infof(format string, args ...interface{}) {
+func (l *Wraper) Infof(format string, args ...interface{}) {
 	l.Logf(LevelInfo, format, args...)
 
 }
 
-func (l *wraper) Error(args ...interface{}) {
+func (l *Wraper) Error(args ...interface{}) {
 	l.Log(LevelError, args...)
 
 }
-func (l *wraper) Errorf(format string, args ...interface{}) {
+func (l *Wraper) Errorf(format string, args ...interface{}) {
 	l.Logf(LevelError, format, args...)
 
 }
 
-func (l *wraper) Debug(args ...interface{}) {
+func (l *Wraper) Debug(args ...interface{}) {
 	l.Log(LevelDebug, args...)
 }
 
-func (l *wraper) Debugf(format string, args ...interface{}) {
+func (l *Wraper) Debugf(format string, args ...interface{}) {
 	l.Logf(LevelDebug, format, args...)
 }
 
-func (l *wraper) Panic(args ...interface{}) {
+func (l *Wraper) Panic(args ...interface{}) {
 	l.Log(LevelPanic, args...)
 }
 
-func (l *wraper) Panicf(format string, args ...interface{}) {
+func (l *Wraper) Panicf(format string, args ...interface{}) {
 	l.Logf(LevelPanic, format, args...)
 }
 
-func (l *wraper) Fatalf(format string, args ...interface{}) {
+func (l *Wraper) Fatalf(format string, args ...interface{}) {
 	l.Logf(LevelFatal, format, args...)
 }
-func (l *wraper) Fatal(args ...interface{}) {
+func (l *Wraper) Fatal(args ...interface{}) {
 	l.Log(LevelFatal, args...)
 }
 
-func (l *wraper) Warnf(format string, args ...interface{}) {
+func (l *Wraper) Warnf(format string, args ...interface{}) {
 	l.Logf(LevelWarn, format, args...)
 }
 
-func (l *wraper) Warn(args ...interface{}) {
+func (l *Wraper) Warn(args ...interface{}) {
 	l.Log(LevelWarn, args...)
 }
 
-func (l *wraper) Write(p []byte) (n int, err error) {
+func (l *Wraper) Write(p []byte) (n int, err error) {
 	l.Log(LevelWarn, string(p))
 	return len(p), nil
 }
@@ -149,14 +212,14 @@ func Panicf(template string, args ...interface{}) {
 	DefaultLogger.Panicf(template, args...)
 }
 
-func New(opts ...Option) Logger {
-	return defaultBuilder.Build(opts...)
+func New(ctx context.Context, opts ...Option) Logger {
+	return DefaultBuilder.Build(ctx, opts...)
 }
 
 func Close() {
-	defaultBuilder.Close()
+	DefaultBuilder.Close()
 }
 
-func Concurrency(cnt int) {
-	xlog.Concurrency(cnt)
+func Config(opts ...ConfigOption) error {
+	return xlog.Config(opts...)
 }

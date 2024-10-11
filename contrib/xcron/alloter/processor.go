@@ -207,7 +207,7 @@ func (s *processor) getOffset(now time.Time, next time.Time) (pos int, circle in
 }
 
 func (s *processor) handle(req *Request) {
-	logger := log.New(log.WithSid(req.session))
+	logger := log.New(req.Context(), log.WithSid(req.session))
 
 	defer func() {
 		if obj := recover(); obj != nil {
