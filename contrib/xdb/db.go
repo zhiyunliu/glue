@@ -33,18 +33,6 @@ func NewDB(proto string, setting *Setting, opts ...xdb.Option) (obj xdb.IDB, err
 		opts[i](setting.Cfg)
 	}
 
-	conn := setting.Cfg.Conn
-	maxOpen := setting.Cfg.MaxOpen
-	maxIdle := setting.Cfg.MaxIdle
-	maxLifeTime := setting.Cfg.LifeTime
-
-	if maxOpen <= 0 {
-		maxOpen = runtime.NumCPU() * 10
-	}
-	if maxIdle <= 0 {
-		maxIdle = maxOpen
-	}
-
 	dbobj := &xDB{
 		cfg: setting,
 	}
@@ -58,7 +46,12 @@ func NewDB(proto string, setting *Setting, opts ...xdb.Option) (obj xdb.IDB, err
 	if err != nil {
 		return
 	}
-	dbobj.db, err = implement.NewSysDB(proto, conn, maxOpen, maxIdle, time.Duration(maxLifeTime)*time.Second)
+	dbobj.db, err = implement.NewSysDB(proto, setting.Cfg.Conn,
+		implement.WithConnName(setting.ConnName),
+		implement.WithMaxOpen(setting.Cfg.MaxOpen),
+		implement.WithMaxIdle(setting.Cfg.MaxIdle),
+		implement.WithMaxLifeTime(setting.Cfg.LifeTime),
+	)
 	return dbobj, err
 }
 func (db *xDB) GetImpl() interface{} {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"runtime"
 	"strings"
 	"time"
 
@@ -31,15 +32,16 @@ type ISysDB interface {
 // SysDB 数据库实体
 type sysDB struct {
 	proto       string
+	connName    string
 	conn        string
 	db          *sql.DB
 	maxIdle     int
 	maxOpen     int
-	maxLifeTime time.Duration
+	maxLifeTime int
 }
 
 // NewSysDB 创建DB实例
-func NewSysDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime time.Duration) (ISysDB, error) {
+func NewSysDB(proto string, conn string, opts ...Option) (ISysDB, error) {
 	var err error
 	if proto == "" || conn == "" {
 		err = errors.New("proto or conn not allow null")
@@ -47,24 +49,36 @@ func NewSysDB(proto string, conn string, maxOpen int, maxIdle int, maxLifeTime t
 	}
 
 	obj := &sysDB{
-		proto:       proto,
-		conn:        conn,
-		maxIdle:     maxIdle,
-		maxOpen:     maxOpen,
-		maxLifeTime: maxLifeTime,
+		proto: proto,
+		conn:  conn,
 	}
+
+	for i := range opts {
+		opts[i](obj)
+	}
+
+	if obj.maxOpen <= 0 {
+		obj.maxOpen = runtime.NumCPU() * 10
+	}
+	if obj.maxIdle <= 0 {
+		obj.maxIdle = obj.maxOpen
+	}
+	if obj.maxLifeTime <= 0 {
+		obj.maxLifeTime = 600 //默认10分钟
+	}
+
 	proto = strings.ToLower(proto)
 	proto = nameMap.GetWithDefault(proto, proto)
 	obj.db, err = sql.Open(proto, conn)
 	if err != nil {
-		return nil, fmt.Errorf("NewSysDB.Open.proto:%s,conn=%s,error:%w", proto, conn, err)
+		return nil, fmt.Errorf("NewSysDB.Open.proto:%s,connName:%s,error:%w", proto, obj.connName, err)
 	}
-	obj.db.SetMaxIdleConns(maxIdle)
-	obj.db.SetMaxOpenConns(maxOpen)
-	obj.db.SetConnMaxLifetime(maxLifeTime)
+	obj.db.SetMaxIdleConns(obj.maxIdle)
+	obj.db.SetMaxOpenConns(obj.maxOpen)
+	obj.db.SetConnMaxLifetime(time.Duration(obj.maxLifeTime) * time.Second)
 	err = obj.db.Ping()
 	if err != nil {
-		return nil, fmt.Errorf("NewSysDB.Ping.proto:%s,conn=%s,error:%w", proto, conn, err)
+		return nil, fmt.Errorf("NewSysDB.Ping.proto:%s,connName:%s,error:%w", proto, obj.connName, err)
 	}
 	return obj, nil
 }
