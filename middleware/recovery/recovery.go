@@ -2,10 +2,10 @@ package recovery
 
 import (
 	"fmt"
-	"runtime"
 
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/golibs/xstack"
 
 	"github.com/zhiyunliu/glue/middleware"
 )
@@ -44,11 +44,8 @@ func Recovery(opts ...Option) middleware.Middleware {
 		return func(ctx context.Context) (reply interface{}) {
 			defer func() {
 				if rerr := recover(); rerr != nil {
-					buf := make([]byte, 64<<10) //nolint:gomnd
-					n := runtime.Stack(buf, false)
-					buf = buf[:n]
-					ctx.Log().Panicf("%v: \n%s\n", rerr, buf)
-
+					stack := xstack.GetStack(5, xstack.WithDepth(5))
+					ctx.Log().Panicf("%v: \n%s", rerr, stack)
 					reply = op.handler(ctx, rerr)
 				}
 			}()
