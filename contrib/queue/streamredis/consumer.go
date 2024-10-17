@@ -14,7 +14,7 @@ import (
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/xtypes"
 
-	redisqueue "github.com/zhiyunliu/redisqueue/v2"
+	redisqueue "github.com/zhiyunliu/redisqueue/v3"
 
 	cmap "github.com/orcaman/concurrent-map"
 )

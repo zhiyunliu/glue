@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/zhiyunliu/golibs v0.2.5
-	github.com/zhiyunliu/redisqueue/v2 v2.4.0
+	github.com/zhiyunliu/redisqueue/v3 v3.0.0
 )
 
 require (
@@ -135,4 +135,4 @@ require (
 
 //replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
 
-//replace github.com/zhiyunliu/redisqueue/v2 => ../../../github.com/zhiyunliu/redisqueue
+//replace github.com/zhiyunliu/redisqueue/v3 => ../../../github.com/zhiyunliu/redisqueue
