@@ -1,5 +1,7 @@
 package engine
 
+import "github.com/zhiyunliu/glue/constants"
+
 type RouterOption interface {
 	Apply(*RouterOptions)
 }
@@ -8,8 +10,8 @@ type RouterOptions struct {
 	Methods        []string
 	ExcludeLogReq  bool
 	ExcludeLogResp bool
-	WithHeaders    []string //打印请求头
-	WithSource     *bool    //打印请求源
+	WithHeaders    []constants.HeaderGetter //打印请求头
+	WithSource     *bool                    //打印请求源
 }
 
 // func (opts *RouterOptions) Merge(nopts *RouterOptions) *RouterOptions {
@@ -52,7 +54,7 @@ func WithExcludeLogResp() RouterOption {
 	}
 }
 
-func WithPrintHeaders(keys ...string) RouterOption {
+func WithPrintHeaders(keys ...constants.HeaderGetter) RouterOption {
 	return &NormalRouterOption{
 		callback: func(opts *RouterOptions) {
 			opts.WithHeaders = keys
