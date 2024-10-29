@@ -48,6 +48,7 @@ func (s *sqliteResolver) Resolve(connName string, setting config.Config, opts ..
 	}
 	return &dbWrap{
 		tpl:    tpl,
+		proto:  s.Proto,
 		gromDB: gromDB,
 	}, nil
 }

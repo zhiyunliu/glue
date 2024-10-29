@@ -29,6 +29,7 @@ func NewApp(opts ...Option) (m *MicroApp) {
 
 // Start 启动服务器
 func (m *MicroApp) Start() (err error) {
+	global.StartRunning()
 	var cancel context.CancelFunc
 	global.Ctx, cancel = context.WithCancel(context.Background())
 	err = m.cliApp.Start()

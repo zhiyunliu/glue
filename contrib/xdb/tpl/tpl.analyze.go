@@ -15,7 +15,7 @@ var tplcache sync.Map
 // $表达式，检查值，值为空时返加"",否则直接替换字符
 // &条件表达式，检查值，值为空时返加"",否则返回: and name=value
 // |条件表达式，检查值，值为空时返回"", 否则返回: or name=value
-func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}, ph Placeholder) (sql string, values []any, err error) {
+func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}, ph xdb.Placeholder) (sql string, values []any, err error) {
 	hashVal := md5.Str(template.Name() + tpl)
 	tplval, ok := tplcache.Load(hashVal)
 	if !ok {
@@ -52,11 +52,21 @@ func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]inte
 	return item.build(input)
 }
 
-func DefaultAnalyze(symbols SymbolMap, tpl string, input map[string]interface{}, placeholder Placeholder) (string, *ReplaceItem, error) {
+func DefaultAnalyze(symbols SymbolMap, tpl string, input map[string]interface{}, placeholder xdb.Placeholder, opts ...xdb.PropOption) (string, *ReplaceItem, error) {
 	word := GetPatternRegexp(symbols.GetPattern())
+
+	//初始化prop的参数
+	propOpts := &xdb.PropOptions{
+		UseCache: true,
+	}
+	for i := range opts {
+		opts[i](propOpts)
+	}
+
 	item := &ReplaceItem{
 		NameCache:   map[string]string{},
 		Placeholder: placeholder,
+		PropOpts:    propOpts,
 	}
 
 	var outerrs []xdb.MissError
@@ -76,11 +86,11 @@ func DefaultAnalyze(symbols SymbolMap, tpl string, input map[string]interface{},
 		symbol := s[:1]
 		fullKey := s[2 : len(s)-1]
 
-		callback, ok := symbols.Load(symbol)
+		callback, ok := symbols.LoadSymbol(symbol)
 		if !ok {
 			return s
 		}
-		tmpv, err := callback(input, fullKey, item)
+		tmpv, err := callback(symbols, input, fullKey, item)
 		if err != nil {
 			outerrs = append(outerrs, err)
 		}

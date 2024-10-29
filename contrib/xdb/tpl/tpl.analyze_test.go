@@ -3,6 +3,8 @@ package tpl
 import (
 	"reflect"
 	"testing"
+
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 func TestIsNil(t *testing.T) {
@@ -25,7 +27,7 @@ func TestIsNil(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsNil(tt.input); got != tt.want {
+			if got := xdb.IsNil(tt.input); got != tt.want {
 				t.Errorf("IsNil() = %v, want %v", got, tt.want)
 			}
 		})
@@ -38,7 +40,7 @@ func TestDefaultAnalyze(t *testing.T) {
 	type args struct {
 		tpl         string
 		input       map[string]interface{}
-		placeholder Placeholder
+		placeholder xdb.Placeholder
 	}
 	tests := []struct {
 		name  string
@@ -70,7 +72,7 @@ func TestAnalyzeTPLFromCache(t *testing.T) {
 		template   SQLTemplate
 		tpl        string
 		input      map[string]interface{}
-		ph         Placeholder
+		ph         xdb.Placeholder
 		wantSql    string
 		wantValues []any
 	}{

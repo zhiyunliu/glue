@@ -14,9 +14,10 @@ import (
 
 // DB 数据库操作类
 type xDB struct {
-	cfg *Setting
-	db  implement.ISysDB
-	tpl tpl.SQLTemplate
+	cfg   *Setting
+	proto string
+	db    implement.ISysDB
+	tpl   tpl.SQLTemplate
 }
 
 // NewDB 创建DB实例
@@ -34,7 +35,8 @@ func NewDB(proto string, setting *Setting, opts ...xdb.Option) (obj xdb.IDB, err
 	}
 
 	dbobj := &xDB{
-		cfg: setting,
+		cfg:   setting,
+		proto: setting.Cfg.Proto,
 	}
 
 	setting.slowThreshold = time.Duration(setting.Cfg.LongQueryTime) * time.Millisecond
@@ -61,7 +63,7 @@ func (db *xDB) GetImpl() interface{} {
 // Query 查询数据
 func (db *xDB) Query(ctx context.Context, sqls string, input any) (rows xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveRows(r)
+		return implement.ResolveRows(db.proto, r)
 	})
 	if err != nil {
 		return
@@ -73,7 +75,7 @@ func (db *xDB) Query(ctx context.Context, sqls string, input any) (rows xdb.Rows
 // Multi 查询数据(多个数据集)
 func (db *xDB) Multi(ctx context.Context, sqls string, input any) (datasetRows []xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveMultiRows(r)
+		return implement.ResolveMultiRows(db.proto, r)
 	})
 	if err != nil {
 		return
@@ -84,7 +86,7 @@ func (db *xDB) Multi(ctx context.Context, sqls string, input any) (datasetRows [
 
 func (db *xDB) First(ctx context.Context, sqls string, input any) (data xdb.Row, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveFirstRow(r)
+		return implement.ResolveFirstRow(db.proto, r)
 	})
 	if err != nil {
 		return
@@ -95,7 +97,7 @@ func (db *xDB) First(ctx context.Context, sqls string, input any) (data xdb.Row,
 
 func (db *xDB) Scalar(ctx context.Context, sqls string, input any) (data interface{}, err error) {
 	data, err = db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveScalar(r)
+		return implement.ResolveScalar(db.proto, r)
 	})
 	return
 }
@@ -127,13 +129,13 @@ func (db *xDB) Exec(ctx context.Context, sql string, input any) (r xdb.Result, e
 // Query 查询数据
 func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, val any) error {
-		return implement.ResolveRowsDataResult(r, val)
+		return implement.ResolveRowsDataResult(db.proto, r, val)
 	})
 }
 
 func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, val any) error {
-		return implement.ResolveFirstDataResult(r, val)
+		return implement.ResolveFirstDataResult(db.proto, r, val)
 	})
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 // MssqlContext  模板
@@ -37,7 +38,7 @@ func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val interface{}) interfa
 
 }
 
-func (ph *mssqlPlaceHolder) Clone() tpl.Placeholder {
+func (ph *mssqlPlaceHolder) Clone() xdb.Placeholder {
 	return &mssqlPlaceHolder{
 		ctx: ph.ctx,
 	}
@@ -60,18 +61,18 @@ func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interfa
 	return tpl.AnalyzeTPLFromCache(ctx, template, input, ctx.Placeholder())
 }
 
-func (ctx *MssqlContext) Placeholder() tpl.Placeholder {
+func (ctx *MssqlContext) Placeholder() xdb.Placeholder {
 	return &mssqlPlaceHolder{ctx: ctx}
 }
 
-func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph tpl.Placeholder) (string, *tpl.ReplaceItem, error) {
+func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph xdb.Placeholder) (string, *tpl.ReplaceItem, error) {
 	return tpl.DefaultAnalyze(ctx.symbols, template, input, ph)
 }
 
 func (ctx *MssqlContext) RegisterSymbol(symbol tpl.Symbol) error {
-	return ctx.symbols.Register(symbol)
+	return ctx.symbols.RegisterSymbol(symbol)
 }
 
 func (ctx *MssqlContext) RegisterOperator(oper tpl.Operator) error {
-	return ctx.symbols.Operator(oper)
+	return ctx.symbols.RegisterOperator(oper)
 }

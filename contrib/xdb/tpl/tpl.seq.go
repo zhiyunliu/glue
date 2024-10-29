@@ -2,6 +2,8 @@ package tpl
 
 import (
 	"fmt"
+
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 // SeqContext 参数化时使用@+参数名作为占位符的SQL数据库如:oracle,sql server
@@ -33,7 +35,7 @@ func (ph *seqPlaceHolder) NamedArg(propName string) (phName string) {
 	return
 }
 
-func (ph *seqPlaceHolder) Clone() Placeholder {
+func (ph *seqPlaceHolder) Clone() xdb.Placeholder {
 	return &seqPlaceHolder{
 		idx: ph.idx,
 		ctx: ph.ctx,
@@ -57,18 +59,18 @@ func (ctx *SeqContext) GetSQLContext(tpl string, input map[string]interface{}) (
 	return AnalyzeTPLFromCache(ctx, tpl, input, ctx.Placeholder())
 }
 
-func (ctx *SeqContext) Placeholder() Placeholder {
+func (ctx *SeqContext) Placeholder() xdb.Placeholder {
 	return &seqPlaceHolder{ctx: ctx, idx: 0}
 }
 
-func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem, err error) {
+func (ctx *SeqContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph xdb.Placeholder) (sql string, item *ReplaceItem, err error) {
 	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
 }
 
 func (ctx *SeqContext) RegisterSymbol(symbol Symbol) error {
-	return ctx.symbols.Register(symbol)
+	return ctx.symbols.RegisterSymbol(symbol)
 }
 
 func (ctx *SeqContext) RegisterOperator(oper Operator) error {
-	return ctx.symbols.Operator(oper)
+	return ctx.symbols.RegisterOperator(oper)
 }

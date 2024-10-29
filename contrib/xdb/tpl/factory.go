@@ -9,39 +9,46 @@ import (
 )
 
 var (
-	tpls map[string]SQLTemplate
+	tpls               map[string]SQLTemplate
+	DefaultPatternList []string = []string{
+		`(@\{\w+(\.\w+)?\})`,
+		`([&|\|](({(like\s+%?\w+(\.\w+)*%?}))|({\w+(\.\w+)?\s+like\s+%?\w+%?})))`,
+		`([&|\|](({in\s+\w+(\.\w+)*(=\w+)?\})|({\w+(\.\w+)?\s+in\s+\w+})))`,
+		`([&|\|](({(>|>=|<|<=)\s+\w+(\.\w+)?})|({(\w+\.)?\w+(>|>=|<|<=)\w+})))`,
+	}
 )
 
 const (
-	TotalPattern = `[@]\{\w*[\.]?\w+\}|[&]\{like\s+%?\w*[\.]?\w+%?\s?\}|[&]\{(>|>=|<|<=)?\s*\w*[\.]?\w+\s?\}|[\|]\{like\s+%?\w*[\.]?\w+%?\s?\}|[\|]\{(>|>=|<|<=)?\s*\w*[\.]?\w+\s?\}`
+	//TotalPattern = `(@\{\w+(\.\w+)?\})|([&|\|]\{like\s+%?\w+(\.\w+)*%?})|([&|\|]\{in\s+\w+(\.\w+)*(=\w+)?\})|([&|\|]\{((>|>=|<|<=)\s+)?\w+(\.\w+)*(=\w+)?\})`
 	// ParamPattern   = `[@]\{\w*[\.]?\w+\}`
 	// AndPattern     = `[&]\{\w*[\.]?\w+\}`
 	// OrPattern      = `[\|]\{\w*[\.]?\w+\}`
+
+	//替换
 	ReplacePattern = `\$\{\w*[\.]?\w+\}`
 
-	SymbolAt  = "@"
-	SymbolAnd = "&"
-	SymbolOr  = "|"
+	SymbolAt      = "@"
+	SymbolAnd     = "&"
+	SymbolOr      = "|"
+	SymbolReplace = "$"
 )
 
 // 符号回调函数
-type SymbolCallback func(DBParam, string, *ReplaceItem) (string, xdb.MissError)
+type SymbolCallback func(SymbolMap, xdb.DBParam, string, *ReplaceItem) (string, xdb.MissError)
 type SymbolMap interface {
 	GetPattern() string
-	//Store(name string, callback SymbolCallback)
-	Register(Symbol) error
-	Operator(Operator) error
-	LoadOperator(oper string) (OperatorCallback, bool)
-	LoadOrStore(name string, callback SymbolCallback) (loaded bool)
+	RegisterSymbol(Symbol) error
+	RegisterOperator(Operator) error
+	StoreSymbol(name string, callback SymbolCallback)
+	LoadSymbol(name string) (SymbolCallback, bool)
 	Delete(name string)
-	Load(name string) (SymbolCallback, bool)
 	Clone() SymbolMap
 }
 
 type OperatorCallback func(string, string, string) string
 
 type OperatorMap interface {
-	LoadOrStore(name string, callback OperatorCallback) (loaded bool)
+	Store(name string, callback OperatorCallback)
 	Load(name string) (OperatorCallback, bool)
 	Clone() OperatorMap
 }
@@ -54,22 +61,15 @@ type Operator interface {
 type Symbol interface {
 	Name() string
 	GetPattern() string
-	Callback(DBParam, string, *ReplaceItem) (string, xdb.MissError)
-}
-
-type Placeholder interface {
-	Get(propName string) (argName string, phName string)
-	NamedArg(name string) string
-	BuildArgVal(argName string, val interface{}) interface{}
-	Clone() Placeholder
+	Callback(SymbolMap, xdb.DBParam, string, *ReplaceItem) (string, xdb.MissError)
 }
 
 // Template 模板上下文
 type SQLTemplate interface {
 	Name() string
-	Placeholder() Placeholder
+	Placeholder() xdb.Placeholder
 	GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any, err error)
-	AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem, err error)
+	AnalyzeTPL(tpl string, input map[string]interface{}, ph xdb.Placeholder) (sql string, item *ReplaceItem, err error)
 	RegisterSymbol(symbol Symbol) error
 	RegisterOperator(Operator) error
 }

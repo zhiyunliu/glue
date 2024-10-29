@@ -9,7 +9,7 @@ type cacheItem struct {
 	hasReplace    bool
 	hasDynamicAnd bool
 	hasDynamicOr  bool
-	ph            Placeholder
+	ph            xdb.Placeholder
 	SQLTemplate   SQLTemplate
 }
 
@@ -17,7 +17,8 @@ type ReplaceItem struct {
 	Names       []string
 	Values      []interface{}
 	NameCache   map[string]string
-	Placeholder Placeholder
+	Placeholder xdb.Placeholder
+	PropOpts    *xdb.PropOptions
 	HasAndOper  bool
 	HasOrOper   bool
 }
@@ -33,11 +34,11 @@ func (p *ReplaceItem) CanCache() bool {
 	return !(p.HasAndOper || p.HasOrOper)
 }
 
-func (item cacheItem) ClonePlaceHolder() Placeholder {
+func (item cacheItem) ClonePlaceHolder() xdb.Placeholder {
 	return item.ph.Clone()
 }
 
-func (item cacheItem) build(input DBParam) (execSql string, values []interface{}, err error) {
+func (item cacheItem) build(input xdb.DBParam) (execSql string, values []interface{}, err error) {
 	values = make([]interface{}, len(item.names))
 	ph := item.ClonePlaceHolder()
 	var outerrs []xdb.MissError

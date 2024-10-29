@@ -14,6 +14,7 @@ var _ xdb.ITrans = &transWrap{}
 
 type transWrap struct {
 	gromDB *gorm.DB
+	proto  string
 	tpl    tpl.SQLTemplate
 }
 
@@ -28,7 +29,7 @@ func (d *transWrap) Commit() (err error) {
 
 func (db *transWrap) Query(ctx context.Context, sqls string, input any) (data xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveRows(r)
+		return implement.ResolveRows(db.proto, r)
 	})
 	if err != nil {
 		return
@@ -39,7 +40,7 @@ func (db *transWrap) Query(ctx context.Context, sqls string, input any) (data xd
 
 func (db *transWrap) Multi(ctx context.Context, sqls string, input any) (data []xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveMultiRows(r)
+		return implement.ResolveMultiRows(db.proto, r)
 	})
 	if err != nil {
 		return
@@ -59,7 +60,7 @@ func (db *transWrap) Multi(ctx context.Context, sqls string, input any) (data []
 
 func (db *transWrap) First(ctx context.Context, sqls string, input any) (data xdb.Row, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveFirstRow(r)
+		return implement.ResolveFirstRow(db.proto, r)
 	})
 	if err != nil {
 		return
@@ -83,7 +84,7 @@ func (db *transWrap) First(ctx context.Context, sqls string, input any) (data xd
 
 func (db *transWrap) Scalar(ctx context.Context, sqls string, input any) (data interface{}, err error) {
 	data, err = db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveScalar(r)
+		return implement.ResolveScalar(db.proto, r)
 	})
 	return
 }
@@ -112,15 +113,15 @@ func (d *transWrap) Exec(ctx context.Context, sql string, input any) (r xdb.Resu
 }
 
 // Query 查询数据
-func (d *transWrap) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
-	return d.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, a any) error {
-		return implement.ResolveRowsDataResult(r, results)
+func (db *transWrap) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
+	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, a any) error {
+		return implement.ResolveRowsDataResult(db.proto, r, results)
 	})
 }
 
-func (d *transWrap) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
-	return d.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return implement.ResolveFirstDataResult(r, result)
+func (db *transWrap) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
+	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
+		return implement.ResolveFirstDataResult(db.proto, r, result)
 	})
 }
 
@@ -146,7 +147,7 @@ func (db *transWrap) dbQuery(ctx context.Context, sql string, input any, callbac
 	return
 }
 
-func (db *transWrap) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback) (err error) {
+func (db *transWrap) dbQueryAs(_ context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback) (err error) {
 	dbParam, err := implement.ResolveParams(input)
 	if err != nil {
 		return

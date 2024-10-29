@@ -16,6 +16,7 @@ var _ xdb.IDB = &dbWrap{}
 
 type dbWrap struct {
 	gromDB *gorm.DB
+	proto  string
 	tpl    tpl.SQLTemplate
 }
 
@@ -23,6 +24,7 @@ func (d *dbWrap) Begin() (xdb.ITrans, error) {
 	txdb := d.gromDB.Begin()
 	return &transWrap{
 		gromDB: txdb,
+		proto:  d.proto,
 		tpl:    d.tpl,
 	}, nil
 }
@@ -37,7 +39,7 @@ func (d *dbWrap) GetImpl() interface{} {
 
 func (db *dbWrap) Query(ctx context.Context, sqls string, input any) (data xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveRows(r)
+		return implement.ResolveRows(db.proto, r)
 	})
 	if err != nil {
 		return
@@ -48,7 +50,7 @@ func (db *dbWrap) Query(ctx context.Context, sqls string, input any) (data xdb.R
 
 func (db *dbWrap) Multi(ctx context.Context, sqls string, input any) (data []xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveMultiRows(r)
+		return implement.ResolveMultiRows(db.proto, r)
 	})
 	if err != nil {
 		return
@@ -59,7 +61,7 @@ func (db *dbWrap) Multi(ctx context.Context, sqls string, input any) (data []xdb
 
 func (db *dbWrap) First(ctx context.Context, sqls string, input any) (data xdb.Row, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveFirstRow(r)
+		return implement.ResolveFirstRow(db.proto, r)
 	})
 	if err != nil {
 		return
@@ -70,7 +72,7 @@ func (db *dbWrap) First(ctx context.Context, sqls string, input any) (data xdb.R
 
 func (db *dbWrap) Scalar(ctx context.Context, sqls string, input any) (data interface{}, err error) {
 	data, err = db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveScalar(r)
+		return implement.ResolveScalar(db.proto, r)
 	})
 	return
 }
@@ -103,13 +105,13 @@ func (d *dbWrap) Exec(ctx context.Context, sql string, input any) (r xdb.Result,
 // Query 查询数据
 func (db *dbWrap) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, a any) error {
-		return implement.ResolveRowsDataResult(r, results)
+		return implement.ResolveRowsDataResult(db.proto, r, results)
 	})
 }
 
 func (db *dbWrap) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return implement.ResolveFirstDataResult(r, result)
+		return implement.ResolveFirstDataResult(db.proto, r, result)
 	})
 }
 

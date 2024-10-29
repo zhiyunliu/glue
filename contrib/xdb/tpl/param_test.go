@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -21,7 +22,7 @@ func TestDBParam_Get(t *testing.T) {
 	var datetime interface{} = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	decimal := xtypes.NewDecimalFromInt(100)
 
-	val := DBParam{
+	val := xdb.DBParam{
 		"int":      1,
 		"string":   "string",
 		"datetime": datetime,
@@ -52,7 +53,7 @@ func TestDBParam_Get(t *testing.T) {
 		{name: "12.", key: "array2", wantVal: "'1','2','3'"},
 	}
 
-	phList := []Placeholder{
+	phList := []xdb.Placeholder{
 		&fixedPlaceHolder{ctx: &FixedContext{name: "mysql", prefix: "?"}},
 		&seqPlaceHolder{ctx: &SeqContext{name: "oracle", prefix: ":"}},
 	}
@@ -62,7 +63,7 @@ func TestDBParam_Get(t *testing.T) {
 	}
 }
 
-func callParamGet(t *testing.T, tests []paramGetCase, val DBParam, ph Placeholder) {
+func callParamGet(t *testing.T, tests []paramGetCase, val xdb.DBParam, ph xdb.Placeholder) {
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			argName, gotVal, err := val.Get(tt.key, ph)

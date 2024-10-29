@@ -99,6 +99,28 @@ func NewMissOperError(name string) MissError {
 	}
 }
 
+type xMissPropError struct {
+	propName string
+}
+
+func (e xMissPropError) Error() string {
+	return fmt.Sprintf("缺少Prop定义:[%s]", e.propName)
+}
+
+func (e xMissPropError) Name() string {
+	return e.propName
+}
+
+func (e xMissPropError) Type() string {
+	return MissTypeOper
+}
+
+func NewMissPropError(name string) MissError {
+	return &xMissPropError{
+		propName: name,
+	}
+}
+
 type xMissParamsError struct {
 	paramList []string
 	operList  []string

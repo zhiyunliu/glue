@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 func TestMssqlContext_AnalyzeTPL(t *testing.T) {
 	type args struct {
 		template string
 		input    map[string]interface{}
-		ph       tpl.Placeholder
+		ph       xdb.Placeholder
 	}
 
 	var tint int = 1
@@ -21,7 +22,7 @@ func TestMssqlContext_AnalyzeTPL(t *testing.T) {
 		prefix:  "p_",
 		symbols: newMssqlSymbols(tpl.DefaultOperator.Clone()),
 	}
-	var ph tpl.Placeholder = ctx.Placeholder()
+	var ph xdb.Placeholder = ctx.Placeholder()
 	tests := []struct {
 		name  string
 		args  args

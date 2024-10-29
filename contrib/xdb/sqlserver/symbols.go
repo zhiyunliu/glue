@@ -8,8 +8,14 @@ import (
 func newMssqlSymbols(operMap tpl.OperatorMap) tpl.SymbolMap {
 
 	symbols := tpl.NewSymbolMap(operMap)
-	symbols.LoadOrStore(tpl.SymbolAt, func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
-		_, propName, _ := tpl.GetPropName(fullKey)
+	symbols.StoreSymbol(tpl.SymbolAt, func(symbolMap tpl.SymbolMap, input xdb.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
+
+		matcher := tpl.GetPropMatchValuer(fullKey, item.PropOpts)
+		if matcher == nil {
+			return "", xdb.NewMissPropError(fullKey)
+		}
+		propName := matcher.GetPropName()
+
 		if ph, ok := item.NameCache[propName]; ok {
 			return ph, nil
 		}
@@ -24,50 +30,48 @@ func newMssqlSymbols(operMap tpl.OperatorMap) tpl.SymbolMap {
 		return argName, nil
 	})
 
-	symbols.LoadOrStore(tpl.SymbolAnd, func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
+	symbols.StoreSymbol(tpl.SymbolAnd, func(symbolMap tpl.SymbolMap, input xdb.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
 		item.HasAndOper = true
 
-		fullField, propName, oper := tpl.GetPropName(fullKey)
-		opercall, ok := operMap.Load(oper)
-		if !ok {
-			return "", xdb.NewMissOperError(oper)
+		matcher := tpl.GetPropMatchValuer(fullKey, item.PropOpts)
+		if matcher == nil {
+			return "", xdb.NewMissPropError(fullKey)
 		}
+		propName := matcher.GetPropName()
 
 		if ph, ok := item.NameCache[propName]; ok {
-			return opercall(tpl.SymbolAnd, fullField, ph), nil
-			//return fmt.Sprintf("and %s=%s ", fullKey, ph), nil
+			return matcher.Build(tpl.SymbolAnd, input, ph)
 		}
 		argName, value, _ := input.Get(propName, item.Placeholder)
-		if !tpl.IsNil(value) {
+		if !xdb.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
 			item.NameCache[propName] = argName
-			return opercall(tpl.SymbolAnd, fullField, argName), nil
-			//return fmt.Sprintf("and %s=%s ", fullKey, argName), nil
+			return matcher.Build(tpl.SymbolAnd, input, argName)
+
 		}
 		return "", nil
 	})
 
-	symbols.LoadOrStore(tpl.SymbolOr, func(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
+	symbols.StoreSymbol(tpl.SymbolOr, func(symbolMap tpl.SymbolMap, input xdb.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
 		item.HasOrOper = true
 
-		fullField, propName, oper := tpl.GetPropName(fullKey)
-		opercall, ok := operMap.Load(oper)
-		if !ok {
-			return "", xdb.NewMissOperError(oper)
+		matcher := tpl.GetPropMatchValuer(fullKey, item.PropOpts)
+		if matcher == nil {
+			return "", xdb.NewMissPropError(fullKey)
 		}
+		propName := matcher.GetPropName()
+
 		if ph, ok := item.NameCache[propName]; ok {
-			return opercall(tpl.SymbolOr, fullField, ph), nil
-			//return fmt.Sprintf("or %s=%s ", fullKey, ph), nil
+			return matcher.Build(tpl.SymbolOr, input, ph)
 		}
+
 		argName, value, _ := input.Get(propName, item.Placeholder)
-		if !tpl.IsNil(value) {
+		if !xdb.IsNil(value) {
 			item.Names = append(item.Names, propName)
 			item.Values = append(item.Values, value)
 			item.NameCache[propName] = argName
-
-			return opercall(tpl.SymbolOr, fullField, argName), nil
-			//return fmt.Sprintf("or %s=%s ", fullKey, argName), nil
+			return matcher.Build(tpl.SymbolOr, input, argName)
 		}
 		return "", nil
 	})

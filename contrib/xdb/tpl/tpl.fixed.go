@@ -1,5 +1,7 @@
 package tpl
 
+import "github.com/zhiyunliu/glue/xdb"
+
 // FixedContext  模板
 type FixedContext struct {
 	name    string
@@ -25,7 +27,7 @@ func (ph *fixedPlaceHolder) NamedArg(propName string) (phName string) {
 	return
 }
 
-func (ph *fixedPlaceHolder) Clone() Placeholder {
+func (ph *fixedPlaceHolder) Clone() xdb.Placeholder {
 	return &fixedPlaceHolder{
 		ctx: ph.ctx,
 	}
@@ -48,18 +50,18 @@ func (ctx *FixedContext) GetSQLContext(tpl string, input map[string]interface{})
 	return AnalyzeTPLFromCache(ctx, tpl, input, ctx.Placeholder())
 }
 
-func (ctx *FixedContext) Placeholder() Placeholder {
+func (ctx *FixedContext) Placeholder() xdb.Placeholder {
 	return &fixedPlaceHolder{ctx: ctx}
 }
 
-func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem, err error) {
+func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph xdb.Placeholder) (sql string, item *ReplaceItem, err error) {
 	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
 }
 
 func (ctx *FixedContext) RegisterSymbol(symbol Symbol) error {
-	return ctx.symbols.Register(symbol)
+	return ctx.symbols.RegisterSymbol(symbol)
 }
 
 func (ctx *FixedContext) RegisterOperator(oper Operator) error {
-	return ctx.symbols.Operator(oper)
+	return ctx.symbols.RegisterOperator(oper)
 }

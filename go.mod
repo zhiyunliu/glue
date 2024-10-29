@@ -1,6 +1,6 @@
 module github.com/zhiyunliu/glue
 
-go 1.18
+go 1.21
 
 require (
 	github.com/zhiyunliu/golibs v0.2.7
@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.9.1
