@@ -1,20 +1,24 @@
 package tpl
 
-import "github.com/zhiyunliu/glue/xdb"
+import (
+	"fmt"
 
-// FixedContext  模板
-type FixedContext struct {
+	"github.com/zhiyunliu/glue/xdb"
+)
+
+// FixedTemplate  模板
+type FixedTemplate struct {
 	name    string
 	prefix  string
-	symbols SymbolMap
+	matcher xdb.TemplateMatcher
 }
 
 type fixedPlaceHolder struct {
-	ctx *FixedContext
+	template *FixedTemplate
 }
 
 func (ph *fixedPlaceHolder) Get(propName string) (argName, phName string) {
-	phName = ph.ctx.prefix
+	phName = ph.template.prefix
 	argName = propName
 	return
 }
@@ -23,45 +27,44 @@ func (ph *fixedPlaceHolder) BuildArgVal(argName string, val interface{}) interfa
 }
 
 func (ph *fixedPlaceHolder) NamedArg(propName string) (phName string) {
-	phName = ph.ctx.prefix
+	phName = ph.template.prefix
 	return
 }
 
 func (ph *fixedPlaceHolder) Clone() xdb.Placeholder {
 	return &fixedPlaceHolder{
-		ctx: ph.ctx,
+		template: ph.template,
 	}
 }
 
-func NewFixed(name, prefix string) SQLTemplate {
-	return &FixedContext{
+func NewFixed(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
+	if matcher == nil {
+		panic(fmt.Errorf("NewFixed ,TemplateMatcher Can't be nil"))
+	}
+	return &FixedTemplate{
 		name:    name,
 		prefix:  prefix,
-		symbols: defaultSymbols.Clone(),
+		matcher: matcher,
 	}
 }
 
-func (ctx FixedContext) Name() string {
-	return ctx.name
+func (template FixedTemplate) Name() string {
+	return template.name
+}
+
+func (template *FixedTemplate) Placeholder() xdb.Placeholder {
+	return &fixedPlaceHolder{template: template}
 }
 
 // GetSQLContext 获取查询串
-func (ctx *FixedContext) GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any, err error) {
-	return AnalyzeTPLFromCache(ctx, tpl, input, ctx.Placeholder())
+func (template *FixedTemplate) GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any, err error) {
+	return AnalyzeTPLFromCache(template, tpl, input, template.Placeholder())
 }
 
-func (ctx *FixedContext) Placeholder() xdb.Placeholder {
-	return &fixedPlaceHolder{ctx: ctx}
+func (template *FixedTemplate) RegistExpressionMatcher(matchers ...xdb.ExpressionMatcher) {
+	template.matcher.RegistMatcher(matchers...)
 }
 
-func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph xdb.Placeholder) (sql string, item *ReplaceItem, err error) {
-	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
-}
-
-func (ctx *FixedContext) RegisterSymbol(symbol Symbol) error {
-	return ctx.symbols.RegisterSymbol(symbol)
-}
-
-func (ctx *FixedContext) RegisterOperator(oper Operator) error {
-	return ctx.symbols.RegisterOperator(oper)
+func (template *FixedTemplate) GenerateSQL(item *xdb.SqlScene, sqlTpl string, input xdb.DBParam) (sql string, err error) {
+	return template.matcher.GenerateSQL(item, sqlTpl, input)
 }

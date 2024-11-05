@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/zhiyunliu/glue/contrib/xdb/sqlserver/symbols"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 )
@@ -48,7 +49,7 @@ func New(name, prefix string) tpl.SQLTemplate {
 	return &MssqlContext{
 		name:    name,
 		prefix:  prefix,
-		symbols: newMssqlSymbols(tpl.DefaultOperator.Clone()),
+		symbols: symbols.New(), // newMssqlSymbols(tpl.DefaultOperator.Clone()),
 	}
 }
 
@@ -65,7 +66,7 @@ func (ctx *MssqlContext) Placeholder() xdb.Placeholder {
 	return &mssqlPlaceHolder{ctx: ctx}
 }
 
-func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph xdb.Placeholder) (string, *tpl.ReplaceItem, error) {
+func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph xdb.Placeholder) (string, *tpl.TemplateItem, error) {
 	return tpl.DefaultAnalyze(ctx.symbols, template, input, ph)
 }
 

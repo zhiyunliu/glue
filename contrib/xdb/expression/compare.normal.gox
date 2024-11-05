@@ -1,0 +1,82 @@
+package expression
+
+import (
+	"fmt"
+	"regexp"
+	"strings"
+
+	"github.com/zhiyunliu/glue/xdb"
+	"github.com/zhiyunliu/golibs/xtypes"
+)
+
+func init() {
+	RegistMatcher(&compareNormalMatcher{
+		//> aaa
+		//> t.aaa
+		//>= aaa
+		//>= t.aaa
+
+		//< aaa
+		//< t.aaa
+		//<= aaa
+		//<= t.aaa
+
+		regexp: regexp.MustCompile(`^(>|>=|=|<|<=)\s*(\w+(\.\w+)?)$`),
+		symbols: map[string]string{
+			"&": "and",
+			"|": "or",
+		},
+	})
+}
+
+type compareNormalMatcher struct {
+	symbols xtypes.SMap
+	regexp  *regexp.Regexp
+}
+
+func (m *compareNormalMatcher) Priority() int {
+	return 20
+}
+
+func (m *compareNormalMatcher) Pattern() string {
+	return m.regexp.String()
+}
+func (m *compareNormalMatcher) Symbols() []string {
+	return m.symbols.Keys()
+}
+
+func (m *compareNormalMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
+
+	parties := m.regexp.FindStringSubmatch(expression)
+	if len(parties) <= 0 {
+		return
+	}
+	ok = true
+	var (
+		item = &xdb.ExpressionItem{}
+	)
+	item.Oper = parties[1]
+	fullField := parties[2]
+
+	fullField = strings.TrimSpace(fullField)
+	item.FullField = fullField
+	item.PropName = fullField
+
+	idx := strings.Index(fullField, ".")
+	if idx > 0 {
+		item.PropName = fullField[idx+1:]
+	}
+
+	item.ExpressionBuildCallback = m.buildCallback()
+	return item, ok
+}
+
+func (m *compareNormalMatcher) buildCallback() xdb.ExpressionBuildCallback {
+	return func(item *xdb.ExpressionItem, symbol string, param xdb.DBParam, argName string) (part string, err xdb.MissError) {
+		concat, ok := m.symbols[symbol]
+		if !ok {
+			return "", xdb.NewMissPropError(item.GetPropName())
+		}
+		return fmt.Sprintf("%s %s%s%s", concat, item.GetFullfield(), item.GetOper(), argName), nil
+	}
+}

@@ -8,7 +8,7 @@ import (
 func newMssqlSymbols(operMap tpl.OperatorMap) tpl.SymbolMap {
 
 	symbols := tpl.NewSymbolMap(operMap)
-	symbols.StoreSymbol(tpl.SymbolAt, func(symbolMap tpl.SymbolMap, input xdb.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
+	symbols.StoreSymbol(tpl.SymbolAt, func(symbolMap tpl.SymbolMap, input xdb.DBParam, fullKey string, item *tpl.TemplateItem) (string, xdb.MissError) {
 
 		matcher := tpl.GetPropMatchValuer(fullKey, item.PropOpts)
 		if matcher == nil {
@@ -30,7 +30,7 @@ func newMssqlSymbols(operMap tpl.OperatorMap) tpl.SymbolMap {
 		return argName, nil
 	})
 
-	symbols.StoreSymbol(tpl.SymbolAnd, func(symbolMap tpl.SymbolMap, input xdb.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
+	symbols.StoreSymbol(tpl.SymbolAnd, func(symbolMap tpl.SymbolMap, input xdb.DBParam, fullKey string, item *tpl.TemplateItem) (string, xdb.MissError) {
 		item.HasAndOper = true
 
 		matcher := tpl.GetPropMatchValuer(fullKey, item.PropOpts)
@@ -53,7 +53,7 @@ func newMssqlSymbols(operMap tpl.OperatorMap) tpl.SymbolMap {
 		return "", nil
 	})
 
-	symbols.StoreSymbol(tpl.SymbolOr, func(symbolMap tpl.SymbolMap, input xdb.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissError) {
+	symbols.StoreSymbol(tpl.SymbolOr, func(symbolMap tpl.SymbolMap, input xdb.DBParam, fullKey string, item *tpl.TemplateItem) (string, xdb.MissError) {
 		item.HasOrOper = true
 
 		matcher := tpl.GetPropMatchValuer(fullKey, item.PropOpts)

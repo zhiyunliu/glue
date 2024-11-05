@@ -9,10 +9,10 @@ import (
 // 处理替换符合
 func handleRelaceSymbols(tpl string, input map[string]interface{}, ph xdb.Placeholder) (string, bool, error) {
 	word := GetPatternRegexp(ReplacePattern)
-	item := &ReplaceItem{
+	item := &TemplateItem{
 		NameCache:   map[string]string{},
 		Placeholder: ph,
-		PropOpts: &xdb.PropOptions{
+		PropOpts: &xdb.PropertyOptions{
 			UseCache: true,
 		},
 	}
@@ -33,7 +33,7 @@ func handleRelaceSymbols(tpl string, input map[string]interface{}, ph xdb.Placeh
 	return sql, hasReplace, nil
 }
 
-func replaceSymbols(input xdb.DBParam, fullKey string, item *ReplaceItem) (string, xdb.MissError) {
+func replaceSymbols(input xdb.DBParam, fullKey string, item *TemplateItem) (string, xdb.MissError) {
 	//	_, propName, _ := GetPropName(fullKey, item.PropOpts)
 
 	matcher := GetPropMatchValuer(fullKey, item.PropOpts)

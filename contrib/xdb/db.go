@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/implement"
-	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
@@ -17,7 +16,7 @@ type xDB struct {
 	cfg   *Setting
 	proto string
 	db    implement.ISysDB
-	tpl   tpl.SQLTemplate
+	tpl   xdb.SQLTemplate
 }
 
 // NewDB 创建DB实例
@@ -44,7 +43,7 @@ func NewDB(proto string, setting *Setting, opts ...xdb.Option) (obj xdb.IDB, err
 		setting.logger, _ = xdb.GetLogger(setting.Cfg.LoggerName)
 	}
 
-	dbobj.tpl, err = tpl.GetDBTemplate(proto)
+	dbobj.tpl, err = xdb.GetTemplate(proto)
 	if err != nil {
 		return
 	}

@@ -57,9 +57,13 @@ type xDBError struct {
 
 type xMissParamError struct {
 	paramName string
+	innerErr  error
 }
 
 func (e xMissParamError) Error() string {
+	if e.innerErr != nil {
+		return e.Error()
+	}
 	return fmt.Sprintf("SQL缺少参数:[%s]", e.paramName)
 }
 
@@ -71,9 +75,10 @@ func (e xMissParamError) Type() string {
 	return MissTypeParam
 }
 
-func NewMissParamError(name string) MissError {
+func NewMissParamError(name string, innerErr error) MissError {
 	return &xMissParamError{
 		paramName: name,
+		innerErr:  innerErr,
 	}
 }
 
@@ -104,7 +109,7 @@ type xMissPropError struct {
 }
 
 func (e xMissPropError) Error() string {
-	return fmt.Sprintf("缺少Prop定义:[%s]", e.propName)
+	return fmt.Sprintf("缺少Property定义:[%s]", e.propName)
 }
 
 func (e xMissPropError) Name() string {

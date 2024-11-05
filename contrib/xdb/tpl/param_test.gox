@@ -54,8 +54,8 @@ func TestDBParam_Get(t *testing.T) {
 	}
 
 	phList := []xdb.Placeholder{
-		&fixedPlaceHolder{ctx: &FixedContext{name: "mysql", prefix: "?"}},
-		&seqPlaceHolder{ctx: &SeqContext{name: "oracle", prefix: ":"}},
+		&fixedPlaceHolder{template: &FixedTemplate{name: "mysql", prefix: "?"}},
+		&seqPlaceHolder{template: &SeqTemplate{name: "oracle", prefix: ":"}},
 	}
 
 	for _, ph := range phList {

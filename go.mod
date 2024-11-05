@@ -8,7 +8,6 @@ require (
 )
 
 require (
-	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.9.1
@@ -134,6 +133,6 @@ require (
 	gopkg.in/ini.v1 v1.66.2 // indirect
 )
 
-//replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
+replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
 
 //replace github.com/zhiyunliu/redisqueue/v2 => ../../../github.com/zhiyunliu/redisqueue

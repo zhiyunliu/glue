@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/implement"
-	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
@@ -14,7 +13,7 @@ import (
 type xTrans struct {
 	cfg   *Setting
 	proto string
-	tpl   tpl.SQLTemplate
+	tpl   xdb.SQLTemplate
 	tx    implement.ISysTrans
 }
 

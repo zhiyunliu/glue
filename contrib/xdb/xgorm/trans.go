@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/implement"
-	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 	"gorm.io/gorm"
 )
@@ -15,7 +14,7 @@ var _ xdb.ITrans = &transWrap{}
 type transWrap struct {
 	gromDB *gorm.DB
 	proto  string
-	tpl    tpl.SQLTemplate
+	tpl    xdb.SQLTemplate
 }
 
 func (d *transWrap) Rollback() (err error) {

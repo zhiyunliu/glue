@@ -2,43 +2,22 @@ package tpl
 
 import "github.com/zhiyunliu/glue/xdb"
 
-type cacheItem struct {
-	sql           string
+type sceneCacheItem struct {
+	tplSql        string
 	names         []string
 	nameCache     map[string]string
 	hasReplace    bool
 	hasDynamicAnd bool
 	hasDynamicOr  bool
 	ph            xdb.Placeholder
-	SQLTemplate   SQLTemplate
+	SQLTemplate   xdb.SQLTemplate
 }
 
-type ReplaceItem struct {
-	Names       []string
-	Values      []interface{}
-	NameCache   map[string]string
-	Placeholder xdb.Placeholder
-	PropOpts    *xdb.PropOptions
-	HasAndOper  bool
-	HasOrOper   bool
-}
-
-func (p *ReplaceItem) Clone() *ReplaceItem {
-	return &ReplaceItem{
-		NameCache:   p.NameCache,
-		Placeholder: p.Placeholder,
-	}
-}
-
-func (p *ReplaceItem) CanCache() bool {
-	return !(p.HasAndOper || p.HasOrOper)
-}
-
-func (item cacheItem) ClonePlaceHolder() xdb.Placeholder {
+func (item *sceneCacheItem) ClonePlaceHolder() xdb.Placeholder {
 	return item.ph.Clone()
 }
 
-func (item cacheItem) build(input xdb.DBParam) (execSql string, values []interface{}, err error) {
+func (item *sceneCacheItem) build(input xdb.DBParam) (execSql string, values []interface{}, err error) {
 	values = make([]interface{}, len(item.names))
 	ph := item.ClonePlaceHolder()
 	var outerrs []xdb.MissError
@@ -53,7 +32,7 @@ func (item cacheItem) build(input xdb.DBParam) (execSql string, values []interfa
 		return "", values, xdb.NewMissListError(outerrs...)
 	}
 
-	rspitem := &ReplaceItem{
+	rspitem := &xdb.SqlScene{
 		NameCache:   map[string]string{},
 		Placeholder: ph,
 	}
@@ -61,9 +40,9 @@ func (item cacheItem) build(input xdb.DBParam) (execSql string, values []interfa
 		rspitem.NameCache[k] = item.nameCache[k]
 	}
 
-	execSql = item.sql
+	execSql = item.tplSql
 	if item.hasReplace {
-		execSql, _, err = handleRelaceSymbols(item.sql, input, ph)
+		execSql, _, err = handleRelaceSymbols(execSql, input, ph)
 	}
 
 	return execSql, values, err

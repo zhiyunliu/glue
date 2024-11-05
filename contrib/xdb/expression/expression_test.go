@@ -1,4 +1,4 @@
-package prop
+package expression
 
 import (
 	"testing"
@@ -80,7 +80,7 @@ func TestDefaultGetPropName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			propValuer := DefaultGetPropMatchValuer(tt.fullKey, &xdb.PropOptions{UseCache: true})
+			propValuer := GetExpressionValuer(tt.fullKey, &xdb.ExpressionOptions{UseCache: true})
 			if propValuer == nil {
 				t.Error("propValuer is null", tt.name)
 				return
@@ -112,7 +112,7 @@ func Test_getPropertyName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getPropertyName(tt.fullkey); got != tt.want {
+			if got := getExpressionPropertyName(tt.fullkey); got != tt.want {
 				t.Errorf("getPropertyName() = %v, want %v", got, tt.want)
 			}
 		})

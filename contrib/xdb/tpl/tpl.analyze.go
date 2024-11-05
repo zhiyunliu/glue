@@ -1,7 +1,6 @@
 package tpl
 
 import (
-	"regexp"
 	"sync"
 
 	"github.com/zhiyunliu/glue/xdb"
@@ -11,105 +10,61 @@ import (
 var tplcache sync.Map
 
 // AnalyzeTPLFromCache 从缓存中获取已解析的SQL语句
-// @表达式，替换为参数化字符如: :1,:2,:3
-// $表达式，检查值，值为空时返加"",否则直接替换字符
-// &条件表达式，检查值，值为空时返加"",否则返回: and name=value
-// |条件表达式，检查值，值为空时返回"", 否则返回: or name=value
-func AnalyzeTPLFromCache(template SQLTemplate, tpl string, input map[string]interface{}, ph xdb.Placeholder) (sql string, values []any, err error) {
-	hashVal := md5.Str(template.Name() + tpl)
+func AnalyzeTPLFromCache(template xdb.SQLTemplate, sqlTpl string, input map[string]any, ph xdb.Placeholder) (sql string, values []any, err error) {
+	hashVal := md5.Str(template.Name() + sqlTpl)
 	tplval, ok := tplcache.Load(hashVal)
 	if !ok {
-		sql, rpsitem, err := template.AnalyzeTPL(tpl, input, ph)
-		if err != nil {
-			return "", nil, err
-		}
-
-		values = rpsitem.Values
-		if rpsitem.CanCache() {
-			temp := &cacheItem{
-				sql:         sql,
-				names:       rpsitem.Names,
-				SQLTemplate: template,
-				ph:          ph.Clone(),
-			}
-
-			temp.nameCache = map[string]string{}
-			for k := range rpsitem.NameCache {
-				temp.nameCache[k] = rpsitem.NameCache[k]
-			}
-			sql, temp.hasReplace, err = handleRelaceSymbols(sql, input, ph)
-			if err != nil {
-				return sql, values, err
-			}
-			tplcache.Store(hashVal, temp)
-		} else {
-			sql, _, err = handleRelaceSymbols(sql, input, ph)
-		}
-
-		return sql, values, err
+		item := tplval.(*sceneCacheItem)
+		return item.build(input)
 	}
-	item := tplval.(*cacheItem)
-	return item.build(input)
+
+	tplSql, tplItem, err := DefaultAnalyze(template, sqlTpl, input, ph)
+	if err != nil {
+		return "", nil, err
+	}
+
+	values = tplItem.Values
+	if tplItem.CanCache() {
+		temp := &sceneCacheItem{
+			tplSql:      tplSql,
+			names:       tplItem.Names,
+			SQLTemplate: template,
+			ph:          ph.Clone(),
+		}
+
+		temp.nameCache = map[string]string{}
+		for k := range tplItem.NameCache {
+			temp.nameCache[k] = tplItem.NameCache[k]
+		}
+
+		sqlTpl, temp.hasReplace, err = handleRelaceSymbols(sqlTpl, input, ph)
+		if err != nil {
+			return sqlTpl, values, err
+		}
+		tplcache.Store(hashVal, temp)
+	} else {
+		sqlTpl, _, err = handleRelaceSymbols(sqlTpl, input, ph)
+	}
+
+	return sqlTpl, values, err
 }
 
-func DefaultAnalyze(symbols SymbolMap, tpl string, input map[string]interface{}, placeholder xdb.Placeholder, opts ...xdb.PropOption) (string, *ReplaceItem, error) {
-	word := GetPatternRegexp(symbols.GetPattern())
+func DefaultAnalyze(template xdb.SQLTemplate, sqlTpl string, input map[string]interface{}, placeholder xdb.Placeholder, opts ...xdb.PropertyOption) (string, *xdb.SqlScene, error) {
 
 	//初始化prop的参数
-	propOpts := &xdb.PropOptions{
+	propOpts := &xdb.ExpressionOptions{
 		UseCache: true,
 	}
 	for i := range opts {
 		opts[i](propOpts)
 	}
 
-	item := &ReplaceItem{
+	item := &xdb.SqlScene{
 		NameCache:   map[string]string{},
 		Placeholder: placeholder,
 		PropOpts:    propOpts,
 	}
 
-	var outerrs []xdb.MissError
-
-	//@变量, 将数据放入params中
-	sql := word.ReplaceAllStringFunc(tpl, func(s string) string {
-		/*
-			@{aaaa}
-			@{t.aaaa}
-			${cc}
-			${c.cc}
-			&{ddd}
-			&{t.ddd}
-			|{aaaa}
-			|{t.aaaa}
-		*/
-		symbol := s[:1]
-		fullKey := s[2 : len(s)-1]
-
-		callback, ok := symbols.LoadSymbol(symbol)
-		if !ok {
-			return s
-		}
-		tmpv, err := callback(symbols, input, fullKey, item)
-		if err != nil {
-			outerrs = append(outerrs, err)
-		}
-		return tmpv
-	})
-	if len(outerrs) > 0 {
-		return sql, item, xdb.NewMissListError(outerrs...)
-	}
-
-	return sql, item, nil
-}
-
-// 获取模式匹配的正则表达式
-func GetPatternRegexp(pattern string) *regexp.Regexp {
-	tmpregex, ok := tplcache.Load(pattern)
-	if ok {
-		return tmpregex.(*regexp.Regexp)
-	}
-
-	act, _ := tplcache.LoadOrStore(pattern, regexp.MustCompile(pattern))
-	return act.(*regexp.Regexp)
+	sql, err := template.GenerateSQL(item, sqlTpl, input)
+	return sql, item, err
 }

@@ -19,6 +19,7 @@ const (
 	_connPrefix = "encrypt://"
 )
 
+// DecryptConn 解密数据库链接
 var DecryptConn func(connName, conn string) (newConn string, err error) = defaultDecryptConn
 
 func defaultDecryptConn(connName, conn string) (newConn string, err error) {

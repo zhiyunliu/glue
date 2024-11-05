@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 )
 
@@ -40,7 +39,7 @@ func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interfa
 func (p DBParam) GetVal(name string) (val interface{}, err MissError) {
 	val, ok := p[name]
 	if !ok {
-		err = NewMissParamError(name)
+		err = NewMissParamError(name, nil)
 		return
 	}
 	switch t := val.(type) {
@@ -48,26 +47,45 @@ func (p DBParam) GetVal(name string) (val interface{}, err MissError) {
 		val = t
 		return
 	case *sql.NamedArg:
-		val = *t
+		if t != nil {
+			val = *t
+		} else {
+			val = nil
+		}
 		return
 	case driver.Valuer:
-		val, _ = t.Value()
+		v, verr := t.Value()
+		if verr != nil {
+			// 处理 Value 方法返回的错误
+			err = NewMissParamError(name, fmt.Errorf("[%s]failed to get value from driver.Valuer: %w", name, verr))
+			return
+		}
+		val = v
+		return
 	case time.Time:
 		val = t.Format(DateFormat)
+		return
 	case *time.Time:
 		if t != nil {
 			val = t.Format(DateFormat)
 		} else {
 			val = nil
 		}
+		return
 	case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
-		val = strings.Trim(strings.Replace(fmt.Sprint(t), " ", ",", -1), "[]")
+		val = t
+		return
 	case []string:
-		val = "'" + strings.Join(t, "','") + "'"
+		val = t
+		return
 	case driver.Value:
+		val = t
+		return
+	default:
 		val = t
 	}
 	return
+
 }
 
 func TransArgs(args []sql.NamedArg) []interface{} {
