@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultSymbols, expression.DefaultExpressionMatchers...)
+	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
 
 	resolver := &mysqlResolver{Proto: "grom.mysql"}
 	xdb.Register(resolver)

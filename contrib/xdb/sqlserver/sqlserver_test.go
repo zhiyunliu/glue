@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	_ "github.com/microsoft/go-mssqldb"
-	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 func TestSqlserverGetSQLContext(t *testing.T) {
 
-	template, err := tpl.GetDBTemplate(Proto)
+	template, err := xdb.GetTemplate(Proto)
 	if err != nil {
 		return
 	}

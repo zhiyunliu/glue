@@ -57,14 +57,17 @@ func (template *FixedTemplate) Placeholder() xdb.Placeholder {
 }
 
 // GetSQLContext 获取查询串
-func (template *FixedTemplate) GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any, err error) {
-	return AnalyzeTPLFromCache(template, tpl, input, template.Placeholder())
+func (template *FixedTemplate) GetSQLContext(sqlTpl string, input map[string]interface{}, opts ...xdb.TemplateOption) (query string, args []any, err error) {
+	return AnalyzeTPLFromCache(template, sqlTpl, input, opts...)
 }
 
 func (template *FixedTemplate) RegistExpressionMatcher(matchers ...xdb.ExpressionMatcher) {
 	template.matcher.RegistMatcher(matchers...)
 }
 
-func (template *FixedTemplate) GenerateSQL(item *xdb.SqlScene, sqlTpl string, input xdb.DBParam) (sql string, err error) {
+func (template *FixedTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, input xdb.DBParam) (sql string, err error) {
 	return template.matcher.GenerateSQL(item, sqlTpl, input)
+}
+func (template *FixedTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
+	return xdb.NewDefaultSqlState(template.Placeholder(), tplOpts)
 }

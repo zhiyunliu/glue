@@ -10,8 +10,31 @@ var (
 	tpls sync.Map
 )
 
-type SqlScene struct {
-	Names             []string
+// type SqlScene struct {
+// 	Names             []string
+// 	Values            []interface{}
+// 	NameCache         map[string]string
+// 	Placeholder       Placeholder
+// 	PropOpts          *ExpressionOptions
+// 	HasDynamicAnd     bool
+// 	HasDynamicOr      bool
+// 	HasDynamicReplace bool
+// }
+
+// func (p *SqlScene) Clone() *SqlScene {
+// 	return &SqlScene{
+// 		NameCache:   p.NameCache,
+// 		Placeholder: p.Placeholder,
+// 	}
+// }
+
+// // 是否缓存
+// func (p *SqlScene) CanCache() bool {
+// 	return !(p.HasDynamicAnd || p.HasDynamicOr)
+// }
+/*
+
+Names             []string
 	Values            []interface{}
 	NameCache         map[string]string
 	Placeholder       Placeholder
@@ -19,27 +42,20 @@ type SqlScene struct {
 	HasDynamicAnd     bool
 	HasDynamicOr      bool
 	HasDynamicReplace bool
-}
-
-func (p *SqlScene) Clone() *SqlScene {
-	return &SqlScene{
-		NameCache:   p.NameCache,
-		Placeholder: p.Placeholder,
-	}
-}
-
-// 是否缓存
-func (p *SqlScene) CanCache() bool {
-	return !(p.HasDynamicAnd || p.HasDynamicOr)
-}
+*/
 
 // Template 模板上下文
 type SQLTemplate interface {
 	Name() string
 	Placeholder() Placeholder
-	GetSQLContext(tpl string, input map[string]any) (query string, args []any, err error)
+	//获取sql
+	GetSQLContext(tpl string, input map[string]any, opts ...TemplateOption) (sql string, args []any, err error)
+	//注册表达式匹配解析器
 	RegistExpressionMatcher(matchers ...ExpressionMatcher)
-	GenerateSQL(item *SqlScene, sqlTpl string, param DBParam) (sql string, err error)
+	//处理一般表达式
+	HandleExpr(item SqlState, sqlTpl string, param DBParam) (sql string, err error)
+	//获取sql状态
+	GetSqlState(*TemplateOptions) SqlState
 }
 
 func RegistTemplate(tpl SQLTemplate) (err error) {

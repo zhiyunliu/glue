@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/zhiyunliu/glue/contrib/xdb/sqlserver/symbols"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 )
@@ -13,7 +12,7 @@ import (
 type MssqlContext struct {
 	name    string
 	prefix  string
-	symbols tpl.SymbolMap
+	matcher xdb.TemplateMatcher
 }
 
 type mssqlPlaceHolder struct {
@@ -45,11 +44,15 @@ func (ph *mssqlPlaceHolder) Clone() xdb.Placeholder {
 	}
 }
 
-func New(name, prefix string) tpl.SQLTemplate {
+func New(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
+
+	if matcher == nil {
+		panic(fmt.Errorf("New ,TemplateMatcher Can't be nil"))
+	}
 	return &MssqlContext{
 		name:    name,
 		prefix:  prefix,
-		symbols: symbols.New(), // newMssqlSymbols(tpl.DefaultOperator.Clone()),
+		matcher: matcher,
 	}
 }
 
@@ -57,23 +60,23 @@ func (ctx *MssqlContext) Name() string {
 	return ctx.name
 }
 
-// GetSQLContext 获取查询串
-func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interface{}) (query string, args []any, err error) {
-	return tpl.AnalyzeTPLFromCache(ctx, template, input, ctx.Placeholder())
-}
-
 func (ctx *MssqlContext) Placeholder() xdb.Placeholder {
 	return &mssqlPlaceHolder{ctx: ctx}
 }
 
-func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph xdb.Placeholder) (string, *tpl.TemplateItem, error) {
-	return tpl.DefaultAnalyze(ctx.symbols, template, input, ph)
+// GetSQLContext 获取查询串
+func (template *MssqlContext) GetSQLContext(sqlTpl string, input map[string]any, opts ...xdb.TemplateOption) (query string, args []any, err error) {
+	return tpl.AnalyzeTPLFromCache(template, sqlTpl, input, opts...)
 }
 
-func (ctx *MssqlContext) RegisterSymbol(symbol tpl.Symbol) error {
-	return ctx.symbols.RegisterSymbol(symbol)
+func (template *MssqlContext) RegistExpressionMatcher(matchers ...xdb.ExpressionMatcher) {
+	template.matcher.RegistMatcher(matchers...)
 }
 
-func (ctx *MssqlContext) RegisterOperator(oper tpl.Operator) error {
-	return ctx.symbols.RegisterOperator(oper)
+func (template *MssqlContext) HandleExpr(item xdb.SqlState, sqlTpl string, input xdb.DBParam) (sql string, err error) {
+	return template.matcher.GenerateSQL(item, sqlTpl, input)
+}
+
+func (template *MssqlContext) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
+	return xdb.NewDefaultSqlState(template.Placeholder(), tplOpts)
 }

@@ -29,7 +29,7 @@ func (s *mysqlResolver) Resolve(connName string, setting config.Config, opts ...
 	return contribxdb.NewDB(Proto, cfg, opts...)
 }
 func init() {
-	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultSymbols, expression.DefaultExpressionMatchers...)
+	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
 
 	xdb.Register(&mysqlResolver{})
 	xdb.RegistTemplate(tpl.NewFixed(Proto, "?", tplMatcher))

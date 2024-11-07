@@ -29,7 +29,7 @@ func (s *oracleResolver) Resolve(connName string, setting config.Config, opts ..
 	return contribxdb.NewDB(Proto, cfg, opts...)
 }
 func init() {
-	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultSymbols, expression.DefaultExpressionMatchers...)
+	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
 
 	xdb.Register(&oracleResolver{})
 	xdb.RegistTemplate(tpl.NewSeq(Proto, ":", tplMatcher))

@@ -13,20 +13,19 @@ func (s *atSymbols) Name() string {
 func (s *atSymbols) Concat() string {
 	return ""
 }
-func (s *atSymbols) Callback(item *xdb.SqlScene, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
+func (s *atSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
 
 	propName := valuer.GetPropName()
 
-	argName, value, err := input.Get(propName, item.Placeholder)
+	argName, value, err := input.Get(propName, item.GetPlaceholder())
 	if err != nil {
 		return "", err
 	}
+
 	if !xdb.IsNil(value) {
-		item.Names = append(item.Names, propName)
-		item.Values = append(item.Values, value)
+		item.AppendExpr(propName, value)
 	} else {
-		item.Names = append(item.Names, propName)
-		item.Values = append(item.Values, nil)
+		item.AppendExpr(propName, nil)
 	}
 	return argName, nil
 

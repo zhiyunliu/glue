@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultSymbols, expression.DefaultExpressionMatchers...)
+	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
 
 	resolver := &postgresResolver{Proto: "grom.postgres"}
 	xdb.Register(resolver)

@@ -21,7 +21,7 @@ func NewCompareExpressionMatcher(symbolMap xdb.SymbolMap) xdb.ExpressionMatcher 
 	// field <= aaa
 	// field >= aaa
 
-	const pattern = `[&|\|]({(((\w+\.)?\w+)\s*(>|>=|=|<|<=)\s*(\w+)})|({(>|>=|=|<|<=)\s*(\w+(\.\w+)?)}))`
+	const pattern = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|=|<|<=)\s*(\w+)})|({(>|>=|=|<|<=)\s*(\w+(\.\w+)?)}))`
 	return &compareExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -43,8 +43,8 @@ func (m *compareExpressionMatcher) Pattern() string {
 	return m.regexp.String()
 }
 
-func (m *compareExpressionMatcher) Symbol() xdb.SymbolMap {
-	return m.symbolMap
+func (m *compareExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
+	return m.symbolMap.Load(symbol)
 }
 
 func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
@@ -59,19 +59,27 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 		return
 	}
 	ok = true
+	//fullfield,oper,property
+	//{t.field=property} =3，5,6
+	//{<property} =9,8, get(9)
+	//
 
 	item := &xdb.ExpressionItem{
-		FullField: parties[1],
-		Oper:      parties[2],
-		PropName:  parties[3],
-		Symbol:    parties[3],
-	}
-	if len(parties) == 5 {
-		item.Oper = parties[3]
-		item.PropName = parties[4]
+		Symbol: getExpressionSymbol(expression),
 	}
 
+	if parties[5] != "" {
+		item.FullField = parties[3]
+		item.Oper = parties[5]
+		item.PropName = parties[6]
+	}
+	if parties[8] != "" {
+		item.FullField = parties[9]
+		item.Oper = parties[8]
+		item.PropName = getExpressionPropertyName(item.FullField)
+	}
 	item.ExpressionBuildCallback = m.buildCallback()
+	m.expressionCache.Store(expression, item)
 	return item, ok
 }
 

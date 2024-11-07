@@ -3,7 +3,7 @@ package xdb
 import "sync"
 
 // 符号回调函数
-type SymbolCallback func(SymbolMap, DBParam, string, *SqlScene) (string, MissError)
+type SymbolCallback func(SymbolMap, DBParam, string, SqlState) (string, MissError)
 
 type SymbolMap interface {
 	Regist(Symbol)
@@ -12,10 +12,18 @@ type SymbolMap interface {
 	Clone() SymbolMap
 }
 
+type SymbolType int
+
+const (
+	SymbolTypeNormal  SymbolType = 1
+	SymbolTypeDymanic SymbolType = 2
+	SymbolTypeReplace SymbolType = 3
+)
+
 type Symbol interface {
 	Name() string
 	Concat() string
-	Callback(item *SqlScene, valuer ExpressionValuer, input DBParam) (string, MissError)
+	Callback(item SqlState, valuer ExpressionValuer, input DBParam) (string, MissError)
 }
 
 type symbolsMap struct {

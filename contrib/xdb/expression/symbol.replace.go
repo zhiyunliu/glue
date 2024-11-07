@@ -11,16 +11,15 @@ func (s *replaceSymbols) Name() string {
 func (s *replaceSymbols) Concat() string {
 	return ""
 }
-func (s *replaceSymbols) Callback(item *xdb.SqlScene, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
-	item.HasDynamicReplace = true
+func (s *replaceSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
+	item.SetDynamic(xdb.DynamicReplace)
 
 	propName := valuer.GetPropName()
 
-	argName, value, _ := input.Get(propName, item.Placeholder)
+	argName, value, _ := input.Get(propName, item.GetPlaceholder())
 
 	if !xdb.IsNil(value) {
-		item.Names = append(item.Names, propName)
-		item.Values = append(item.Values, value)
+		item.AppendExpr(propName, value)
 		return valuer.Build(input, argName)
 	}
 	return "", nil

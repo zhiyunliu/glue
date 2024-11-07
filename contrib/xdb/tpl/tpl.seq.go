@@ -10,7 +10,7 @@ import (
 type SeqTemplate struct {
 	name    string
 	prefix  string
-	symbols xdb.SymbolMap
+	matcher xdb.TemplateMatcher
 }
 
 type seqPlaceHolder struct {
@@ -42,11 +42,14 @@ func (ph *seqPlaceHolder) Clone() xdb.Placeholder {
 	}
 }
 
-func NewSeq(name, prefix string, matcher TemplateMatcher) xdb.SQLTemplate {
+func NewSeq(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
+	if matcher == nil {
+		panic(fmt.Errorf("NewFixed ,TemplateMatcher Can't be nil"))
+	}
 	return &SeqTemplate{
 		name:    name,
 		prefix:  prefix,
-		symbols: defaultSymbols.Clone(),
+		matcher: matcher,
 	}
 }
 
@@ -54,19 +57,23 @@ func (template SeqTemplate) Name() string {
 	return template.name
 }
 
-// GetSQLContext 获取查询串
-func (template *SeqTemplate) GetSQLContext(tpl string, input map[string]interface{}) (sql string, args []any, err error) {
-	return AnalyzeTPLFromCache(template, tpl, input, template.Placeholder())
-}
-
 func (template *SeqTemplate) Placeholder() xdb.Placeholder {
 	return &seqPlaceHolder{template: template, idx: 0}
 }
 
-func (template *SeqTemplate) RegistPropertyMatcher(matcher ...xdb.ExpressionMatcher) error {
-	return nil
+// GetSQLContext 获取查询串
+func (template *SeqTemplate) GetSQLContext(sqlTpl string, input map[string]interface{}, opts ...xdb.TemplateOption) (query string, args []any, err error) {
+	return AnalyzeTPLFromCache(template, sqlTpl, input, opts...)
 }
 
-func (template *SeqTemplate) RegistSymbol(symbols ...xdb.Symbol) error {
-	return nil
+func (template *SeqTemplate) RegistExpressionMatcher(matchers ...xdb.ExpressionMatcher) {
+	template.matcher.RegistMatcher(matchers...)
+}
+
+func (template *SeqTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, input xdb.DBParam) (sql string, err error) {
+	return template.matcher.GenerateSQL(item, sqlTpl, input)
+}
+
+func (template *SeqTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
+	return xdb.NewDefaultSqlState(template.Placeholder(), tplOpts)
 }

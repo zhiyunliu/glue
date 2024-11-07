@@ -29,7 +29,7 @@ func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap) xdb.ExpressionMatcher {
 	//like t.bbb%
 	//like %t.bbb%
 
-	const pattern = `[&|\|]({like\s+%?\w+(\.\w+)?%?}|{\w+(\.\w+)?\s+like\s+%?\w+%?})`
+	const pattern = `[&|\|](({like\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+like\s+(%?\w+%?)}))`
 	return &likeExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -51,38 +51,58 @@ func (m *likeExpressionMatcher) Pattern() string {
 	return m.regexp.String()
 }
 
-func (m *likeExpressionMatcher) Symbol() xdb.SymbolMap {
-	return m.symbolMap
+func (m *likeExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
+	return m.symbolMap.Load(symbol)
 }
 
 func (m *likeExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
-
-	fullkey := strings.TrimPrefix(expression, "like")
-	fullkey = strings.TrimSpace(fullkey)
-
-	var (
-		prefix string
-		suffix string
-		oper   string = "like"
-	)
-
-	if strings.HasPrefix(fullkey, "%") {
-		prefix = "%"
+	tmp, ok := m.expressionCache.Load(expression)
+	if ok {
+		valuer = tmp.(xdb.ExpressionValuer)
+		return
 	}
-	if strings.HasSuffix(fullkey, "%") {
-		suffix = "%"
+
+	parties := m.regexp.FindStringSubmatch(expression)
+	if len(parties) <= 0 {
+		return
+	}
+	ok = true
+	const SPEC_CHAR = "%"
+	var (
+		prefix   string
+		suffix   string
+		oper     string = m.Name()
+		fullkey  string
+		propName string
+	)
+	if parties[3] != "" {
+
+		propName = parties[3]
+		fullkey = strings.Trim(propName, SPEC_CHAR)
+	} else {
+		fullkey = parties[6]
+		propName = parties[8]
+	}
+
+	if strings.HasPrefix(propName, SPEC_CHAR) {
+		prefix = SPEC_CHAR
+	}
+	if strings.HasSuffix(propName, SPEC_CHAR) {
+		suffix = SPEC_CHAR
 	}
 
 	oper = prefix + oper + suffix
-	fullkey = strings.Trim(fullkey, "%")
+	propName = strings.Trim(propName, SPEC_CHAR)
 
 	item := &xdb.ExpressionItem{
-		Oper:      oper,
 		Symbol:    getExpressionSymbol(expression),
+		Oper:      oper,
 		FullField: fullkey,
+		PropName:  getExpressionPropertyName(propName),
 	}
-	item.PropName = getExpressionPropertyName(fullkey)
 	item.ExpressionBuildCallback = m.buildCallback()
+	m.expressionCache.Store(expression, item)
+
 	return item, ok
 }
 

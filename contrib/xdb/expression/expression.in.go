@@ -2,7 +2,6 @@ package expression
 
 import (
 	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/zhiyunliu/glue/xdb"
@@ -15,7 +14,7 @@ func NewInExpressionMatcher(symbolMap xdb.SymbolMap) xdb.ExpressionMatcher {
 	//in t.aaa
 	//t.aaa in aaa
 	//bbb in aaa
-	const pattern = `[&|\|](({in\s+(\w+(\.\w+)?)})|({\w+(\.\w+)?)\s+in\s+(\w+)})`
+	const pattern = `[&|\|](({in\s+(\w+(\.\w+)?)\s*})|({(\w+(\.\w+)?)\s+in\s+(\w+)\s*}))`
 	return &inExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -36,29 +35,50 @@ func (m *inExpressionMatcher) Name() string {
 func (m *inExpressionMatcher) Pattern() string {
 	return m.regexp.String()
 }
-func (m *inExpressionMatcher) Symbol() xdb.SymbolMap {
-	return m.symbolMap
+
+func (m *inExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
+	return m.symbolMap.Load(symbol)
 }
+
 func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
+	tmp, ok := m.expressionCache.Load(expression)
+	if ok {
+		valuer = tmp.(xdb.ExpressionValuer)
+		return
+	}
 
 	parties := m.regexp.FindStringSubmatch(expression)
 	if len(parties) <= 0 {
 		return
 	}
 	ok = true
+
 	var (
 		item = &xdb.ExpressionItem{
-			Oper:   m.Name(),
 			Symbol: getExpressionSymbol(expression),
+			Oper:   m.Name(),
 		}
+		fullField string
+		propName  string
 	)
-	fullField := parties[2]
+	// fullfield,oper,oper
+	//&{in tbl.field} => 3,in,prop(3)
+	//&{tt.field  in    property} => 6,in, 8
 
-	fullField = strings.TrimSpace(fullField)
+	if parties[3] != "" {
+		fullField = parties[3]
+		propName = getExpressionPropertyName(fullField)
+	} else {
+		fullField = parties[6]
+		propName = parties[8]
+	}
+
 	item.FullField = fullField
-	item.PropName = getExpressionPropertyName(fullField)
+	item.PropName = propName
 
 	item.ExpressionBuildCallback = m.buildCallback()
+	m.expressionCache.Store(expression, item)
+
 	return item, ok
 }
 

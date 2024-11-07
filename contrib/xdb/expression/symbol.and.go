@@ -12,15 +12,13 @@ func (s *andSymbols) Concat() string {
 	return "and"
 }
 
-func (s *andSymbols) Callback(item *xdb.SqlScene, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
-	item.HasDynamicAnd = true
+func (s *andSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
+	item.SetDynamic(xdb.DynamicAnd)
 
 	propName := valuer.GetPropName()
-
-	argName, value, _ := input.Get(propName, item.Placeholder)
+	argName, value, _ := input.Get(propName, item.GetPlaceholder())
 	if !xdb.IsNil(value) {
-		item.Names = append(item.Names, propName)
-		item.Values = append(item.Values, value)
+		item.AppendExpr(propName, value)
 		return valuer.Build(input, argName)
 	}
 	return "", nil

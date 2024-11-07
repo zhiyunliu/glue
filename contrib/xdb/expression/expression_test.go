@@ -7,81 +7,107 @@ import (
 )
 
 func TestDefaultGetPropName(t *testing.T) {
-	//field, tbl.field , tbl.field like , tbl.field >=
+	normalMatcher := NewNormalExpressionMatcher(DefaultSymbols)
+	compareMatcher := NewCompareExpressionMatcher(DefaultSymbols)
+	likeMatcher := NewLikeExpressionMatcher(DefaultSymbols)
+	inMatcher := NewInExpressionMatcher(DefaultSymbols)
+
 	tests := []struct {
+		matcher       xdb.ExpressionMatcher
 		name          string
 		fullKey       string
 		wantFullfield string
 		wantPropName  string
 		wantOper      string
+		wantSymbol    string
 	}{
-		{name: "1.", fullKey: "field", wantFullfield: "field", wantPropName: "field", wantOper: "="},
-		{name: "2.", fullKey: "tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "="},
-		{name: "3.", fullKey: "like tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like"},
-		{name: "4.", fullKey: "> tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">"},
-		{name: "5.", fullKey: ">= tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">="},
-		{name: "6.", fullKey: "< tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<"},
-		{name: "7.", fullKey: "<= tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<="},
+		{name: "1-1.", matcher: normalMatcher, fullKey: "@{field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "@"},
+		{name: "1-2.", matcher: normalMatcher, fullKey: "${field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "$"},
+		{name: "1-3.", matcher: normalMatcher, fullKey: "&{field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "&"},
+		{name: "1-4.", matcher: normalMatcher, fullKey: "|{field }", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "|"},
 
-		{name: "a.", fullKey: "like    tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like"},
-		{name: "b.", fullKey: ">    tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">"},
-		{name: "c.", fullKey: ">=    tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">="},
-		{name: "d.", fullKey: "<    tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<"},
-		{name: "e.", fullKey: "<=    tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<="},
+		{name: "2-1.", matcher: normalMatcher, fullKey: "@{tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "=", wantSymbol: "@"},
+		{name: "2-2.", matcher: normalMatcher, fullKey: "${tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "=", wantSymbol: "$"},
+		{name: "2-3.", matcher: normalMatcher, fullKey: "&{tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "=", wantSymbol: "&"},
+		{name: "2-4.", matcher: normalMatcher, fullKey: "|{tbl.field }", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "=", wantSymbol: "|"},
 
-		{name: "0b.", fullKey: ">tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">"},
-		{name: "0c.", fullKey: ">=tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">="},
-		{name: "0d.", fullKey: "<tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<"},
-		{name: "0e.", fullKey: "<=tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<="},
+		{name: "4-1.", matcher: compareMatcher, fullKey: "&{> tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">", wantSymbol: "&"},
+		{name: "5-1.", matcher: compareMatcher, fullKey: "&{>= tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">=", wantSymbol: "&"},
+		{name: "6-1.", matcher: compareMatcher, fullKey: "&{< tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<", wantSymbol: "&"},
+		{name: "7-1.", matcher: compareMatcher, fullKey: "&{<= tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<=", wantSymbol: "&"},
 
-		{name: "01b.", fullKey: ">field", wantFullfield: "field", wantPropName: "field", wantOper: ">"},
-		{name: "01c.", fullKey: ">=field", wantFullfield: "field", wantPropName: "field", wantOper: ">="},
-		{name: "01d.", fullKey: "<field", wantFullfield: "field", wantPropName: "field", wantOper: "<"},
-		{name: "01e.", fullKey: "<=field", wantFullfield: "field", wantPropName: "field", wantOper: "<="},
+		{name: "4-2.", matcher: compareMatcher, fullKey: "|{> tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">", wantSymbol: "|"},
+		{name: "5-3.", matcher: compareMatcher, fullKey: "|{>= tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">=", wantSymbol: "|"},
+		{name: "6-4.", matcher: compareMatcher, fullKey: "|{< tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<", wantSymbol: "|"},
+		{name: "7-5.", matcher: compareMatcher, fullKey: "|{<= tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<=", wantSymbol: "|"},
 
-		{name: "1a.", fullKey: "like   field", wantFullfield: "field", wantPropName: "field", wantOper: "like"},
-		{name: "1b.", fullKey: ">   field", wantFullfield: "field", wantPropName: "field", wantOper: ">"},
-		{name: "1c.", fullKey: ">=   field", wantFullfield: "field", wantPropName: "field", wantOper: ">="},
-		{name: "1d.", fullKey: "<   field", wantFullfield: "field", wantPropName: "field", wantOper: "<"},
-		{name: "1e.", fullKey: "<=   field", wantFullfield: "field", wantPropName: "field", wantOper: "<="},
-		{name: "1f.", fullKey: "field >   property", wantFullfield: "field", wantPropName: "property", wantOper: ">"},
-		{name: "1g.", fullKey: "t.field >=   property", wantFullfield: "t.field", wantPropName: "property", wantOper: ">="},
-		{name: "1h.", fullKey: "t.field <   property", wantFullfield: "t.field", wantPropName: "property", wantOper: "<"},
-		{name: "1i.", fullKey: "field <=   property", wantFullfield: "field", wantPropName: "property", wantOper: "<="},
-		{name: "1j.", fullKey: "t.field<property", wantFullfield: "t.field", wantPropName: "property", wantOper: "<"},
-		{name: "1k.", fullKey: "field<=property", wantFullfield: "field", wantPropName: "property", wantOper: "<="},
+		{name: "b.", matcher: compareMatcher, fullKey: "&{>    tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">", wantSymbol: "&"},
+		{name: "c.", matcher: compareMatcher, fullKey: "&{>=    tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">=", wantSymbol: "&"},
+		{name: "d.", matcher: compareMatcher, fullKey: "&{<    tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<", wantSymbol: "&"},
+		{name: "e.", matcher: compareMatcher, fullKey: "&{<=    tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<=", wantSymbol: "&"},
 
-		{name: "2a.", fullKey: "like   %field", wantFullfield: "field", wantPropName: "field", wantOper: "%like"},
-		{name: "3a.", fullKey: "like   field%", wantFullfield: "field", wantPropName: "field", wantOper: "like%"},
-		{name: "4a.", fullKey: "like   %field%", wantFullfield: "field", wantPropName: "field", wantOper: "%like%"},
-		{name: "5a.", fullKey: "like    %tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "%like"},
-		{name: "6a.", fullKey: "like    tbl.field%", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like%"},
-		{name: "7a.", fullKey: "like    %tbl.field%", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "%like%"},
-		{name: "8a.", fullKey: "like %tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "%like"},
-		{name: "9a.", fullKey: "like tbl.field%", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like%"},
-		{name: "10a.", fullKey: "like %tbl.field%", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "%like%"},
+		{name: "0b.", matcher: compareMatcher, fullKey: "|{>tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">", wantSymbol: "|"},
+		{name: "0c.", matcher: compareMatcher, fullKey: "|{>=tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">=", wantSymbol: "|"},
+		{name: "0d.", matcher: compareMatcher, fullKey: "|{<tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<", wantSymbol: "|"},
+		{name: "0e.", matcher: compareMatcher, fullKey: "|{<=tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "<=", wantSymbol: "|"},
 
-		{name: "2b.", fullKey: "tbl.field   like   %property", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like"},
-		{name: "3b.", fullKey: "tbl.field   like   property%", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "like%"},
-		{name: "4b.", fullKey: "tbl.field   like   %property%", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like%"},
-		{name: "5b.", fullKey: "field like    %property", wantFullfield: "field", wantPropName: "property", wantOper: "%like"},
-		{name: "6b.", fullKey: "field like    property%", wantFullfield: "field", wantPropName: "property", wantOper: "like%"},
-		{name: "7b.", fullKey: "field like    %property%", wantFullfield: "field", wantPropName: "property", wantOper: "%like%"},
-		{name: "8b.", fullKey: "tbl.field like %property", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like"},
-		{name: "9b.", fullKey: "tbl.field like property%", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "like%"},
-		{name: "10b.", fullKey: "tbl.field like %property%", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like%"},
+		{name: "01b.", matcher: compareMatcher, fullKey: "|{>field}", wantFullfield: "field", wantPropName: "field", wantOper: ">", wantSymbol: "|"},
+		{name: "01c.", matcher: compareMatcher, fullKey: "|{>=field}", wantFullfield: "field", wantPropName: "field", wantOper: ">=", wantSymbol: "|"},
+		{name: "01d.", matcher: compareMatcher, fullKey: "|{<field}", wantFullfield: "field", wantPropName: "field", wantOper: "<", wantSymbol: "|"},
+		{name: "01e.", matcher: compareMatcher, fullKey: "|{<=field}", wantFullfield: "field", wantPropName: "field", wantOper: "<=", wantSymbol: "|"},
 
-		{name: "8.", fullKey: "in tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "in"},
-		{name: "9.", fullKey: "in field", wantFullfield: "field", wantPropName: "field", wantOper: "in"},
-		{name: "f.", fullKey: "in    tbl.field", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "in"},
-		{name: "g.", fullKey: "in    field", wantFullfield: "field", wantPropName: "field", wantOper: "in"},
-		{name: "h.", fullKey: "field  in   property", wantFullfield: "field", wantPropName: "property", wantOper: "in"},
-		{name: "i.", fullKey: "tt.field  in    property", wantFullfield: "tt.field", wantPropName: "property", wantOper: "in"},
+		{name: "1b.", matcher: compareMatcher, fullKey: "&{>   field}", wantFullfield: "field", wantPropName: "field", wantOper: ">", wantSymbol: "&"},
+		{name: "1c.", matcher: compareMatcher, fullKey: "&{>=   field}", wantFullfield: "field", wantPropName: "field", wantOper: ">=", wantSymbol: "&"},
+		{name: "1d.", matcher: compareMatcher, fullKey: "&{<   field}", wantFullfield: "field", wantPropName: "field", wantOper: "<", wantSymbol: "&"},
+		{name: "1e.", matcher: compareMatcher, fullKey: "&{<=   t.field}", wantFullfield: "t.field", wantPropName: "field", wantOper: "<=", wantSymbol: "&"},
+		{name: "1f.", matcher: compareMatcher, fullKey: "&{field >   property}", wantFullfield: "field", wantPropName: "property", wantOper: ">", wantSymbol: "&"},
+		{name: "1g.", matcher: compareMatcher, fullKey: "&{t.field >=   property}", wantFullfield: "t.field", wantPropName: "property", wantOper: ">=", wantSymbol: "&"},
+		{name: "1h.", matcher: compareMatcher, fullKey: "&{t.field <   property}", wantFullfield: "t.field", wantPropName: "property", wantOper: "<", wantSymbol: "&"},
+		{name: "1i.", matcher: compareMatcher, fullKey: "&{field <=   property}", wantFullfield: "field", wantPropName: "property", wantOper: "<=", wantSymbol: "&"},
+		{name: "1j.", matcher: compareMatcher, fullKey: "&{t.field<property}", wantFullfield: "t.field", wantPropName: "property", wantOper: "<", wantSymbol: "&"},
+		{name: "1k.", matcher: compareMatcher, fullKey: "&{field<=property}", wantFullfield: "field", wantPropName: "property", wantOper: "<=", wantSymbol: "&"},
+
+		{name: "1a.", matcher: likeMatcher, fullKey: "&{like   field}", wantFullfield: "field", wantPropName: "field", wantOper: "like", wantSymbol: "&"},
+		{name: "3.", matcher: likeMatcher, fullKey: "&{like tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like", wantSymbol: "&"},
+		{name: "a.", matcher: likeMatcher, fullKey: "&{like    tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like", wantSymbol: "&"},
+		{name: "2a.", matcher: likeMatcher, fullKey: "&{like   %field}", wantFullfield: "field", wantPropName: "field", wantOper: "%like", wantSymbol: "&"},
+		{name: "3a.", matcher: likeMatcher, fullKey: "&{like   field%}", wantFullfield: "field", wantPropName: "field", wantOper: "like%", wantSymbol: "&"},
+		{name: "4a.", matcher: likeMatcher, fullKey: "&{like   %field%}", wantFullfield: "field", wantPropName: "field", wantOper: "%like%", wantSymbol: "&"},
+		{name: "5a.", matcher: likeMatcher, fullKey: "&{like    %tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "%like", wantSymbol: "&"},
+		{name: "6a.", matcher: likeMatcher, fullKey: "&{like    tbl.field%}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like%", wantSymbol: "&"},
+		{name: "7a.", matcher: likeMatcher, fullKey: "&{like    %tbl.field%}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "%like%", wantSymbol: "&"},
+		{name: "8a.", matcher: likeMatcher, fullKey: "&{like %tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "%like", wantSymbol: "&"},
+		{name: "9a.", matcher: likeMatcher, fullKey: "&{like tbl.field%}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like%", wantSymbol: "&"},
+		{name: "10a.", matcher: likeMatcher, fullKey: "&{like %tbl.field%}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "%like%", wantSymbol: "&"},
+		{name: "2b.", matcher: likeMatcher, fullKey: "&{tbl.field   like   %property}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like", wantSymbol: "&"},
+		{name: "3b.", matcher: likeMatcher, fullKey: "&{tbl.field   like   property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "like%", wantSymbol: "&"},
+		{name: "4b.", matcher: likeMatcher, fullKey: "&{tbl.field   like   %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like%", wantSymbol: "&"},
+		{name: "5b.", matcher: likeMatcher, fullKey: "&{field like    %property}", wantFullfield: "field", wantPropName: "property", wantOper: "%like", wantSymbol: "&"},
+		{name: "6b.", matcher: likeMatcher, fullKey: "&{field like    property%}", wantFullfield: "field", wantPropName: "property", wantOper: "like%", wantSymbol: "&"},
+		{name: "7b.", matcher: likeMatcher, fullKey: "&{field like    %property%}", wantFullfield: "field", wantPropName: "property", wantOper: "%like%", wantSymbol: "&"},
+		{name: "8b.", matcher: likeMatcher, fullKey: "&{tbl.field like %property}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like", wantSymbol: "&"},
+		{name: "9b.", matcher: likeMatcher, fullKey: "&{tbl.field like property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "like%", wantSymbol: "&"},
+		{name: "10b.", matcher: likeMatcher, fullKey: "&{tbl.field like %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like%", wantSymbol: "&"},
+
+		{name: "8.", matcher: inMatcher, fullKey: "&{in tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "in", wantSymbol: "&"},
+		{name: "9.", matcher: inMatcher, fullKey: "&{in field}", wantFullfield: "field", wantPropName: "field", wantOper: "in", wantSymbol: "&"},
+		{name: "f.", matcher: inMatcher, fullKey: "&{in    tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "in", wantSymbol: "&"},
+		{name: "g.", matcher: inMatcher, fullKey: "&{in    field}", wantFullfield: "field", wantPropName: "field", wantOper: "in", wantSymbol: "&"},
+		{name: "h.", matcher: inMatcher, fullKey: "&{field  in   property}", wantFullfield: "field", wantPropName: "property", wantOper: "in", wantSymbol: "&"},
+		{name: "i.", matcher: inMatcher, fullKey: "&{tt.field  in    property}", wantFullfield: "tt.field", wantPropName: "property", wantOper: "in", wantSymbol: "&"},
+
+		{name: "8-a.", matcher: inMatcher, fullKey: "&{in tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "in", wantSymbol: "&"},
+		{name: "9-a.", matcher: inMatcher, fullKey: "&{in field}", wantFullfield: "field", wantPropName: "field", wantOper: "in", wantSymbol: "&"},
+		{name: "f-a.", matcher: inMatcher, fullKey: "&{in    tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "in", wantSymbol: "&"},
+		{name: "g-a.", matcher: inMatcher, fullKey: "&{in    field}", wantFullfield: "field", wantPropName: "field", wantOper: "in", wantSymbol: "&"},
+		{name: "h-a.", matcher: inMatcher, fullKey: "&{field  in   property}", wantFullfield: "field", wantPropName: "property", wantOper: "in", wantSymbol: "&"},
+		{name: "i-a.", matcher: inMatcher, fullKey: "&{tt.field  in    property}", wantFullfield: "tt.field", wantPropName: "property", wantOper: "in", wantSymbol: "&"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			propValuer := GetExpressionValuer(tt.fullKey, &xdb.ExpressionOptions{UseCache: true})
-			if propValuer == nil {
+			matcher := tt.matcher
+			propValuer, ok := matcher.MatchString(tt.fullKey)
+			if !ok {
 				t.Error("propValuer is null", tt.name)
 				return
 			}
@@ -96,11 +122,14 @@ func TestDefaultGetPropName(t *testing.T) {
 			if propValuer.GetOper() != tt.wantOper {
 				t.Errorf("GetOper() :%v, want %v", propValuer.GetOper(), tt.wantOper)
 			}
+			if propValuer.GetSymbol() != tt.wantSymbol {
+				t.Errorf("GetSymbol() :%v, want %v", propValuer.GetSymbol(), tt.wantSymbol)
+			}
 		})
 	}
 }
 
-func Test_getPropertyName(t *testing.T) {
+func Test_getExpressionPropertyName(t *testing.T) {
 
 	tests := []struct {
 		name    string
@@ -113,7 +142,29 @@ func Test_getPropertyName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := getExpressionPropertyName(tt.fullkey); got != tt.want {
-				t.Errorf("getPropertyName() = %v, want %v", got, tt.want)
+				t.Errorf("getExpressionPropertyName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getExpressionSymbol(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		fullkey string
+		want    string
+	}{
+		{name: "1", fullkey: "@{aaa.bbb}", want: "@"},
+		{name: "2", fullkey: "${bbb}", want: "$"},
+		{name: "3", fullkey: "&{bbb}", want: "&"},
+		{name: "4", fullkey: "|{bbb}", want: "|"},
+		{name: "5", fullkey: "###{bbb}", want: "###"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getExpressionSymbol(tt.fullkey); got != tt.want {
+				t.Errorf("getExpressionSymbol() = %v, want %v", got, tt.want)
 			}
 		})
 	}

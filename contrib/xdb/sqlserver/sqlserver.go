@@ -6,7 +6,8 @@ import (
 	_ "github.com/microsoft/go-mssqldb"
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
-	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/contrib/xdb/expression"
+	"github.com/zhiyunliu/glue/contrib/xdb/sqlserver/symbols"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
@@ -30,6 +31,15 @@ func (s *sqlserverResolver) Resolve(connName string, setting config.Config, opts
 }
 
 func init() {
+	symbols := symbols.New()
+
+	tplMatcher := xdb.NewTemplateMatcher(
+		expression.NewNormalExpressionMatcher(symbols),
+		expression.NewCompareExpressionMatcher(symbols),
+		expression.NewLikeExpressionMatcher(symbols),
+		expression.NewInExpressionMatcher(symbols),
+	)
+
 	xdb.Register(&sqlserverResolver{})
-	tpl.Register(New(Proto, ArgumentPrefix))
+	xdb.RegistTemplate(New(Proto, ArgumentPrefix, tplMatcher))
 }

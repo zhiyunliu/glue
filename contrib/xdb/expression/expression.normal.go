@@ -29,7 +29,7 @@ func init() {
 var _ xdb.ExpressionMatcher = &normalExpressionMatcher{}
 
 func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap) xdb.ExpressionMatcher {
-	const pattern = `[&|\|]({\w+(\.\w+)?})`
+	const pattern = `[$|@|&|\|]({(\w+(\.\w+)?\s*)})`
 	return &normalExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -51,29 +51,40 @@ func (m *normalExpressionMatcher) Pattern() string {
 	return m.regexp.String()
 }
 
-func (m *normalExpressionMatcher) Symbol() xdb.SymbolMap {
-	return m.symbolMap
+func (m *normalExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
+	return m.symbolMap.Load(symbol)
 }
 
 func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
-	fullkey := expression
-	ok = m.regexp.MatchString(fullkey)
-	if !ok {
+	tmp, ok := m.expressionCache.Load(expression)
+	if ok {
+		valuer = tmp.(xdb.ExpressionValuer)
 		return
 	}
 
-	parties := strings.Split(fullkey, ".")
+	parties := m.regexp.FindStringSubmatch(expression)
+	if len(parties) <= 0 {
+		return
+	}
+	ok = true
+
+	fullkey := strings.TrimSpace(parties[2])
 
 	item := &xdb.ExpressionItem{
+		Symbol:    getExpressionSymbol(expression),
 		Oper:      "=",
 		FullField: fullkey,
 		PropName:  fullkey,
 	}
-	if len(parties) > 1 {
-		item.PropName = parties[1]
+	pIdx := strings.Index(fullkey, ".")
+
+	if pIdx > 0 {
+		item.PropName = fullkey[pIdx+1:]
 	}
 
 	item.ExpressionBuildCallback = m.buildCallback()
+	m.expressionCache.Store(expression, item)
+
 	return item, ok
 }
 
