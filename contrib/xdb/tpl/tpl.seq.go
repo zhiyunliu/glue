@@ -42,7 +42,9 @@ func (ph *seqPlaceHolder) Clone() xdb.Placeholder {
 	}
 }
 
-func NewSeq(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
+var _ xdb.SQLTemplate = &SeqTemplate{}
+
+func NewSeq(name, prefix string, matcher xdb.TemplateMatcher) *SeqTemplate {
 	if matcher == nil {
 		panic(fmt.Errorf("NewFixed ,TemplateMatcher Can't be nil"))
 	}

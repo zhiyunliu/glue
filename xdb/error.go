@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	MissTypeParam = "param"
-	MissTypeOper  = "oper"
+	MissTypeParam  = "param"
+	MissTypeOper   = "oper"
+	MissTypeSymbol = "symbol"
 )
 
 type DbError interface {
@@ -126,10 +127,33 @@ func NewMissPropError(name string) MissError {
 	}
 }
 
+type xMissSymbolError struct {
+	propName string
+}
+
+func (e xMissSymbolError) Error() string {
+	return fmt.Sprintf("缺少Property定义:[%s]", e.propName)
+}
+
+func (e xMissSymbolError) Name() string {
+	return e.propName
+}
+
+func (e xMissSymbolError) Type() string {
+	return MissTypeSymbol
+}
+
+func NewMissSymbolError(name string) MissError {
+	return &xMissSymbolError{
+		propName: name,
+	}
+}
+
 type xMissParamsError struct {
-	paramList []string
-	operList  []string
-	otherList []string
+	paramList  []string
+	operList   []string
+	symbolList []string
+	otherList  []string
 }
 
 func (e xMissParamsError) Error() string {
@@ -140,6 +164,9 @@ func (e xMissParamsError) Error() string {
 	if len(e.operList) > 0 {
 		msgList = append(msgList, fmt.Sprintf("缺少Operator定义:[%s]", strings.Join(e.operList, ",")))
 	}
+	if len(e.symbolList) > 0 {
+		msgList = append(msgList, fmt.Sprintf("缺少Symbol定义:[%s]", strings.Join(e.symbolList, ",")))
+	}
 	if len(e.otherList) > 0 {
 		msgList = append(msgList, fmt.Sprintf("缺少类型:[%s]", strings.Join(e.otherList, ",")))
 	}
@@ -149,20 +176,25 @@ func (e xMissParamsError) Error() string {
 func NewMissListError(errList ...MissError) MissListError {
 	paramList := []string{}
 	operList := []string{}
+	symbolList := []string{}
 	otherList := []string{}
+
 	for i := range errList {
 		if strings.EqualFold(errList[i].Type(), MissTypeParam) {
 			paramList = append(paramList, errList[i].Name())
 		} else if strings.EqualFold(errList[i].Type(), MissTypeOper) {
 			operList = append(operList, errList[i].Name())
+		} else if strings.EqualFold(errList[i].Type(), MissTypeSymbol) {
+			symbolList = append(symbolList, errList[i].Name())
 		} else {
 			otherList = append(otherList, fmt.Sprintf("%s:%s", errList[i].Type(), errList[i].Name()))
 		}
 	}
 	return &xMissParamsError{
-		paramList: paramList,
-		operList:  operList,
-		otherList: otherList,
+		paramList:  paramList,
+		operList:   operList,
+		symbolList: symbolList,
+		otherList:  otherList,
 	}
 }
 

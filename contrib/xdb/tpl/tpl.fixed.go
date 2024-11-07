@@ -37,7 +37,9 @@ func (ph *fixedPlaceHolder) Clone() xdb.Placeholder {
 	}
 }
 
-func NewFixed(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
+var _ xdb.SQLTemplate = &FixedTemplate{}
+
+func NewFixed(name, prefix string, matcher xdb.TemplateMatcher) *FixedTemplate {
 	if matcher == nil {
 		panic(fmt.Errorf("NewFixed ,TemplateMatcher Can't be nil"))
 	}

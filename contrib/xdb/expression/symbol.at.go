@@ -10,10 +10,15 @@ func (s *atSymbols) Name() string {
 	return xdb.SymbolAt
 }
 
+func (s *atSymbols) DynamicType() xdb.DynamicType {
+	return xdb.DynamicNone
+}
+
 func (s *atSymbols) Concat() string {
 	return ""
 }
 func (s *atSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
+	item.SetDynamic(s.DynamicType())
 
 	propName := valuer.GetPropName()
 

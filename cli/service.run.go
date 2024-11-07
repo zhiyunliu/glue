@@ -35,6 +35,7 @@ func (p *ServiceApp) apprun() error {
 	if err := p.startingHooks(p.svcCtx); err != nil {
 		return err
 	}
+	global.StartRunning()
 	p.closeWaitGroup.Add(len(p.options.Servers))
 	for _, srv := range p.options.Servers {
 		srv.Config(p.options.Config)

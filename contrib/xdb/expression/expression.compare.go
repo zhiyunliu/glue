@@ -78,18 +78,16 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 		item.Oper = parties[8]
 		item.PropName = getExpressionPropertyName(item.FullField)
 	}
+
+	item.SpecConcat(m.symbolMap)
 	item.ExpressionBuildCallback = m.buildCallback()
 	m.expressionCache.Store(expression, item)
 	return item, ok
 }
 
 func (m *compareExpressionMatcher) buildCallback() xdb.ExpressionBuildCallback {
-	return func(item *xdb.ExpressionItem, param xdb.DBParam, argName string) (expression string, err xdb.MissError) {
-		symbol, ok := m.symbolMap.Load(item.GetSymbol())
-		if !ok {
-			return "", xdb.NewMissPropError(item.GetPropName())
-		}
-
-		return fmt.Sprintf("%s %s%s%s", symbol.Concat(), item.GetFullfield(), item.GetOper(), argName), nil
+	return func(state xdb.SqlState, item *xdb.ExpressionItem, param xdb.DBParam, argName string, value any) (expression string, err xdb.MissError) {
+		state.AppendExpr(argName, value)
+		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), argName), nil
 	}
 }

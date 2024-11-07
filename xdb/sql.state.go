@@ -3,6 +3,7 @@ package xdb
 type DynamicType int
 
 const (
+	DynamicNone    DynamicType = 0
 	DynamicAnd     DynamicType = 1
 	DynamicOr      DynamicType = 2
 	DynamicReplace DynamicType = 4

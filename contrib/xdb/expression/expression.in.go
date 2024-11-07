@@ -1,7 +1,9 @@
 package expression
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/zhiyunliu/glue/xdb"
@@ -76,6 +78,7 @@ func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.Express
 	item.FullField = fullField
 	item.PropName = propName
 
+	item.SpecConcat(m.symbolMap)
 	item.ExpressionBuildCallback = m.buildCallback()
 	m.expressionCache.Store(expression, item)
 
@@ -83,8 +86,23 @@ func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.Express
 }
 
 func (m *inExpressionMatcher) buildCallback() xdb.ExpressionBuildCallback {
-	return func(item *xdb.ExpressionItem, param xdb.DBParam, argName string) (expression string, err xdb.MissError) {
+	return func(state xdb.SqlState, item *xdb.ExpressionItem, param xdb.DBParam, argName string, value any) (expression string, err xdb.MissError) {
+		var val string
+		switch t := value.(type) {
+		case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
+			val = strings.Trim(strings.Replace(fmt.Sprint(t), " ", ",", -1), "[]")
+			if len(val) == 0 {
+				return
+			}
+		case []string:
+			if len(t) <= 0 {
+				return
+			}
+			val = sqlInjectionPreventionArray(t)
+		default:
+			return
+		}
 
-		return
+		return fmt.Sprintf("%s %s in (%s)", item.Concat, item.GetFullfield(), val), nil
 	}
 }

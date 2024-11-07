@@ -23,6 +23,7 @@ const (
 type Symbol interface {
 	Name() string
 	Concat() string
+	DynamicType() DynamicType
 	Callback(item SqlState, valuer ExpressionValuer, input DBParam) (string, MissError)
 }
 
@@ -51,6 +52,9 @@ func (m *symbolsMap) Regist(symbol Symbol) {
 
 func (m *symbolsMap) Load(name string) (Symbol, bool) {
 	callback, ok := m.symbolMap.Load(name)
+	if !ok {
+		return nil, ok
+	}
 	return callback.(Symbol), ok
 }
 func (m *symbolsMap) Delete(name string) {

@@ -5,8 +5,9 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"sync/atomic"
 
+	"github.com/emirpasic/gods/v2/maps/treemap"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -52,7 +53,7 @@ func (conn *DefaultTemplateMatcher) RegistMatcher(matchers ...ExpressionMatcher)
 func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, input DBParam) (sql string, err error) {
 
 	matcherMap := conn.matcherMap
-	word := matcherMap.BuildFullRegexp()
+	word := matcherMap.GetMatcherRegexp()
 
 	var outerrs []MissError
 
@@ -70,10 +71,9 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 			matcher = exprItem.(ExpressionMatcher)
 			valuer, _ = matcher.MatchString(expr)
 		} else {
-			matcherMap.Each(func(name string, exprMatcher ExpressionMatcher) bool {
+			matcher = matcherMap.Find(func(exprMatcher ExpressionMatcher) bool {
 				valuer, ok = exprMatcher.MatchString(expr)
-				matcher = exprMatcher
-				return !ok
+				return ok
 			})
 
 			if valuer == nil {
@@ -92,7 +92,7 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 		if err != nil {
 			outerrs = append(outerrs, err)
 		}
-		return
+		return repExpr
 
 	})
 	if len(outerrs) > 0 {
@@ -103,17 +103,16 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 
 type DefaultExpressionMatcherMapImpl struct {
 	mutex        *sync.Mutex
-	matcherCache *sync.Map
+	matcherCache *treemap.Map[int, ExpressionMatcher]
 	sortVal      map[string]int
-	regexp       *atomic.Value
+	regexp       *regexp.Regexp
 }
 
 func NewExpressionMatcherMap() ExpressionMatcherMap {
 	return &DefaultExpressionMatcherMapImpl{
 		mutex:        &sync.Mutex{},
-		matcherCache: &sync.Map{},
+		matcherCache: treemap.New[int, ExpressionMatcher](),
 		sortVal:      map[string]int{},
-		regexp:       &atomic.Value{},
 	}
 }
 
@@ -121,55 +120,66 @@ func (m *DefaultExpressionMatcherMapImpl) Regist(matchers ...ExpressionMatcher) 
 	if len(matchers) <= 0 {
 		return
 	}
+	if global.IsRunning() {
+		return
+	}
+
 	for i := range matchers {
 		matcher := matchers[i]
 		if matcher == nil {
 			continue
 		}
-		m.sortMatcher(matcher)
-		m.matcherCache.Store(matcher.Name(), matcher)
-		m.regexp.Store(nil)
+		idx, ok := m.sortVal[matcher.Name()]
+		if !ok {
+			idx = len(m.sortVal)
+			m.sortVal[matcher.Name()] = idx
+		}
+
+		m.matcherCache.Put(idx, matcher)
 	}
 }
 func (m *DefaultExpressionMatcherMapImpl) Load(name string) (ExpressionMatcher, bool) {
-	tmp, ok := m.matcherCache.Load(name)
+	idx := m.sortVal[name]
+	tmp, ok := m.matcherCache.Get(idx)
 	if !ok {
 		return nil, ok
 	}
-	return tmp.(ExpressionMatcher), ok
+	return tmp, ok
 }
-func (m *DefaultExpressionMatcherMapImpl) Each(call func(name string, matcher ExpressionMatcher) bool) {
-	m.matcherCache.Range(func(key, value interface{}) bool {
-		return call(key.(string), value.(ExpressionMatcher))
+func (m *DefaultExpressionMatcherMapImpl) Find(call func(matcher ExpressionMatcher) bool) ExpressionMatcher {
+	_, matcher := m.matcherCache.Find(func(key int, value ExpressionMatcher) bool {
+		return call(value)
 	})
+	return matcher
 }
 func (m *DefaultExpressionMatcherMapImpl) Delete(name string) {
-	m.matcherCache.Delete(name)
+	if global.IsRunning() {
+		return
+	}
+	idx := m.sortVal[name]
+	m.matcherCache.Remove(idx)
 }
 
 func (m *DefaultExpressionMatcherMapImpl) Clone() ExpressionMatcherMap {
 	clone := NewExpressionMatcherMap()
 
-	m.Each(func(name string, matcher ExpressionMatcher) bool {
+	m.matcherCache.Each(func(idx int, matcher ExpressionMatcher) {
 		clone.Regist(matcher)
-		return true
 	})
 
 	return clone
 }
 
-func (m *DefaultExpressionMatcherMapImpl) BuildFullRegexp() *regexp.Regexp {
-	tmpVal := m.regexp.Load()
-	if tmpVal != nil {
-		return tmpVal.(*regexp.Regexp)
+func (m *DefaultExpressionMatcherMapImpl) GetMatcherRegexp() *regexp.Regexp {
+	if m.regexp != nil {
+		return m.regexp
 	}
 
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	tmpVal = m.regexp.Load()
-	if tmpVal != nil {
-		return tmpVal.(*regexp.Regexp)
+	if m.regexp != nil {
+		return m.regexp
 	}
 
 	sortMap := xtypes.NewSortedMap[int, string](func(a, b int) bool {
@@ -195,15 +205,6 @@ func (m *DefaultExpressionMatcherMapImpl) BuildFullRegexp() *regexp.Regexp {
 	patternVal = strings.TrimSuffix(patternVal, "|")
 
 	pattern := regexp.MustCompile(patternVal)
-
-	m.regexp.Store(pattern)
+	m.regexp = pattern
 	return pattern
-}
-
-func (m *DefaultExpressionMatcherMapImpl) sortMatcher(matcher ExpressionMatcher) {
-	_, ok := m.sortVal[matcher.Name()]
-	if ok {
-		return
-	}
-	m.sortVal[matcher.Name()] = len(m.sortVal)
 }

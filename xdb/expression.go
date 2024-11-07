@@ -23,8 +23,8 @@ type ExpressionMatcher interface {
 type ExpressionMatcherMap interface {
 	Regist(...ExpressionMatcher)
 	Load(name string) (ExpressionMatcher, bool)
-	Each(call func(name string, matcher ExpressionMatcher) bool)
-	BuildFullRegexp() *regexp.Regexp
+	Find(call func(matcher ExpressionMatcher) bool) ExpressionMatcher
+	GetMatcherRegexp() *regexp.Regexp
 }
 
 // xdb表达式
@@ -33,17 +33,19 @@ type ExpressionValuer interface {
 	GetFullfield() string
 	GetOper() string
 	GetSymbol() string
-	Build(input DBParam, argName string) (string, MissError)
+	GetConcat() string
+	Build(state SqlState, input DBParam, argName string, value any) (string, MissError)
 }
 
 // 表达式回调
-type ExpressionBuildCallback func(item *ExpressionItem, param DBParam, argName string) (expression string, err MissError)
+type ExpressionBuildCallback func(state SqlState, item *ExpressionItem, param DBParam, argName string, value any) (expression string, err MissError)
 
 type ExpressionItem struct {
 	FullField               string
 	PropName                string
 	Oper                    string
 	Symbol                  string
+	Concat                  string
 	ExpressionBuildCallback ExpressionBuildCallback
 }
 
@@ -62,10 +64,18 @@ func (m *ExpressionItem) GetFullfield() string {
 func (m *ExpressionItem) GetOper() string {
 	return m.Oper
 }
+func (m *ExpressionItem) GetConcat() string {
+	return m.Concat
+}
 
-func (m *ExpressionItem) Build(param DBParam, argName string) (expression string, err MissError) {
+func (m *ExpressionItem) Build(state SqlState, param DBParam, argName string, value any) (expression string, err MissError) {
 	if m.ExpressionBuildCallback == nil {
 		return
 	}
-	return m.ExpressionBuildCallback(m, param, argName)
+	return m.ExpressionBuildCallback(state, m, param, argName, value)
+}
+
+func (m *ExpressionItem) SpecConcat(symbolMap SymbolMap) {
+	tmp, _ := symbolMap.Load(m.Symbol)
+	m.Concat = tmp.Concat()
 }

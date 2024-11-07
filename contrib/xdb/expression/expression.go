@@ -27,3 +27,17 @@ func getExpressionSymbol(expression string) string {
 	}
 	return expression[:idx]
 }
+
+func sqlInjectionPrevention(data string) (newdata string) {
+	newdata = strings.ReplaceAll(data, "'", "''")
+	return
+}
+
+func sqlInjectionPreventionArray(data []string) (newdata string) {
+
+	newArray := make([]string, len(data))
+	for i := range data {
+		newArray[i] = strings.ReplaceAll(data[i], "'", "''")
+	}
+	return "'" + strings.Join(newArray, "','") + "'"
+}

@@ -1,12 +1,10 @@
-package expression
+package xdb
 
 import (
 	"sync"
-
-	"github.com/zhiyunliu/glue/xdb"
 )
 
-type OperatorCallback func(param xdb.DBParam, valuer xdb.ExpressionValuer, concat string, argName string) string
+type OperatorCallback func(valuer ExpressionValuer, param DBParam, argName string, value any) string
 
 type OperatorMap interface {
 	Store(name string, callback OperatorCallback)

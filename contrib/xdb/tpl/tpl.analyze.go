@@ -19,7 +19,7 @@ func AnalyzeTPLFromCache(template xdb.SQLTemplate, sqlTpl string, input map[stri
 
 	if tplOpts.UseCache {
 		tplval, ok := tplcache.Load(hashVal)
-		if !ok {
+		if ok {
 			item := tplval.(xdb.SqlStateCahe)
 			return item.Build(input)
 		}

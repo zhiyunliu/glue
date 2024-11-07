@@ -1,6 +1,7 @@
 package expression
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -30,17 +31,20 @@ func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap) xdb.ExpressionMatcher {
 	//like %t.bbb%
 
 	const pattern = `[&|\|](({like\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+like\s+(%?\w+%?)}))`
-	return &likeExpressionMatcher{
+	matcher := &likeExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
 		symbolMap:       symbolMap,
 	}
+	matcher.operatorMap = matcher.getOperatorMap()
+	return matcher
 }
 
 type likeExpressionMatcher struct {
 	symbolMap       xdb.SymbolMap
 	regexp          *regexp.Regexp
 	expressionCache *sync.Map
+	operatorMap     xdb.OperatorMap
 }
 
 func (m *likeExpressionMatcher) Name() string {
@@ -100,6 +104,7 @@ func (m *likeExpressionMatcher) MatchString(expression string) (valuer xdb.Expre
 		FullField: fullkey,
 		PropName:  getExpressionPropertyName(propName),
 	}
+	item.SpecConcat(m.symbolMap)
 	item.ExpressionBuildCallback = m.buildCallback()
 	m.expressionCache.Store(expression, item)
 
@@ -107,7 +112,34 @@ func (m *likeExpressionMatcher) MatchString(expression string) (valuer xdb.Expre
 }
 
 func (m *likeExpressionMatcher) buildCallback() xdb.ExpressionBuildCallback {
-	return func(item *xdb.ExpressionItem, param xdb.DBParam, argName string) (expression string, err xdb.MissError) {
-		return
+	return func(state xdb.SqlState, item *xdb.ExpressionItem, param xdb.DBParam, argName string, value any) (expression string, err xdb.MissError) {
+		state.AppendExpr(argName, value)
+		callback, ok := m.operatorMap.Load(item.GetOper())
+		if !ok {
+			err = xdb.NewMissOperError(item.Oper)
+			return
+		}
+		return callback(item, param, argName, value), nil
 	}
+}
+
+func (m *likeExpressionMatcher) getOperatorMap() xdb.OperatorMap {
+	likeoperMap := xdb.NewOperatorMap()
+
+	likeoperMap.Store("like", func(item xdb.ExpressionValuer, param xdb.DBParam, argName string, value any) string {
+		return fmt.Sprintf("%s %s like %s", item.GetConcat(), item.GetFullfield(), argName)
+	})
+
+	likeoperMap.Store("%like", func(item xdb.ExpressionValuer, param xdb.DBParam, argName string, value any) string {
+		return fmt.Sprintf("%s %s like '%%'+%s", item.GetConcat(), item.GetFullfield(), argName)
+	})
+
+	likeoperMap.Store("like%", func(item xdb.ExpressionValuer, param xdb.DBParam, argName string, value any) string {
+		return fmt.Sprintf("%s %s like %s+'%%'", item.GetConcat(), item.GetFullfield(), argName)
+	})
+
+	likeoperMap.Store("%like%", func(item xdb.ExpressionValuer, param xdb.DBParam, argName string, value any) string {
+		return fmt.Sprintf("%s %s like '%%'+%s+'%%'", item.GetConcat(), item.GetFullfield(), argName)
+	})
+	return likeoperMap
 }

@@ -8,15 +8,15 @@ import (
 	"github.com/zhiyunliu/glue/xdb"
 )
 
-// MssqlContext  模板
-type MssqlContext struct {
+// MssqlTemplate  模板
+type MssqlTemplate struct {
 	name    string
 	prefix  string
 	matcher xdb.TemplateMatcher
 }
 
 type mssqlPlaceHolder struct {
-	ctx *MssqlContext
+	ctx *MssqlTemplate
 }
 
 func (ph *mssqlPlaceHolder) Get(propName string) (argName, phName string) {
@@ -49,34 +49,34 @@ func New(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
 	if matcher == nil {
 		panic(fmt.Errorf("New ,TemplateMatcher Can't be nil"))
 	}
-	return &MssqlContext{
+	return &MssqlTemplate{
 		name:    name,
 		prefix:  prefix,
 		matcher: matcher,
 	}
 }
 
-func (ctx *MssqlContext) Name() string {
+func (ctx *MssqlTemplate) Name() string {
 	return ctx.name
 }
 
-func (ctx *MssqlContext) Placeholder() xdb.Placeholder {
+func (ctx *MssqlTemplate) Placeholder() xdb.Placeholder {
 	return &mssqlPlaceHolder{ctx: ctx}
 }
 
 // GetSQLContext 获取查询串
-func (template *MssqlContext) GetSQLContext(sqlTpl string, input map[string]any, opts ...xdb.TemplateOption) (query string, args []any, err error) {
+func (template *MssqlTemplate) GetSQLContext(sqlTpl string, input map[string]any, opts ...xdb.TemplateOption) (query string, args []any, err error) {
 	return tpl.AnalyzeTPLFromCache(template, sqlTpl, input, opts...)
 }
 
-func (template *MssqlContext) RegistExpressionMatcher(matchers ...xdb.ExpressionMatcher) {
+func (template *MssqlTemplate) RegistExpressionMatcher(matchers ...xdb.ExpressionMatcher) {
 	template.matcher.RegistMatcher(matchers...)
 }
 
-func (template *MssqlContext) HandleExpr(item xdb.SqlState, sqlTpl string, input xdb.DBParam) (sql string, err error) {
+func (template *MssqlTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, input xdb.DBParam) (sql string, err error) {
 	return template.matcher.GenerateSQL(item, sqlTpl, input)
 }
 
-func (template *MssqlContext) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
+func (template *MssqlTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
 	return xdb.NewDefaultSqlState(template.Placeholder(), tplOpts)
 }

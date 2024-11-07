@@ -5,22 +5,23 @@ import "github.com/zhiyunliu/glue/xdb"
 type replaceSymbols struct{}
 
 func (s *replaceSymbols) Name() string {
-	return xdb.SymbolAnd
+	return xdb.SymbolReplace
+}
+
+func (s *replaceSymbols) DynamicType() xdb.DynamicType {
+	return xdb.DynamicReplace
 }
 
 func (s *replaceSymbols) Concat() string {
 	return ""
 }
 func (s *replaceSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
-	item.SetDynamic(xdb.DynamicReplace)
-
+	item.SetDynamic(s.DynamicType())
 	propName := valuer.GetPropName()
-
 	argName, value, _ := input.Get(propName, item.GetPlaceholder())
 
 	if !xdb.IsNil(value) {
-		item.AppendExpr(propName, value)
-		return valuer.Build(input, argName)
+		return valuer.Build(item, input, argName, value)
 	}
 	return "", nil
 }
