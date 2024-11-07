@@ -13,18 +13,37 @@ import (
 
 // 表达式解析选项
 type TemplateOptions struct {
-	UseCache bool
+	UseExprCache bool
 }
 
 type TemplateOption func(*TemplateOptions)
 
 // 使用解析缓存
-func WithUseCache(use bool) TemplateOption {
+func WithExprCache(use bool) TemplateOption {
 	return func(o *TemplateOptions) {
-		o.UseCache = use
+		o.UseExprCache = use
 	}
 }
 
+type MatcherOptions struct {
+	BuildCallback ExpressionBuildCallback
+}
+type MatcherOption func(*MatcherOptions)
+
+// WithBuildCallback 制定matcher的表达式生成回调
+func WithBuildCallback(callback ExpressionBuildCallback) MatcherOption {
+	return func(mo *MatcherOptions) {
+		mo.BuildCallback = callback
+	}
+}
+
+// ExprCacheItem 表达式缓存
+type ExprCacheItem struct {
+	Matcher ExpressionMatcher
+	Valuer  ExpressionValuer
+}
+
+// TemplateMatcher 模板匹配器
 type TemplateMatcher interface {
 	RegistMatcher(matcher ...ExpressionMatcher)
 	GenerateSQL(item SqlState, sqlTpl string, input DBParam) (sql string, err error)
@@ -60,27 +79,29 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 	//@变量, 将数据放入params中
 	sql = word.ReplaceAllStringFunc(sqlTpl, func(expr string) (repExpr string) {
 		var (
-			valuer  ExpressionValuer
 			matcher ExpressionMatcher
-
-			ok bool
+			valuer  ExpressionValuer
+			ok      bool
 		)
 
 		exprItem, ok := conn.exprCache.Load(expr)
 		if ok {
-			matcher = exprItem.(ExpressionMatcher)
-			valuer, _ = matcher.MatchString(expr)
+			expritem := exprItem.(*ExprCacheItem)
+			matcher = expritem.Matcher
+			valuer = expritem.Valuer
 		} else {
 			matcher = matcherMap.Find(func(exprMatcher ExpressionMatcher) bool {
 				valuer, ok = exprMatcher.MatchString(expr)
 				return ok
 			})
-
 			if valuer == nil {
 				return expr
 			}
-			if state.CanCache() {
-				conn.exprCache.Store(expr, matcher)
+			if state.UseExprCache() {
+				conn.exprCache.Store(expr, &ExprCacheItem{
+					Matcher: matcher,
+					Valuer:  valuer,
+				})
 			}
 		}
 

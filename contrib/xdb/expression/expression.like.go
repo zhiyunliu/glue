@@ -11,7 +11,7 @@ import (
 
 var _ xdb.ExpressionMatcher = &likeExpressionMatcher{}
 
-func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap) xdb.ExpressionMatcher {
+func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption) xdb.ExpressionMatcher {
 	//aaaa like ttt
 	//aaaa like %ttt
 	//aaaa like ttt%
@@ -30,11 +30,17 @@ func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap) xdb.ExpressionMatcher {
 	//like t.bbb%
 	//like %t.bbb%
 
+	mopts := &xdb.MatcherOptions{}
+	for i := range opts {
+		opts[i](mopts)
+	}
+
 	const pattern = `[&|\|](({like\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+like\s+(%?\w+%?)}))`
 	matcher := &likeExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
 		symbolMap:       symbolMap,
+		buildCallback:   mopts.BuildCallback,
 	}
 	matcher.operatorMap = matcher.getOperatorMap()
 	return matcher
@@ -45,6 +51,7 @@ type likeExpressionMatcher struct {
 	regexp          *regexp.Regexp
 	expressionCache *sync.Map
 	operatorMap     xdb.OperatorMap
+	buildCallback   xdb.ExpressionBuildCallback
 }
 
 func (m *likeExpressionMatcher) Name() string {
@@ -105,13 +112,16 @@ func (m *likeExpressionMatcher) MatchString(expression string) (valuer xdb.Expre
 		PropName:  getExpressionPropertyName(propName),
 	}
 	item.SpecConcat(m.symbolMap)
-	item.ExpressionBuildCallback = m.buildCallback()
+	item.ExpressionBuildCallback = m.defaultBuildCallback()
+	if m.buildCallback != nil {
+		item.ExpressionBuildCallback = m.buildCallback
+	}
 	m.expressionCache.Store(expression, item)
 
 	return item, ok
 }
 
-func (m *likeExpressionMatcher) buildCallback() xdb.ExpressionBuildCallback {
+func (m *likeExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
 	return func(state xdb.SqlState, item *xdb.ExpressionItem, param xdb.DBParam, argName string, value any) (expression string, err xdb.MissError) {
 		state.AppendExpr(argName, value)
 		callback, ok := m.operatorMap.Load(item.GetOper())

@@ -18,7 +18,6 @@ func (s *andSymbols) Concat() string {
 
 func (s *andSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
 	item.SetDynamic(s.DynamicType())
-
 	propName := valuer.GetPropName()
 	argName, value, _ := input.Get(propName, item.GetPlaceholder())
 	if !xdb.IsNil(value) {

@@ -11,12 +11,18 @@ import (
 
 var _ xdb.ExpressionMatcher = &normalExpressionMatcher{}
 
-func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap) xdb.ExpressionMatcher {
+func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption) xdb.ExpressionMatcher {
+	mopts := &xdb.MatcherOptions{}
+	for i := range opts {
+		opts[i](mopts)
+	}
+
 	const pattern = `[$|@|&|\|]({(\w+(\.\w+)?\s*)})`
 	matcher := &normalExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
 		symbolMap:       symbolMap,
+		buildCallback:   mopts.BuildCallback,
 	}
 	matcher.operatorMap = matcher.getOperatorMap()
 	return matcher
@@ -27,6 +33,7 @@ type normalExpressionMatcher struct {
 	regexp          *regexp.Regexp
 	expressionCache *sync.Map
 	operatorMap     xdb.OperatorMap
+	buildCallback   xdb.ExpressionBuildCallback
 }
 
 func (m *normalExpressionMatcher) Name() string {
@@ -68,13 +75,17 @@ func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.Exp
 		item.PropName = fullkey[pIdx+1:]
 	}
 	item.SpecConcat(m.symbolMap)
-	item.ExpressionBuildCallback = m.buildCallback()
+	item.ExpressionBuildCallback = m.defaultBuildCallback()
+	if m.buildCallback != nil {
+		item.ExpressionBuildCallback = m.buildCallback
+	}
+
 	m.expressionCache.Store(expression, item)
 
 	return item, ok
 }
 
-func (m *normalExpressionMatcher) buildCallback() xdb.ExpressionBuildCallback {
+func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
 	return func(state xdb.SqlState, item *xdb.ExpressionItem, param xdb.DBParam, argName string, value any) (expression string, err xdb.MissError) {
 		if !strings.EqualFold(item.GetSymbol(), xdb.SymbolReplace) {
 			state.AppendExpr(argName, value)

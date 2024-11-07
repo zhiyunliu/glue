@@ -11,16 +11,23 @@ import (
 
 var _ xdb.ExpressionMatcher = &inExpressionMatcher{}
 
-func NewInExpressionMatcher(symbolMap xdb.SymbolMap) xdb.ExpressionMatcher {
+func NewInExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption) xdb.ExpressionMatcher {
 	//in aaa
 	//in t.aaa
 	//t.aaa in aaa
 	//bbb in aaa
+
+	mopts := &xdb.MatcherOptions{}
+	for i := range opts {
+		opts[i](mopts)
+	}
+
 	const pattern = `[&|\|](({in\s+(\w+(\.\w+)?)\s*})|({(\w+(\.\w+)?)\s+in\s+(\w+)\s*}))`
 	return &inExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
 		symbolMap:       symbolMap,
+		buildCallback:   mopts.BuildCallback,
 	}
 }
 
@@ -28,6 +35,7 @@ type inExpressionMatcher struct {
 	symbolMap       xdb.SymbolMap
 	regexp          *regexp.Regexp
 	expressionCache *sync.Map
+	buildCallback   xdb.ExpressionBuildCallback
 }
 
 func (m *inExpressionMatcher) Name() string {
@@ -79,13 +87,16 @@ func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.Express
 	item.PropName = propName
 
 	item.SpecConcat(m.symbolMap)
-	item.ExpressionBuildCallback = m.buildCallback()
-	m.expressionCache.Store(expression, item)
+	item.ExpressionBuildCallback = m.defaultBuildCallback()
+	if m.buildCallback != nil {
+		item.ExpressionBuildCallback = m.buildCallback
+	}
 
+	m.expressionCache.Store(expression, item)
 	return item, ok
 }
 
-func (m *inExpressionMatcher) buildCallback() xdb.ExpressionBuildCallback {
+func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
 	return func(state xdb.SqlState, item *xdb.ExpressionItem, param xdb.DBParam, argName string, value any) (expression string, err xdb.MissError) {
 		var val string
 		switch t := value.(type) {

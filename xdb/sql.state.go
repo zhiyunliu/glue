@@ -17,7 +17,7 @@ type SqlState interface {
 	GetPlaceholder() Placeholder
 	GetNames() []string
 	GetValues() []any
-	CanCache() bool
+	UseExprCache() bool
 	SetDynamic(DynamicType)
 	HasDynamic(DynamicType) bool
 	BuildCache() SqlStateCahe
@@ -46,23 +46,29 @@ func (s *DefaultSqlState) GetPlaceholder() Placeholder {
 func (s *DefaultSqlState) GetNames() []string {
 	return s.Names
 }
+
 func (s *DefaultSqlState) GetValues() []any {
 	return s.Values
 }
-func (s *DefaultSqlState) CanCache() bool {
-	return s.DynamicType&DynamicAnd > 0 ||
-		s.DynamicType&DynamicOr > 0 ||
-		s.DynamicType&DynamicReplace > 0
+
+func (s *DefaultSqlState) UseExprCache() bool {
+	return s.tplOpts.UseExprCache
 }
+
 func (s *DefaultSqlState) SetDynamic(val DynamicType) {
 	s.DynamicType = s.DynamicType | val
 }
+
 func (s *DefaultSqlState) HasDynamic(val DynamicType) bool {
 	return s.DynamicType&val > 0
 }
+
 func (s *DefaultSqlState) BuildCache() SqlStateCahe {
-	return &DefaultSqlStateCahe{}
+	return &DefaultSqlStateCahe{
+		ph: s.Placeholder,
+	}
 }
+
 func (s *DefaultSqlState) AppendExpr(name string, value any) {
 	s.Names = append(s.Names, name)
 	s.Values = append(s.Values, value)
