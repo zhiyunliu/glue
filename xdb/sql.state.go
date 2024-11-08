@@ -21,7 +21,7 @@ type SqlState interface {
 	SetDynamic(DynamicType)
 	HasDynamic(DynamicType) bool
 	BuildCache() SqlStateCahe
-	AppendExpr(name string, value any)
+	AppendExpr(propName string, value any)
 }
 
 type DefaultSqlState struct {
@@ -69,7 +69,7 @@ func (s *DefaultSqlState) BuildCache() SqlStateCahe {
 	}
 }
 
-func (s *DefaultSqlState) AppendExpr(name string, value any) {
-	s.Names = append(s.Names, name)
+func (s *DefaultSqlState) AppendExpr(propName string, value any) {
+	s.Names = append(s.Names, propName)
 	s.Values = append(s.Values, value)
 }

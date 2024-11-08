@@ -15,14 +15,15 @@ func (s *orSymbols) DynamicType() xdb.DynamicType {
 func (s *orSymbols) Concat() string {
 	return "or"
 }
-func (s *orSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
-	item.SetDynamic(s.DynamicType())
 
-	propName := valuer.GetPropName()
-	argName, value, _ := input.Get(propName, item.GetPlaceholder())
+// func (s *orSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
+// 	item.SetDynamic(s.DynamicType())
 
-	if !xdb.IsNil(value) {
-		return valuer.Build(item, input, argName, value)
-	}
-	return "", nil
-}
+// 	propName := valuer.GetPropName()
+// 	argName, value, _ := input.Get(propName, item.GetPlaceholder())
+
+// 	if !xdb.IsNil(value) {
+// 		return valuer.Build(item, input, argName, value)
+// 	}
+// 	return "", nil
+// }

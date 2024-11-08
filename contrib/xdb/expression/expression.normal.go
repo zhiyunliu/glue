@@ -86,36 +86,54 @@ func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.Exp
 }
 
 func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
-	return func(state xdb.SqlState, item *xdb.ExpressionItem, param xdb.DBParam, argName string, value any) (expression string, err xdb.MissError) {
-		if !strings.EqualFold(item.GetSymbol(), xdb.SymbolReplace) {
-			state.AppendExpr(argName, value)
-		}
+	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
 
-		callback, ok := m.operatorMap.Load(item.Symbol)
-		if !ok {
-			err = xdb.NewMissOperError(item.Oper)
+		propName := item.GetPropName()
+
+		value, err := param.GetVal(propName)
+		if err != nil {
 			return
 		}
-		return callback(item, param, argName, value), nil
+		if xdb.CheckIsNil(value) {
+			return
+		}
+
+		var (
+			phName  string
+			argName string
+		)
+		if !strings.EqualFold(item.GetSymbol(), xdb.SymbolReplace) {
+			placeHolder := state.GetPlaceholder()
+			argName, phName = placeHolder.Get(propName)
+			value = placeHolder.BuildArgVal(argName, value)
+			state.AppendExpr(propName, value)
+		}
+
+		operCallback, ok := m.operatorMap.Load(item.GetSymbol())
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		return operCallback(item, param, phName, value), nil
 	}
 }
 
 func (m *normalExpressionMatcher) getOperatorMap() xdb.OperatorMap {
 	var normalOperMap = xdb.NewOperatorMap()
 
-	normalOperMap.Store("@", func(item xdb.ExpressionValuer, param xdb.DBParam, argName string, value any) string {
-		return argName
+	normalOperMap.Store("@", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return phName
 	})
 
-	normalOperMap.Store("&", func(item xdb.ExpressionValuer, param xdb.DBParam, argName string, value any) string {
-		return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), argName)
+	normalOperMap.Store("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), phName)
 	})
 
-	normalOperMap.Store("|", func(item xdb.ExpressionValuer, param xdb.DBParam, argName string, value any) string {
-		return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), argName)
+	normalOperMap.Store("|", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), phName)
 	})
 
-	normalOperMap.Store("$", func(item xdb.ExpressionValuer, param xdb.DBParam, argName string, value any) (val string) {
+	normalOperMap.Store("$", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) (val string) {
 
 		switch t := value.(type) {
 		case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:

@@ -21,7 +21,7 @@ type mssqlPlaceHolder struct {
 
 func (ph *mssqlPlaceHolder) Get(propName string) (argName, phName string) {
 	argName = fmt.Sprint(ph.ctx.prefix, propName)
-	phName = "@" + argName
+	phName = ph.NamedArg(argName)
 	return
 }
 

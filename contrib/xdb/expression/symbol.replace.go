@@ -15,13 +15,14 @@ func (s *replaceSymbols) DynamicType() xdb.DynamicType {
 func (s *replaceSymbols) Concat() string {
 	return ""
 }
-func (s *replaceSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
-	item.SetDynamic(s.DynamicType())
-	propName := valuer.GetPropName()
-	argName, value, _ := input.Get(propName, item.GetPlaceholder())
 
-	if !xdb.IsNil(value) {
-		return valuer.Build(item, input, argName, value)
-	}
-	return "", nil
-}
+// func (s *replaceSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
+// 	item.SetDynamic(s.DynamicType())
+// 	propName := valuer.GetPropName()
+// 	argName, value, _ := input.Get(propName, item.GetPlaceholder())
+
+// 	if !xdb.IsNil(value) {
+// 		return valuer.Build(item, input, argName, value)
+// 	}
+// 	return "", nil
+// }

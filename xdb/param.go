@@ -19,6 +19,9 @@ type Placeholder interface {
 	Clone() Placeholder
 }
 
+// CheckIsNil 检查是否为空
+var CheckIsNil func(input any) bool = DefaultIsNil
+
 type DBParam map[string]any
 
 func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interface{}, err MissError) {
@@ -96,7 +99,7 @@ func TransArgs(args []sql.NamedArg) []interface{} {
 	return result
 }
 
-func IsNil(input interface{}) bool {
+func DefaultIsNil(input interface{}) bool {
 	if input == nil {
 		return true
 	}

@@ -79,18 +79,15 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 	//@变量, 将数据放入params中
 	sql = word.ReplaceAllStringFunc(sqlTpl, func(expr string) (repExpr string) {
 		var (
-			matcher ExpressionMatcher
-			valuer  ExpressionValuer
-			ok      bool
+			valuer ExpressionValuer
+			ok     bool
 		)
 
 		exprItem, ok := conn.exprCache.Load(expr)
 		if ok {
-			expritem := exprItem.(*ExprCacheItem)
-			matcher = expritem.Matcher
-			valuer = expritem.Valuer
+			valuer = exprItem.(ExpressionValuer)
 		} else {
-			matcher = matcherMap.Find(func(exprMatcher ExpressionMatcher) bool {
+			matcherMap.Find(func(exprMatcher ExpressionMatcher) bool {
 				valuer, ok = exprMatcher.MatchString(expr)
 				return ok
 			})
@@ -98,18 +95,11 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 				return expr
 			}
 			if state.UseExprCache() {
-				conn.exprCache.Store(expr, &ExprCacheItem{
-					Matcher: matcher,
-					Valuer:  valuer,
-				})
+				conn.exprCache.Store(expr, valuer)
 			}
 		}
 
-		symbol, ok := matcher.LoadSymbol(valuer.GetSymbol())
-		if !ok {
-			return expr
-		}
-		repExpr, err := symbol.Callback(state, valuer, input)
+		repExpr, err := valuer.Build(state, input)
 		if err != nil {
 			outerrs = append(outerrs, err)
 		}

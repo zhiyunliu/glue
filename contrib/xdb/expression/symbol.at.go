@@ -17,21 +17,22 @@ func (s *atSymbols) DynamicType() xdb.DynamicType {
 func (s *atSymbols) Concat() string {
 	return ""
 }
-func (s *atSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
-	item.SetDynamic(s.DynamicType())
 
-	propName := valuer.GetPropName()
+// func (s *atSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
+// 	item.SetDynamic(s.DynamicType())
 
-	argName, value, err := input.Get(propName, item.GetPlaceholder())
-	if err != nil {
-		return "", err
-	}
+// 	propName := valuer.GetPropName()
 
-	if !xdb.IsNil(value) {
-		item.AppendExpr(propName, value)
-	} else {
-		item.AppendExpr(propName, nil)
-	}
-	return argName, nil
+// 	argName, value, err := input.Get(propName, item.GetPlaceholder())
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-}
+// 	if !xdb.IsNil(value) {
+// 		item.AppendExpr(propName, value)
+// 	} else {
+// 		item.AppendExpr(propName, nil)
+// 	}
+// 	return argName, nil
+
+// }

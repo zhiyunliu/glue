@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-type OperatorCallback func(valuer ExpressionValuer, param DBParam, argName string, value any) string
+type OperatorCallback func(valuer ExpressionValuer, param DBParam, phName string, value any) string
 
 type OperatorMap interface {
 	Store(name string, callback OperatorCallback)

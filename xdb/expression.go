@@ -34,11 +34,11 @@ type ExpressionValuer interface {
 	GetOper() string
 	GetSymbol() string
 	GetConcat() string
-	Build(state SqlState, input DBParam, argName string, value any) (string, MissError)
+	Build(state SqlState, input DBParam) (string, MissError)
 }
 
 // 表达式回调
-type ExpressionBuildCallback func(state SqlState, item *ExpressionItem, param DBParam, argName string, value any) (expression string, err MissError)
+type ExpressionBuildCallback func(item ExpressionValuer, state SqlState, param DBParam) (expression string, err MissError)
 
 type ExpressionItem struct {
 	FullField               string
@@ -68,11 +68,11 @@ func (m *ExpressionItem) GetConcat() string {
 	return m.Concat
 }
 
-func (m *ExpressionItem) Build(state SqlState, param DBParam, argName string, value any) (expression string, err MissError) {
+func (m *ExpressionItem) Build(state SqlState, param DBParam) (expression string, err MissError) {
 	if m.ExpressionBuildCallback == nil {
 		return
 	}
-	return m.ExpressionBuildCallback(state, m, param, argName, value)
+	return m.ExpressionBuildCallback(m, state, param)
 }
 
 func (m *ExpressionItem) SpecConcat(symbolMap SymbolMap) {

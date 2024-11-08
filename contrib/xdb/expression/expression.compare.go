@@ -96,8 +96,19 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 }
 
 func (m *compareExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
-	return func(state xdb.SqlState, item *xdb.ExpressionItem, param xdb.DBParam, argName string, value any) (expression string, err xdb.MissError) {
-		state.AppendExpr(argName, value)
-		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), argName), nil
+	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
+		propName := item.GetPropName()
+		value, err := param.GetVal(propName)
+		if err != nil {
+			return
+		}
+		if xdb.CheckIsNil(value) {
+			return
+		}
+		placeHolder := state.GetPlaceholder()
+		argName, phName := placeHolder.Get(propName)
+		value = placeHolder.BuildArgVal(argName, value)
+		state.AppendExpr(propName, value)
+		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName), nil
 	}
 }

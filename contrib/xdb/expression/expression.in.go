@@ -97,7 +97,15 @@ func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.Express
 }
 
 func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
-	return func(state xdb.SqlState, item *xdb.ExpressionItem, param xdb.DBParam, argName string, value any) (expression string, err xdb.MissError) {
+	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
+		value, err := param.GetVal(item.GetPropName())
+		if err != nil {
+			return
+		}
+		if xdb.CheckIsNil(value) {
+			return
+		}
+
 		var val string
 		switch t := value.(type) {
 		case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
@@ -114,6 +122,6 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 			return
 		}
 
-		return fmt.Sprintf("%s %s in (%s)", item.Concat, item.GetFullfield(), val), nil
+		return fmt.Sprintf("%s %s in (%s)", item.GetConcat(), item.GetFullfield(), val), nil
 	}
 }

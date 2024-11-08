@@ -24,7 +24,7 @@ type Symbol interface {
 	Name() string
 	Concat() string
 	DynamicType() DynamicType
-	Callback(item SqlState, valuer ExpressionValuer, input DBParam) (string, MissError)
+	//Callback(item SqlState, valuer ExpressionValuer, input DBParam) (string, MissError)
 }
 
 type symbolsMap struct {
