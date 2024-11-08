@@ -25,6 +25,10 @@ func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpti
 		buildCallback:   mopts.BuildCallback,
 	}
 	matcher.operatorMap = matcher.getOperatorMap()
+	if mopts.OperatorMap != nil {
+		matcher.operatorMap = mopts.OperatorMap
+	}
+
 	return matcher
 }
 
@@ -89,7 +93,6 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
 
 		propName := item.GetPropName()
-
 		value, err := param.GetVal(propName)
 		if err != nil {
 			return

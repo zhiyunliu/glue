@@ -49,8 +49,8 @@ func TestDBParam_Get(t *testing.T) {
 		{name: "9.", key: "bool", wantVal: true},
 		{name: "10.", key: "[]byte", wantVal: []byte("[]byte")},
 
-		{name: "11.", key: "array", wantVal: "1,2,3"},
-		{name: "12.", key: "array2", wantVal: "'1','2','3'"},
+		{name: "11.", key: "array", wantVal: []int{1, 2, 3}},
+		{name: "12.", key: "array2", wantVal: []string{"1", "2", "3"}},
 	}
 
 	phList := []xdb.Placeholder{

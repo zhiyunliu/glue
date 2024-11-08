@@ -23,12 +23,19 @@ func NewInExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption) 
 	}
 
 	const pattern = `[&|\|](({in\s+(\w+(\.\w+)?)\s*})|({(\w+(\.\w+)?)\s+in\s+(\w+)\s*}))`
-	return &inExpressionMatcher{
+	matcher := &inExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
 		symbolMap:       symbolMap,
 		buildCallback:   mopts.BuildCallback,
 	}
+	matcher.operatorMap = matcher.getOperatorMap()
+
+	if mopts.OperatorMap != nil {
+		matcher.operatorMap = mopts.OperatorMap
+	}
+
+	return matcher
 }
 
 type inExpressionMatcher struct {
@@ -36,6 +43,7 @@ type inExpressionMatcher struct {
 	regexp          *regexp.Regexp
 	expressionCache *sync.Map
 	buildCallback   xdb.ExpressionBuildCallback
+	operatorMap     xdb.OperatorMap
 }
 
 func (m *inExpressionMatcher) Name() string {
@@ -122,6 +130,20 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 			return
 		}
 
-		return fmt.Sprintf("%s %s in (%s)", item.GetConcat(), item.GetFullfield(), val), nil
+		operCallback, ok := m.operatorMap.Load(item.GetOper())
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		return operCallback(item, param, "", val), nil
 	}
+}
+func (m *inExpressionMatcher) getOperatorMap() xdb.OperatorMap {
+	inOperMap := xdb.NewOperatorMap()
+
+	inOperMap.Store("in", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s in (%s)", item.GetConcat(), item.GetFullfield(), value)
+	})
+
+	return inOperMap
 }

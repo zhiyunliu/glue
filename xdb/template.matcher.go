@@ -27,6 +27,7 @@ func WithExprCache(use bool) TemplateOption {
 
 type MatcherOptions struct {
 	BuildCallback ExpressionBuildCallback
+	OperatorMap   OperatorMap
 }
 type MatcherOption func(*MatcherOptions)
 
@@ -34,6 +35,13 @@ type MatcherOption func(*MatcherOptions)
 func WithBuildCallback(callback ExpressionBuildCallback) MatcherOption {
 	return func(mo *MatcherOptions) {
 		mo.BuildCallback = callback
+	}
+}
+
+// WithOperatorMap 制定matcher的表达式生成回调
+func WithOperatorMap(operatorMap OperatorMap) MatcherOption {
+	return func(mo *MatcherOptions) {
+		mo.OperatorMap = operatorMap
 	}
 }
 

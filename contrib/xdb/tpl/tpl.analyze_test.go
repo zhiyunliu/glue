@@ -17,7 +17,6 @@ func Test_NewFixed_AnalyzeTPLFromCache(t *testing.T) {
 		template   xdb.SQLTemplate
 		tpl        string
 		input      map[string]interface{}
-		ph         xdb.Placeholder
 		wantSql    string
 		wantValues []any
 		wantErr    bool
@@ -51,9 +50,11 @@ func Test_NewFixed_AnalyzeTPLFromCache(t *testing.T) {
 		{name: "b-2-6.", tpl: "|{like %t.f%} &{t.f}", input: map[string]any{"f": "1"}, wantSql: "or t.f like '%'+?+'%' and t.f=?", wantValues: []any{"1", "1"}},
 
 		{name: "c-1-1.", tpl: "&{in f}", input: map[string]any{"f": []string{"1"}}, wantSql: "and f in ('1')", wantValues: nil},
-		{name: "c-1-2.", tpl: "&{in t.f}", input: map[string]any{"f": []string{"1"}}, wantSql: "and t.f in ('1')", wantValues: nil},
-		{name: "c-1-3.", tpl: "&{in f}", input: map[string]any{"f": []int{1, 2}}, wantSql: "and f in (1,2)", wantValues: nil},
-		{name: "c-1-4.", tpl: "&{in t.f}", input: map[string]any{"f": []int{1, 2}}, wantSql: "and t.f in (1,2)", wantValues: nil},
+		{name: "c-1-2.", tpl: "&{in t.f}", input: map[string]any{"f": []string{"1", "2"}}, wantSql: "and t.f in ('1','2')", wantValues: nil},
+		{name: "c-1-3.", tpl: "&{in t.f}", input: map[string]any{"f": []string{"1", "'"}}, wantSql: "and t.f in ('1','''')", wantValues: nil},
+		{name: "c-1-4.", tpl: "&{in t.f}", input: map[string]any{"f": []string{"1", "2", "'--"}}, wantSql: "and t.f in ('1','2','''--')", wantValues: nil},
+		{name: "c-1-5.", tpl: "&{in f}", input: map[string]any{"f": []int{1, 2}}, wantSql: "and f in (1,2)", wantValues: nil},
+		{name: "c-1-6.", tpl: "&{in t.f}", input: map[string]any{"f": []int{1, 2}}, wantSql: "and t.f in (1,2)", wantValues: nil},
 
 		{name: "c-2-1.", tpl: "|{filed in f}", input: map[string]any{"f": []string{"1"}}, wantSql: "or filed in ('1')", wantValues: nil},
 		{name: "c-2-2.", tpl: "|{t.field in f}", input: map[string]any{"f": []string{"1"}}, wantSql: "or t.field in ('1')", wantValues: nil},
@@ -134,9 +135,11 @@ func Test_NewSeq_AnalyzeTPLFromCache(t *testing.T) {
 		{name: "b-2-6.", tpl: "|{like %t.f%} &{t.f}", input: map[string]any{"f": "1"}, wantSql: "or t.f like '%'+:1+'%' and t.f=:2", wantValues: []any{"1", "1"}},
 
 		{name: "c-1-1.", tpl: "&{in f}", input: map[string]any{"f": []string{"1"}}, wantSql: "and f in ('1')", wantValues: nil},
-		{name: "c-1-2.", tpl: "&{in t.f}", input: map[string]any{"f": []string{"1"}}, wantSql: "and t.f in ('1')", wantValues: nil},
-		{name: "c-1-3.", tpl: "&{in f}", input: map[string]any{"f": []int{1, 2}}, wantSql: "and f in (1,2)", wantValues: nil},
-		{name: "c-1-4.", tpl: "&{in t.f}", input: map[string]any{"f": []int{1, 2}}, wantSql: "and t.f in (1,2)", wantValues: nil},
+		{name: "c-1-2.", tpl: "&{in t.f}", input: map[string]any{"f": []string{"1", "2"}}, wantSql: "and t.f in ('1','2')", wantValues: nil},
+		{name: "c-1-3.", tpl: "&{in t.f}", input: map[string]any{"f": []string{"1", "'"}}, wantSql: "and t.f in ('1','''')", wantValues: nil},
+		{name: "c-1-4.", tpl: "&{in t.f}", input: map[string]any{"f": []string{"1", "2", "'--"}}, wantSql: "and t.f in ('1','2','''--')", wantValues: nil},
+		{name: "c-1-5.", tpl: "&{in f}", input: map[string]any{"f": []int{1, 2}}, wantSql: "and f in (1,2)", wantValues: nil},
+		{name: "c-1-6.", tpl: "&{in t.f}", input: map[string]any{"f": []int{1, 2}}, wantSql: "and t.f in (1,2)", wantValues: nil},
 
 		{name: "c-2-1.", tpl: "|{filed in f}", input: map[string]any{"f": []string{"1"}}, wantSql: "or filed in ('1')", wantValues: nil},
 		{name: "c-2-2.", tpl: "|{t.field in f}", input: map[string]any{"f": []string{"1"}}, wantSql: "or t.field in ('1')", wantValues: nil},

@@ -6,6 +6,30 @@ import (
 	"github.com/zhiyunliu/glue/xdb"
 )
 
+type testPlaceHolder struct {
+	prefix string
+}
+
+func (ph *testPlaceHolder) Get(propName string) (argName, phName string) {
+	phName = ph.prefix
+	argName = propName
+	return
+}
+func (ph *testPlaceHolder) BuildArgVal(argName string, val interface{}) interface{} {
+	return val
+}
+
+func (ph *testPlaceHolder) NamedArg(propName string) (phName string) {
+	phName = ph.prefix
+	return
+}
+
+func (ph *testPlaceHolder) Clone() xdb.Placeholder {
+	return &testPlaceHolder{
+		prefix: ph.prefix,
+	}
+}
+
 func TestDefaultGetPropName(t *testing.T) {
 	normalMatcher := NewNormalExpressionMatcher(DefaultSymbols)
 	compareMatcher := NewCompareExpressionMatcher(DefaultSymbols)
@@ -20,6 +44,7 @@ func TestDefaultGetPropName(t *testing.T) {
 		wantPropName  string
 		wantOper      string
 		wantSymbol    string
+		wantExpr      string
 	}{
 		{name: "1-1.", matcher: normalMatcher, fullKey: "@{field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "@"},
 		{name: "1-2.", matcher: normalMatcher, fullKey: "${field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "$"},
@@ -103,6 +128,9 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "h-a.", matcher: inMatcher, fullKey: "&{field  in   property}", wantFullfield: "field", wantPropName: "property", wantOper: "in", wantSymbol: "&"},
 		{name: "i-a.", matcher: inMatcher, fullKey: "&{tt.field  in    property}", wantFullfield: "tt.field", wantPropName: "property", wantOper: "in", wantSymbol: "&"},
 	}
+
+	dbParam := map[string]any{"property": "p", "field": "field"}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			matcher := tt.matcher
@@ -124,6 +152,16 @@ func TestDefaultGetPropName(t *testing.T) {
 			}
 			if propValuer.GetSymbol() != tt.wantSymbol {
 				t.Errorf("GetSymbol() :%v, want %v", propValuer.GetSymbol(), tt.wantSymbol)
+			}
+			state := xdb.NewDefaultSqlState(&testPlaceHolder{prefix: "test"}, &xdb.TemplateOptions{UseExprCache: true})
+			expr, err := propValuer.Build(state, dbParam)
+			if err != nil {
+				t.Error(err)
+			}
+
+			if expr != tt.wantExpr {
+				t.Errorf("Build() :%v, want %v", expr, tt.wantExpr)
+
 			}
 		})
 	}

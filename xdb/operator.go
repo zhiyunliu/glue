@@ -28,6 +28,9 @@ func (m *operatorMap) Store(name string, callback OperatorCallback) {
 
 func (m *operatorMap) Load(name string) (OperatorCallback, bool) {
 	callback, ok := m.syncMap.Load(name)
+	if !ok {
+		return nil, ok
+	}
 
 	return callback.(OperatorCallback), ok
 }

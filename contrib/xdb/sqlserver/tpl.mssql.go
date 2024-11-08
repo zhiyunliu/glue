@@ -16,11 +16,11 @@ type MssqlTemplate struct {
 }
 
 type mssqlPlaceHolder struct {
-	ctx *MssqlTemplate
+	template *MssqlTemplate
 }
 
 func (ph *mssqlPlaceHolder) Get(propName string) (argName, phName string) {
-	argName = fmt.Sprint(ph.ctx.prefix, propName)
+	argName = fmt.Sprint(ph.template.prefix, propName)
 	phName = ph.NamedArg(argName)
 	return
 }
@@ -30,7 +30,7 @@ func (ph *mssqlPlaceHolder) NamedArg(argName string) (phName string) {
 	return
 }
 
-func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val interface{}) interface{} {
+func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val any) any {
 	if arg, ok := val.(sql.NamedArg); ok {
 		return arg
 	}
@@ -40,7 +40,7 @@ func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val interface{}) interfa
 
 func (ph *mssqlPlaceHolder) Clone() xdb.Placeholder {
 	return &mssqlPlaceHolder{
-		ctx: ph.ctx,
+		template: ph.template,
 	}
 }
 
@@ -61,7 +61,7 @@ func (ctx *MssqlTemplate) Name() string {
 }
 
 func (ctx *MssqlTemplate) Placeholder() xdb.Placeholder {
-	return &mssqlPlaceHolder{ctx: ctx}
+	return &mssqlPlaceHolder{template: ctx}
 }
 
 // GetSQLContext 获取查询串

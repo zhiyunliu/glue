@@ -27,12 +27,19 @@ func NewCompareExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpt
 	}
 
 	const pattern = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|=|<|<=)\s*(\w+)})|({(>|>=|=|<|<=)\s*(\w+(\.\w+)?)}))`
-	return &compareExpressionMatcher{
+	matcher := &compareExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
 		symbolMap:       symbolMap,
 		buildCallback:   mopts.BuildCallback,
 	}
+
+	matcher.operatorMap = matcher.getOperatorMap()
+
+	if mopts.OperatorMap != nil {
+		matcher.operatorMap = mopts.OperatorMap
+	}
+	return matcher
 }
 
 type compareExpressionMatcher struct {
@@ -40,6 +47,7 @@ type compareExpressionMatcher struct {
 	regexp          *regexp.Regexp
 	expressionCache *sync.Map
 	buildCallback   xdb.ExpressionBuildCallback
+	operatorMap     xdb.OperatorMap
 }
 
 func (m *compareExpressionMatcher) Name() string {
@@ -69,8 +77,6 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 	//fullfield,oper,property
 	//{t.field=property} =3，5,6
 	//{<property} =9,8, get(9)
-	//
-
 	item := &xdb.ExpressionItem{
 		Symbol: getExpressionSymbol(expression),
 	}
@@ -80,6 +86,7 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 		item.Oper = parties[5]
 		item.PropName = parties[6]
 	}
+
 	if parties[8] != "" {
 		item.FullField = parties[9]
 		item.Oper = parties[8]
@@ -105,10 +112,42 @@ func (m *compareExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCal
 		if xdb.CheckIsNil(value) {
 			return
 		}
+
 		placeHolder := state.GetPlaceholder()
 		argName, phName := placeHolder.Get(propName)
 		value = placeHolder.BuildArgVal(argName, value)
 		state.AppendExpr(propName, value)
-		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName), nil
+
+		operCallback, ok := m.operatorMap.Load(item.GetOper())
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		return operCallback(item, param, phName, value), nil
 	}
+}
+
+func (m *compareExpressionMatcher) getOperatorMap() xdb.OperatorMap {
+	inOperMap := xdb.NewOperatorMap()
+	inOperMap.Store(">", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
+	})
+
+	inOperMap.Store(">=", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
+	})
+
+	inOperMap.Store("<", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
+	})
+
+	inOperMap.Store("<=", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
+	})
+
+	inOperMap.Store("=", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
+	})
+
+	return inOperMap
 }
