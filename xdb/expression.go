@@ -16,7 +16,7 @@ func init() {
 type ExpressionMatcher interface {
 	Name() string
 	Pattern() string
-	//LoadSymbol(symbol string) (Symbol, bool)
+	GetOperatorMap() OperatorMap
 	MatchString(string) (ExpressionValuer, bool)
 }
 
@@ -29,6 +29,8 @@ type ExpressionMatcherMap interface {
 
 // xdb表达式
 type ExpressionValuer interface {
+	GetMatcher() ExpressionMatcher
+	GetOperatorCallback() (callback OperatorCallback, ok bool)
 	GetPropName() string
 	GetFullfield() string
 	GetOper() string
@@ -41,6 +43,7 @@ type ExpressionValuer interface {
 type ExpressionBuildCallback func(item ExpressionValuer, state SqlState, param DBParam) (expression string, err MissError)
 
 type ExpressionItem struct {
+	Matcher                 ExpressionMatcher
 	FullField               string
 	PropName                string
 	Oper                    string
@@ -67,12 +70,23 @@ func (m *ExpressionItem) GetOper() string {
 func (m *ExpressionItem) GetConcat() string {
 	return m.Concat
 }
+func (m *ExpressionItem) GetMatcher() ExpressionMatcher {
+	return m.Matcher
+}
 
 func (m *ExpressionItem) Build(state SqlState, param DBParam) (expression string, err MissError) {
 	if m.ExpressionBuildCallback == nil {
 		return
 	}
 	return m.ExpressionBuildCallback(m, state, param)
+}
+
+func (m *ExpressionItem) GetOperatorCallback() (callback OperatorCallback, ok bool) {
+	operator, ok := m.Matcher.GetOperatorMap().Load(m.Oper)
+	if !ok {
+		return nil, false
+	}
+	return operator.Callback, true
 }
 
 func (m *ExpressionItem) SpecConcat(symbolMap SymbolMap) {

@@ -27,13 +27,8 @@ func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpti
 			xdb.SymbolAt: true,
 		},
 	}
-	matcher.operatorMap = matcher.getOperatorMap()
-	if mopts.OperatorMap != nil {
-		mopts.OperatorMap.Range(func(k string, v xdb.OperatorCallback) bool {
-			matcher.operatorMap.Store(k, v)
-			return true
-		})
-	}
+	matcher.operatorMap = matcher.getOperatorMap(mopts.OperatorMap)
+
 	return matcher
 }
 
@@ -54,9 +49,9 @@ func (m *normalExpressionMatcher) Pattern() string {
 	return m.regexp.String()
 }
 
-// func (m *normalExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
-// 	return m.symbolMap.Load(symbol)
-// }
+func (m *normalExpressionMatcher) GetOperatorMap() xdb.OperatorMap {
+	return m.operatorMap
+}
 
 func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
 	tmp, ok := m.expressionCache.Load(expression)
@@ -75,10 +70,11 @@ func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.Exp
 
 	item := &xdb.ExpressionItem{
 		Symbol:    getExpressionSymbol(expression),
-		Oper:      "=",
+		Matcher:   m,
 		FullField: fullkey,
 		PropName:  fullkey,
 	}
+	item.Oper = item.Symbol
 	pIdx := strings.Index(fullkey, ".")
 
 	if pIdx > 0 {
@@ -104,7 +100,6 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 
 		var (
 			phName       string
-			argName      string
 			isNilNeedArg bool = m.IsNilNeedArg(item.GetSymbol())
 		)
 
@@ -122,13 +117,10 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 		}
 
 		if !strings.EqualFold(item.GetSymbol(), xdb.SymbolReplace) {
-			placeHolder := state.GetPlaceholder()
-			argName, phName = placeHolder.Get(propName)
-			value = placeHolder.BuildArgVal(argName, value)
-			state.AppendExpr(propName, value)
+			phName = state.AppendExpr(propName, value)
 		}
 
-		operCallback, ok := m.operatorMap.Load(item.GetSymbol())
+		operCallback, ok := item.GetOperatorCallback()
 		if !ok {
 			err = xdb.NewMissOperError(item.GetOper())
 			return
@@ -137,34 +129,41 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 	}
 }
 
-func (m *normalExpressionMatcher) getOperatorMap() xdb.OperatorMap {
-	var normalOperMap = xdb.NewOperatorMap()
+func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
+	operList := []xdb.Operator{
 
-	normalOperMap.Store("@", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return phName
-	})
+		xdb.NewDefaultOperator("@", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+			return phName
+		}),
 
-	normalOperMap.Store("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), phName)
-	})
+		xdb.NewDefaultOperator("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+			return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), phName)
+		}),
 
-	normalOperMap.Store("|", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), phName)
-	})
+		xdb.NewDefaultOperator("|", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+			return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), phName)
+		}),
 
-	normalOperMap.Store("$", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) (val string) {
+		xdb.NewDefaultOperator("$", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) (val string) {
 
-		switch t := value.(type) {
-		case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
-			val = strings.Trim(strings.Replace(fmt.Sprint(t), " ", ",", -1), "[]")
-		case []string:
-			val = sqlInjectionPreventionArray(t)
-		default:
-			val = fmt.Sprintf("%v", t)
-			val = sqlInjectionPrevention(val)
-		}
-		return val
-	})
+			switch t := value.(type) {
+			case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
+				val = strings.Trim(strings.Replace(fmt.Sprint(t), " ", ",", -1), "[]")
+			case []string:
+				val = sqlInjectionPreventionArray(t)
+			default:
+				val = fmt.Sprintf("%v", t)
+				val = sqlInjectionPrevention(val)
+			}
+			return val
+		}),
+	}
+	if optMap != nil {
+		optMap.Range(func(name string, operator xdb.Operator) bool {
+			operList = append(operList, operator)
+			return true
+		})
+	}
 
-	return normalOperMap
+	return xdb.NewOperatorMap(operList...)
 }

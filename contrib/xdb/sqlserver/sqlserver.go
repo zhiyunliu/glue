@@ -7,7 +7,6 @@ import (
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
 	"github.com/zhiyunliu/glue/contrib/xdb/expression"
-	"github.com/zhiyunliu/glue/contrib/xdb/sqlserver/symbols"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
@@ -31,7 +30,7 @@ func (s *sqlserverResolver) Resolve(connName string, setting config.Config, opts
 }
 
 func init() {
-	symbols := symbols.New()
+	symbols := expression.DefaultSymbols
 
 	tplMatcher := xdb.NewTemplateMatcher(
 		expression.NewNormalExpressionMatcher(symbols),

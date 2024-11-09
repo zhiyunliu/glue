@@ -13,12 +13,29 @@ type Operator interface {
 	Callback(valuer ExpressionValuer, param DBParam, phName string, value any) string
 }
 
+type DefaultOperator struct {
+	name     string
+	callback OperatorCallback
+}
+
+func NewDefaultOperator(name string, callback OperatorCallback) Operator {
+	return &DefaultOperator{name: name, callback: callback}
+}
+
+func (d *DefaultOperator) Name() string {
+	return ""
+}
+
+func (d *DefaultOperator) Callback(valuer ExpressionValuer, param DBParam, phName string, value any) string {
+	return ""
+}
+
 // OperatorMap 操作符映射接口
 type OperatorMap interface {
-	Store(name string, callback OperatorCallback)
-	Load(name string) (OperatorCallback, bool)
+	//Store(name string, callback OperatorCallback)
+	Load(name string) (Operator, bool)
 	Clone() OperatorMap
-	Range(func(name string, callback OperatorCallback) bool)
+	Range(func(name string, callback Operator) bool)
 }
 
 type operatorMap struct {
@@ -31,35 +48,33 @@ func NewOperatorMap(operators ...Operator) OperatorMap {
 		syncMap: &sync.Map{},
 	}
 	for _, oper := range operators {
-		operMap.Store(oper.Name(), oper.Callback)
+		operMap.syncMap.Store(oper.Name(), oper)
 	}
 	return operMap
 }
 
-func (m *operatorMap) Store(name string, callback OperatorCallback) {
-	m.syncMap.Store(name, callback)
-}
-
-func (m *operatorMap) Load(name string) (OperatorCallback, bool) {
+func (m *operatorMap) Load(name string) (Operator, bool) {
 	callback, ok := m.syncMap.Load(name)
 	if !ok {
 		return nil, ok
 	}
 
-	return callback.(OperatorCallback), ok
+	return callback.(Operator), ok
 }
 
 func (m *operatorMap) Clone() OperatorMap {
-	clone := NewOperatorMap()
+	clone := &operatorMap{
+		syncMap: &sync.Map{},
+	}
 	m.syncMap.Range(func(key, value any) bool {
-		clone.Store(key.(string), value.(OperatorCallback))
+		clone.syncMap.Store(key.(string), value.(OperatorCallback))
 		return true
 	})
 	return clone
 }
 
-func (m *operatorMap) Range(f func(name string, callback OperatorCallback) bool) {
+func (m *operatorMap) Range(f func(name string, operator Operator) bool) {
 	m.syncMap.Range(func(key, value any) bool {
-		return f(key.(string), value.(OperatorCallback))
+		return f(key.(string), value.(Operator))
 	})
 }

@@ -35,14 +35,8 @@ func NewCompareExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpt
 		buildCallback:   mopts.BuildCallback,
 	}
 
-	matcher.operatorMap = matcher.getOperatorMap()
+	matcher.operatorMap = matcher.getOperatorMap(mopts.OperatorMap)
 
-	if mopts.OperatorMap != nil {
-		mopts.OperatorMap.Range(func(k string, v xdb.OperatorCallback) bool {
-			matcher.operatorMap.Store(k, v)
-			return true
-		})
-	}
 	return matcher
 }
 
@@ -62,9 +56,9 @@ func (m *compareExpressionMatcher) Pattern() string {
 	return m.regexp.String()
 }
 
-// func (m *compareExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
-// 	return m.symbolMap.Load(symbol)
-// }
+func (m *compareExpressionMatcher) GetOperatorMap() xdb.OperatorMap {
+	return m.operatorMap
+}
 
 func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
 	tmp, ok := m.expressionCache.Load(expression)
@@ -82,7 +76,8 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 	//{t.field=property} =3，5,6
 	//{<property} =9,8, get(9)
 	item := &xdb.ExpressionItem{
-		Symbol: getExpressionSymbol(expression),
+		Symbol:  getExpressionSymbol(expression),
+		Matcher: m,
 	}
 
 	if parties[5] != "" {
@@ -117,12 +112,9 @@ func (m *compareExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCal
 			return
 		}
 
-		placeHolder := state.GetPlaceholder()
-		argName, phName := placeHolder.Get(propName)
-		value = placeHolder.BuildArgVal(argName, value)
-		state.AppendExpr(propName, value)
+		phName := state.AppendExpr(propName, value)
 
-		operCallback, ok := m.operatorMap.Load(item.GetOper())
+		operCallback, ok := item.GetOperatorCallback()
 		if !ok {
 			err = xdb.NewMissOperError(item.GetOper())
 			return
@@ -131,18 +123,25 @@ func (m *compareExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCal
 	}
 }
 
-func (m *compareExpressionMatcher) getOperatorMap() xdb.OperatorMap {
-	inOperMap := xdb.NewOperatorMap()
+func (m *compareExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
+
 	operCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
 	}
+	operList := []xdb.Operator{
+		xdb.NewDefaultOperator(">", operCallback),
+		xdb.NewDefaultOperator(">=", operCallback),
+		xdb.NewDefaultOperator("<>", operCallback),
+		xdb.NewDefaultOperator("=", operCallback),
+		xdb.NewDefaultOperator("<", operCallback),
+		xdb.NewDefaultOperator("<=", operCallback),
+	}
 
-	inOperMap.Store(">", operCallback)
-	inOperMap.Store(">=", operCallback)
-	inOperMap.Store("<>", operCallback)
-	inOperMap.Store("=", operCallback)
-	inOperMap.Store("<", operCallback)
-	inOperMap.Store("<=", operCallback)
-
-	return inOperMap
+	if optMap != nil {
+		optMap.Range(func(name string, operator xdb.Operator) bool {
+			operList = append(operList, operator)
+			return true
+		})
+	}
+	return xdb.NewOperatorMap(operList...)
 }

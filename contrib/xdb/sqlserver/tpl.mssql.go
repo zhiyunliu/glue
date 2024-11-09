@@ -78,5 +78,5 @@ func (template *MssqlTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, inpu
 }
 
 func (template *MssqlTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
-	return xdb.NewDefaultSqlState(template.Placeholder(), tplOpts)
+	return NewSqlState(template.Placeholder(), tplOpts)
 }

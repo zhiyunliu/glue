@@ -15,33 +15,28 @@ type SqlStateCahe interface {
 
 // SqlState 用户记录sql状态
 type SqlState interface {
-	GetPlaceholder() Placeholder
 	GetNames() []string
 	GetValues() []any
 	UseExprCache() bool
 	SetDynamic(DynamicType)
 	HasDynamic(DynamicType) bool
-	BuildCache() SqlStateCahe
-	AppendExpr(propName string, value any)
+	//BuildCache() SqlStateCahe
+	AppendExpr(propName string, value any) (phName string)
 }
 
 type DefaultSqlState struct {
 	tplOpts     *TemplateOptions
 	Names       []string
 	Values      []any
-	Placeholder Placeholder
+	placeholder Placeholder
 	DynamicType DynamicType
 }
 
 func NewDefaultSqlState(ph Placeholder, tplOpts *TemplateOptions) SqlState {
 	return &DefaultSqlState{
 		tplOpts:     tplOpts,
-		Placeholder: ph,
+		placeholder: ph,
 	}
-}
-
-func (s *DefaultSqlState) GetPlaceholder() Placeholder {
-	return s.Placeholder
 }
 
 func (s *DefaultSqlState) GetNames() []string {
@@ -66,11 +61,15 @@ func (s *DefaultSqlState) HasDynamic(val DynamicType) bool {
 
 func (s *DefaultSqlState) BuildCache() SqlStateCahe {
 	return &DefaultSqlStateCahe{
-		ph: s.Placeholder,
+		ph: s.placeholder,
 	}
 }
 
-func (s *DefaultSqlState) AppendExpr(propName string, value any) {
+func (s *DefaultSqlState) AppendExpr(propName string, value any) (phName string) {
+	argName, phName := s.placeholder.Get(propName)
+	value = s.placeholder.BuildArgVal(argName, value)
+
 	s.Names = append(s.Names, propName)
 	s.Values = append(s.Values, value)
+	return phName
 }

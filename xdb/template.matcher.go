@@ -38,23 +38,17 @@ func WithBuildCallback(callback ExpressionBuildCallback) MatcherOption {
 	}
 }
 
-// WithOperatorMap 制定matcher的符号处理函数
+// WithOperatorMap 制定matcher的符号处理函数 与WithOperator 二选一
 func WithOperatorMap(operatorMap OperatorMap) MatcherOption {
 	return func(mo *MatcherOptions) {
 		mo.OperatorMap = operatorMap
 	}
 }
 
-// WithOperator 增加一个符号处理函数
+// WithOperator 增加一个符号处理函数 与WithOperatorMap 二选一
 func WithOperator(operator ...Operator) MatcherOption {
 	return func(mo *MatcherOptions) {
-		if mo.OperatorMap == nil {
-			mo.OperatorMap = NewOperatorMap(operator...)
-		} else {
-			for _, op := range operator {
-				mo.OperatorMap.Store(op.Name(), op.Callback)
-			}
-		}
+		mo.OperatorMap = NewOperatorMap(operator...)
 	}
 }
 
