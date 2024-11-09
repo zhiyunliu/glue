@@ -38,25 +38,35 @@ func WithBuildCallback(callback ExpressionBuildCallback) MatcherOption {
 	}
 }
 
-// WithOperatorMap 制定matcher的表达式生成回调
+// WithOperatorMap 制定matcher的符号处理函数
 func WithOperatorMap(operatorMap OperatorMap) MatcherOption {
 	return func(mo *MatcherOptions) {
 		mo.OperatorMap = operatorMap
 	}
 }
 
-// ExprCacheItem 表达式缓存
-type ExprCacheItem struct {
-	Matcher ExpressionMatcher
-	Valuer  ExpressionValuer
+// WithOperator 增加一个符号处理函数
+func WithOperator(operator ...Operator) MatcherOption {
+	return func(mo *MatcherOptions) {
+		if mo.OperatorMap == nil {
+			mo.OperatorMap = NewOperatorMap(operator...)
+		} else {
+			for _, op := range operator {
+				mo.OperatorMap.Store(op.Name(), op.Callback)
+			}
+		}
+	}
 }
 
 // TemplateMatcher 模板匹配器
 type TemplateMatcher interface {
+	// RegistMatcher 注册表达式匹配器
 	RegistMatcher(matcher ...ExpressionMatcher)
+	// GenerateSQL 根据模板生成SQL语句
 	GenerateSQL(item SqlState, sqlTpl string, input DBParam) (sql string, err error)
 }
 
+// ExpressionMatcher 默认表达式匹配器
 type DefaultTemplateMatcher struct {
 	matcherMap ExpressionMatcherMap
 	exprCache  *sync.Map
@@ -120,6 +130,7 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 	return sql, nil
 }
 
+// DefaultExpressionMatcherMapImpl 默认表达式匹配器实现
 type DefaultExpressionMatcherMapImpl struct {
 	mutex        *sync.Mutex
 	matcherCache *treemap.Map[int, ExpressionMatcher]

@@ -58,6 +58,7 @@ type SQLTemplate interface {
 	GetSqlState(*TemplateOptions) SqlState
 }
 
+// RegistTemplate 注册模板
 func RegistTemplate(tpl SQLTemplate) (err error) {
 	name := strings.ToLower(tpl.Name())
 	tpls.Store(name, tpl)

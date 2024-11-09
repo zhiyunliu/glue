@@ -13,6 +13,7 @@ type SqlStateCahe interface {
 	Build(DBParam) (execSql string, values []interface{}, err error)
 }
 
+// SqlState 用户记录sql状态
 type SqlState interface {
 	GetPlaceholder() Placeholder
 	GetNames() []string

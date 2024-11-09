@@ -20,6 +20,7 @@ const (
 	SymbolTypeReplace SymbolType = 3
 )
 
+//符号接口
 type Symbol interface {
 	Name() string
 	Concat() string
@@ -31,6 +32,7 @@ type symbolsMap struct {
 	symbolMap *sync.Map
 }
 
+// NewSymbolMap 创建一个符号表
 func NewSymbolMap(symbols ...Symbol) SymbolMap {
 	var mapSymbols = &symbolsMap{
 		symbolMap: &sync.Map{},

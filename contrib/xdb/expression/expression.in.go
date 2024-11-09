@@ -23,6 +23,7 @@ func NewInExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption) 
 	}
 
 	const pattern = `[&|\|](({in\s+(\w+(\.\w+)?)\s*})|({(\w+(\.\w+)?)\s+in\s+(\w+)\s*}))`
+
 	matcher := &inExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},

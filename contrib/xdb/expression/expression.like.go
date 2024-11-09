@@ -36,6 +36,7 @@ func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption
 	}
 
 	const pattern = `[&|\|](({like\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+like\s+(%?\w+%?)}))`
+
 	matcher := &likeExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},

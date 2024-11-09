@@ -27,6 +27,7 @@ func NewCompareExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpt
 	}
 
 	const pattern = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|<>|=|<|<=)\s*(\w+)})|({(>|>=|<>|=|<|<=)\s*(\w+(\.\w+)?)}))`
+
 	matcher := &compareExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
