@@ -10,6 +10,7 @@ type OperatorMap interface {
 	Store(name string, callback OperatorCallback)
 	Load(name string) (OperatorCallback, bool)
 	Clone() OperatorMap
+	Range(func(name string, callback OperatorCallback) bool)
 }
 
 type operatorMap struct {
@@ -42,4 +43,10 @@ func (m *operatorMap) Clone() OperatorMap {
 		return true
 	})
 	return clone
+}
+
+func (m *operatorMap) Range(f func(name string, callback OperatorCallback) bool) {
+	m.syncMap.Range(func(key, value any) bool {
+		return f(key.(string), value.(OperatorCallback))
+	})
 }

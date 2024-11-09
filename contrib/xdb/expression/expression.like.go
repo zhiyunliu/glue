@@ -44,7 +44,10 @@ func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption
 	}
 	matcher.operatorMap = matcher.getOperatorMap()
 	if mopts.OperatorMap != nil {
-		matcher.operatorMap = mopts.OperatorMap
+		mopts.OperatorMap.Range(func(k string, v xdb.OperatorCallback) bool {
+			matcher.operatorMap.Store(k, v)
+			return true
+		})
 	}
 	return matcher
 }

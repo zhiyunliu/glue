@@ -26,7 +26,7 @@ func NewCompareExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpt
 		opts[i](mopts)
 	}
 
-	const pattern = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|=|<|<=)\s*(\w+)})|({(>|>=|=|<|<=)\s*(\w+(\.\w+)?)}))`
+	const pattern = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|<>|=|<|<=)\s*(\w+)})|({(>|>=|<>|=|<|<=)\s*(\w+(\.\w+)?)}))`
 	matcher := &compareExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -37,7 +37,10 @@ func NewCompareExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpt
 	matcher.operatorMap = matcher.getOperatorMap()
 
 	if mopts.OperatorMap != nil {
-		matcher.operatorMap = mopts.OperatorMap
+		mopts.OperatorMap.Range(func(k string, v xdb.OperatorCallback) bool {
+			matcher.operatorMap.Store(k, v)
+			return true
+		})
 	}
 	return matcher
 }
@@ -129,25 +132,16 @@ func (m *compareExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCal
 
 func (m *compareExpressionMatcher) getOperatorMap() xdb.OperatorMap {
 	inOperMap := xdb.NewOperatorMap()
-	inOperMap.Store(">", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+	operCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
-	})
+	}
 
-	inOperMap.Store(">=", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
-	})
-
-	inOperMap.Store("<", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
-	})
-
-	inOperMap.Store("<=", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
-	})
-
-	inOperMap.Store("=", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
-	})
+	inOperMap.Store(">", operCallback)
+	inOperMap.Store(">=", operCallback)
+	inOperMap.Store("<>", operCallback)
+	inOperMap.Store("=", operCallback)
+	inOperMap.Store("<", operCallback)
+	inOperMap.Store("<=", operCallback)
 
 	return inOperMap
 }
