@@ -16,7 +16,7 @@ func init() {
 type ExpressionMatcher interface {
 	Name() string
 	Pattern() string
-	LoadSymbol(symbol string) (Symbol, bool)
+	//LoadSymbol(symbol string) (Symbol, bool)
 	MatchString(string) (ExpressionValuer, bool)
 }
 

@@ -61,9 +61,9 @@ func (m *compareExpressionMatcher) Pattern() string {
 	return m.regexp.String()
 }
 
-func (m *compareExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
-	return m.symbolMap.Load(symbol)
-}
+// func (m *compareExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
+// 	return m.symbolMap.Load(symbol)
+// }
 
 func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
 	tmp, ok := m.expressionCache.Load(expression)

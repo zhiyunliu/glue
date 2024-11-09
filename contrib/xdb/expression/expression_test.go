@@ -45,6 +45,7 @@ func TestDefaultGetPropName(t *testing.T) {
 		wantOper      string
 		wantSymbol    string
 		wantExpr      string
+		wantErr       bool
 	}{
 		{name: "1-1.", matcher: normalMatcher, fullKey: "@{field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "@", wantExpr: "?"},
 		{name: "1-2.", matcher: normalMatcher, fullKey: "${field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "$", wantExpr: "f"},
@@ -128,6 +129,13 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "g-a.", matcher: inMatcher, fullKey: "&{in    infield}", wantFullfield: "infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in (1,2)"},
 		{name: "h-a.", matcher: inMatcher, fullKey: "&{infield  in   inproperty}", wantFullfield: "infield", wantPropName: "inproperty", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in ('p1','p2')"},
 		{name: "i-a.", matcher: inMatcher, fullKey: "&{tt.infield  in    inproperty}", wantFullfield: "tt.infield", wantPropName: "inproperty", wantOper: "in", wantSymbol: "&", wantExpr: "and tt.infield in ('p1','p2')"},
+
+		{name: "$-array-1.", matcher: normalMatcher, fullKey: "${tbl.inproperty}", wantFullfield: "tbl.inproperty", wantPropName: "inproperty", wantOper: "=", wantSymbol: "$", wantExpr: "'p1','p2'"},
+		{name: "$-array-2.", matcher: normalMatcher, fullKey: "${tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "=", wantSymbol: "$", wantExpr: "1,2"},
+
+		{name: "@-empty-2.", matcher: normalMatcher, fullKey: "@{tbl.emptyfield}", wantFullfield: "tbl.emptyfield", wantPropName: "emptyfield", wantOper: "=", wantSymbol: "@", wantExpr: "?"},
+
+		{name: "err-1.", matcher: normalMatcher, fullKey: "@{tbl.errfield}", wantFullfield: "tbl.errfield", wantPropName: "errfield", wantOper: "=", wantSymbol: "@", wantExpr: "", wantErr: true},
 	}
 
 	dbParam := map[string]any{
@@ -135,6 +143,7 @@ func TestDefaultGetPropName(t *testing.T) {
 		"field":      "f",
 		"inproperty": []string{"p1", "p2"},
 		"infield":    []int{1, 2},
+		"emptyfield": "",
 	}
 
 	for _, tt := range tests {
@@ -161,13 +170,12 @@ func TestDefaultGetPropName(t *testing.T) {
 			}
 			state := xdb.NewDefaultSqlState(&testPlaceHolder{prefix: "?"}, &xdb.TemplateOptions{UseExprCache: true})
 			expr, err := propValuer.Build(state, dbParam)
-			if err != nil {
+			if (err != nil) != tt.wantErr {
 				t.Error(err)
 			}
 
 			if expr != tt.wantExpr {
 				t.Errorf("Build() :%v, want %v", expr, tt.wantExpr)
-
 			}
 		})
 	}

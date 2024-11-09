@@ -23,6 +23,9 @@ func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpti
 		expressionCache: &sync.Map{},
 		symbolMap:       symbolMap,
 		buildCallback:   mopts.BuildCallback,
+		nilNeedArgMap: map[string]bool{
+			xdb.SymbolAt: true,
+		},
 	}
 	matcher.operatorMap = matcher.getOperatorMap()
 	if mopts.OperatorMap != nil {
@@ -40,6 +43,7 @@ type normalExpressionMatcher struct {
 	expressionCache *sync.Map
 	operatorMap     xdb.OperatorMap
 	buildCallback   xdb.ExpressionBuildCallback
+	nilNeedArgMap   map[string]bool
 }
 
 func (m *normalExpressionMatcher) Name() string {
@@ -50,9 +54,9 @@ func (m *normalExpressionMatcher) Pattern() string {
 	return m.regexp.String()
 }
 
-func (m *normalExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
-	return m.symbolMap.Load(symbol)
-}
+// func (m *normalExpressionMatcher) LoadSymbol(symbol string) (xdb.Symbol, bool) {
+// 	return m.symbolMap.Load(symbol)
+// }
 
 func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
 	tmp, ok := m.expressionCache.Load(expression)
@@ -91,22 +95,32 @@ func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.Exp
 	return item, ok
 }
 
+func (m *normalExpressionMatcher) IsNilNeedArg(symbol string) bool {
+	return m.nilNeedArgMap[symbol]
+}
+
 func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
 	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
+
+		var (
+			phName       string
+			argName      string
+			isNilNeedArg bool = m.IsNilNeedArg(item.GetSymbol())
+		)
 
 		propName := item.GetPropName()
 		value, err := param.GetVal(propName)
 		if err != nil {
 			return
 		}
-		if xdb.CheckIsNil(value) {
+
+		isNil := xdb.CheckIsNil(value)
+
+		//是空&&不需要参数，则退出
+		if isNil && !isNilNeedArg {
 			return
 		}
 
-		var (
-			phName  string
-			argName string
-		)
 		if !strings.EqualFold(item.GetSymbol(), xdb.SymbolReplace) {
 			placeHolder := state.GetPlaceholder()
 			argName, phName = placeHolder.Get(propName)
