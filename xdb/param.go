@@ -59,6 +59,7 @@ func (p DBParam) GetVal(name string) (val interface{}, err MissError) {
 	case driver.Valuer:
 		v, verr := t.Value()
 		if verr != nil {
+			val = nil
 			// 处理 Value 方法返回的错误
 			err = NewMissParamError(name, fmt.Errorf("[%s]failed to get value from driver.Valuer: %w", name, verr))
 			return
@@ -91,7 +92,7 @@ func (p DBParam) GetVal(name string) (val interface{}, err MissError) {
 
 }
 
-func TransArgs(args []sql.NamedArg) []interface{} {
+func TransArgs(args []sql.NamedArg) []any {
 	result := make([]interface{}, len(args))
 	for i := range args {
 		result[i] = args[i]
