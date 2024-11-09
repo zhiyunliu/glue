@@ -47,15 +47,15 @@ func TestDefaultGetPropName(t *testing.T) {
 		wantExpr      string
 		wantErr       bool
 	}{
-		{name: "1-1.", matcher: normalMatcher, fullKey: "@{field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "@", wantExpr: "?"},
-		{name: "1-2.", matcher: normalMatcher, fullKey: "${field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "$", wantExpr: "f"},
-		{name: "1-3.", matcher: normalMatcher, fullKey: "&{field}", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "&", wantExpr: "and field=?"},
-		{name: "1-4.", matcher: normalMatcher, fullKey: "|{field }", wantFullfield: "field", wantPropName: "field", wantOper: "=", wantSymbol: "|", wantExpr: "or field=?"},
+		{name: "1-1.", matcher: normalMatcher, fullKey: "@{field}", wantFullfield: "field", wantPropName: "field", wantOper: "@", wantSymbol: "@", wantExpr: "?"},
+		{name: "1-2.", matcher: normalMatcher, fullKey: "${field}", wantFullfield: "field", wantPropName: "field", wantOper: "$", wantSymbol: "$", wantExpr: "f"},
+		{name: "1-3.", matcher: normalMatcher, fullKey: "&{field}", wantFullfield: "field", wantPropName: "field", wantOper: "&", wantSymbol: "&", wantExpr: "and field=?"},
+		{name: "1-4.", matcher: normalMatcher, fullKey: "|{field }", wantFullfield: "field", wantPropName: "field", wantOper: "|", wantSymbol: "|", wantExpr: "or field=?"},
 
-		{name: "2-1.", matcher: normalMatcher, fullKey: "@{tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "=", wantSymbol: "@", wantExpr: "?"},
-		{name: "2-2.", matcher: normalMatcher, fullKey: "${tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "=", wantSymbol: "$", wantExpr: "f"},
-		{name: "2-3.", matcher: normalMatcher, fullKey: "&{tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "=", wantSymbol: "&", wantExpr: "and tbl.field=?"},
-		{name: "2-4.", matcher: normalMatcher, fullKey: "|{tbl.field }", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "=", wantSymbol: "|", wantExpr: "or tbl.field=?"},
+		{name: "2-1.", matcher: normalMatcher, fullKey: "@{tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "@", wantSymbol: "@", wantExpr: "?"},
+		{name: "2-2.", matcher: normalMatcher, fullKey: "${tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "$", wantSymbol: "$", wantExpr: "f"},
+		{name: "2-3.", matcher: normalMatcher, fullKey: "&{tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "&", wantSymbol: "&", wantExpr: "and tbl.field=?"},
+		{name: "2-4.", matcher: normalMatcher, fullKey: "|{tbl.field }", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "|", wantSymbol: "|", wantExpr: "or tbl.field=?"},
 
 		{name: "4-1.", matcher: compareMatcher, fullKey: "&{> tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">", wantSymbol: "&", wantExpr: "and tbl.field>?"},
 		{name: "5-1.", matcher: compareMatcher, fullKey: "&{>= tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: ">=", wantSymbol: "&", wantExpr: "and tbl.field>=?"},
@@ -130,12 +130,12 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "h-a.", matcher: inMatcher, fullKey: "&{infield  in   inproperty}", wantFullfield: "infield", wantPropName: "inproperty", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in ('p1','p2')"},
 		{name: "i-a.", matcher: inMatcher, fullKey: "&{tt.infield  in    inproperty}", wantFullfield: "tt.infield", wantPropName: "inproperty", wantOper: "in", wantSymbol: "&", wantExpr: "and tt.infield in ('p1','p2')"},
 
-		{name: "$-array-1.", matcher: normalMatcher, fullKey: "${tbl.inproperty}", wantFullfield: "tbl.inproperty", wantPropName: "inproperty", wantOper: "=", wantSymbol: "$", wantExpr: "'p1','p2'"},
-		{name: "$-array-2.", matcher: normalMatcher, fullKey: "${tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "=", wantSymbol: "$", wantExpr: "1,2"},
+		{name: "$-array-1.", matcher: normalMatcher, fullKey: "${tbl.inproperty}", wantFullfield: "tbl.inproperty", wantPropName: "inproperty", wantOper: "$", wantSymbol: "$", wantExpr: "'p1','p2'"},
+		{name: "$-array-2.", matcher: normalMatcher, fullKey: "${tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "$", wantSymbol: "$", wantExpr: "1,2"},
 
-		{name: "@-empty-2.", matcher: normalMatcher, fullKey: "@{tbl.emptyfield}", wantFullfield: "tbl.emptyfield", wantPropName: "emptyfield", wantOper: "=", wantSymbol: "@", wantExpr: "?"},
+		{name: "@-empty-2.", matcher: normalMatcher, fullKey: "@{tbl.emptyfield}", wantFullfield: "tbl.emptyfield", wantPropName: "emptyfield", wantOper: "@", wantSymbol: "@", wantExpr: "?"},
 
-		{name: "err-1.", matcher: normalMatcher, fullKey: "@{tbl.errfield}", wantFullfield: "tbl.errfield", wantPropName: "errfield", wantOper: "=", wantSymbol: "@", wantExpr: "", wantErr: true},
+		{name: "err-1.", matcher: normalMatcher, fullKey: "@{tbl.errfield}", wantFullfield: "tbl.errfield", wantPropName: "errfield", wantOper: "@", wantSymbol: "@", wantExpr: "", wantErr: true},
 	}
 
 	dbParam := map[string]any{

@@ -1,9 +1,5 @@
 package xdb
 
-import (
-	"sync"
-)
-
 // OperatorCallback 操作符回调函数
 type OperatorCallback func(valuer ExpressionValuer, param DBParam, phName string, value any) string
 
@@ -23,11 +19,11 @@ func NewDefaultOperator(name string, callback OperatorCallback) Operator {
 }
 
 func (d *DefaultOperator) Name() string {
-	return ""
+	return d.name
 }
 
 func (d *DefaultOperator) Callback(valuer ExpressionValuer, param DBParam, phName string, value any) string {
-	return ""
+	return d.callback(valuer, param, phName, value)
 }
 
 // OperatorMap 操作符映射接口
@@ -39,22 +35,26 @@ type OperatorMap interface {
 }
 
 type operatorMap struct {
-	syncMap *sync.Map
+	//syncMap *sync.Map
+	syncMap map[string]Operator
 }
 
 // NewOperatorMap 创建操作符映射
 func NewOperatorMap(operators ...Operator) OperatorMap {
 	operMap := &operatorMap{
-		syncMap: &sync.Map{},
+		//syncMap: &sync.Map{},
+		syncMap: make(map[string]Operator),
 	}
 	for _, oper := range operators {
-		operMap.syncMap.Store(oper.Name(), oper)
+		//operMap.syncMap.Store(oper.Name(), oper)
+		operMap.syncMap[oper.Name()] = oper
 	}
 	return operMap
 }
 
 func (m *operatorMap) Load(name string) (Operator, bool) {
-	callback, ok := m.syncMap.Load(name)
+	//callback, ok := m.syncMap.Load(name)
+	callback, ok := m.syncMap[name]
 	if !ok {
 		return nil, ok
 	}
@@ -64,17 +64,27 @@ func (m *operatorMap) Load(name string) (Operator, bool) {
 
 func (m *operatorMap) Clone() OperatorMap {
 	clone := &operatorMap{
-		syncMap: &sync.Map{},
+		//syncMap: &sync.Map{},
+		syncMap: make(map[string]Operator),
 	}
-	m.syncMap.Range(func(key, value any) bool {
-		clone.syncMap.Store(key.(string), value.(OperatorCallback))
-		return true
-	})
+	// m.syncMap.Range(func(key, value any) bool {
+	// 	clone.syncMap.Store(key.(string), value.(OperatorCallback))
+	// 	return true
+	// })
+
+	for key, value := range m.syncMap {
+		clone.syncMap[key] = value
+	}
 	return clone
 }
 
 func (m *operatorMap) Range(f func(name string, operator Operator) bool) {
-	m.syncMap.Range(func(key, value any) bool {
-		return f(key.(string), value.(Operator))
-	})
+	// m.syncMap.Range(func(key, value any) bool {
+	// 	return f(key.(string), value.(Operator))
+	// })
+	for key, value := range m.syncMap {
+		if !f(key, value) {
+			break
+		}
+	}
 }

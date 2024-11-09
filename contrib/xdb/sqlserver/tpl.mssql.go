@@ -56,12 +56,12 @@ func New(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
 	}
 }
 
-func (ctx *MssqlTemplate) Name() string {
-	return ctx.name
+func (template *MssqlTemplate) Name() string {
+	return template.name
 }
 
-func (ctx *MssqlTemplate) Placeholder() xdb.Placeholder {
-	return &mssqlPlaceHolder{template: ctx}
+func (template *MssqlTemplate) Placeholder() xdb.Placeholder {
+	return &mssqlPlaceHolder{template: template}
 }
 
 // GetSQLContext 获取查询串
