@@ -60,10 +60,10 @@ func (db *xDB) GetImpl() interface{} {
 }
 
 // Query 查询数据
-func (db *xDB) Query(ctx context.Context, sqls string, input any) (rows xdb.Rows, err error) {
+func (db *xDB) Query(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (rows xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return implement.ResolveRows(db.proto, r)
-	})
+	}, opts...)
 	if err != nil {
 		return
 	}
@@ -72,10 +72,10 @@ func (db *xDB) Query(ctx context.Context, sqls string, input any) (rows xdb.Rows
 }
 
 // Multi 查询数据(多个数据集)
-func (db *xDB) Multi(ctx context.Context, sqls string, input any) (datasetRows []xdb.Rows, err error) {
+func (db *xDB) Multi(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (datasetRows []xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return implement.ResolveMultiRows(db.proto, r)
-	})
+	}, opts...)
 	if err != nil {
 		return
 	}
@@ -83,10 +83,10 @@ func (db *xDB) Multi(ctx context.Context, sqls string, input any) (datasetRows [
 	return
 }
 
-func (db *xDB) First(ctx context.Context, sqls string, input any) (data xdb.Row, err error) {
+func (db *xDB) First(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (data xdb.Row, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return implement.ResolveFirstRow(db.proto, r)
-	})
+	}, opts...)
 	if err != nil {
 		return
 	}
@@ -94,21 +94,21 @@ func (db *xDB) First(ctx context.Context, sqls string, input any) (data xdb.Row,
 	return
 }
 
-func (db *xDB) Scalar(ctx context.Context, sqls string, input any) (data interface{}, err error) {
+func (db *xDB) Scalar(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (data interface{}, err error) {
 	data, err = db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
 		return implement.ResolveScalar(db.proto, r)
-	})
+	}, opts...)
 	return
 }
 
 // Execute 根据包含@名称占位符的语句执行查询语句
-func (db *xDB) Exec(ctx context.Context, sql string, input any) (r xdb.Result, err error) {
+func (db *xDB) Exec(ctx context.Context, sql string, input any, opts ...xdb.TemplateOption) (r xdb.Result, err error) {
 
 	dbParam, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
-	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam, opts...)
 	if err != nil {
 		err = implement.GetError(err, sql, input)
 		return
@@ -126,16 +126,16 @@ func (db *xDB) Exec(ctx context.Context, sql string, input any) (r xdb.Result, e
 }
 
 // Query 查询数据
-func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
+func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, val any) error {
 		return implement.ResolveRowsDataResult(db.proto, r, val)
-	})
+	}, opts...)
 }
 
-func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
+func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, val any) error {
 		return implement.ResolveFirstDataResult(db.proto, r, val)
-	})
+	}, opts...)
 }
 
 // Begin 创建事务
@@ -188,13 +188,13 @@ func (db *xDB) Close() error {
 	return db.db.Close()
 }
 
-func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback) (result any, err error) {
+func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback, opts ...xdb.TemplateOption) (result any, err error) {
 	dbParams, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
 
-	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams, opts...)
 	if err != nil {
 		err = implement.GetError(err, sql, input)
 		return
@@ -217,13 +217,13 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback impl
 	return
 }
 
-func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback) (err error) {
+func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback, opts ...xdb.TemplateOption) (err error) {
 	dbParams, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
 
-	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams, opts...)
 	if err != nil {
 		err = implement.GetError(err, sql, input)
 		return

@@ -1,16 +1,20 @@
 package sqlserver
 
-import "github.com/zhiyunliu/glue/xdb"
+import (
+	"github.com/zhiyunliu/glue/xdb"
+)
 
 type MssqlSqlState struct {
-	innerState xdb.SqlState
-	propCache  map[string]string
+	innerState  xdb.SqlState
+	placeHolder xdb.Placeholder
+	propCache   map[string]string
 }
 
 func NewSqlState(placeHolder xdb.Placeholder, tplOpts *xdb.TemplateOptions) xdb.SqlState {
 	return &MssqlSqlState{
-		innerState: xdb.NewDefaultSqlState(placeHolder, tplOpts),
-		propCache:  make(map[string]string),
+		innerState:  xdb.NewDefaultSqlState(placeHolder, tplOpts),
+		placeHolder: placeHolder,
+		propCache:   make(map[string]string),
 	}
 }
 

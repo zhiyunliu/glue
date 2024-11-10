@@ -27,14 +27,14 @@ type ITrans interface {
 
 // Executer 数据库操作对象集合
 type Executer interface {
-	Query(ctx context.Context, sql string, input any) (data Rows, err error)
-	Multi(ctx context.Context, sql string, input any) (data []Rows, err error)
-	First(ctx context.Context, sql string, input any) (data Row, err error)
-	Scalar(ctx context.Context, sql string, input any) (data interface{}, err error)
-	Exec(ctx context.Context, sql string, input any) (r Result, err error)
+	Query(ctx context.Context, sql string, input any, opts ...TemplateOption) (data Rows, err error)
+	Multi(ctx context.Context, sql string, input any, opts ...TemplateOption) (data []Rows, err error)
+	First(ctx context.Context, sql string, input any, opts ...TemplateOption) (data Row, err error)
+	Scalar(ctx context.Context, sql string, input any, opts ...TemplateOption) (data interface{}, err error)
+	Exec(ctx context.Context, sql string, input any, opts ...TemplateOption) (r Result, err error)
 
-	QueryAs(ctx context.Context, sql string, input any, result any) (err error)
-	FirstAs(ctx context.Context, sql string, input any, result any) (err error)
+	QueryAs(ctx context.Context, sql string, input any, result any, opts ...TemplateOption) (err error)
+	FirstAs(ctx context.Context, sql string, input any, result any, opts ...TemplateOption) (err error)
 }
 
 // dbResover 定义配置文件转换方法
