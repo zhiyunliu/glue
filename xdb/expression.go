@@ -14,10 +14,10 @@ func init() {
 
 // 属性表达式匹配器
 type ExpressionMatcher interface {
-	Name() string
-	Pattern() string
-	GetOperatorMap() OperatorMap
-	MatchString(string) (ExpressionValuer, bool)
+	Name() string                                //表达式名称
+	Pattern() string                             //表达式正则匹配
+	GetOperatorMap() OperatorMap                 //符号列表
+	MatchString(string) (ExpressionValuer, bool) //匹配执行
 }
 
 type ExpressionMatcherMap interface {

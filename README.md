@@ -165,41 +165,57 @@ encoding.RegisterCodec(&urlecoded{})
 
 # SQL解析支持
 
+## 自定义数据库模板
 
-
-## 数据库自定义解析字符
 ```golang 
-
-type symbol struct{}
-
-func (s *symbol) Name() string {
-	return "#"
-}
-func (s *symbol) GetPattern() string {
-	return `\#\{\w*[\.]?\w+\}`
-}
-func (s *symbol) Callback(input tpl.DBParam, fullKey string, item *tpl.ReplaceItem) (string, xdb.MissParamError) {
-	propName := tpl.GetPropName(fullKey)
-	if ph, ok := item.NameCache[propName]; ok {
-		return ph, nil
-	}
-	argName, value, err := input.Get(propName, item.Placeholder)
-	if err != nil {
-		return argName, err
-	}
-	item.Names = append(item.Names, propName)
-	item.Values = append(item.Values, value)
-
-	item.NameCache[propName] = argName
-	return argName, nil
+type SQLTemplate interface {
+	Name() string
+	Placeholder() Placeholder
+	//获取sql
+	GetSQLContext(tpl string, input map[string]any, opts ...TemplateOption) (sql string, args []any, err error)
+	//注册表达式匹配解析器
+	RegistExpressionMatcher(matchers ...ExpressionMatcher)
+	//处理一般表达式
+	HandleExpr(item SqlState, sqlTpl string, param DBParam) (sql string, err error)
+	//获取sql状态
+	GetSqlState(*TemplateOptions) SqlState
 }
 
-// github.com/zhiyunliu/glue/contrib/xdb
-//注入sqlserver 数据库新的字符解析处理逻辑
-tpl.RegisterSymbol("sqlserver", &symbol{})
+
+
+func RegistTemplate(tpl SQLTemplate) (err error) {
+	name := strings.ToLower(tpl.Name())
+	tpls.Store(name, tpl)
+	return
+}
 
 ```
 
+
+## 自定义表达式解析(必须在MicroApp.Start之前完成注册)
+```golang
+type ExpressionMatcher interface {
+	Name() string
+	Pattern() string
+	GetOperatorMap() OperatorMap
+	MatchString(string) (ExpressionValuer, bool)
+}
+
+
+//单独给某一种数据库注册解析器
+func RegistExpressionMatcher(proto string, matcher ExpressionMatcher) (err error) {
+	tmpl, err := GetTemplate(proto)
+	if err != nil {
+		return err
+	}
+	tmpl.RegistExpressionMatcher(matcher)
+	return
+}
+
+```
+
+
+ 
 
 ## 参数化支持
 
@@ -256,10 +272,18 @@ select * from table t where t.id = @p_id --参数不存在或者为空,空字符
 ## 原文替换
 ```sql
 ${field} 
-如：select * from table t where t.id = ${id} 
+如：
+select * from table t where t.id = ${id} 
 
 解析结果：
 select * from table t where t.id = 123 --123是id的参数值
+
+若：filed的入参是切片类型
+select * from table t where t.id in (${id})
+解析结果：
+select * from table t where t.id in (1,2,3) --id:[1,2,3]
+select * from table t where t.id in ('1','2','3')--id:["1","2","3"]
+
 
 ```
 
@@ -267,9 +291,8 @@ select * from table t where t.id = 123 --123是id的参数值
 
 ```sql
 &{like field} ，&{like %field}， &{like field%} ，&{like %field%}
-&{like t.field} ，&{like %t.field}， &{like t.field%} ，&{like %t.field%}
-|{like field} ，|{like %field}， |{like field%} ，|{like %field%}
-|{like t.field} ，|{like %t.field}， |{like t.field%} ，|{like %t.field%}
+&{t.field like property} ，&{t.field like %property}， &{t.field like property%} ，&{t.field like %property%}
+----(|符号类似)
 
 样例： 
 select * from table t where t.id = @{id} &{like name} 
@@ -277,11 +300,7 @@ select * from table t where t.id = @{id} &{like %name}
 select * from table t where t.id = @{id} &{like name%}
 select * from table t where t.id = @{id} &{like %name%}
 
-select * from table t where t.id = @{id} |{like name} 
-select * from table t where t.id = @{id} |{like %name}
-select * from table t where t.id = @{id} |{like name%}
-select * from table t where t.id = @{id} |{like %name%}
-
+select * from table t where t.id = @{id} &{t.field like %newname%}
 
 解析结果：
 select * from table t where t.id = @p_id and name like @p_name
@@ -289,50 +308,45 @@ select * from table t where t.id = @p_id and name like '%'+@p_name
 select * from table t where t.id = @p_id and name like @p_name+'%'
 select * from table t where t.id = @p_id and name like '%'+@p_name+'%'
 
-select * from table t where t.id = @p_id or name like @p_name
-select * from table t where t.id = @p_id or name like '%'+@p_name
-select * from table t where t.id = @p_id or name like @p_name+'%'
-select * from table t where t.id = @p_id or name like '%'+@p_name+'%'
+select * from table t where t.id = @p_id and t.field like '%'+@p_newname+'%'
 
 ```
 
-## 运算符支持（>,>=,<,<=）
+## 运算符支持（>,>=,=,<>,<,<=）,支持符号&,|
 
 ```sql
+&{> field} ,&{>= t.field}
+&{t.field > property},&{t.field>=property}
+----(|符号类似)
 
-&{> field} ,&{>= field}, &{< field} ,&{<= field}
-&{> t.field} ,&{>= t.field}, &{< t.field} ,&{<= t.field}
+样例： 
+select * from table t where t.id = @{id} &{> t.name} 
+select * from table t where t.id = @{id} &{t.name= myinputname} 
 
-----类似
-|{> field} ,|{>= field}, |{< field} ,|{<= field}
-|{> t.field} ,|{>= t.field}, |{< t.field} ,|{<= t.field}
+解析结果：
+select * from table t where t.id = @p_id and t.name > @p_name
+select * from table t where t.id = @p_id and t.name = @p_myinputname
+``` 
+
+
+## in表达式支持
+
+```sql
+---注意：in表达式只接受数组切片数据,其他类似直接返回空
+
+&{in field} ,&{in t.field}
+&{t.field in property}
+----(|符号类似)
 
 
 样例： 
-select * from table t where t.id = @{id} &{> name} 
-select * from table t where t.id = @{id} &{>= name}
-select * from table t where t.id = @{id} &{< name}
-select * from table t where t.id = @{id} &{<= name}
-
-select * from table t where t.id = @{id} &{> t.name} 
-select * from table t where t.id = @{id} &{>= t.name}
-select * from table t where t.id = @{id} &{< t.name}
-select * from table t where t.id = @{id} &{<= t.name}
-
+select * from table t where t.id = @{id} &{in t.name} 
+select * from table t where t.id = @{id} &{t.name in myinputname} 
 
 解析结果：
-select * from table t where t.id = @p_id and name > @p_name
-select * from table t where t.id = @p_id and name >= @p_name
-select * from table t where t.id = @p_id and name < @p_name
-select * from table t where t.id = @p_id and name <= @p_name
-
-select * from table t where t.id = @p_id and t.name > @p_name
-select * from table t where t.id = @p_id and t.name >= @p_name
-select * from table t where t.id = @p_id and t.name < @p_name
-select * from table t where t.id = @p_id and t.name <= @p_name
-
+select * from table t where t.id = @p_id and t.name in (1,2,3)  --name:[1,2,3]
+select * from table t where t.id = @p_id and t.name in ('1','2','3') --myinputname:["1","2","3"]
 ``` 
-
 
 
 # 使用方式
