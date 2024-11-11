@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	MissTypeParam  = "param"
-	MissTypeOper   = "oper"
-	MissTypeSymbol = "symbol"
+	MissTypeParam      = "param"
+	MissTypeOper       = "oper"
+	MissTypeSymbol     = "symbol"
+	MissDataTypeSymbol = "datatype"
 )
 
 type DbError interface {
@@ -149,11 +150,34 @@ func NewMissSymbolError(name string) MissError {
 	}
 }
 
+type xMissDataTypeError struct {
+	propName string
+}
+
+func (e xMissDataTypeError) Error() string {
+	return fmt.Sprintf("数据类型错误:[%s]", e.propName)
+}
+
+func (e xMissDataTypeError) Name() string {
+	return e.propName
+}
+
+func (e xMissDataTypeError) Type() string {
+	return MissDataTypeSymbol
+}
+
+func NewMissDataTypeError(name string) MissError {
+	return &xMissDataTypeError{
+		propName: name,
+	}
+}
+
 type xMissParamsError struct {
-	paramList  []string
-	operList   []string
-	symbolList []string
-	otherList  []string
+	paramList    []string
+	operList     []string
+	symbolList   []string
+	dataTypeList []string
+	otherList    []string
 }
 
 func (e xMissParamsError) Error() string {
@@ -167,6 +191,9 @@ func (e xMissParamsError) Error() string {
 	if len(e.symbolList) > 0 {
 		msgList = append(msgList, fmt.Sprintf("缺少Symbol定义:[%s]", strings.Join(e.symbolList, ",")))
 	}
+	if len(e.dataTypeList) > 0 {
+		msgList = append(msgList, fmt.Sprintf("数据类型错误:[%s]", strings.Join(e.dataTypeList, ",")))
+	}
 	if len(e.otherList) > 0 {
 		msgList = append(msgList, fmt.Sprintf("缺少类型:[%s]", strings.Join(e.otherList, ",")))
 	}
@@ -174,28 +201,22 @@ func (e xMissParamsError) Error() string {
 }
 
 func NewMissListError(errList ...MissError) MissListError {
-	paramList := []string{}
-	operList := []string{}
-	symbolList := []string{}
-	otherList := []string{}
+	err := &xMissParamsError{}
 
 	for i := range errList {
 		if strings.EqualFold(errList[i].Type(), MissTypeParam) {
-			paramList = append(paramList, errList[i].Name())
+			err.paramList = append(err.paramList, errList[i].Name())
 		} else if strings.EqualFold(errList[i].Type(), MissTypeOper) {
-			operList = append(operList, errList[i].Name())
+			err.operList = append(err.operList, errList[i].Name())
 		} else if strings.EqualFold(errList[i].Type(), MissTypeSymbol) {
-			symbolList = append(symbolList, errList[i].Name())
+			err.symbolList = append(err.symbolList, errList[i].Name())
+		} else if strings.EqualFold(errList[i].Type(), MissDataTypeSymbol) {
+			err.dataTypeList = append(err.dataTypeList, errList[i].Name())
 		} else {
-			otherList = append(otherList, fmt.Sprintf("%s:%s", errList[i].Type(), errList[i].Name()))
+			err.otherList = append(err.otherList, fmt.Sprintf("%s:%s", errList[i].Type(), errList[i].Name()))
 		}
 	}
-	return &xMissParamsError{
-		paramList:  paramList,
-		operList:   operList,
-		symbolList: symbolList,
-		otherList:  otherList,
-	}
+	return err
 }
 
 func NewError(err error, execSql string, args []interface{}) error {

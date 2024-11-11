@@ -124,7 +124,7 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 			}
 			val = sqlInjectionPreventionArray(t)
 		default:
-			return
+			return "", xdb.NewMissDataTypeError(item.GetPropName())
 		}
 
 		operCallback, ok := item.GetOperatorCallback()

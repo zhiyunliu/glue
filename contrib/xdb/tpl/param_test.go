@@ -1,7 +1,6 @@
 package tpl
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -64,18 +63,18 @@ func TestDBParam_Get(t *testing.T) {
 }
 
 func callParamGet(t *testing.T, tests []paramGetCase, val xdb.DBParam, ph xdb.Placeholder) {
-	for i, tt := range tests {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			argName, gotVal, err := val.Get(tt.key, ph)
+			gotVal, err := val.GetVal(tt.key)
 			if err != nil {
 				t.Errorf("case %s DBParam.Get() err:%+v", tt.name, err)
 			}
 			if !reflect.DeepEqual(gotVal, tt.wantVal) {
 				t.Errorf("case %s DBParam.Get() = %v, want %v", tt.name, gotVal, tt.wantVal)
 			}
-			if !(argName == fmt.Sprintf(":%d", i+1) || argName == "?") {
-				t.Errorf("case %s DBParam.Get() = %v, wantName %v", tt.name, argName, tt.wantName)
-			}
+			// if !(argName == fmt.Sprintf(":%d", i+1) || argName == "?") {
+			// 	t.Errorf("case %s DBParam.Get() = %v, wantName %v", tt.name, argName, tt.wantName)
+			// }
 		})
 	}
 }

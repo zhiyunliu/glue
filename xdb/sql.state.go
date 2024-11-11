@@ -57,6 +57,7 @@ func (s *DefaultSqlState) HasDynamic(val DynamicType) bool {
 }
 
 func (s *DefaultSqlState) AppendExpr(propName string, value any) (phName string) {
+
 	argName, phName := s.placeholder.Get(propName)
 	value = s.placeholder.BuildArgVal(argName, value)
 

@@ -24,20 +24,20 @@ var CheckIsNil func(input any) bool = DefaultIsNil
 
 type DBParam map[string]any
 
-func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interface{}, err MissError) {
-	val, err := p.GetVal(name)
-	if err != nil {
-		return
-	}
-	if tmpv, ok := val.(sql.NamedArg); ok {
-		argVal = tmpv
-		phName = ph.NamedArg(tmpv.Name)
-		return
-	}
-	argName, phName := ph.Get(name)
-	argVal = ph.BuildArgVal(argName, val)
-	return
-}
+// func (p DBParam) Get(name string, ph Placeholder) (phName string, argVal interface{}, err MissError) {
+// 	val, err := p.GetVal(name)
+// 	if err != nil {
+// 		return
+// 	}
+// 	if tmpv, ok := val.(sql.NamedArg); ok {
+// 		argVal = tmpv
+// 		phName = ph.NamedArg(tmpv.Name)
+// 		return
+// 	}
+// 	argName, phName := ph.Get(name)
+// 	argVal = ph.BuildArgVal(argName, val)
+// 	return
+// }
 
 func (p DBParam) GetVal(name string) (val interface{}, err MissError) {
 	val, ok := p[name]

@@ -14,10 +14,11 @@ const Proto = "sqlserver"
 const ArgumentPrefix = "p_"
 
 type sqlserverResolver struct {
+	name string
 }
 
 func (s *sqlserverResolver) Name() string {
-	return Proto
+	return s.name
 }
 
 func (s *sqlserverResolver) Resolve(connName string, setting config.Config, opts ...xdb.Option) (interface{}, error) {
@@ -39,6 +40,9 @@ func init() {
 		expression.NewInExpressionMatcher(symbols),
 	)
 
-	xdb.Register(&sqlserverResolver{})
+	xdb.Register(&sqlserverResolver{name: Proto})
 	xdb.RegistTemplate(New(Proto, ArgumentPrefix, tplMatcher))
+
+	xdb.Register(&sqlserverResolver{name: "mssql"})
+	xdb.RegistTemplate(New("mssql", ArgumentPrefix, tplMatcher))
 }

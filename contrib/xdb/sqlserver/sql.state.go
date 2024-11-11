@@ -1,6 +1,8 @@
 package sqlserver
 
 import (
+	"database/sql"
+
 	"github.com/zhiyunliu/glue/xdb"
 )
 
@@ -39,7 +41,18 @@ func (s *MssqlSqlState) AppendExpr(propName string, value any) (phName string) {
 	if ok {
 		return phName
 	}
+
+	var argPhName string
+	if value != nil {
+		if tmpv, ok := value.(sql.NamedArg); ok {
+			value = tmpv
+			argPhName = s.placeHolder.NamedArg(tmpv.Name)
+		}
+	}
 	phName = s.innerState.AppendExpr(propName, value)
+	if argPhName != "" {
+		phName = argPhName
+	}
 	s.propCache[propName] = phName
 	return
 }
