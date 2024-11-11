@@ -46,13 +46,15 @@ func TestDefaultGetPropName(t *testing.T) {
 		wantSymbol    string
 		wantExpr      string
 		wantErr       bool
+		wantCanCache  bool
 	}{
-		{name: "1-1.", matcher: normalMatcher, fullKey: "@{field}", wantFullfield: "field", wantPropName: "field", wantOper: "@", wantSymbol: "@", wantExpr: "?"},
+
+		{name: "1-1.", matcher: normalMatcher, fullKey: "@{field}", wantFullfield: "field", wantPropName: "field", wantOper: "@", wantSymbol: "@", wantExpr: "?", wantCanCache: true},
 		{name: "1-2.", matcher: normalMatcher, fullKey: "${field}", wantFullfield: "field", wantPropName: "field", wantOper: "$", wantSymbol: "$", wantExpr: "f"},
 		{name: "1-3.", matcher: normalMatcher, fullKey: "&{field}", wantFullfield: "field", wantPropName: "field", wantOper: "&", wantSymbol: "&", wantExpr: "and field=?"},
 		{name: "1-4.", matcher: normalMatcher, fullKey: "|{field }", wantFullfield: "field", wantPropName: "field", wantOper: "|", wantSymbol: "|", wantExpr: "or field=?"},
 
-		{name: "2-1.", matcher: normalMatcher, fullKey: "@{tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "@", wantSymbol: "@", wantExpr: "?"},
+		{name: "2-1.", matcher: normalMatcher, fullKey: "@{tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "@", wantSymbol: "@", wantExpr: "?", wantCanCache: true},
 		{name: "2-2.", matcher: normalMatcher, fullKey: "${tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "$", wantSymbol: "$", wantExpr: "f"},
 		{name: "2-3.", matcher: normalMatcher, fullKey: "&{tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "&", wantSymbol: "&", wantExpr: "and tbl.field=?"},
 		{name: "2-4.", matcher: normalMatcher, fullKey: "|{tbl.field }", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "|", wantSymbol: "|", wantExpr: "or tbl.field=?"},
@@ -133,9 +135,9 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "$-array-1.", matcher: normalMatcher, fullKey: "${tbl.inproperty}", wantFullfield: "tbl.inproperty", wantPropName: "inproperty", wantOper: "$", wantSymbol: "$", wantExpr: "'p1','p2'"},
 		{name: "$-array-2.", matcher: normalMatcher, fullKey: "${tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "$", wantSymbol: "$", wantExpr: "1,2"},
 
-		{name: "@-empty-2.", matcher: normalMatcher, fullKey: "@{tbl.emptyfield}", wantFullfield: "tbl.emptyfield", wantPropName: "emptyfield", wantOper: "@", wantSymbol: "@", wantExpr: "?"},
+		{name: "@-empty-2.", matcher: normalMatcher, fullKey: "@{tbl.emptyfield}", wantFullfield: "tbl.emptyfield", wantPropName: "emptyfield", wantOper: "@", wantSymbol: "@", wantExpr: "?", wantCanCache: true},
 
-		{name: "err-1.", matcher: normalMatcher, fullKey: "@{tbl.errfield}", wantFullfield: "tbl.errfield", wantPropName: "errfield", wantOper: "@", wantSymbol: "@", wantExpr: "", wantErr: true},
+		{name: "err-1.", matcher: normalMatcher, fullKey: "@{tbl.errfield}", wantFullfield: "tbl.errfield", wantPropName: "errfield", wantOper: "@", wantSymbol: "@", wantExpr: "", wantErr: true, wantCanCache: true},
 	}
 
 	dbParam := map[string]any{
@@ -165,7 +167,7 @@ func TestDefaultGetPropName(t *testing.T) {
 			if propValuer.GetOper() != tt.wantOper {
 				t.Errorf("GetOper() :%v, want %v", propValuer.GetOper(), tt.wantOper)
 			}
-			if propValuer.GetSymbol() != tt.wantSymbol {
+			if propValuer.GetSymbol().Name() != tt.wantSymbol {
 				t.Errorf("GetSymbol() :%v, want %v", propValuer.GetSymbol(), tt.wantSymbol)
 			}
 			state := xdb.NewDefaultSqlState(&testPlaceHolder{prefix: "?"}, &xdb.TemplateOptions{UseExprCache: true})
@@ -177,6 +179,11 @@ func TestDefaultGetPropName(t *testing.T) {
 			if expr != tt.wantExpr {
 				t.Errorf("Build() :%v, want %v", expr, tt.wantExpr)
 			}
+
+			if state.CanCache() != tt.wantCanCache {
+				t.Errorf("Canche :%v, want:%v", state.CanCache(), tt.wantCanCache)
+			}
+
 		})
 	}
 }
@@ -201,6 +208,8 @@ func Test_getExpressionPropertyName(t *testing.T) {
 }
 
 func Test_getExpressionSymbol(t *testing.T) {
+	symbolMap := DefaultSymbols
+	symbolMap.Regist(&demoSymbols{})
 
 	tests := []struct {
 		name    string
@@ -215,9 +224,23 @@ func Test_getExpressionSymbol(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getExpressionSymbol(tt.fullkey); got != tt.want {
+			if got := getExpressionSymbol(symbolMap, tt.fullkey); got.Name() != tt.want {
 				t.Errorf("getExpressionSymbol() = %v, want %v", got, tt.want)
 			}
 		})
 	}
+}
+
+type demoSymbols struct{}
+
+func (s *demoSymbols) Name() string {
+	return "###"
+}
+
+func (s *demoSymbols) DynamicType() xdb.DynamicType {
+	return xdb.DynamicNone
+}
+
+func (s *demoSymbols) Concat() string {
+	return "demo"
 }

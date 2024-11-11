@@ -69,18 +69,17 @@ func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.Exp
 	fullkey := strings.TrimSpace(parties[2])
 
 	item := &xdb.ExpressionItem{
-		Symbol:    getExpressionSymbol(expression),
+		Symbol:    getExpressionSymbol(m.symbolMap, expression),
 		Matcher:   m,
 		FullField: fullkey,
 		PropName:  fullkey,
 	}
-	item.Oper = item.Symbol
+	item.Oper = item.Symbol.Name()
 	pIdx := strings.Index(fullkey, ".")
 
 	if pIdx > 0 {
 		item.PropName = fullkey[pIdx+1:]
 	}
-	item.SpecConcat(m.symbolMap)
 	item.ExpressionBuildCallback = m.defaultBuildCallback()
 	if m.buildCallback != nil {
 		item.ExpressionBuildCallback = m.buildCallback
@@ -97,10 +96,9 @@ func (m *normalExpressionMatcher) IsNilNeedArg(symbol string) bool {
 
 func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
 	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
-
 		var (
 			phName       string
-			isNilNeedArg bool = m.IsNilNeedArg(item.GetSymbol())
+			isNilNeedArg bool = m.IsNilNeedArg(item.GetSymbol().Name())
 		)
 
 		propName := item.GetPropName()
@@ -116,7 +114,7 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 			return
 		}
 
-		if !strings.EqualFold(item.GetSymbol(), xdb.SymbolReplace) {
+		if !strings.EqualFold(item.GetSymbol().Name(), xdb.SymbolReplace) {
 			phName = state.AppendExpr(propName, value)
 		}
 
@@ -137,11 +135,11 @@ func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Ope
 		}),
 
 		xdb.NewDefaultOperator("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-			return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), phName)
+			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
 		xdb.NewDefaultOperator("|", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-			return fmt.Sprintf("%s %s=%s", item.GetConcat(), item.GetFullfield(), phName)
+			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
 		xdb.NewDefaultOperator("$", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) (val string) {

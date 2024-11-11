@@ -58,6 +58,10 @@ type SQLTemplate interface {
 	GetSqlState(*TemplateOptions) SqlState
 }
 
+type SQLTemplateCache interface {
+	Build(SqlState, DBParam) (sql string, err error)
+}
+
 // RegistTemplate 注册模板
 func RegistTemplate(tpl SQLTemplate) (err error) {
 	name := strings.ToLower(tpl.Name())

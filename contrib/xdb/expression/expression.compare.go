@@ -76,7 +76,7 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 	//{t.field=property} =3，5,6
 	//{<property} =9,8, get(9)
 	item := &xdb.ExpressionItem{
-		Symbol:  getExpressionSymbol(expression),
+		Symbol:  getExpressionSymbol(m.symbolMap, expression),
 		Matcher: m,
 	}
 
@@ -92,7 +92,6 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 		item.PropName = getExpressionPropertyName(item.FullField)
 	}
 
-	item.SpecConcat(m.symbolMap)
 	item.ExpressionBuildCallback = m.defaultBuildCallback()
 	if m.buildCallback != nil {
 		item.ExpressionBuildCallback = m.buildCallback
@@ -126,7 +125,7 @@ func (m *compareExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCal
 func (m *compareExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
 
 	operCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s%s%s", item.GetConcat(), item.GetFullfield(), item.GetOper(), phName)
+		return fmt.Sprintf("%s %s%s%s", item.GetSymbol().Concat(), item.GetFullfield(), item.GetOper(), phName)
 	}
 	operList := []xdb.Operator{
 		xdb.NewDefaultOperator(">", operCallback),

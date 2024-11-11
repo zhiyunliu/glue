@@ -16,7 +16,7 @@ type Placeholder interface {
 	Get(propName string) (argName string, phName string)
 	NamedArg(name string) string
 	BuildArgVal(argName string, val interface{}) interface{}
-	Clone() Placeholder
+	//Clone() Placeholder
 }
 
 // CheckIsNil 检查是否为空

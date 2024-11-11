@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.9.1
@@ -49,7 +50,6 @@ require (
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/emirpasic/gods/v2 v2.0.0-alpha // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

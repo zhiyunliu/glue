@@ -70,7 +70,7 @@ func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.Express
 
 	var (
 		item = &xdb.ExpressionItem{
-			Symbol:  getExpressionSymbol(expression),
+			Symbol:  getExpressionSymbol(m.symbolMap, expression),
 			Matcher: m,
 			Oper:    m.Name(),
 		}
@@ -92,7 +92,6 @@ func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.Express
 	item.FullField = fullField
 	item.PropName = propName
 
-	item.SpecConcat(m.symbolMap)
 	item.ExpressionBuildCallback = m.defaultBuildCallback()
 	if m.buildCallback != nil {
 		item.ExpressionBuildCallback = m.buildCallback
@@ -139,7 +138,7 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 func (m *inExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
 
 	operCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s in (%s)", item.GetConcat(), item.GetFullfield(), value)
+		return fmt.Sprintf("%s %s in (%s)", item.GetSymbol().Concat(), item.GetFullfield(), value)
 	}
 	operList := []xdb.Operator{
 		xdb.NewDefaultOperator("in", operCallback),

@@ -34,8 +34,7 @@ type ExpressionValuer interface {
 	GetPropName() string
 	GetFullfield() string
 	GetOper() string
-	GetSymbol() string
-	GetConcat() string
+	GetSymbol() Symbol
 	Build(state SqlState, input DBParam) (string, MissError)
 }
 
@@ -47,12 +46,11 @@ type ExpressionItem struct {
 	FullField               string
 	PropName                string
 	Oper                    string
-	Symbol                  string
-	Concat                  string
+	Symbol                  Symbol
 	ExpressionBuildCallback ExpressionBuildCallback
 }
 
-func (m *ExpressionItem) GetSymbol() string {
+func (m *ExpressionItem) GetSymbol() Symbol {
 	return m.Symbol
 }
 
@@ -67,9 +65,7 @@ func (m *ExpressionItem) GetFullfield() string {
 func (m *ExpressionItem) GetOper() string {
 	return m.Oper
 }
-func (m *ExpressionItem) GetConcat() string {
-	return m.Concat
-}
+
 func (m *ExpressionItem) GetMatcher() ExpressionMatcher {
 	return m.Matcher
 }
@@ -78,6 +74,7 @@ func (m *ExpressionItem) Build(state SqlState, param DBParam) (expression string
 	if m.ExpressionBuildCallback == nil {
 		return
 	}
+	state.SetDynamic(m.GetSymbol().DynamicType())
 	return m.ExpressionBuildCallback(m, state, param)
 }
 
@@ -87,9 +84,4 @@ func (m *ExpressionItem) GetOperatorCallback() (callback OperatorCallback, ok bo
 		return nil, false
 	}
 	return operator.Callback, true
-}
-
-func (m *ExpressionItem) SpecConcat(symbolMap SymbolMap) {
-	tmp, _ := symbolMap.Load(m.Symbol)
-	m.Concat = tmp.Concat()
 }

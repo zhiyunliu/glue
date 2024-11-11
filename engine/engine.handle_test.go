@@ -28,7 +28,9 @@ func TestPrintSource_HappyPath(t *testing.T) {
 	logger := &mockLogger{}
 	printSource(logger, logOpts, group, header)
 
-	assert.Contains(t, logger.output, "srcinfo:X-Src-Ip:127.0.0.1,X-Src-Name:testApp")
+	assert.Contains(t, logger.output, "X-Src-Ip=127.0.0.1")
+	assert.Contains(t, logger.output, "X-Src-Name=testApp")
+
 }
 
 func TestPrintSource_EmptyHeader(t *testing.T) {
@@ -64,7 +66,8 @@ func TestPrintSource_NoPrintSourceNotSet(t *testing.T) {
 	logger := &mockLogger{}
 	printSource(logger, logOpts, group, header)
 
-	assert.Contains(t, logger.output, "srcinfo:X-Src-Ip:127.0.0.1,X-Src-Name:testApp")
+	assert.Contains(t, logger.output, "X-Src-Ip=127.0.0.1")
+	assert.Contains(t, logger.output, "X-Src-Name=testApp")
 }
 
 func TestPrintSource_NoPrintSourcePath(t *testing.T) {

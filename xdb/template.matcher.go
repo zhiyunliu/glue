@@ -8,6 +8,7 @@ import (
 
 	"github.com/emirpasic/gods/v2/maps/treemap"
 	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/golibs/xsecurity/md5"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -83,13 +84,20 @@ func (conn *DefaultTemplateMatcher) RegistMatcher(matchers ...ExpressionMatcher)
 
 func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, input DBParam) (sql string, err error) {
 
+	tplHash := md5.Str(sqlTpl)
+
+	if tmp, ok := conn.exprCache.Load(tplHash); ok {
+		tplCache := tmp.(SQLTemplateCache)
+		return tplCache.Build(state, input)
+	}
+
 	matcherMap := conn.matcherMap
 	word := matcherMap.GetMatcherRegexp()
 
 	var outerrs []MissError
 
 	//@变量, 将数据放入params中
-	sql = word.ReplaceAllStringFunc(sqlTpl, func(expr string) (repExpr string) {
+	sql = word.ReplaceAllStringFunc(sqlTpl, func(expr string) (resultExpr string) {
 		var (
 			valuer ExpressionValuer
 			ok     bool
@@ -111,16 +119,23 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 			}
 		}
 
-		repExpr, err := valuer.Build(state, input)
+		resultExpr, err := valuer.Build(state, input)
 		if err != nil {
 			outerrs = append(outerrs, err)
+			return expr
 		}
-		return repExpr
+		return resultExpr
 
 	})
 	if len(outerrs) > 0 {
 		return sql, NewMissListError(outerrs...)
 	}
+
+	if state.CanCache() {
+		tplCache := state.BuildCache(sql)
+		conn.exprCache.Store(tplHash, tplCache)
+	}
+
 	return sql, nil
 }
 

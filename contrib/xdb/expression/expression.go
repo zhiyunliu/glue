@@ -20,12 +20,15 @@ func getExpressionPropertyName(fullkey string) string {
 	}
 	return fullkey[idx+1:]
 }
-func getExpressionSymbol(expression string) string {
+
+// getExpressionSymbol 可能存在崩溃，在开发阶段即可暴露，无需关注
+func getExpressionSymbol(symbolMap xdb.SymbolMap, expression string) xdb.Symbol {
 	idx := strings.Index(expression, "{")
 	if idx < 0 {
-		return ""
+		return nil
 	}
-	return expression[:idx]
+	symbol, _ := symbolMap.Load(expression[:idx])
+	return symbol
 }
 
 func sqlInjectionPrevention(data string) (newdata string) {

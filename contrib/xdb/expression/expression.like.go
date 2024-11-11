@@ -108,13 +108,12 @@ func (m *likeExpressionMatcher) MatchString(expression string) (valuer xdb.Expre
 	propName = strings.Trim(propName, SPEC_CHAR)
 
 	item := &xdb.ExpressionItem{
-		Symbol:    getExpressionSymbol(expression),
+		Symbol:    getExpressionSymbol(m.symbolMap, expression),
 		Matcher:   m,
 		Oper:      oper,
 		FullField: fullkey,
 		PropName:  getExpressionPropertyName(propName),
 	}
-	item.SpecConcat(m.symbolMap)
 	item.ExpressionBuildCallback = m.defaultBuildCallback()
 	if m.buildCallback != nil {
 		item.ExpressionBuildCallback = m.buildCallback
@@ -152,19 +151,19 @@ func (m *likeExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Opera
 
 	operList := []xdb.Operator{
 		xdb.NewDefaultOperator("like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-			return fmt.Sprintf("%s %s like %s", item.GetConcat(), item.GetFullfield(), phName)
+			return fmt.Sprintf("%s %s like %s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
 		xdb.NewDefaultOperator("%like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-			return fmt.Sprintf("%s %s like '%%'+%s", item.GetConcat(), item.GetFullfield(), phName)
+			return fmt.Sprintf("%s %s like '%%'+%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
 		xdb.NewDefaultOperator("like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-			return fmt.Sprintf("%s %s like %s+'%%'", item.GetConcat(), item.GetFullfield(), phName)
+			return fmt.Sprintf("%s %s like %s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
 		xdb.NewDefaultOperator("%like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-			return fmt.Sprintf("%s %s like '%%'+%s+'%%'", item.GetConcat(), item.GetFullfield(), phName)
+			return fmt.Sprintf("%s %s like '%%'+%s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 	}
 

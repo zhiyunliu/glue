@@ -43,3 +43,11 @@ func (s *MssqlSqlState) AppendExpr(propName string, value any) (phName string) {
 	s.propCache[propName] = phName
 	return
 }
+
+func (s *MssqlSqlState) CanCache() bool {
+	return s.innerState.CanCache()
+}
+
+func (s *MssqlSqlState) BuildCache(sql string) xdb.SQLTemplateCache {
+	return s.innerState.BuildCache(sql)
+}

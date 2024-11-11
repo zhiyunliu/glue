@@ -17,6 +17,8 @@ type SqlState interface {
 	SetDynamic(DynamicType)
 	HasDynamic(DynamicType) bool
 	AppendExpr(propName string, value any) (phName string)
+	CanCache() bool
+	BuildCache(sql string) SQLTemplateCache
 }
 
 type DefaultSqlState struct {
@@ -61,4 +63,32 @@ func (s *DefaultSqlState) AppendExpr(propName string, value any) (phName string)
 	s.names = append(s.names, propName)
 	s.values = append(s.values, value)
 	return phName
+}
+func (s *DefaultSqlState) CanCache() bool {
+	return !(s.HasDynamic(DynamicAnd) ||
+		s.HasDynamic(DynamicOr) ||
+		s.HasDynamic(DynamicReplace))
+}
+
+func (s *DefaultSqlState) BuildCache(sql string) SQLTemplateCache {
+	return &defaultSqlTemplateCache{
+		sql:   sql,
+		names: s.names,
+	}
+}
+
+type defaultSqlTemplateCache struct {
+	sql   string
+	names []string
+}
+
+func (stc *defaultSqlTemplateCache) Build(state SqlState, input DBParam) (sql string, err error) {
+	for _, name := range stc.names {
+		val, err := input.GetVal(name)
+		if err != nil {
+			return "", err
+		}
+		state.AppendExpr(name, val)
+	}
+	return stc.sql, nil
 }
