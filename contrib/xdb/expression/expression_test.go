@@ -30,11 +30,21 @@ func (ph *testPlaceHolder) Clone() xdb.Placeholder {
 	}
 }
 
+type emptyOperator struct {
+}
+
+func (o *emptyOperator) Name() string {
+	return "empty"
+}
+func (o *emptyOperator) Callback(valuer xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+	return "empty"
+}
+
 func TestDefaultGetPropName(t *testing.T) {
-	normalMatcher := NewNormalExpressionMatcher(DefaultSymbols)
-	compareMatcher := NewCompareExpressionMatcher(DefaultSymbols)
-	likeMatcher := NewLikeExpressionMatcher(DefaultSymbols)
-	inMatcher := NewInExpressionMatcher(DefaultSymbols)
+	normalMatcher := NewNormalExpressionMatcher(DefaultSymbols, xdb.WithOperator(&emptyOperator{}))
+	compareMatcher := NewCompareExpressionMatcher(DefaultSymbols, xdb.WithOperator(&emptyOperator{}))
+	likeMatcher := NewLikeExpressionMatcher(DefaultSymbols, xdb.WithOperator(&emptyOperator{}))
+	inMatcher := NewInExpressionMatcher(DefaultSymbols, xdb.WithOperator(&emptyOperator{}))
 
 	tests := []struct {
 		matcher       xdb.ExpressionMatcher
@@ -131,6 +141,8 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "g-a.", matcher: inMatcher, fullKey: "&{in    infield}", wantFullfield: "infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in (1,2)"},
 		{name: "h-a.", matcher: inMatcher, fullKey: "&{infield  in   inproperty}", wantFullfield: "infield", wantPropName: "inproperty", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in ('p1','p2')"},
 		{name: "i-a.", matcher: inMatcher, fullKey: "&{tt.infield  in    inproperty}", wantFullfield: "tt.infield", wantPropName: "inproperty", wantOper: "in", wantSymbol: "&", wantExpr: "and tt.infield in ('p1','p2')"},
+		{name: "j-a.", matcher: inMatcher, fullKey: "&{tt.infield  in    bytesfield}", wantFullfield: "tt.infield", wantPropName: "bytesfield", wantOper: "in", wantSymbol: "&", wantExpr: "", wantErr: true},
+		{name: "j-a.", matcher: inMatcher, fullKey: "&{tt.infield  in    objfield}", wantFullfield: "tt.infield", wantPropName: "objfield", wantOper: "in", wantSymbol: "&", wantExpr: "", wantErr: true},
 
 		{name: "$-array-1.", matcher: normalMatcher, fullKey: "${tbl.inproperty}", wantFullfield: "tbl.inproperty", wantPropName: "inproperty", wantOper: "$", wantSymbol: "$", wantExpr: "'p1','p2'"},
 		{name: "$-array-2.", matcher: normalMatcher, fullKey: "${tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "$", wantSymbol: "$", wantExpr: "1,2"},
@@ -146,6 +158,8 @@ func TestDefaultGetPropName(t *testing.T) {
 		"inproperty": []string{"p1", "p2"},
 		"infield":    []int{1, 2},
 		"emptyfield": "",
+		"bytesfield": []byte("bytes"),
+		"objfield":   struct{}{},
 	}
 
 	for _, tt := range tests {
@@ -170,7 +184,8 @@ func TestDefaultGetPropName(t *testing.T) {
 			if propValuer.GetSymbol().Name() != tt.wantSymbol {
 				t.Errorf("GetSymbol() :%v, want %v", propValuer.GetSymbol(), tt.wantSymbol)
 			}
-			state := xdb.NewDefaultSqlState(&testPlaceHolder{prefix: "?"}, &xdb.TemplateOptions{UseExprCache: true})
+
+			state := xdb.NewSqlState(&testPlaceHolder{prefix: "?"}, &xdb.TemplateOptions{UseExprCache: true})
 			expr, err := propValuer.Build(state, dbParam)
 			if (err != nil) != tt.wantErr {
 				t.Error(err)
@@ -183,7 +198,6 @@ func TestDefaultGetPropName(t *testing.T) {
 			if state.CanCache() != tt.wantCanCache {
 				t.Errorf("Canche :%v, want:%v", state.CanCache(), tt.wantCanCache)
 			}
-
 		})
 	}
 }

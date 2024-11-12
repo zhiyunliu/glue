@@ -1,5 +1,10 @@
 package xdb
 
+var (
+	//新建一个符号处理
+	NewOperator func(name string, callback OperatorCallback) Operator
+)
+
 // OperatorCallback 操作符回调函数
 type OperatorCallback func(valuer ExpressionValuer, param DBParam, phName string, value any) string
 
@@ -7,23 +12,6 @@ type OperatorCallback func(valuer ExpressionValuer, param DBParam, phName string
 type Operator interface {
 	Name() string
 	Callback(valuer ExpressionValuer, param DBParam, phName string, value any) string
-}
-
-type DefaultOperator struct {
-	name     string
-	callback OperatorCallback
-}
-
-func NewDefaultOperator(name string, callback OperatorCallback) Operator {
-	return &DefaultOperator{name: name, callback: callback}
-}
-
-func (d *DefaultOperator) Name() string {
-	return d.name
-}
-
-func (d *DefaultOperator) Callback(valuer ExpressionValuer, param DBParam, phName string, value any) string {
-	return d.callback(valuer, param, phName, value)
 }
 
 // OperatorMap 操作符映射接口
@@ -58,8 +46,7 @@ func (m *operatorMap) Load(name string) (Operator, bool) {
 	if !ok {
 		return nil, ok
 	}
-
-	return callback.(Operator), ok
+	return callback, ok
 }
 
 func (m *operatorMap) Clone() OperatorMap {

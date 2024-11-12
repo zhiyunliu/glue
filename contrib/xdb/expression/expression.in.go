@@ -123,7 +123,23 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 				return
 			}
 			val = sqlInjectionPreventionArray(t)
+		case []byte:
+			return "", xdb.NewMissDataTypeError(item.GetPropName())
 		default:
+			// refVal := reflect.ValueOf(value)
+			// if !(refVal.Kind() == reflect.Array ||
+			// 	refVal.Kind() == reflect.Slice) {
+			// 	return "", xdb.NewMissDataTypeError(item.GetPropName())
+			// }
+			// arrayLen := refVal.Len()
+			// if arrayLen <= 0 {
+			// 	return
+			// }
+			// for i := 0; i < arrayLen; i++ {
+			// 	ele := refVal.Index(i)
+			// 	ele.Interface().(xdb.DBParamItem)
+
+			// }
 			return "", xdb.NewMissDataTypeError(item.GetPropName())
 		}
 
@@ -141,7 +157,7 @@ func (m *inExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Operato
 		return fmt.Sprintf("%s %s in (%s)", item.GetSymbol().Concat(), item.GetFullfield(), value)
 	}
 	operList := []xdb.Operator{
-		xdb.NewDefaultOperator("in", operCallback),
+		xdb.NewOperator("in", operCallback),
 	}
 
 	if optMap != nil {

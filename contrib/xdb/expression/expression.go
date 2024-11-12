@@ -6,11 +6,19 @@ import (
 	"github.com/zhiyunliu/glue/xdb"
 )
 
-var DefaultExpressionMatchers []xdb.ExpressionMatcher = []xdb.ExpressionMatcher{
-	NewNormalExpressionMatcher(DefaultSymbols),
-	NewCompareExpressionMatcher(DefaultSymbols),
-	NewLikeExpressionMatcher(DefaultSymbols),
-	NewInExpressionMatcher(DefaultSymbols),
+var DefaultExpressionMatchers []xdb.ExpressionMatcher
+
+func init() {
+	initSqlState()
+	initOperator()
+	initSymbols()
+
+	DefaultExpressionMatchers = []xdb.ExpressionMatcher{
+		NewNormalExpressionMatcher(DefaultSymbols),
+		NewCompareExpressionMatcher(DefaultSymbols),
+		NewLikeExpressionMatcher(DefaultSymbols),
+		NewInExpressionMatcher(DefaultSymbols),
+	}
 }
 
 func getExpressionPropertyName(fullkey string) string {

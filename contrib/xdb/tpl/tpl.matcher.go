@@ -1,4 +1,4 @@
-package xdb
+package tpl
 
 import (
 	"bytes"
@@ -8,67 +8,23 @@ import (
 
 	"github.com/emirpasic/gods/v2/maps/treemap"
 	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/golibs/xsecurity/md5"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
-// 表达式解析选项
-type TemplateOptions struct {
-	UseExprCache bool
-}
-
-type TemplateOption func(*TemplateOptions)
-
-// 使用解析缓存
-func WithExprCache(use bool) TemplateOption {
-	return func(o *TemplateOptions) {
-		o.UseExprCache = use
-	}
-}
-
-type MatcherOptions struct {
-	BuildCallback ExpressionBuildCallback
-	OperatorMap   OperatorMap
-}
-type MatcherOption func(*MatcherOptions)
-
-// WithBuildCallback 制定matcher的表达式生成回调
-func WithBuildCallback(callback ExpressionBuildCallback) MatcherOption {
-	return func(mo *MatcherOptions) {
-		mo.BuildCallback = callback
-	}
-}
-
-// WithOperatorMap 制定matcher的符号处理函数 与WithOperator 二选一
-func WithOperatorMap(operatorMap OperatorMap) MatcherOption {
-	return func(mo *MatcherOptions) {
-		mo.OperatorMap = operatorMap
-	}
-}
-
-// WithOperator 增加一个符号处理函数 与WithOperatorMap 二选一
-func WithOperator(operator ...Operator) MatcherOption {
-	return func(mo *MatcherOptions) {
-		mo.OperatorMap = NewOperatorMap(operator...)
-	}
-}
-
-// TemplateMatcher 模板匹配器
-type TemplateMatcher interface {
-	// RegistMatcher 注册表达式匹配器
-	RegistMatcher(matcher ...ExpressionMatcher)
-	// GenerateSQL 根据模板生成SQL语句
-	GenerateSQL(item SqlState, sqlTpl string, input DBParam) (sql string, err error)
+func initMatcher() {
+	xdb.NewTemplateMatcher = NewDefaultTemplateMatcher
 }
 
 // ExpressionMatcher 默认表达式匹配器
 type DefaultTemplateMatcher struct {
-	matcherMap ExpressionMatcherMap
+	matcherMap xdb.ExpressionMatcherMap
 	exprCache  *sync.Map
 }
 
 // 新建一个默认模板匹配器
-func NewDefaultTemplateMatcher(matchers ...ExpressionMatcher) TemplateMatcher {
+func NewDefaultTemplateMatcher(matchers ...xdb.ExpressionMatcher) xdb.TemplateMatcher {
 
 	conn := &DefaultTemplateMatcher{
 		matcherMap: NewExpressionMatcherMap(),
@@ -78,36 +34,36 @@ func NewDefaultTemplateMatcher(matchers ...ExpressionMatcher) TemplateMatcher {
 	return conn
 }
 
-func (conn *DefaultTemplateMatcher) RegistMatcher(matchers ...ExpressionMatcher) {
+func (conn *DefaultTemplateMatcher) RegistMatcher(matchers ...xdb.ExpressionMatcher) {
 	conn.matcherMap.Regist(matchers...)
 }
 
-func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, input DBParam) (sql string, err error) {
+func (conn *DefaultTemplateMatcher) GenerateSQL(state xdb.SqlState, sqlTpl string, input xdb.DBParam) (sql string, err error) {
 
 	tplHash := md5.Str(sqlTpl)
 
 	if tmp, ok := conn.exprCache.Load(tplHash); ok {
-		tplCache := tmp.(SQLTemplateCache)
+		tplCache := tmp.(xdb.SQLTemplateCache)
 		return tplCache.Build(state, input)
 	}
 
 	matcherMap := conn.matcherMap
 	word := matcherMap.GetMatcherRegexp()
 
-	var outerrs []MissError
+	var outerrs []xdb.MissError
 
 	//@变量, 将数据放入params中
 	sql = word.ReplaceAllStringFunc(sqlTpl, func(expr string) (resultExpr string) {
 		var (
-			valuer ExpressionValuer
+			valuer xdb.ExpressionValuer
 			ok     bool
 		)
 
 		exprItem, ok := conn.exprCache.Load(expr)
 		if ok {
-			valuer = exprItem.(ExpressionValuer)
+			valuer = exprItem.(xdb.ExpressionValuer)
 		} else {
-			matcherMap.Find(func(exprMatcher ExpressionMatcher) bool {
+			matcherMap.Find(func(exprMatcher xdb.ExpressionMatcher) bool {
 				valuer, ok = exprMatcher.MatchString(expr)
 				return ok
 			})
@@ -128,7 +84,7 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 
 	})
 	if len(outerrs) > 0 {
-		return sql, NewMissListError(outerrs...)
+		return sql, xdb.NewMissListError(outerrs...)
 	}
 
 	if state.CanCache() {
@@ -142,20 +98,20 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state SqlState, sqlTpl string, i
 // DefaultExpressionMatcherMapImpl 默认表达式匹配器实现
 type DefaultExpressionMatcherMapImpl struct {
 	mutex        *sync.Mutex
-	matcherCache *treemap.Map[int, ExpressionMatcher]
+	matcherCache *treemap.Map[int, xdb.ExpressionMatcher]
 	sortVal      map[string]int
 	regexp       *regexp.Regexp
 }
 
-func NewExpressionMatcherMap() ExpressionMatcherMap {
+func NewExpressionMatcherMap() xdb.ExpressionMatcherMap {
 	return &DefaultExpressionMatcherMapImpl{
 		mutex:        &sync.Mutex{},
-		matcherCache: treemap.New[int, ExpressionMatcher](),
+		matcherCache: treemap.New[int, xdb.ExpressionMatcher](),
 		sortVal:      map[string]int{},
 	}
 }
 
-func (m *DefaultExpressionMatcherMapImpl) Regist(matchers ...ExpressionMatcher) {
+func (m *DefaultExpressionMatcherMapImpl) Regist(matchers ...xdb.ExpressionMatcher) {
 	if len(matchers) <= 0 {
 		return
 	}
@@ -177,7 +133,7 @@ func (m *DefaultExpressionMatcherMapImpl) Regist(matchers ...ExpressionMatcher) 
 		m.matcherCache.Put(idx, matcher)
 	}
 }
-func (m *DefaultExpressionMatcherMapImpl) Load(name string) (ExpressionMatcher, bool) {
+func (m *DefaultExpressionMatcherMapImpl) Load(name string) (xdb.ExpressionMatcher, bool) {
 	idx := m.sortVal[name]
 	tmp, ok := m.matcherCache.Get(idx)
 	if !ok {
@@ -185,8 +141,8 @@ func (m *DefaultExpressionMatcherMapImpl) Load(name string) (ExpressionMatcher, 
 	}
 	return tmp, ok
 }
-func (m *DefaultExpressionMatcherMapImpl) Find(call func(matcher ExpressionMatcher) bool) ExpressionMatcher {
-	_, matcher := m.matcherCache.Find(func(key int, value ExpressionMatcher) bool {
+func (m *DefaultExpressionMatcherMapImpl) Find(call func(matcher xdb.ExpressionMatcher) bool) xdb.ExpressionMatcher {
+	_, matcher := m.matcherCache.Find(func(key int, value xdb.ExpressionMatcher) bool {
 		return call(value)
 	})
 	return matcher
@@ -199,10 +155,10 @@ func (m *DefaultExpressionMatcherMapImpl) Delete(name string) {
 	m.matcherCache.Remove(idx)
 }
 
-func (m *DefaultExpressionMatcherMapImpl) Clone() ExpressionMatcherMap {
+func (m *DefaultExpressionMatcherMapImpl) Clone() xdb.ExpressionMatcherMap {
 	clone := NewExpressionMatcherMap()
 
-	m.matcherCache.Each(func(idx int, matcher ExpressionMatcher) {
+	m.matcherCache.Each(func(idx int, matcher xdb.ExpressionMatcher) {
 		clone.Regist(matcher)
 	})
 

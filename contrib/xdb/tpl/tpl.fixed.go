@@ -71,5 +71,5 @@ func (template *FixedTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, inpu
 	return template.matcher.GenerateSQL(item, sqlTpl, input)
 }
 func (template *FixedTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
-	return xdb.NewDefaultSqlState(template.Placeholder(), tplOpts)
+	return xdb.NewSqlState(template.Placeholder(), tplOpts)
 }

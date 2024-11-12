@@ -150,19 +150,19 @@ func (m *likeExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallba
 func (m *likeExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
 
 	operList := []xdb.Operator{
-		xdb.NewDefaultOperator("like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		xdb.NewOperator("like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like %s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
-		xdb.NewDefaultOperator("%like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		xdb.NewOperator("%like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like '%%'+%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
-		xdb.NewDefaultOperator("like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		xdb.NewOperator("like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like %s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
-		xdb.NewDefaultOperator("%like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		xdb.NewOperator("%like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like '%%'+%s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 	}

@@ -5,13 +5,6 @@ import (
 	//	"github.com/emirpasic/gods/v2/maps/treemap"
 )
 
-// 新建一个模板匹配器
-var NewTemplateMatcher func(matchers ...ExpressionMatcher) TemplateMatcher
-
-func init() {
-	NewTemplateMatcher = NewDefaultTemplateMatcher
-}
-
 // 属性表达式匹配器
 type ExpressionMatcher interface {
 	Name() string                                //表达式名称

@@ -77,5 +77,5 @@ func (template *SeqTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, input 
 }
 
 func (template *SeqTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
-	return xdb.NewDefaultSqlState(template.Placeholder(), tplOpts)
+	return xdb.NewSqlState(template.Placeholder(), tplOpts)
 }

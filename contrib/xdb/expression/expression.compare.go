@@ -128,12 +128,12 @@ func (m *compareExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Op
 		return fmt.Sprintf("%s %s%s%s", item.GetSymbol().Concat(), item.GetFullfield(), item.GetOper(), phName)
 	}
 	operList := []xdb.Operator{
-		xdb.NewDefaultOperator(">", operCallback),
-		xdb.NewDefaultOperator(">=", operCallback),
-		xdb.NewDefaultOperator("<>", operCallback),
-		xdb.NewDefaultOperator("=", operCallback),
-		xdb.NewDefaultOperator("<", operCallback),
-		xdb.NewDefaultOperator("<=", operCallback),
+		xdb.NewOperator(">", operCallback),
+		xdb.NewOperator(">=", operCallback),
+		xdb.NewOperator("<>", operCallback),
+		xdb.NewOperator("=", operCallback),
+		xdb.NewOperator("<", operCallback),
+		xdb.NewOperator("<=", operCallback),
 	}
 
 	if optMap != nil {

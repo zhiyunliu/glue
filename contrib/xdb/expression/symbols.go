@@ -5,9 +5,13 @@ import (
 )
 
 // 根据表达式获取
-var DefaultSymbols xdb.SymbolMap = xdb.NewSymbolMap(
-	&andSymbols{},
-	&atSymbols{},
-	&orSymbols{},
-	&replaceSymbols{},
-)
+var DefaultSymbols xdb.SymbolMap
+
+func initSymbols() {
+	DefaultSymbols = xdb.NewSymbolMap(
+		&andSymbols{},
+		&atSymbols{},
+		&orSymbols{},
+		&replaceSymbols{},
+	)
+}

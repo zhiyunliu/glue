@@ -9,14 +9,15 @@ import (
 type MssqlSqlState struct {
 	innerState  xdb.SqlState
 	placeHolder xdb.Placeholder
-	propCache   map[string]string
+	phNameCache map[string]string
 }
 
+// 新建一个SqlState
 func NewSqlState(placeHolder xdb.Placeholder, tplOpts *xdb.TemplateOptions) xdb.SqlState {
 	return &MssqlSqlState{
-		innerState:  xdb.NewDefaultSqlState(placeHolder, tplOpts),
+		innerState:  xdb.NewSqlState(placeHolder, tplOpts),
 		placeHolder: placeHolder,
-		propCache:   make(map[string]string),
+		phNameCache: make(map[string]string),
 	}
 }
 
@@ -37,7 +38,7 @@ func (s *MssqlSqlState) HasDynamic(dynamicType xdb.DynamicType) bool {
 }
 
 func (s *MssqlSqlState) AppendExpr(propName string, value any) (phName string) {
-	phName, ok := s.propCache[propName]
+	phName, ok := s.phNameCache[propName]
 	if ok {
 		return phName
 	}
@@ -53,7 +54,7 @@ func (s *MssqlSqlState) AppendExpr(propName string, value any) (phName string) {
 	if argPhName != "" {
 		phName = argPhName
 	}
-	s.propCache[propName] = phName
+	s.phNameCache[propName] = phName
 	return
 }
 

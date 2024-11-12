@@ -1,4 +1,4 @@
-package xdb
+package tpl
 
 import (
 	"database/sql"
@@ -6,20 +6,22 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/zhiyunliu/glue/xdb"
 )
 
 func TestDefaultTemplateMatcher_GenerateSQL(t *testing.T) {
 
-	var conn TemplateMatcher = NewDefaultTemplateMatcher(&testExpressionMatcher{
-		symbolMap: NewSymbolMap(&testSymbol{}, &test2Symbol{}),
+	var conn xdb.TemplateMatcher = NewDefaultTemplateMatcher(&testExpressionMatcher{
+		symbolMap: xdb.NewSymbolMap(&testSymbol{}, &test2Symbol{}),
 	}, &test2ExpressionMatcher{
-		symbolMap: NewSymbolMap(&testSymbol{}, &test2Symbol{}),
+		symbolMap: xdb.NewSymbolMap(&testSymbol{}, &test2Symbol{}),
 	})
 
 	tests := []struct {
 		name     string
 		sqlTpl   string
-		input    DBParam
+		input    xdb.DBParam
 		wantVals []any
 		wantSql  string
 		wantErr  bool
@@ -33,7 +35,7 @@ func TestDefaultTemplateMatcher_GenerateSQL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			state := NewDefaultSqlState(&testPlaceHolder{prefix: "p_"}, &TemplateOptions{UseExprCache: true})
+			state := xdb.NewSqlState(&testPlaceHolder{prefix: "p_"}, &xdb.TemplateOptions{UseExprCache: true})
 
 			gotSql, err := conn.GenerateSQL(state, tt.sqlTpl, tt.input)
 			if (err != nil) != tt.wantErr {
@@ -53,7 +55,7 @@ func TestDefaultTemplateMatcher_GenerateSQL(t *testing.T) {
 }
 
 type testExpressionMatcher struct {
-	symbolMap SymbolMap
+	symbolMap xdb.SymbolMap
 }
 
 func (m *testExpressionMatcher) Name() string {
@@ -65,22 +67,22 @@ func (m *testExpressionMatcher) Pattern() string {
 	return pattern
 }
 
-func (m *testExpressionMatcher) GetOperatorMap() OperatorMap {
-	operList := []Operator{
+func (m *testExpressionMatcher) GetOperatorMap() xdb.OperatorMap {
+	operList := []xdb.Operator{
 
-		NewDefaultOperator("@", func(item ExpressionValuer, param DBParam, phName string, value any) string {
+		xdb.NewOperator("@", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return phName
 		}),
 
-		NewDefaultOperator("&", func(item ExpressionValuer, param DBParam, phName string, value any) string {
+		xdb.NewOperator("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 	}
 
-	return NewOperatorMap(operList...)
+	return xdb.NewOperatorMap(operList...)
 
 }
-func (m *testExpressionMatcher) MatchString(expression string) (valuer ExpressionValuer, ok bool) {
+func (m *testExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
 
 	ok = strings.HasPrefix(expression, "@")
 	if !ok {
@@ -93,7 +95,7 @@ func (m *testExpressionMatcher) MatchString(expression string) (valuer Expressio
 
 	symbol, _ := m.symbolMap.Load("@")
 
-	item := &ExpressionItem{
+	item := &xdb.ExpressionItem{
 		Symbol:    symbol,
 		Matcher:   m,
 		FullField: fullkey,
@@ -109,8 +111,8 @@ func (m *testExpressionMatcher) MatchString(expression string) (valuer Expressio
 
 	return item, ok
 }
-func (m *testExpressionMatcher) defaultBuildCallback() ExpressionBuildCallback {
-	return func(item ExpressionValuer, state SqlState, param DBParam) (expression string, err MissError) {
+func (m *testExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
+	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
 		val, err := param.GetVal(item.GetPropName())
 		if err != nil {
 			return
@@ -121,7 +123,7 @@ func (m *testExpressionMatcher) defaultBuildCallback() ExpressionBuildCallback {
 }
 
 type test2ExpressionMatcher struct {
-	symbolMap SymbolMap
+	symbolMap xdb.SymbolMap
 }
 
 func (m *test2ExpressionMatcher) Name() string {
@@ -133,24 +135,24 @@ func (m *test2ExpressionMatcher) Pattern() string {
 	return pattern
 }
 
-func (m *test2ExpressionMatcher) GetOperatorMap() OperatorMap {
+func (m *test2ExpressionMatcher) GetOperatorMap() xdb.OperatorMap {
 
-	operCallback := func(item ExpressionValuer, param DBParam, phName string, value any) string {
+	operCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 		return fmt.Sprintf("%s %s%s%s", item.GetSymbol().Concat(), item.GetFullfield(), item.GetOper(), phName)
 	}
-	operList := []Operator{
-		NewDefaultOperator(">", operCallback),
-		NewDefaultOperator(">=", operCallback),
-		NewDefaultOperator("<>", operCallback),
-		NewDefaultOperator("=", operCallback),
-		NewDefaultOperator("<", operCallback),
-		NewDefaultOperator("<=", operCallback),
+	operList := []xdb.Operator{
+		xdb.NewOperator(">", operCallback),
+		xdb.NewOperator(">=", operCallback),
+		xdb.NewOperator("<>", operCallback),
+		xdb.NewOperator("=", operCallback),
+		xdb.NewOperator("<", operCallback),
+		xdb.NewOperator("<=", operCallback),
 	}
 
-	return NewOperatorMap(operList...)
+	return xdb.NewOperatorMap(operList...)
 
 }
-func (m *test2ExpressionMatcher) MatchString(expression string) (valuer ExpressionValuer, ok bool) {
+func (m *test2ExpressionMatcher) MatchString(expression string) (valuer xdb.ExpressionValuer, ok bool) {
 	ok = true
 
 	expression = strings.Trim(expression, "&{}")
@@ -162,7 +164,7 @@ func (m *test2ExpressionMatcher) MatchString(expression string) (valuer Expressi
 	propName := parties[1]
 	symbol, _ := m.symbolMap.Load("&")
 
-	item := &ExpressionItem{
+	item := &xdb.ExpressionItem{
 		Symbol:    symbol,
 		Matcher:   m,
 		FullField: fullkey,
@@ -174,8 +176,8 @@ func (m *test2ExpressionMatcher) MatchString(expression string) (valuer Expressi
 
 	return item, ok
 }
-func (m *test2ExpressionMatcher) defaultBuildCallback() ExpressionBuildCallback {
-	return func(item ExpressionValuer, state SqlState, param DBParam) (expression string, err MissError) {
+func (m *test2ExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
+	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
 		val, err := param.GetVal(item.GetPropName())
 		if err != nil {
 			return
@@ -212,11 +214,11 @@ func (ph *testPlaceHolder) BuildArgVal(argName string, val any) any {
 type testSymbol struct{}
 
 func (s *testSymbol) Name() string {
-	return SymbolAt
+	return xdb.SymbolAt
 }
 
-func (s *testSymbol) DynamicType() DynamicType {
-	return DynamicNone
+func (s *testSymbol) DynamicType() xdb.DynamicType {
+	return xdb.DynamicNone
 }
 
 func (s *testSymbol) Concat() string {
@@ -226,11 +228,11 @@ func (s *testSymbol) Concat() string {
 type test2Symbol struct{}
 
 func (s *test2Symbol) Name() string {
-	return SymbolAnd
+	return xdb.SymbolAnd
 }
 
-func (s *test2Symbol) DynamicType() DynamicType {
-	return DynamicAnd
+func (s *test2Symbol) DynamicType() xdb.DynamicType {
+	return xdb.DynamicAnd
 }
 
 func (s *test2Symbol) Concat() string {

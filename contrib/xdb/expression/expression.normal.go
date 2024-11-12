@@ -130,19 +130,19 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
 	operList := []xdb.Operator{
 
-		xdb.NewDefaultOperator("@", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		xdb.NewOperator("@", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return phName
 		}),
 
-		xdb.NewDefaultOperator("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		xdb.NewOperator("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
-		xdb.NewDefaultOperator("|", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		xdb.NewOperator("|", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 
-		xdb.NewDefaultOperator("$", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) (val string) {
+		xdb.NewOperator("$", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) (val string) {
 
 			switch t := value.(type) {
 			case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:

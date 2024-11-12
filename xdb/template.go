@@ -8,41 +8,9 @@ import (
 
 var (
 	tpls sync.Map
+	// 新建一个模板匹配器
+	NewTemplateMatcher func(matchers ...ExpressionMatcher) TemplateMatcher
 )
-
-// type SqlScene struct {
-// 	Names             []string
-// 	Values            []interface{}
-// 	NameCache         map[string]string
-// 	Placeholder       Placeholder
-// 	PropOpts          *ExpressionOptions
-// 	HasDynamicAnd     bool
-// 	HasDynamicOr      bool
-// 	HasDynamicReplace bool
-// }
-
-// func (p *SqlScene) Clone() *SqlScene {
-// 	return &SqlScene{
-// 		NameCache:   p.NameCache,
-// 		Placeholder: p.Placeholder,
-// 	}
-// }
-
-// // 是否缓存
-// func (p *SqlScene) CanCache() bool {
-// 	return !(p.HasDynamicAnd || p.HasDynamicOr)
-// }
-/*
-
-Names             []string
-	Values            []interface{}
-	NameCache         map[string]string
-	Placeholder       Placeholder
-	PropOpts          *ExpressionOptions
-	HasDynamicAnd     bool
-	HasDynamicOr      bool
-	HasDynamicReplace bool
-*/
 
 // Template 模板上下文
 type SQLTemplate interface {
@@ -85,4 +53,53 @@ func RegistExpressionMatcher(proto string, matcher ExpressionMatcher) (err error
 	}
 	tmpl.RegistExpressionMatcher(matcher)
 	return
+}
+
+// 表达式解析选项
+type TemplateOptions struct {
+	UseExprCache bool
+}
+
+type TemplateOption func(*TemplateOptions)
+
+// 使用解析缓存
+func WithExprCache(use bool) TemplateOption {
+	return func(o *TemplateOptions) {
+		o.UseExprCache = use
+	}
+}
+
+type MatcherOptions struct {
+	BuildCallback ExpressionBuildCallback
+	OperatorMap   OperatorMap
+}
+type MatcherOption func(*MatcherOptions)
+
+// WithBuildCallback 制定matcher的表达式生成回调
+func WithBuildCallback(callback ExpressionBuildCallback) MatcherOption {
+	return func(mo *MatcherOptions) {
+		mo.BuildCallback = callback
+	}
+}
+
+// WithOperatorMap 制定matcher的符号处理函数 与WithOperator 二选一
+func WithOperatorMap(operatorMap OperatorMap) MatcherOption {
+	return func(mo *MatcherOptions) {
+		mo.OperatorMap = operatorMap
+	}
+}
+
+// WithOperator 增加一个符号处理函数 与WithOperatorMap 二选一
+func WithOperator(operator ...Operator) MatcherOption {
+	return func(mo *MatcherOptions) {
+		mo.OperatorMap = NewOperatorMap(operator...)
+	}
+}
+
+// TemplateMatcher 模板匹配器
+type TemplateMatcher interface {
+	// RegistMatcher 注册表达式匹配器
+	RegistMatcher(matcher ...ExpressionMatcher)
+	// GenerateSQL 根据模板生成SQL语句
+	GenerateSQL(item SqlState, sqlTpl string, input DBParam) (sql string, err error)
 }
