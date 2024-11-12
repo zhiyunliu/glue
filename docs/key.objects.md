@@ -16,3 +16,8 @@
 ![avatar](images/组件.png "组件")
 
 
+## xdb数据库解析接口关系结构图
+
+![avatar](images/xdb结构图.png "xdb结构图")
+
+
