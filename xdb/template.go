@@ -26,7 +26,7 @@ type SQLTemplate interface {
 	GetSqlState(*TemplateOptions) SqlState
 }
 
-type SQLTemplateCache interface {
+type ExpressionCache interface {
 	Build(SqlState, DBParam) (sql string, err error)
 }
 

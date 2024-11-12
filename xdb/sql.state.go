@@ -23,5 +23,5 @@ type SqlState interface {
 	HasDynamic(DynamicType) bool
 	AppendExpr(propName string, value any) (phName string)
 	CanCache() bool
-	BuildCache(sql string) SQLTemplateCache
+	BuildCache(sql string) ExpressionCache
 }

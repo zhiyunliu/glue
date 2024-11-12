@@ -56,7 +56,7 @@ func (s *DefaultSqlState) CanCache() bool {
 		s.HasDynamic(xdb.DynamicReplace))
 }
 
-func (s *DefaultSqlState) BuildCache(sql string) xdb.SQLTemplateCache {
+func (s *DefaultSqlState) BuildCache(sql string) xdb.ExpressionCache {
 	return &defaultSqlTemplateCache{
 		sql:   sql,
 		names: s.names,

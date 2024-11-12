@@ -62,6 +62,6 @@ func (s *MssqlSqlState) CanCache() bool {
 	return s.innerState.CanCache()
 }
 
-func (s *MssqlSqlState) BuildCache(sql string) xdb.SQLTemplateCache {
+func (s *MssqlSqlState) BuildCache(sql string) xdb.ExpressionCache {
 	return s.innerState.BuildCache(sql)
 }

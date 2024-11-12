@@ -43,7 +43,7 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state xdb.SqlState, sqlTpl strin
 	tplHash := md5.Str(sqlTpl)
 
 	if tmp, ok := conn.exprCache.Load(tplHash); ok {
-		tplCache := tmp.(xdb.SQLTemplateCache)
+		tplCache := tmp.(xdb.ExpressionCache)
 		return tplCache.Build(state, input)
 	}
 
