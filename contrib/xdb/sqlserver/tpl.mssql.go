@@ -3,6 +3,7 @@ package sqlserver
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
@@ -10,9 +11,10 @@ import (
 
 // MssqlTemplate  模板
 type MssqlTemplate struct {
-	name    string
-	prefix  string
-	matcher xdb.TemplateMatcher
+	name         string
+	prefix       string
+	matcher      xdb.TemplateMatcher
+	sqlStatePool *sync.Pool
 }
 
 type mssqlPlaceHolder struct {
@@ -38,22 +40,23 @@ func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val any) any {
 
 }
 
-func (ph *mssqlPlaceHolder) Clone() xdb.Placeholder {
-	return &mssqlPlaceHolder{
-		template: ph.template,
-	}
-}
-
 func New(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
 
 	if matcher == nil {
 		panic(fmt.Errorf("New ,TemplateMatcher Can't be nil"))
 	}
-	return &MssqlTemplate{
+	template := &MssqlTemplate{
 		name:    name,
 		prefix:  prefix,
 		matcher: matcher,
 	}
+
+	template.sqlStatePool = &sync.Pool{
+		New: func() interface{} {
+			return NewSqlState(template.Placeholder())
+		},
+	}
+	return template
 }
 
 func (template *MssqlTemplate) Name() string {
@@ -78,5 +81,12 @@ func (template *MssqlTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, inpu
 }
 
 func (template *MssqlTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
-	return NewSqlState(template.Placeholder(), tplOpts)
+	sqlState := template.sqlStatePool.Get().(xdb.SqlState)
+	sqlState.WithTemplateOptions(tplOpts)
+	return sqlState
+}
+
+func (template *MssqlTemplate) ReleaseSqlState(state xdb.SqlState) {
+	state.Reset()
+	template.sqlStatePool.Put(state)
 }

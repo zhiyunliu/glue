@@ -2,15 +2,17 @@ package tpl
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/zhiyunliu/glue/xdb"
 )
 
 // FixedTemplate  模板
 type FixedTemplate struct {
-	name    string
-	prefix  string
-	matcher xdb.TemplateMatcher
+	name         string
+	prefix       string
+	matcher      xdb.TemplateMatcher
+	sqlStatePool *sync.Pool
 }
 
 type fixedPlaceHolder struct {
@@ -31,23 +33,23 @@ func (ph *fixedPlaceHolder) NamedArg(propName string) (phName string) {
 	return
 }
 
-func (ph *fixedPlaceHolder) Clone() xdb.Placeholder {
-	return &fixedPlaceHolder{
-		template: ph.template,
-	}
-}
-
 var _ xdb.SQLTemplate = &FixedTemplate{}
 
 func NewFixed(name, prefix string, matcher xdb.TemplateMatcher) *FixedTemplate {
 	if matcher == nil {
 		panic(fmt.Errorf("NewFixed ,TemplateMatcher Can't be nil"))
 	}
-	return &FixedTemplate{
+	template := &FixedTemplate{
 		name:    name,
 		prefix:  prefix,
 		matcher: matcher,
 	}
+	template.sqlStatePool = &sync.Pool{
+		New: func() interface{} {
+			return xdb.NewSqlState(template.Placeholder())
+		},
+	}
+	return template
 }
 
 func (template FixedTemplate) Name() string {
@@ -70,6 +72,14 @@ func (template *FixedTemplate) RegistExpressionMatcher(matchers ...xdb.Expressio
 func (template *FixedTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, input xdb.DBParam) (sql string, err error) {
 	return template.matcher.GenerateSQL(item, sqlTpl, input)
 }
+
 func (template *FixedTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
-	return xdb.NewSqlState(template.Placeholder(), tplOpts)
+	sqlState := template.sqlStatePool.Get().(xdb.SqlState)
+	sqlState.WithTemplateOptions(tplOpts)
+	return sqlState
+}
+
+func (template *FixedTemplate) ReleaseSqlState(state xdb.SqlState) {
+	state.Reset()
+	template.sqlStatePool.Put(state)
 }

@@ -13,9 +13,9 @@ type MssqlSqlState struct {
 }
 
 // 新建一个SqlState
-func NewSqlState(placeHolder xdb.Placeholder, tplOpts *xdb.TemplateOptions) xdb.SqlState {
+func NewSqlState(placeHolder xdb.Placeholder) xdb.SqlState {
 	return &MssqlSqlState{
-		innerState:  xdb.NewSqlState(placeHolder, tplOpts),
+		innerState:  xdb.NewSqlState(placeHolder),
 		placeHolder: placeHolder,
 		phNameCache: make(map[string]string),
 	}
@@ -64,4 +64,16 @@ func (s *MssqlSqlState) CanCache() bool {
 
 func (s *MssqlSqlState) BuildCache(sql string) xdb.ExpressionCache {
 	return s.innerState.BuildCache(sql)
+}
+
+func (s *MssqlSqlState) WithPlaceholder(placeholder xdb.Placeholder) {
+	s.innerState.WithPlaceholder(placeholder)
+}
+
+func (s *MssqlSqlState) WithTemplateOptions(tplOpts *xdb.TemplateOptions) {
+	s.innerState.WithTemplateOptions(tplOpts)
+}
+func (s *MssqlSqlState) Reset() {
+	clear(s.phNameCache)
+	s.innerState.Reset()
 }

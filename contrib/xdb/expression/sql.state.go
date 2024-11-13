@@ -14,9 +14,8 @@ type DefaultSqlState struct {
 	dynamicType xdb.DynamicType
 }
 
-func NewDefaultSqlState(ph xdb.Placeholder, tplOpts *xdb.TemplateOptions) xdb.SqlState {
+func NewDefaultSqlState(ph xdb.Placeholder) xdb.SqlState {
 	return &DefaultSqlState{
-		tplOpts:     tplOpts,
 		placeholder: ph,
 	}
 }
@@ -61,6 +60,26 @@ func (s *DefaultSqlState) BuildCache(sql string) xdb.ExpressionCache {
 		sql:   sql,
 		names: s.names,
 	}
+}
+
+func (s *DefaultSqlState) WithArgs(placeholder xdb.Placeholder, tplOpts *xdb.TemplateOptions) {
+	s.placeholder = placeholder
+	s.tplOpts = tplOpts
+}
+
+func (s *DefaultSqlState) WithPlaceholder(placeholder xdb.Placeholder) {
+	s.placeholder = placeholder
+}
+
+func (s *DefaultSqlState) WithTemplateOptions(tplOpts *xdb.TemplateOptions) {
+	s.tplOpts = tplOpts
+}
+
+func (s *DefaultSqlState) Reset() {
+	s.tplOpts = nil
+	s.names = nil
+	s.values = nil
+	s.dynamicType = xdb.DynamicNone
 }
 
 type defaultSqlTemplateCache struct {

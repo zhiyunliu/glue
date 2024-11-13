@@ -24,6 +24,8 @@ type SQLTemplate interface {
 	HandleExpr(item SqlState, sqlTpl string, param DBParam) (sql string, err error)
 	//获取sql状态
 	GetSqlState(*TemplateOptions) SqlState
+	//sql状态释放
+	ReleaseSqlState(SqlState)
 }
 
 type ExpressionCache interface {

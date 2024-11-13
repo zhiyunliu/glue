@@ -11,6 +11,7 @@ func AnalyzeTPLFromCache(template xdb.SQLTemplate, sqlTpl string, input map[stri
 		opts[i](tplOpts)
 	}
 	sqlState := template.GetSqlState(tplOpts)
+	defer template.ReleaseSqlState(sqlState)
 	sqlTpl, err = template.HandleExpr(sqlState, sqlTpl, input)
 	if err != nil {
 		return "", nil, err

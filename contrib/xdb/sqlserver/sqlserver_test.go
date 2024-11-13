@@ -27,6 +27,10 @@ func TestSqlserverGetSQLContext(t *testing.T) {
 	query, execArgs, err = template.GetSQLContext(execSql, execParam)
 	checkcase1(t, query, execArgs)
 
+	sqlParam := map[string]any{"p1": sql.Named("p_p1", 1)}
+	//1 check from cache
+	query, execArgs, err = template.GetSQLContext(execSql, sqlParam)
+	checkcase1(t, query, execArgs)
 	//-------------------------------------------------------------
 
 	execSql = `select 1 from t where p1=@{p1} and p2=@{p2}`

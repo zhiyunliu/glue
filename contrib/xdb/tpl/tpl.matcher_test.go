@@ -35,7 +35,8 @@ func TestDefaultTemplateMatcher_GenerateSQL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			state := xdb.NewSqlState(&testPlaceHolder{prefix: "p_"}, &xdb.TemplateOptions{UseExprCache: true})
+			state := xdb.NewSqlState(&testPlaceHolder{prefix: "p_"})
+			state.WithTemplateOptions(&xdb.TemplateOptions{UseExprCache: true})
 
 			gotSql, err := conn.GenerateSQL(state, tt.sqlTpl, tt.input)
 			if (err != nil) != tt.wantErr {
