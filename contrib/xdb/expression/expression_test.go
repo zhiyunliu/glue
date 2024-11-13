@@ -258,3 +258,76 @@ func (s *demoSymbols) DynamicType() xdb.DynamicType {
 func (s *demoSymbols) Concat() string {
 	return "demo"
 }
+
+func Benchmark_NormalMatcher(b *testing.B) {
+	matcher := NewNormalExpressionMatcher(DefaultSymbols)
+	tt := struct {
+		name          string
+		fullKey       string
+		wantFullfield string
+		wantPropName  string
+		wantOper      string
+		wantSymbol    string
+		wantExpr      string
+		wantErr       bool
+		wantCanCache  bool
+	}{
+		name:          "1",
+		fullKey:       `@{t.property}`,
+		wantFullfield: `t.property`,
+		wantPropName:  `property`,
+		wantOper:      `@`,
+		wantSymbol:    `@`,
+		wantExpr:      `?`,
+		wantErr:       false,
+		wantCanCache:  true,
+	}
+
+	dbParam := map[string]interface{}{
+		"property":   "p",
+		"field":      "f",
+		"inproperty": []string{"p1", "p2"},
+		"infield":    []int{1, 2},
+		"emptyfield": "",
+		"bytesfield": []byte("bytes"),
+		"objfield":   struct{}{},
+	}
+
+	for i := 0; i < b.N; i++ {
+
+		propValuer, ok := matcher.MatchString(tt.fullKey)
+		if !ok {
+			b.Error("propValuer is null", tt.name)
+			return
+		}
+		gotPropName := propValuer.GetPropName()
+
+		if propValuer.GetFullfield() != tt.wantFullfield {
+			b.Errorf("GetFullfield() :%v, want %v", propValuer.GetFullfield(), tt.wantFullfield)
+		}
+		if gotPropName != tt.wantPropName {
+			b.Errorf("GetPropName() :%v, want %v", gotPropName, tt.wantPropName)
+		}
+		if propValuer.GetOper() != tt.wantOper {
+			b.Errorf("GetOper() :%v, want %v", propValuer.GetOper(), tt.wantOper)
+		}
+		if propValuer.GetSymbol().Name() != tt.wantSymbol {
+			b.Errorf("GetSymbol() :%v, want %v", propValuer.GetSymbol(), tt.wantSymbol)
+		}
+
+		state := xdb.NewSqlState(&testPlaceHolder{prefix: "?"}, &xdb.TemplateOptions{UseExprCache: true})
+		expr, err := propValuer.Build(state, dbParam)
+		if (err != nil) != tt.wantErr {
+			b.Error(err)
+		}
+
+		if expr != tt.wantExpr {
+			b.Errorf("Build() :%v, want %v", expr, tt.wantExpr)
+		}
+
+		if state.CanCache() != tt.wantCanCache {
+			b.Errorf("Canche :%v, want:%v", state.CanCache(), tt.wantCanCache)
+		}
+
+	}
+}

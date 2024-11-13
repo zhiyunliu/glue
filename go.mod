@@ -3,7 +3,8 @@ module github.com/zhiyunliu/glue
 go 1.21
 
 require (
-	github.com/zhiyunliu/golibs v0.2.7
+	github.com/zhiyunliu/alloter v0.1.0
+	github.com/zhiyunliu/golibs v0.2.8
 	github.com/zhiyunliu/redisqueue/v2 v2.3.0
 )
 
@@ -134,6 +135,6 @@ require (
 	gopkg.in/ini.v1 v1.66.2 // indirect
 )
 
-replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
+//replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
 
 //replace github.com/zhiyunliu/redisqueue/v2 => ../../../github.com/zhiyunliu/redisqueue

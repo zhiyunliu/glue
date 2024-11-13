@@ -8,7 +8,7 @@ import (
 
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/robfig/cron/v3"
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/dlocker"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"

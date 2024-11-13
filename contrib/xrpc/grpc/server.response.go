@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 

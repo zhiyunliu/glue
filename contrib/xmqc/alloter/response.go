@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/glue/xmqc"
 	"github.com/zhiyunliu/golibs/xtypes"

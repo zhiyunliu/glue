@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/alloter"
 	enginealloter "github.com/zhiyunliu/glue/contrib/engine/alloter"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/glue/engine"

@@ -12,7 +12,7 @@ import (
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
 	"google.golang.org/grpc/peer"
 
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/alloter"
 )
 
 var _ alloter.IRequest = (*serverRequest)(nil)

@@ -9,7 +9,7 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/xcron"
 	"github.com/zhiyunliu/golibs/xlist"
 )

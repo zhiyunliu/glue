@@ -3,8 +3,8 @@ package alloter
 import (
 	"sync"
 
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/context"
-	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/engine"
 )
 

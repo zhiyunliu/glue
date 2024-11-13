@@ -9,7 +9,7 @@ import (
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map"
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/dlocker"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/standard"
