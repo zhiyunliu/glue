@@ -3,16 +3,16 @@ package registry
 import (
 	"fmt"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/golibs/xnet"
 )
 
-var _cache cmap.ConcurrentMap
+var _cache cmap.ConcurrentMap[string, any]
 var _factoryMap = map[string]Factory{}
 
 func init() {
-	_cache = cmap.New()
+	_cache = cmap.New[any]()
 }
 
 // IFactory 注册中心构建器
@@ -45,7 +45,7 @@ func GetRegistrar(cfg config.Config) (Registrar, error) {
 	if cfgVal == "" {
 		return nil, fmt.Errorf("registry未配置")
 	}
-	tmpVal := _cache.Upsert(cfgVal, nil, func(exist bool, valueInMap, newValue interface{}) interface{} {
+	tmpVal := _cache.Upsert(cfgVal, nil, func(exist bool, valueInMap, newValue any) any {
 		if exist {
 			return valueInMap
 		}

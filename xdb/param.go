@@ -114,9 +114,26 @@ func DefaultIsNil(input interface{}) bool {
 	if input == nil {
 		return true
 	}
-	if fmt.Sprintf("%v", input) == "" {
-		return true
+	switch tmpv := input.(type) {
+	case string:
+		if len(tmpv) <= 0 {
+			return true
+		}
+	case fmt.GoStringer:
+		if tmpv.GoString() == "" {
+			return true
+		}
+	case fmt.Stringer:
+		if tmpv.String() == "" {
+			return true
+		}
+	case driver.Valuer:
+		drv, _ := tmpv.Value()
+		if drv == nil {
+			return true
+		}
 	}
+
 	rv := reflect.ValueOf(input)
 	if rv.Kind() == reflect.Ptr {
 		return rv.IsNil()

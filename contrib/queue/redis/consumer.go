@@ -12,7 +12,7 @@ import (
 	"github.com/zhiyunliu/glue/contrib/redis"
 	"github.com/zhiyunliu/glue/queue"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 // Consumer Consumer
@@ -21,7 +21,7 @@ type Consumer struct {
 	EnableDeadLetter bool //开启死信队列
 	DeadLetterQueue  string
 	client           *redis.Client
-	queues           cmap.ConcurrentMap
+	queues           cmap.ConcurrentMap[string, *QueueItem]
 	closeCh          chan struct{}
 	once             sync.Once
 	wg               sync.WaitGroup
@@ -46,7 +46,7 @@ func NewConsumer(configName string, config config.Config) (consumer *Consumer, e
 	consumer.config = config
 
 	consumer.closeCh = make(chan struct{})
-	consumer.queues = cmap.New()
+	consumer.queues = cmap.New[*QueueItem]()
 	return
 }
 
@@ -166,7 +166,7 @@ func (consumer *Consumer) Unconsume(queue string) {
 		return
 	}
 	if item, ok := consumer.queues.Get(queue); ok {
-		consumer.stopReceive(item.(*QueueItem))
+		consumer.stopReceive(item)
 	}
 	consumer.queues.Remove(queue)
 }
@@ -176,7 +176,7 @@ func (consumer *Consumer) Start() error {
 	for item := range consumer.queues.IterBuffered() {
 		func(qitem *QueueItem) {
 			go consumer.doReceive(qitem)
-		}(item.Val.(*QueueItem))
+		}(item.Val)
 	}
 	return nil
 }

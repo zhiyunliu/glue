@@ -9,7 +9,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/xcron"
@@ -134,18 +134,18 @@ func (m *Request) reset() {
 	m.header["x-cron-job-key"] = m.job.GetKey()
 }
 
-func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (bool, error) {
+func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap[string, *monopolyJob]) (bool, error) {
 	//本身不是独占
 	if !m.job.IsMonopoly() {
 		return false, nil
 	}
 
-	val, ok := monopolyJobs.Get(m.job.GetKey())
+	mjob, ok := monopolyJobs.Get(m.job.GetKey())
 	//独占列表不存在（只存在close的短暂时间）
 	if !ok {
 		return true, nil
 	}
-	mjob := val.(*monopolyJob)
+
 	isSuc, err := mjob.Acquire()
 	if err != nil {
 		return true, err

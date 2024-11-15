@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/zhiyunliu/alloter"
@@ -18,8 +18,8 @@ func Test_processor_handleImmediatelyJob(t *testing.T) {
 	processor := &processor{
 		ctx:             context.Background(),
 		closeChan:       make(chan struct{}),
-		jobs:            cmap.New(),
-		monopolyJobs:    cmap.New(),
+		jobs:            cmap.New[any](),
+		monopolyJobs:    cmap.New[*monopolyJob](),
 		routerEngine:    alloter.New(),
 		cronStdEngine:   cron.New(),
 		cronSecEngine:   cron.New(cron.WithSeconds()),
