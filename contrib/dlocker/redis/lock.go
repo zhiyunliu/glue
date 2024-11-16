@@ -163,8 +163,13 @@ func (rl *Lock) autoRenewalCallback(expire int) error {
 	if !rl.state.CompareAndSwap(old, true) {
 		return nil
 	}
+	autoRenewalTick := expire / 2
+	if autoRenewalTick < 1 {
+		autoRenewalTick = 1
+	}
+
 	rl.group.Go(func() error {
-		ticker := time.NewTicker(time.Second * time.Duration(expire))
+		ticker := time.NewTicker(time.Second * time.Duration(autoRenewalTick))
 		for {
 			select {
 			case <-ticker.C:
