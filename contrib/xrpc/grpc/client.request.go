@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
@@ -19,7 +19,7 @@ import (
 
 // Request RPC Request
 type Request struct {
-	requests     cmap.ConcurrentMap
+	requests     cmap.ConcurrentMap[string, any]
 	clientConfig *clientConfig
 }
 
@@ -28,7 +28,7 @@ func NewRequest(clientCfg *clientConfig) *Request {
 
 	req := &Request{
 		clientConfig: clientCfg,
-		requests:     cmap.New(),
+		requests:     cmap.New[any](),
 	}
 	return req
 }

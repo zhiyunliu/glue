@@ -6,22 +6,22 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/implement"
-	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
 // xTrans 数据库事务操作类
 type xTrans struct {
-	cfg *Setting
-	tpl tpl.SQLTemplate
-	tx  implement.ISysTrans
+	cfg   *Setting
+	proto string
+	tpl   xdb.SQLTemplate
+	tx    implement.ISysTrans
 }
 
 // Query 查询数据
-func (db *xTrans) Query(ctx context.Context, sqls string, input any) (rows xdb.Rows, err error) {
+func (db *xTrans) Query(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (rows xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveRows(r)
-	})
+		return implement.ResolveRows(db.proto, r)
+	}, opts...)
 	if err != nil {
 		return
 	}
@@ -30,10 +30,10 @@ func (db *xTrans) Query(ctx context.Context, sqls string, input any) (rows xdb.R
 }
 
 // Query 查询数据
-func (db *xTrans) Multi(ctx context.Context, sqls string, input any) (datasetRows []xdb.Rows, err error) {
+func (db *xTrans) Multi(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (datasetRows []xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveMultiRows(r)
-	})
+		return implement.ResolveMultiRows(db.proto, r)
+	}, opts...)
 	if err != nil {
 		return
 	}
@@ -41,10 +41,10 @@ func (db *xTrans) Multi(ctx context.Context, sqls string, input any) (datasetRow
 	return
 }
 
-func (t *xTrans) First(ctx context.Context, sqls string, input any) (data xdb.Row, err error) {
-	tmp, err := t.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveFirstRow(r)
-	})
+func (db *xTrans) First(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (data xdb.Row, err error) {
+	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return implement.ResolveFirstRow(db.proto, r)
+	}, opts...)
 	if err != nil {
 		return
 	}
@@ -53,21 +53,21 @@ func (t *xTrans) First(ctx context.Context, sqls string, input any) (data xdb.Ro
 }
 
 // Scalar 根据包含@名称占位符的查询语句执行查询语句
-func (t *xTrans) Scalar(ctx context.Context, sqls string, input any) (data interface{}, err error) {
-	data, err = t.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveScalar(r)
-	})
+func (db *xTrans) Scalar(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (data interface{}, err error) {
+	data, err = db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
+		return implement.ResolveScalar(db.proto, r)
+	}, opts...)
 	return
 }
 
 // Execute 根据包含@名称占位符的语句执行查询语句
-func (db *xTrans) Exec(ctx context.Context, sql string, input any) (r xdb.Result, err error) {
+func (db *xTrans) Exec(ctx context.Context, sql string, input any, opts ...xdb.TemplateOption) (r xdb.Result, err error) {
 
 	dbParams, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
-	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams, opts...)
 	if err != nil {
 		err = implement.GetError(err, sql, input)
 		return
@@ -84,16 +84,16 @@ func (db *xTrans) Exec(ctx context.Context, sql string, input any) (r xdb.Result
 }
 
 // Query 查询数据
-func (db *xTrans) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
+func (db *xTrans) QueryAs(ctx context.Context, sqls string, input any, results any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, a any) error {
-		return implement.ResolveRowsDataResult(r, results)
-	})
+		return implement.ResolveRowsDataResult(db.proto, r, results)
+	}, opts...)
 }
 
-func (db *xTrans) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
+func (db *xTrans) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return implement.ResolveFirstDataResult(r, result)
-	})
+		return implement.ResolveFirstDataResult(db.proto, r, result)
+	}, opts...)
 }
 
 // Rollback 回滚所有操作
@@ -106,13 +106,13 @@ func (t *xTrans) Commit() error {
 	return t.tx.Commit()
 }
 
-func (db *xTrans) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback) (result any, err error) {
+func (db *xTrans) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback, opts ...xdb.TemplateOption) (result any, err error) {
 	dbParams, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
 
-	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams, opts...)
 	if err != nil {
 		err = implement.GetError(err, sql, input)
 		return
@@ -135,13 +135,13 @@ func (db *xTrans) dbQuery(ctx context.Context, sql string, input any, callback i
 	return
 }
 
-func (db *xTrans) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback) (err error) {
+func (db *xTrans) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback, opts ...xdb.TemplateOption) (err error) {
 	dbParams, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
 
-	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParams, opts...)
 	if err != nil {
 		err = implement.GetError(err, sql, input)
 		return

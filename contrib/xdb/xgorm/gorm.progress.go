@@ -5,21 +5,23 @@ import (
 
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
+	"github.com/zhiyunliu/glue/contrib/xdb/expression"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 	"gorm.io/driver/postgres"
 )
 
 func init() {
+	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
 
 	resolver := &postgresResolver{Proto: "grom.postgres"}
 	xdb.Register(resolver)
-	tpl.Register(tpl.NewFixed(resolver.Proto, "$"))
+	xdb.RegistTemplate(tpl.NewFixed(resolver.Proto, "$", tplMatcher))
 	callbackCache[resolver.Proto] = postgres.Open
 
 	rresolver := &postgresResolver{Proto: "gorm.postgres"}
 	xdb.Register(rresolver)
-	tpl.Register(tpl.NewFixed(rresolver.Proto, "$"))
+	xdb.RegistTemplate(tpl.NewFixed(rresolver.Proto, "$", tplMatcher))
 	callbackCache[rresolver.Proto] = postgres.Open
 }
 
@@ -41,12 +43,13 @@ func (s *postgresResolver) Resolve(connName string, setting config.Config, opts 
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := tpl.GetDBTemplate(s.Proto)
+	tpl, err := xdb.GetTemplate(s.Proto)
 	if err != nil {
 		return nil, err
 	}
 	return &dbWrap{
 		tpl:    tpl,
+		proto:  s.Proto,
 		gromDB: gromDB,
 	}, nil
 }

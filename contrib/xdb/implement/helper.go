@@ -72,7 +72,7 @@ func GetError(err error, query string, args ...interface{}) error {
 }
 
 // 解析数据结果
-func ResolveFirstDataResult(rows *sql.Rows, result any) (err error) {
+func ResolveFirstDataResult(proto string, rows *sql.Rows, result any) (err error) {
 	rv := reflect.ValueOf(result)
 	if rv.Kind() != reflect.Pointer || rv.IsNil() {
 		return &xdb.InvalidArgTypeError{Type: rv.Type()}
@@ -89,7 +89,7 @@ func ResolveFirstDataResult(rows *sql.Rows, result any) (err error) {
 		columnTypes, _ := rows.ColumnTypes()
 		columns, _ := rows.Columns()
 		values := make([]interface{}, len(columnTypes))
-		prepareValues(values, columnTypes)
+		prepareValues(proto, values, columnTypes)
 
 		if rows.Next() {
 			err = rows.Scan(values...)
@@ -105,7 +105,7 @@ func ResolveFirstDataResult(rows *sql.Rows, result any) (err error) {
 		columnTypes, _ := rows.ColumnTypes()
 		columns, _ := rows.Columns()
 		values := make([]interface{}, len(columnTypes))
-		prepareValues(values, columnTypes)
+		prepareValues(proto, values, columnTypes)
 		if rows.Next() {
 			err = rows.Scan(values...)
 			if err != nil {
@@ -120,7 +120,7 @@ func ResolveFirstDataResult(rows *sql.Rows, result any) (err error) {
 }
 
 // 解析数据结果
-func ResolveRowsDataResult(rows *sql.Rows, result any) (err error) {
+func ResolveRowsDataResult(proto string, rows *sql.Rows, result any) (err error) {
 
 	rv := reflect.ValueOf(result)
 	if rv.Kind() != reflect.Pointer {
@@ -132,7 +132,7 @@ func ResolveRowsDataResult(rows *sql.Rows, result any) (err error) {
 	}
 	rv = rv.Elem()
 	var reflectResults reflect.Value
-	reflectResults, err = resolveRows(rows, rv)
+	reflectResults, err = resolveRows(proto, rows, rv)
 	if err != nil {
 		return
 	}
@@ -140,10 +140,10 @@ func ResolveRowsDataResult(rows *sql.Rows, result any) (err error) {
 	return
 }
 
-func ResolveScalar(rows *sql.Rows) (val any, err error) {
+func ResolveScalar(proto string, rows *sql.Rows) (val any, err error) {
 	columnTypes, _ := rows.ColumnTypes()
 	values := make([]interface{}, len(columnTypes))
-	prepareValues(values, columnTypes)
+	prepareValues(proto, values, columnTypes)
 	if rows.Next() {
 		err = rows.Scan(values...)
 		if err != nil {
@@ -165,12 +165,12 @@ func ResolveScalar(rows *sql.Rows) (val any, err error) {
 	return nil, nil
 }
 
-func ResolveFirstRow(rows *sql.Rows) (dataRows xdb.Row, err error) {
+func ResolveFirstRow(proto string, rows *sql.Rows) (dataRows xdb.Row, err error) {
 	dataRows = xdb.NewRow()
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))
-	prepareValues(values, columnTypes)
+	prepareValues(proto, values, columnTypes)
 	if rows.Next() {
 		err = rows.Scan(values...)
 		if err != nil {
@@ -184,12 +184,12 @@ func ResolveFirstRow(rows *sql.Rows) (dataRows xdb.Row, err error) {
 	return
 }
 
-func ResolveRows(rows *sql.Rows) (dataRows xdb.Rows, err error) {
+func ResolveRows(proto string, rows *sql.Rows) (dataRows xdb.Rows, err error) {
 	dataRows = xdb.NewRows()
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))
-	prepareValues(values, columnTypes)
+	prepareValues(proto, values, columnTypes)
 	for rows.Next() {
 		err = rows.Scan(values...)
 		if err != nil {
@@ -205,10 +205,10 @@ func ResolveRows(rows *sql.Rows) (dataRows xdb.Rows, err error) {
 	return
 }
 
-func ResolveMultiRows(rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
+func ResolveMultiRows(proto string, rows *sql.Rows) (datasetRows []xdb.Rows, err error) {
 	var setRows xdb.Rows
 	for {
-		setRows, err = ResolveRows(rows)
+		setRows, err = ResolveRows(proto, rows)
 		if err != nil {
 			return
 		}
@@ -245,7 +245,7 @@ func ResolveParams(input any) (params xtypes.XMap, err error) {
 			params[k] = v
 		}
 		return params, nil
-	case xdb.DbParam:
+	case xdb.DbParamConverter:
 		return t.ToDbParam(), nil
 	default:
 		return analyzeParamFields(t)
@@ -275,9 +275,9 @@ func analyzeParamFields(input any) (params xtypes.XMap, err error) {
 	return
 }
 
-func prepareValues(values []interface{}, columnTypes []*sql.ColumnType) {
+func prepareValues(proto string, values []interface{}, columnTypes []*sql.ColumnType) {
 	for idx, columnType := range columnTypes {
-		t, ok := xdb.GetDbType(columnType.DatabaseTypeName())
+		t, ok := xdb.GetDbType(proto, columnType.DatabaseTypeName())
 		if !ok {
 			t = columnType.ScanType()
 		}
@@ -348,7 +348,7 @@ func scanInToStruct(fields *xreflect.StructFields, rv reflect.Value, cols []stri
 	return nil
 }
 
-func resolveRows(rows *sql.Rows, rv reflect.Value) (reflectResults reflect.Value, err error) {
+func resolveRows(proto string, rows *sql.Rows, rv reflect.Value) (reflectResults reflect.Value, err error) {
 	itemType := reflect.Indirect(rv).Type().Elem()
 
 	var kind reflect.Kind = itemType.Kind()
@@ -356,10 +356,10 @@ func resolveRows(rows *sql.Rows, rv reflect.Value) (reflectResults reflect.Value
 	switch {
 	case kind == reflect.Map ||
 		(kind == reflect.Ptr && itemType.Elem().Kind() == reflect.Map):
-		reflectResults, err = resolveRowsToMap(rows, itemType)
+		reflectResults, err = resolveRowsToMap(proto, rows, itemType)
 	case kind == reflect.Struct ||
 		(kind == reflect.Ptr && itemType.Elem().Kind() == reflect.Struct):
-		reflectResults, err = resolveRowsToStruct(rows, itemType)
+		reflectResults, err = resolveRowsToStruct(proto, rows, itemType)
 	default:
 		err = &xdb.InvalidArgTypeError{Type: rv.Type()}
 		return
@@ -367,7 +367,7 @@ func resolveRows(rows *sql.Rows, rv reflect.Value) (reflectResults reflect.Value
 	return
 }
 
-func resolveRowsToStruct(rows *sql.Rows, itemType reflect.Type) (reflectResults reflect.Value, err error) {
+func resolveRowsToStruct(proto string, rows *sql.Rows, itemType reflect.Type) (reflectResults reflect.Value, err error) {
 	reflectResults = reflect.MakeSlice(reflect.SliceOf(itemType), 0, 1)
 
 	isPtr := false
@@ -380,7 +380,7 @@ func resolveRowsToStruct(rows *sql.Rows, itemType reflect.Type) (reflectResults 
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))
-	prepareValues(values, columnTypes)
+	prepareValues(proto, values, columnTypes)
 	for rows.Next() {
 		err = rows.Scan(values...)
 		if err != nil {
@@ -401,7 +401,7 @@ func resolveRowsToStruct(rows *sql.Rows, itemType reflect.Type) (reflectResults 
 	return
 }
 
-func resolveRowsToMap(rows *sql.Rows, itemType reflect.Type) (reflectResults reflect.Value, err error) {
+func resolveRowsToMap(proto string, rows *sql.Rows, itemType reflect.Type) (reflectResults reflect.Value, err error) {
 	reflectResults = reflect.MakeSlice(reflect.SliceOf(itemType), 0, 1)
 	isPtr := false
 	if itemType.Kind() == reflect.Pointer {
@@ -412,7 +412,7 @@ func resolveRowsToMap(rows *sql.Rows, itemType reflect.Type) (reflectResults ref
 	columnTypes, _ := rows.ColumnTypes()
 	columns, _ := rows.Columns()
 	values := make([]interface{}, len(columnTypes))
-	prepareValues(values, columnTypes)
+	prepareValues(proto, values, columnTypes)
 
 	for rows.Next() {
 		err = rows.Scan(values...)
@@ -432,115 +432,3 @@ func resolveRowsToMap(rows *sql.Rows, itemType reflect.Type) (reflectResults ref
 	}
 	return
 }
-
-// func resolveRowsData(rows *sql.Rows, reflectResults reflect.Value, itemType reflect.Type) (err error) {
-// 	switch itemType.Kind() {
-// 	case reflect.Map:
-
-// 		columnTypes, _ := rows.ColumnTypes()
-// 		columns, _ := rows.Columns()
-// 		values := make([]interface{}, len(columnTypes))
-// 		prepareValues(values, columnTypes)
-
-// 		for rows.Next() {
-// 			err = rows.Scan(values...)
-// 			if err != nil {
-// 				return
-// 			}
-// 			// 创建一个新的 map 实例，键和值的类型是 result 中 map 的类型
-// 			mapval := reflect.MakeMap(itemType)
-// 			err = scanIntoMap(mapval, values, columns)
-// 			if err != nil {
-// 				return
-// 			}
-// 			reflectResults = reflect.Append(reflectResults, mapval)
-// 		}
-
-// 	case reflect.Struct:
-// 		fields := cachedTypeFields(itemType)
-
-// 		columnTypes, _ := rows.ColumnTypes()
-// 		columns, _ := rows.Columns()
-// 		values := make([]interface{}, len(columnTypes))
-// 		prepareValues(values, columnTypes)
-// 		for rows.Next() {
-// 			err = rows.Scan(values...)
-// 			if err != nil {
-// 				return
-// 			}
-// 			itemVal := reflect.New(itemType)
-// 			err = scanInToStruct(fields, itemVal, columns, values)
-// 			if err != nil {
-// 				return
-// 			}
-// 			reflectResults = reflect.Append(reflectResults, itemVal.Elem())
-// 		}
-// 	case reflect.Pointer:
-// 		return resolveRowsData(rows, reflectResults, itemType.Elem())
-// 	default:
-// 		return &xdb.InvalidArgTypeError{Type: reflectResults.Type()}
-// 	}
-// 	return nil
-// }
-
-// func parseResultSchema(dest any) (schema *Schema, err error) {
-// 	if dest == nil {
-// 		return nil, fmt.Errorf("目标对象为null: %+v", dest)
-// 	}
-
-// 	value := reflect.ValueOf(dest)
-// 	if value.Kind() == reflect.Ptr && value.IsNil() {
-// 		value = reflect.New(value.Type().Elem())
-// 	}
-// 	modelType := reflect.Indirect(value).Type()
-
-// 	if modelType.Kind() == reflect.Interface {
-// 		modelType = reflect.Indirect(reflect.ValueOf(dest)).Elem().Type()
-// 	}
-
-// 	for modelType.Kind() == reflect.Slice || modelType.Kind() == reflect.Array || modelType.Kind() == reflect.Ptr {
-// 		modelType = modelType.Elem()
-// 	}
-
-// 	if modelType.Kind() != reflect.Struct {
-// 		if modelType.PkgPath() == "" {
-// 			return nil, fmt.Errorf("%s: %+v", modelType.Name(), dest)
-// 		}
-// 		return nil, fmt.Errorf("%s.%s", modelType.PkgPath(), modelType.Name())
-// 	}
-
-// 	if v, ok := schemaCache.Load(modelType); ok {
-// 		s := v.(*Schema)
-// 		// Wait for the initialization of other goroutines to complete
-// 		<-s.initialized
-// 		return s, s.err
-// 	}
-
-// 	schema = &Schema{
-// 		Name:         modelType.Name(),
-// 		ModelType:    modelType,
-// 		FieldsByName: map[string]*field{},
-// 		initialized:  make(chan struct{}),
-// 	}
-
-// 	// Cache the schema
-// 	if v, loaded := schemaCache.LoadOrStore(modelType, schema); loaded {
-// 		s := v.(*Schema)
-// 		// Wait for the initialization of other goroutines to complete
-// 		<-s.initialized
-// 		return s, s.err
-// 	}
-
-// 	// When the schema initialization is completed, the channel will be closed
-// 	defer close(schema.initialized)
-
-// 	for i := 0; i < modelType.NumField(); i++ {
-// 		fieldStruct := modelType.Field(i)
-// 		if ast.IsExported(fieldStruct.Name) {
-// 			continue
-// 		}
-// 		field := schema.ParseField(fieldStruct)
-// 		schema.Fields = append(schema.Fields, field)
-// 	}
-// 	return
-// }

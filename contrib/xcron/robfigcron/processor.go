@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/robfig/cron/v3"
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/dlocker"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
@@ -23,8 +23,8 @@ type processor struct {
 	ctx             sctx.Context
 	closeChan       chan struct{}
 	onceLock        sync.Once
-	jobs            cmap.ConcurrentMap
-	monopolyJobs    cmap.ConcurrentMap
+	jobs            cmap.ConcurrentMap[string, any]
+	monopolyJobs    cmap.ConcurrentMap[string, *monopolyJob]
 	routerEngine    *alloter.Engine
 	immediatelyJobs *xlist.List
 	cronStdEngine   *cron.Cron
@@ -42,8 +42,8 @@ func newProcessor(ctx sctx.Context, engine *alloter.Engine) (p *processor, err e
 	p = &processor{
 		ctx:             ctx,
 		closeChan:       make(chan struct{}),
-		jobs:            cmap.New(),
-		monopolyJobs:    cmap.New(),
+		jobs:            cmap.New[any](),
+		monopolyJobs:    cmap.New[*monopolyJob](),
 		routerEngine:    engine,
 		cronStdEngine:   cron.New(),
 		cronSecEngine:   cron.New(cron.WithSeconds()),
@@ -135,7 +135,7 @@ func (s *processor) checkIsMonopoly(j *xcron.Job) (err error) {
 	}()
 	ins := standard.GetInstance(dlocker.TypeNode)
 	sdlocker := ins.(dlocker.StandardLocker)
-	s.monopolyJobs.Upsert(j.GetKey(), j, func(exist bool, valueInMap, newValue interface{}) interface{} {
+	s.monopolyJobs.Upsert(j.GetKey(), nil, func(exist bool, valueInMap, _ *monopolyJob) *monopolyJob {
 		if exist {
 			return valueInMap
 		}
@@ -164,11 +164,10 @@ func (s *processor) releaseMonopolyJob(job *xcron.Job) (err error) {
 	if !job.IsMonopoly() {
 		return
 	}
-	val, ok := s.monopolyJobs.Get(job.GetKey())
+	mjob, ok := s.monopolyJobs.Get(job.GetKey())
 	if !ok {
 		return
 	}
-	mjob := val.(*monopolyJob)
 	nextSecs := mjob.job.CalcExpireSeconds()
 	err = mjob.locker.Renewal(nextSecs)
 	return
@@ -178,18 +177,17 @@ func (s *processor) renewalMonopolyJob(job *xcron.Job) (err error) {
 	if !job.IsMonopoly() {
 		return
 	}
-	val, ok := s.monopolyJobs.Get(job.GetKey())
+	mjob, ok := s.monopolyJobs.Get(job.GetKey())
 	if !ok {
 		return
 	}
-	mjob := val.(*monopolyJob)
 	err = mjob.locker.Renewal(mjob.expire)
 	return
 }
 
 func (s *processor) closeMonopolyJobs() {
 	for item := range s.monopolyJobs.IterBuffered() {
-		item.Val.(*monopolyJob).Close()
+		item.Val.Close()
 	}
 	s.monopolyJobs.Clear()
 }

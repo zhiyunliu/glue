@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/queue"
@@ -20,7 +20,7 @@ type processor struct {
 	ctx        context.Context
 	lock       sync.Mutex
 	closeChan  chan struct{}
-	queues     cmap.ConcurrentMap
+	queues     cmap.ConcurrentMap[string, *xmqc.Task]
 	consumer   queue.IMQC
 	status     engine.RunStatus
 	engine     *alloter.Engine
@@ -34,7 +34,7 @@ func newProcessor(ctx context.Context, alloterEngine *alloter.Engine, proto, con
 		ctx:        ctx,
 		status:     engine.Unstarted,
 		closeChan:  make(chan struct{}),
-		queues:     cmap.New(),
+		queues:     cmap.New[*xmqc.Task](),
 		engine:     alloterEngine,
 		configName: configName,
 	}
@@ -47,7 +47,7 @@ func newProcessor(ctx context.Context, alloterEngine *alloter.Engine, proto, con
 }
 
 // QueueItems QueueItems
-func (s *processor) QueueItems() map[string]interface{} {
+func (s *processor) QueueItems() map[string]*xmqc.Task {
 	return s.queues.Items()
 }
 
@@ -95,8 +95,7 @@ func (s *processor) Pause() (bool, error) {
 		s.status = engine.Pause
 		items := s.queues.Items()
 		for _, v := range items {
-			queue := v.(*xmqc.Task)
-			s.consumer.Unconsume(queue.Queue) //取消服务订阅
+			s.consumer.Unconsume(v.Queue) //取消服务订阅
 		}
 		return true, nil
 	}
@@ -111,8 +110,10 @@ func (s *processor) Resume() (bool, error) {
 		s.status = engine.Running
 		items := s.queues.Items()
 		for _, v := range items {
-			queue := v.(*xmqc.Task)
-			if err := s.consume(queue); err != nil {
+			err := func(tsk *xmqc.Task) (ierr error) {
+				return s.consume(tsk)
+			}(v)
+			if err != nil {
 				return true, err
 			}
 		}

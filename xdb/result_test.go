@@ -30,7 +30,7 @@ func TestRawMessage(t *testing.T) {
 		wantRes interface{}
 		wantErr bool
 	}{
-		//		{name: "1.", Obj: &testStruct{Name: "1", Raw: []byte(`{"a":1}`)}, tmp: map[string]any{}, wantRes: map[string]any{"name": "1", "raw": map[string]any{"a": float64(1)}}, wantErr: false},
+		//{name: "1.", Obj: &TestStruct{Name: "1", Raw: []byte(`{"a":1}`)}, tmp: map[string]any{}, wantRes: map[string]any{"name": "1", "raw": map[string]any{"a": float64(1)}}, wantErr: false},
 		//{name: "2.", Obj: Row{"name": "2", "raw": `{"a":1}`}, tmp: TestStruct{}, wantRes: TestStruct{Name: "1", Raw: []byte(`{"a":1}`)}, wantErr: false},
 		//{name: "3.", Obj: Row{"name": "3", "raw": map[string]any{"f1": "1", "f2": `{"i":"a","j":2}`}}, tmp: TestStruct2{}, wantRes: TestStruct2{Name: "1", Raw: TestInner{F1: "1", F2: []byte(`{"i":"a","j":2}`)}}, wantErr: false},
 	}

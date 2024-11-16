@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
@@ -16,22 +16,22 @@ import (
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
-//Request RPC Request
+// Request RPC Request
 type Request struct {
-	requests cmap.ConcurrentMap
+	requests cmap.ConcurrentMap[string, any]
 	setting  *setting
 }
 
-//NewRequest 构建请求
+// NewRequest 构建请求
 func NewRequest(setting *setting) *Request {
 	req := &Request{
 		setting:  setting,
-		requests: cmap.New(),
+		requests: cmap.New[any](),
 	}
 	return req
 }
 
-//Swap 将当前请求参数作为RPC参数并发送RPC请求
+// Swap 将当前请求参数作为RPC参数并发送RPC请求
 func (r *Request) Swap(ctx context.Context, service string, opts ...xhttp.RequestOption) (res xhttp.Body, err error) {
 
 	//获取内容
@@ -47,8 +47,8 @@ func (r *Request) Swap(ctx context.Context, service string, opts ...xhttp.Reques
 	return r.Request(ctx.Context(), service, input, opts...)
 }
 
-//RequestByCtx RPC请求，可通过context撤销请求
-//service=http://servername/path
+// RequestByCtx RPC请求，可通过context撤销请求
+// service=http://servername/path
 func (r *Request) Request(ctx sctx.Context, service string, input interface{}, opts ...xhttp.RequestOption) (res xhttp.Body, err error) {
 
 	pathVal, err := url.Parse(service)
@@ -81,11 +81,10 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	return client.RequestByString(ctx, pathVal, bodyBytes, nopts...)
 }
 
-//Close 关闭RPC连接
+// Close 关闭RPC连接
 func (r *Request) Close() error {
-	r.requests.IterCb(func(key string, v interface{}) {
-		client := v.(*Client)
-		client.Close()
+	r.requests.IterCb(func(key string, v any) {
+		v.(*Client).Close()
 	})
 	r.requests.Clear()
 	return nil

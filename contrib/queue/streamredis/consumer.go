@@ -15,7 +15,7 @@ import (
 
 	redisqueue "github.com/zhiyunliu/redisqueue/v2"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 // Consumer Consumer
@@ -23,7 +23,7 @@ type Consumer struct {
 	configName       string
 	EnableDeadLetter bool //开启死信队列
 	DeadLetterQueue  string
-	queues           cmap.ConcurrentMap
+	queues           cmap.ConcurrentMap[string, *QueueItem]
 	consumer         *redisqueue.Consumer
 	producer         *redisqueue.Producer
 	redisClient      *redis.Client
@@ -63,7 +63,7 @@ func NewConsumer(configName string, config config.Config) (consumer *Consumer, e
 	consumer.configName = configName
 	consumer.config = config
 	consumer.closeCh = make(chan struct{})
-	consumer.queues = cmap.New()
+	consumer.queues = cmap.New[*QueueItem]()
 	return
 }
 
@@ -185,7 +185,7 @@ func (consumer *Consumer) Unconsume(queue string) {
 
 func (consumer *Consumer) Start() error {
 	for item := range consumer.queues.IterBuffered() {
-		tqi := item.Val.(*QueueItem)
+		tqi := item.Val
 		var confunc redisqueue.ConsumerFunc = func(qi *QueueItem) redisqueue.ConsumerFunc {
 			return func(m *redisqueue.Message) error {
 				if m.RetryCount >= queue.MaxRetrtCount {

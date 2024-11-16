@@ -3,24 +3,27 @@ package sqlserver
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/xdb"
 )
 
-// MssqlContext  模板
-type MssqlContext struct {
-	name    string
-	prefix  string
-	symbols tpl.SymbolMap
+// MssqlTemplate  模板
+type MssqlTemplate struct {
+	name         string
+	prefix       string
+	matcher      xdb.TemplateMatcher
+	sqlStatePool *sync.Pool
 }
 
 type mssqlPlaceHolder struct {
-	ctx *MssqlContext
+	template *MssqlTemplate
 }
 
 func (ph *mssqlPlaceHolder) Get(propName string) (argName, phName string) {
-	argName = fmt.Sprint(ph.ctx.prefix, propName)
-	phName = "@" + argName
+	argName = fmt.Sprint(ph.template.prefix, propName)
+	phName = ph.NamedArg(argName)
 	return
 }
 
@@ -29,7 +32,7 @@ func (ph *mssqlPlaceHolder) NamedArg(argName string) (phName string) {
 	return
 }
 
-func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val interface{}) interface{} {
+func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val any) any {
 	if arg, ok := val.(sql.NamedArg); ok {
 		return arg
 	}
@@ -37,41 +40,53 @@ func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val interface{}) interfa
 
 }
 
-func (ph *mssqlPlaceHolder) Clone() tpl.Placeholder {
-	return &mssqlPlaceHolder{
-		ctx: ph.ctx,
-	}
-}
+func New(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
 
-func New(name, prefix string) tpl.SQLTemplate {
-	return &MssqlContext{
+	if matcher == nil {
+		panic(fmt.Errorf("New ,TemplateMatcher Can't be nil"))
+	}
+	template := &MssqlTemplate{
 		name:    name,
 		prefix:  prefix,
-		symbols: newMssqlSymbols(tpl.DefaultOperator.Clone()),
+		matcher: matcher,
 	}
+
+	template.sqlStatePool = &sync.Pool{
+		New: func() interface{} {
+			return NewSqlState(template.Placeholder())
+		},
+	}
+	return template
 }
 
-func (ctx *MssqlContext) Name() string {
-	return ctx.name
+func (template *MssqlTemplate) Name() string {
+	return template.name
+}
+
+func (template *MssqlTemplate) Placeholder() xdb.Placeholder {
+	return &mssqlPlaceHolder{template: template}
 }
 
 // GetSQLContext 获取查询串
-func (ctx *MssqlContext) GetSQLContext(template string, input map[string]interface{}) (query string, args []any, err error) {
-	return tpl.AnalyzeTPLFromCache(ctx, template, input, ctx.Placeholder())
+func (template *MssqlTemplate) GetSQLContext(sqlTpl string, input map[string]any, opts ...xdb.TemplateOption) (query string, args []any, err error) {
+	return tpl.AnalyzeTPLFromCache(template, sqlTpl, input, opts...)
 }
 
-func (ctx *MssqlContext) Placeholder() tpl.Placeholder {
-	return &mssqlPlaceHolder{ctx: ctx}
+func (template *MssqlTemplate) RegistExpressionMatcher(matchers ...xdb.ExpressionMatcher) {
+	template.matcher.RegistMatcher(matchers...)
 }
 
-func (ctx *MssqlContext) AnalyzeTPL(template string, input map[string]interface{}, ph tpl.Placeholder) (string, *tpl.ReplaceItem, error) {
-	return tpl.DefaultAnalyze(ctx.symbols, template, input, ph)
+func (template *MssqlTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, input xdb.DBParam) (sql string, err error) {
+	return template.matcher.GenerateSQL(item, sqlTpl, input)
 }
 
-func (ctx *MssqlContext) RegisterSymbol(symbol tpl.Symbol) error {
-	return ctx.symbols.Register(symbol)
+func (template *MssqlTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
+	sqlState := template.sqlStatePool.Get().(xdb.SqlState)
+	sqlState.WithTemplateOptions(tplOpts)
+	return sqlState
 }
 
-func (ctx *MssqlContext) RegisterOperator(oper tpl.Operator) error {
-	return ctx.symbols.Operator(oper)
+func (template *MssqlTemplate) ReleaseSqlState(state xdb.SqlState) {
+	state.Reset()
+	template.sqlStatePool.Put(state)
 }

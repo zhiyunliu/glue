@@ -1,18 +1,26 @@
 package tpl
 
-// FixedContext  模板
-type FixedContext struct {
-	name    string
-	prefix  string
-	symbols SymbolMap
+import (
+	"fmt"
+	"sync"
+
+	"github.com/zhiyunliu/glue/xdb"
+)
+
+// FixedTemplate  模板
+type FixedTemplate struct {
+	name         string
+	prefix       string
+	matcher      xdb.TemplateMatcher
+	sqlStatePool *sync.Pool
 }
 
 type fixedPlaceHolder struct {
-	ctx *FixedContext
+	template *FixedTemplate
 }
 
 func (ph *fixedPlaceHolder) Get(propName string) (argName, phName string) {
-	phName = ph.ctx.prefix
+	phName = ph.template.prefix
 	argName = propName
 	return
 }
@@ -21,45 +29,57 @@ func (ph *fixedPlaceHolder) BuildArgVal(argName string, val interface{}) interfa
 }
 
 func (ph *fixedPlaceHolder) NamedArg(propName string) (phName string) {
-	phName = ph.ctx.prefix
+	phName = ph.template.prefix
 	return
 }
 
-func (ph *fixedPlaceHolder) Clone() Placeholder {
-	return &fixedPlaceHolder{
-		ctx: ph.ctx,
-	}
-}
+var _ xdb.SQLTemplate = &FixedTemplate{}
 
-func NewFixed(name, prefix string) SQLTemplate {
-	return &FixedContext{
+func NewFixed(name, prefix string, matcher xdb.TemplateMatcher) *FixedTemplate {
+	if matcher == nil {
+		panic(fmt.Errorf("NewFixed ,TemplateMatcher Can't be nil"))
+	}
+	template := &FixedTemplate{
 		name:    name,
 		prefix:  prefix,
-		symbols: defaultSymbols.Clone(),
+		matcher: matcher,
 	}
+	template.sqlStatePool = &sync.Pool{
+		New: func() interface{} {
+			return xdb.NewSqlState(template.Placeholder())
+		},
+	}
+	return template
 }
 
-func (ctx FixedContext) Name() string {
-	return ctx.name
+func (template FixedTemplate) Name() string {
+	return template.name
+}
+
+func (template *FixedTemplate) Placeholder() xdb.Placeholder {
+	return &fixedPlaceHolder{template: template}
 }
 
 // GetSQLContext 获取查询串
-func (ctx *FixedContext) GetSQLContext(tpl string, input map[string]interface{}) (query string, args []any, err error) {
-	return AnalyzeTPLFromCache(ctx, tpl, input, ctx.Placeholder())
+func (template *FixedTemplate) GetSQLContext(sqlTpl string, input map[string]interface{}, opts ...xdb.TemplateOption) (query string, args []any, err error) {
+	return AnalyzeTPLFromCache(template, sqlTpl, input, opts...)
 }
 
-func (ctx *FixedContext) Placeholder() Placeholder {
-	return &fixedPlaceHolder{ctx: ctx}
+func (template *FixedTemplate) RegistExpressionMatcher(matchers ...xdb.ExpressionMatcher) {
+	template.matcher.RegistMatcher(matchers...)
 }
 
-func (ctx *FixedContext) AnalyzeTPL(tpl string, input map[string]interface{}, ph Placeholder) (sql string, item *ReplaceItem, err error) {
-	return DefaultAnalyze(ctx.symbols, tpl, input, ph)
+func (template *FixedTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, input xdb.DBParam) (sql string, err error) {
+	return template.matcher.GenerateSQL(item, sqlTpl, input)
 }
 
-func (ctx *FixedContext) RegisterSymbol(symbol Symbol) error {
-	return ctx.symbols.Register(symbol)
+func (template *FixedTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
+	sqlState := template.sqlStatePool.Get().(xdb.SqlState)
+	sqlState.WithTemplateOptions(tplOpts)
+	return sqlState
 }
 
-func (ctx *FixedContext) RegisterOperator(oper Operator) error {
-	return ctx.symbols.Operator(oper)
+func (template *FixedTemplate) ReleaseSqlState(state xdb.SqlState) {
+	state.Reset()
+	template.sqlStatePool.Put(state)
 }

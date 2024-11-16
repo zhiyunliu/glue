@@ -211,20 +211,20 @@ func printHeader(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 		return
 	}
 	//打印请求头
-	var headers = append(make([]string, 0, len(logOpts.WithHeaders)), logOpts.WithHeaders...)
+	var headers = append(make([]constants.HeaderGetter, 0, len(logOpts.WithHeaders)), logOpts.WithHeaders...)
 	if len(group.opts.WithHeaders) > 0 {
 		headers = append(headers, group.opts.WithHeaders...)
 	}
 
 	if len(headers) > 0 {
 		builder := bytes.Buffer{}
-		for _, key := range headers {
-			v := header.Get(key)
+		for _, getter := range headers {
+			v := getter.Get(header)
 			if len(v) <= 0 {
 				continue
 			}
 			builder.WriteString("<")
-			builder.WriteString(key)
+			builder.WriteString(getter.Key())
 			builder.WriteString("=")
 			builder.WriteString(v)
 			builder.WriteString(">")

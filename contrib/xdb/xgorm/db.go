@@ -7,7 +7,6 @@ import (
 	"runtime"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/implement"
-	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 	"gorm.io/gorm"
 )
@@ -16,13 +15,15 @@ var _ xdb.IDB = &dbWrap{}
 
 type dbWrap struct {
 	gromDB *gorm.DB
-	tpl    tpl.SQLTemplate
+	proto  string
+	tpl    xdb.SQLTemplate
 }
 
 func (d *dbWrap) Begin() (xdb.ITrans, error) {
 	txdb := d.gromDB.Begin()
 	return &transWrap{
 		gromDB: txdb,
+		proto:  d.proto,
 		tpl:    d.tpl,
 	}, nil
 }
@@ -35,10 +36,10 @@ func (d *dbWrap) GetImpl() interface{} {
 	return d.gromDB
 }
 
-func (db *dbWrap) Query(ctx context.Context, sqls string, input any) (data xdb.Rows, err error) {
+func (db *dbWrap) Query(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (data xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveRows(r)
-	})
+		return implement.ResolveRows(db.proto, r)
+	}, opts...)
 	if err != nil {
 		return
 	}
@@ -46,10 +47,10 @@ func (db *dbWrap) Query(ctx context.Context, sqls string, input any) (data xdb.R
 	return
 }
 
-func (db *dbWrap) Multi(ctx context.Context, sqls string, input any) (data []xdb.Rows, err error) {
+func (db *dbWrap) Multi(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (data []xdb.Rows, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveMultiRows(r)
-	})
+		return implement.ResolveMultiRows(db.proto, r)
+	}, opts...)
 	if err != nil {
 		return
 	}
@@ -57,10 +58,10 @@ func (db *dbWrap) Multi(ctx context.Context, sqls string, input any) (data []xdb
 	return
 }
 
-func (db *dbWrap) First(ctx context.Context, sqls string, input any) (data xdb.Row, err error) {
+func (db *dbWrap) First(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (data xdb.Row, err error) {
 	tmp, err := db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveFirstRow(r)
-	})
+		return implement.ResolveFirstRow(db.proto, r)
+	}, opts...)
 	if err != nil {
 		return
 	}
@@ -68,19 +69,19 @@ func (db *dbWrap) First(ctx context.Context, sqls string, input any) (data xdb.R
 	return
 }
 
-func (db *dbWrap) Scalar(ctx context.Context, sqls string, input any) (data interface{}, err error) {
+func (db *dbWrap) Scalar(ctx context.Context, sqls string, input any, opts ...xdb.TemplateOption) (data interface{}, err error) {
 	data, err = db.dbQuery(ctx, sqls, input, func(r *sql.Rows) (any, error) {
-		return implement.ResolveScalar(r)
-	})
+		return implement.ResolveScalar(db.proto, r)
+	}, opts...)
 	return
 }
 
-func (d *dbWrap) Exec(ctx context.Context, sql string, input any) (r xdb.Result, err error) {
+func (d *dbWrap) Exec(ctx context.Context, sql string, input any, opts ...xdb.TemplateOption) (r xdb.Result, err error) {
 	dbParam, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
-	query, execArgs, err := d.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := d.tpl.GetSQLContext(sql, dbParam, opts...)
 	if err != nil {
 		err = implement.GetError(err, sql, input)
 		return
@@ -101,16 +102,16 @@ func (d *dbWrap) Exec(ctx context.Context, sql string, input any) (r xdb.Result,
 }
 
 // Query 查询数据
-func (db *dbWrap) QueryAs(ctx context.Context, sqls string, input any, results any) (err error) {
+func (db *dbWrap) QueryAs(ctx context.Context, sqls string, input any, results any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, a any) error {
-		return implement.ResolveRowsDataResult(r, results)
-	})
+		return implement.ResolveRowsDataResult(db.proto, r, results)
+	}, opts...)
 }
 
-func (db *dbWrap) FirstAs(ctx context.Context, sqls string, input any, result any) (err error) {
+func (db *dbWrap) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return implement.ResolveFirstDataResult(r, result)
-	})
+		return implement.ResolveFirstDataResult(db.proto, r, result)
+	}, opts...)
 }
 
 // Transaction 执行事务
@@ -143,13 +144,13 @@ func (d *dbWrap) Transaction(callback xdb.TransactionCallback) (err error) {
 	return
 }
 
-func (db *dbWrap) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback) (result any, err error) {
+func (db *dbWrap) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback, opts ...xdb.TemplateOption) (result any, err error) {
 	dbParam, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
 
-	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam, opts...)
 	if err != nil {
 		err = implement.GetError(err, sql, input)
 		return
@@ -166,13 +167,13 @@ func (db *dbWrap) dbQuery(ctx context.Context, sql string, input any, callback i
 
 }
 
-func (db *dbWrap) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback) (err error) {
+func (db *dbWrap) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback, opts ...xdb.TemplateOption) (err error) {
 	dbParam, err := implement.ResolveParams(input)
 	if err != nil {
 		return
 	}
 
-	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam)
+	query, execArgs, err := db.tpl.GetSQLContext(sql, dbParam, opts...)
 	if err != nil {
 		err = implement.GetError(err, sql, input)
 		return

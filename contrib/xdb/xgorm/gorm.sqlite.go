@@ -6,21 +6,23 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
+	"github.com/zhiyunliu/glue/contrib/xdb/expression"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 	"gorm.io/driver/sqlite"
 )
 
 func init() {
+	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
 
 	resolver := &sqliteResolver{Proto: "grom.sqlite"}
 	xdb.Register(resolver)
-	tpl.Register(tpl.NewFixed(resolver.Proto, "?"))
+	xdb.RegistTemplate(tpl.NewFixed(resolver.Proto, "?", tplMatcher))
 	callbackCache[resolver.Proto] = sqlite.Open
 
 	rresolver := &sqliteResolver{Proto: "gorm.sqlite"}
 	xdb.Register(rresolver)
-	tpl.Register(tpl.NewFixed(rresolver.Proto, "?"))
+	xdb.RegistTemplate(tpl.NewFixed(rresolver.Proto, "?", tplMatcher))
 	callbackCache[rresolver.Proto] = sqlite.Open
 }
 
@@ -42,12 +44,13 @@ func (s *sqliteResolver) Resolve(connName string, setting config.Config, opts ..
 	if err != nil {
 		return nil, err
 	}
-	tpl, err := tpl.GetDBTemplate(s.Proto)
+	tpl, err := xdb.GetTemplate(s.Proto)
 	if err != nil {
 		return nil, err
 	}
 	return &dbWrap{
 		tpl:    tpl,
+		proto:  s.Proto,
 		gromDB: gromDB,
 	}, nil
 }

@@ -1,13 +1,15 @@
 module github.com/zhiyunliu/glue
 
-go 1.18
+go 1.21
 
 require (
-	github.com/zhiyunliu/golibs v0.2.7
+	github.com/zhiyunliu/alloter v0.1.0
+	github.com/zhiyunliu/golibs v0.2.8
 	github.com/zhiyunliu/redisqueue/v2 v2.3.0
 )
 
 require (
+	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.9.1
@@ -23,7 +25,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/microsoft/go-mssqldb v1.1.0
 	github.com/nacos-group/nacos-sdk-go v1.1.4
-	github.com/orcaman/concurrent-map v1.0.0
+	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/pelletier/go-toml/v2 v2.0.8
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rabbitmq/amqp091-go v1.9.0
@@ -66,6 +68,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
+	github.com/orcaman/concurrent-map v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect

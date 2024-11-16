@@ -1,11 +1,11 @@
 package tpl
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -21,7 +21,7 @@ func TestDBParam_Get(t *testing.T) {
 	var datetime interface{} = time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	decimal := xtypes.NewDecimalFromInt(100)
 
-	val := DBParam{
+	val := xdb.DBParam{
 		"int":      1,
 		"string":   "string",
 		"datetime": datetime,
@@ -48,13 +48,13 @@ func TestDBParam_Get(t *testing.T) {
 		{name: "9.", key: "bool", wantVal: true},
 		{name: "10.", key: "[]byte", wantVal: []byte("[]byte")},
 
-		{name: "11.", key: "array", wantVal: "1,2,3"},
-		{name: "12.", key: "array2", wantVal: "'1','2','3'"},
+		{name: "11.", key: "array", wantVal: []int{1, 2, 3}},
+		{name: "12.", key: "array2", wantVal: []string{"1", "2", "3"}},
 	}
 
-	phList := []Placeholder{
-		&fixedPlaceHolder{ctx: &FixedContext{name: "mysql", prefix: "?"}},
-		&seqPlaceHolder{ctx: &SeqContext{name: "oracle", prefix: ":"}},
+	phList := []xdb.Placeholder{
+		&fixedPlaceHolder{template: &FixedTemplate{name: "mysql", prefix: "?"}},
+		&seqPlaceHolder{template: &SeqTemplate{name: "oracle", prefix: ":"}},
 	}
 
 	for _, ph := range phList {
@@ -62,19 +62,19 @@ func TestDBParam_Get(t *testing.T) {
 	}
 }
 
-func callParamGet(t *testing.T, tests []paramGetCase, val DBParam, ph Placeholder) {
-	for i, tt := range tests {
+func callParamGet(t *testing.T, tests []paramGetCase, val xdb.DBParam, ph xdb.Placeholder) {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			argName, gotVal, err := val.Get(tt.key, ph)
+			gotVal, err := val.GetVal(tt.key)
 			if err != nil {
 				t.Errorf("case %s DBParam.Get() err:%+v", tt.name, err)
 			}
 			if !reflect.DeepEqual(gotVal, tt.wantVal) {
 				t.Errorf("case %s DBParam.Get() = %v, want %v", tt.name, gotVal, tt.wantVal)
 			}
-			if !(argName == fmt.Sprintf(":%d", i+1) || argName == "?") {
-				t.Errorf("case %s DBParam.Get() = %v, wantName %v", tt.name, argName, tt.wantName)
-			}
+			// if !(argName == fmt.Sprintf(":%d", i+1) || argName == "?") {
+			// 	t.Errorf("case %s DBParam.Get() = %v, wantName %v", tt.name, argName, tt.wantName)
+			// }
 		})
 	}
 }

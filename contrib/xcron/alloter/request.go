@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/xcron"
@@ -110,18 +110,17 @@ func (m *Request) CanProc() bool {
 	return false
 }
 
-func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap) (*monopolyJob, bool, error) {
+func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap[string, *monopolyJob]) (*monopolyJob, bool, error) {
 	//本身不是独占
 	if !m.job.IsMonopoly() {
 		return nil, false, nil
 	}
 
-	val, ok := monopolyJobs.Get(m.job.GetKey())
+	mjob, ok := monopolyJobs.Get(m.job.GetKey())
 	//独占列表不存在（只存在close的短暂时间）
 	if !ok {
 		return nil, true, nil
 	}
-	mjob := val.(*monopolyJob)
 	isSuc, err := mjob.Acquire()
 	if err != nil {
 		return mjob, true, err

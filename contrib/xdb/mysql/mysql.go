@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
+	"github.com/zhiyunliu/glue/contrib/xdb/expression"
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
 	"github.com/zhiyunliu/glue/xdb"
 )
@@ -28,7 +29,9 @@ func (s *mysqlResolver) Resolve(connName string, setting config.Config, opts ...
 	return contribxdb.NewDB(Proto, cfg, opts...)
 }
 func init() {
+	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
+
 	xdb.Register(&mysqlResolver{})
-	tpl.Register(tpl.NewFixed(Proto, "?"))
+	xdb.RegistTemplate(tpl.NewFixed(Proto, "?", tplMatcher))
 
 }

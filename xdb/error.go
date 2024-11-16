@@ -7,8 +7,10 @@ import (
 )
 
 const (
-	MissTypeParam = "param"
-	MissTypeOper  = "oper"
+	MissTypeParam      = "param"
+	MissTypeOper       = "oper"
+	MissTypeSymbol     = "symbol"
+	MissDataTypeSymbol = "datatype"
 )
 
 type DbError interface {
@@ -57,9 +59,13 @@ type xDBError struct {
 
 type xMissParamError struct {
 	paramName string
+	innerErr  error
 }
 
 func (e xMissParamError) Error() string {
+	if e.innerErr != nil {
+		return e.Error()
+	}
 	return fmt.Sprintf("SQL缺少参数:[%s]", e.paramName)
 }
 
@@ -71,9 +77,10 @@ func (e xMissParamError) Type() string {
 	return MissTypeParam
 }
 
-func NewMissParamError(name string) MissError {
+func NewMissParamError(name string, innerErr error) MissError {
 	return &xMissParamError{
 		paramName: name,
+		innerErr:  innerErr,
 	}
 }
 
@@ -99,10 +106,78 @@ func NewMissOperError(name string) MissError {
 	}
 }
 
+type xMissPropError struct {
+	propName string
+}
+
+func (e xMissPropError) Error() string {
+	return fmt.Sprintf("缺少Property定义:[%s]", e.propName)
+}
+
+func (e xMissPropError) Name() string {
+	return e.propName
+}
+
+func (e xMissPropError) Type() string {
+	return MissTypeOper
+}
+
+func NewMissPropError(name string) MissError {
+	return &xMissPropError{
+		propName: name,
+	}
+}
+
+type xMissSymbolError struct {
+	propName string
+}
+
+func (e xMissSymbolError) Error() string {
+	return fmt.Sprintf("缺少Property定义:[%s]", e.propName)
+}
+
+func (e xMissSymbolError) Name() string {
+	return e.propName
+}
+
+func (e xMissSymbolError) Type() string {
+	return MissTypeSymbol
+}
+
+func NewMissSymbolError(name string) MissError {
+	return &xMissSymbolError{
+		propName: name,
+	}
+}
+
+type xMissDataTypeError struct {
+	propName string
+}
+
+func (e xMissDataTypeError) Error() string {
+	return fmt.Sprintf("数据类型错误:[%s]", e.propName)
+}
+
+func (e xMissDataTypeError) Name() string {
+	return e.propName
+}
+
+func (e xMissDataTypeError) Type() string {
+	return MissDataTypeSymbol
+}
+
+func NewMissDataTypeError(name string) MissError {
+	return &xMissDataTypeError{
+		propName: name,
+	}
+}
+
 type xMissParamsError struct {
-	paramList []string
-	operList  []string
-	otherList []string
+	paramList    []string
+	operList     []string
+	symbolList   []string
+	dataTypeList []string
+	otherList    []string
 }
 
 func (e xMissParamsError) Error() string {
@@ -113,6 +188,12 @@ func (e xMissParamsError) Error() string {
 	if len(e.operList) > 0 {
 		msgList = append(msgList, fmt.Sprintf("缺少Operator定义:[%s]", strings.Join(e.operList, ",")))
 	}
+	if len(e.symbolList) > 0 {
+		msgList = append(msgList, fmt.Sprintf("缺少Symbol定义:[%s]", strings.Join(e.symbolList, ",")))
+	}
+	if len(e.dataTypeList) > 0 {
+		msgList = append(msgList, fmt.Sprintf("数据类型错误:[%s]", strings.Join(e.dataTypeList, ",")))
+	}
 	if len(e.otherList) > 0 {
 		msgList = append(msgList, fmt.Sprintf("缺少类型:[%s]", strings.Join(e.otherList, ",")))
 	}
@@ -120,23 +201,22 @@ func (e xMissParamsError) Error() string {
 }
 
 func NewMissListError(errList ...MissError) MissListError {
-	paramList := []string{}
-	operList := []string{}
-	otherList := []string{}
+	err := &xMissParamsError{}
+
 	for i := range errList {
 		if strings.EqualFold(errList[i].Type(), MissTypeParam) {
-			paramList = append(paramList, errList[i].Name())
+			err.paramList = append(err.paramList, errList[i].Name())
 		} else if strings.EqualFold(errList[i].Type(), MissTypeOper) {
-			operList = append(operList, errList[i].Name())
+			err.operList = append(err.operList, errList[i].Name())
+		} else if strings.EqualFold(errList[i].Type(), MissTypeSymbol) {
+			err.symbolList = append(err.symbolList, errList[i].Name())
+		} else if strings.EqualFold(errList[i].Type(), MissDataTypeSymbol) {
+			err.dataTypeList = append(err.dataTypeList, errList[i].Name())
 		} else {
-			otherList = append(otherList, fmt.Sprintf("%s:%s", errList[i].Type(), errList[i].Name()))
+			err.otherList = append(err.otherList, fmt.Sprintf("%s:%s", errList[i].Type(), errList[i].Name()))
 		}
 	}
-	return &xMissParamsError{
-		paramList: paramList,
-		operList:  operList,
-		otherList: otherList,
-	}
+	return err
 }
 
 func NewError(err error, execSql string, args []interface{}) error {

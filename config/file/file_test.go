@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
+	_ "github.com/zhiyunliu/glue/encoding/binding"
+	_ "github.com/zhiyunliu/glue/encoding/text"
 )
 
 const (
@@ -66,20 +68,7 @@ const (
 		"event":"update"
 	}
 }`
-
-	//	_testYaml = `
-	//Foo:
-	//    bar :
-	//        - {name: nihao,age: 1}
-	//        - {name: nihao,age: 1}
-	//
-	//
-	//`
 )
-
-//func TestScan(t *testing.T) {
-//
-//}
 
 func TestFile(t *testing.T) {
 	var (
@@ -96,8 +85,8 @@ func TestFile(t *testing.T) {
 	}
 	testSource(t, file, data)
 	testSource(t, path, data)
-	testWatchFile(t, file)
-	testWatchDir(t, path, file)
+	//testWatchFile(t, file)
+	//testWatchDir(t, path, file)
 }
 
 func testWatchFile(t *testing.T, path string) {

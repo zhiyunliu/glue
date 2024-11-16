@@ -5,19 +5,19 @@ import (
 	"strings"
 	"sync"
 
-	cmap "github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/global"
 )
 
-//ICloser 关闭
+// ICloser 关闭
 type ICloser interface {
 	Close() error
 }
 
 type CreateFunc func(setting config.Config) (interface{}, error)
 
-//IContainer 组件容器
+// IContainer 组件容器
 type Container interface {
 	GetOrCreate(typeName, name string, creator CreateFunc, keys ...string) (interface{}, error)
 	Remove(typeName, name string, keys ...string) error
@@ -29,22 +29,22 @@ type StandardBuilder interface {
 	Build(Container) interface{}
 }
 
-//Container 容器用于缓存公共组件
+// Container 容器用于缓存公共组件
 type container struct {
 	mutex sync.Mutex
-	cache cmap.ConcurrentMap
+	cache cmap.ConcurrentMap[string, any]
 }
 
-//NewContainer 构建容器,用于管理公共组件
+// NewContainer 构建容器,用于管理公共组件
 func NewContainer() Container {
 	c := &container{
-		cache: cmap.New(),
+		cache: cmap.New[any](),
 	}
 	return c
 
 }
 
-//GetOrCreate 获取指定名称的组件，不存在时自动创建
+// GetOrCreate 获取指定名称的组件，不存在时自动创建
 func (c *container) GetOrCreate(typeName string, name string, creator CreateFunc, keys ...string) (interface{}, error) {
 
 	nameSetting := global.Config
@@ -75,7 +75,7 @@ func (c *container) GetOrCreate(typeName string, name string, creator CreateFunc
 	return val, nil
 }
 
-//Close 释放组件资源
+// Close 释放组件资源
 func (c *container) Close() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -89,7 +89,7 @@ func (c *container) Close() error {
 	return nil
 }
 
-//Remove 释放组件资源
+// Remove 释放组件资源
 func (c *container) Remove(typeName, name string, keys ...string) error {
 	key := fmt.Sprintf("%s_%s_%s", typeName, name, strings.Join(keys, "_"))
 	c.cache.RemoveCb(key, func(key string, v interface{}, exists bool) bool {

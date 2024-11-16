@@ -55,7 +55,7 @@ func (f *file) loadDir(path string) (kvs []*config.KeyValue, err error) {
 		if file.IsDir() || strings.HasPrefix(file.Name(), ".") {
 			continue
 		}
-		kv, err := f.loadFile(filepath.Join(f.path, file.Name()))
+		kv, err := f.loadFile(filepath.Join(path, file.Name()))
 		if err != nil {
 			return nil, err
 		}

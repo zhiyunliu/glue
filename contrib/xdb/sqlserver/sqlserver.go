@@ -6,7 +6,7 @@ import (
 	_ "github.com/microsoft/go-mssqldb"
 	"github.com/zhiyunliu/glue/config"
 	contribxdb "github.com/zhiyunliu/glue/contrib/xdb"
-	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
+	"github.com/zhiyunliu/glue/contrib/xdb/expression"
 	"github.com/zhiyunliu/glue/xdb"
 )
 
@@ -14,10 +14,11 @@ const Proto = "sqlserver"
 const ArgumentPrefix = "p_"
 
 type sqlserverResolver struct {
+	name string
 }
 
 func (s *sqlserverResolver) Name() string {
-	return Proto
+	return s.name
 }
 
 func (s *sqlserverResolver) Resolve(connName string, setting config.Config, opts ...xdb.Option) (interface{}, error) {
@@ -30,6 +31,18 @@ func (s *sqlserverResolver) Resolve(connName string, setting config.Config, opts
 }
 
 func init() {
-	xdb.Register(&sqlserverResolver{})
-	tpl.Register(New(Proto, ArgumentPrefix))
+	symbols := expression.DefaultSymbols
+
+	tplMatcher := xdb.NewTemplateMatcher(
+		expression.NewNormalExpressionMatcher(symbols),
+		expression.NewCompareExpressionMatcher(symbols),
+		expression.NewLikeExpressionMatcher(symbols),
+		expression.NewInExpressionMatcher(symbols),
+	)
+
+	xdb.Register(&sqlserverResolver{name: Proto})
+	xdb.RegistTemplate(New(Proto, ArgumentPrefix, tplMatcher))
+
+	xdb.Register(&sqlserverResolver{name: "mssql"})
+	xdb.RegistTemplate(New("mssql", ArgumentPrefix, tplMatcher))
 }

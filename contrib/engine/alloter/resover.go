@@ -1,8 +1,8 @@
 package alloter
 
 import (
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/contrib/alloter"
 	"github.com/zhiyunliu/glue/engine"
 )
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/zhiyunliu/glue/constants"
 	vctx "github.com/zhiyunliu/glue/context"
-	"github.com/zhiyunliu/glue/contrib/alloter"
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	gluesid "github.com/zhiyunliu/glue/session"
