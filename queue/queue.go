@@ -15,9 +15,12 @@ var DefaultMaxQueueLen = 100
 
 // IQueue 消息队列
 type IQueue interface {
-	Send(ctx context.Context, key string, value interface{}) error
-	DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error
-	//Count(key string) (int64, error)
+	//发送消息
+	Send(ctx context.Context, key string, value any) error
+	//批量发送消息
+	BatchSend(ctx context.Context, key string, value ...any) error
+	//延迟发送消息
+	DelaySend(ctx context.Context, key string, value any, delaySeconds int64) error
 }
 
 // IMQCMessage  队列消息
@@ -58,9 +61,9 @@ type IMQC interface {
 
 // IMQP 消息生产
 type IMQP interface {
-	Push(key string, value Message) error
-	DelayPush(key string, value Message, delaySeconds int64) error
-	//Count(key string) (int64, error)
+	Push(ctx context.Context, key string, value Message) error
+	BatchPush(ctx context.Context, key string, value ...Message) error
+	DelayPush(ctx context.Context, key string, value Message, delaySeconds int64) error
 	Close() error
 }
 

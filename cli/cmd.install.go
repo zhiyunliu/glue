@@ -3,13 +3,13 @@ package cli
 import (
 	"os"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 	"github.com/zhiyunliu/glue/compatible"
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
-		return cli.Command{
+	RegisterFunc(func(cfg *Options) *cli.Command {
+		return &cli.Command{
 			Name:   "install",
 			Usage:  "安装服务，以服务方式安装到本地系统",
 			Flags:  getFlags(cfg),

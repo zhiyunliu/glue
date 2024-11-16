@@ -2,6 +2,7 @@ package xrpc
 
 import (
 	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -56,11 +57,11 @@ func WithContentType(contentType string) RequestOption {
 	}
 }
 
-func WithSourceName(sourceName string) RequestOption {
+func WithSourceName() RequestOption {
 	return func(o *Options) {
 		if o.Header == nil {
 			o.Header = make(map[string]string)
 		}
-		o.Header[constants.HeaderSourceName] = sourceName
+		o.Header[constants.HeaderSourceName] = global.AppName
 	}
 }

@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 func init() {
-	RegisterFunc(func(cfg *Options) cli.Command {
-		return cli.Command{
+	RegisterFunc(func(cfg *Options) *cli.Command {
+		return &cli.Command{
 			Name:   "remove",
 			Usage:  "删除服务，从本地服务器移除服务",
 			Flags:  getFlags(cfg),

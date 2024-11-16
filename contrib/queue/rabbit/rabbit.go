@@ -271,7 +271,7 @@ func (c *rabbitClient) QueueDeclare(queueName string) (err error) {
 	return
 }
 
-func (c *rabbitClient) DelayPublish(queueName, exchange string, msg queue.Message, delaySeconds int64) (err error) {
+func (c *rabbitClient) DelayPublish(ctx context.Context, queueName, exchange string, msg queue.Message, delaySeconds int64) (err error) {
 
 	amqpMsg := amqp.Publishing{
 		ContentType:  "text/plain",
@@ -287,7 +287,7 @@ func (c *rabbitClient) DelayPublish(queueName, exchange string, msg queue.Messag
 	}
 
 	channel := c.getAvalChannel()
-	err = channel.PublishWithContext(context.Background(), exchange, queueName, false, false, amqpMsg)
+	err = channel.PublishWithContext(ctx, exchange, queueName, false, false, amqpMsg)
 	if err != nil {
 		err = fmt.Errorf("DelayPublish.PublishWithContext:%+v", err)
 		return
@@ -295,7 +295,7 @@ func (c *rabbitClient) DelayPublish(queueName, exchange string, msg queue.Messag
 	return nil
 }
 
-func (c *rabbitClient) Publish(queueName string, msg queue.Message) (err error) {
+func (c *rabbitClient) Publish(ctx context.Context, queueName string, msg queue.Message) (err error) {
 	if err = c.QueueDeclare(queueName); err != nil {
 		return
 	}
@@ -308,7 +308,7 @@ func (c *rabbitClient) Publish(queueName string, msg queue.Message) (err error) 
 		return
 	}
 	channel := c.getAvalChannel()
-	err = channel.PublishWithContext(context.Background(), c.options.Exchange, queueName, false, false, amqpMsg)
+	err = channel.PublishWithContext(ctx, c.options.Exchange, queueName, false, false, amqpMsg)
 	if err != nil {
 		err = fmt.Errorf("publish.PublishWithContext:%+v", err)
 		return

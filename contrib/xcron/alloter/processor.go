@@ -1,6 +1,7 @@
 package alloter
 
 import (
+	"context"
 	sctx "context"
 	"errors"
 	"fmt"
@@ -275,15 +276,15 @@ type monopolyJob struct {
 }
 
 func (j *monopolyJob) Acquire() (bool, error) {
-	return j.locker.Acquire(j.expire)
+	return j.locker.Acquire(context.Background(), j.expire)
 }
 
 func (j *monopolyJob) Renewal() {
-	j.locker.Renewal(j.expire)
+	j.locker.Renewal(context.Background(), j.expire)
 }
 
 func (j *monopolyJob) Close() {
-	j.locker.Release()
+	j.locker.Release(context.Background())
 }
 
 func (j *monopolyJob) Start(ctx sctx.Context) {

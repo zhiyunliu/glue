@@ -1,9 +1,10 @@
 package redis
 
 import (
+	"context"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/redis/go-redis/v9"
 	"github.com/zhiyunliu/glue/config"
 )
 
@@ -74,7 +75,7 @@ func newRedis(configName string, opts *Options, mapCfg map[string]any) (r *Clien
 		PoolSize:     int(r.opts.PoolSize),
 	}
 	r.UniversalClient = redis.NewUniversalClient(ropts)
-	_, err = r.UniversalClient.Ping().Result()
+	_, err = r.UniversalClient.Ping(context.Background()).Result()
 	return
 }
 

@@ -1,6 +1,7 @@
 package streamredis
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -13,7 +14,7 @@ import (
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/golibs/xtypes"
 
-	redisqueue "github.com/zhiyunliu/redisqueue/v2"
+	redisqueue "github.com/zhiyunliu/redisqueue/v3"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
@@ -227,7 +228,7 @@ func (consumer *Consumer) writeToDeadLetter(queue string, vals xtypes.XMap) {
 	deadMsg["q"] = queue
 	deadMsg["m"] = vals
 
-	consumer.producer.Enqueue(&redisqueue.Message{Stream: consumer.DeadLetterQueue, Values: deadMsg})
+	consumer.producer.Enqueue(context.Background(), &redisqueue.Message{Stream: consumer.DeadLetterQueue, Values: deadMsg})
 }
 
 type consumeResolver struct {

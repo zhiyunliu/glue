@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	rds "github.com/go-redis/redis/v7"
+	rds "github.com/redis/go-redis/v9"
 	"github.com/zhiyunliu/glue/cache"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
@@ -21,7 +21,7 @@ func (r *Redis) Name() string {
 
 // Get from key
 func (r *Redis) Get(ctx context.Context, key string) (string, error) {
-	v, err := r.client.Get(key).Result()
+	v, err := r.client.Get(ctx, key).Result()
 	if err == rds.Nil {
 		return "", cache.Nil
 	}
@@ -30,7 +30,7 @@ func (r *Redis) Get(ctx context.Context, key string) (string, error) {
 
 // Set value with key and expire time
 func (r *Redis) Set(ctx context.Context, key string, val interface{}, expire int) error {
-	err := r.client.Set(key, val, time.Duration(expire)*time.Second).Err()
+	err := r.client.Set(ctx, key, val, time.Duration(expire)*time.Second).Err()
 	if err == rds.Nil {
 		return cache.Nil
 	}
@@ -39,7 +39,7 @@ func (r *Redis) Set(ctx context.Context, key string, val interface{}, expire int
 
 // Del delete key in redis
 func (r *Redis) Del(ctx context.Context, key string) error {
-	err := r.client.Del(key).Err()
+	err := r.client.Del(ctx, key).Err()
 	if err == rds.Nil {
 		return cache.Nil
 	}
@@ -48,7 +48,7 @@ func (r *Redis) Del(ctx context.Context, key string) error {
 
 // HashGet from key
 func (r *Redis) HashGet(ctx context.Context, hk, key string) (string, error) {
-	v, err := r.client.HGet(hk, key).Result()
+	v, err := r.client.HGet(ctx, hk, key).Result()
 	if err == rds.Nil {
 		return "", cache.Nil
 	}
@@ -57,7 +57,7 @@ func (r *Redis) HashGet(ctx context.Context, hk, key string) (string, error) {
 
 // HashSet from key
 func (r *Redis) HashSet(ctx context.Context, hk, key string, val string) (bool, error) {
-	v, err := r.client.HSet(hk, key, val).Result()
+	v, err := r.client.HSet(ctx, hk, key, val).Result()
 	if err == rds.Nil {
 		return v > 0, cache.Nil
 	}
@@ -66,7 +66,7 @@ func (r *Redis) HashSet(ctx context.Context, hk, key string, val string) (bool, 
 
 // HashDel delete key in specify redis's hashtable
 func (r *Redis) HashDel(ctx context.Context, hk, key string) error {
-	err := r.client.HDel(hk, key).Err()
+	err := r.client.HDel(ctx, hk, key).Err()
 	if err == rds.Nil {
 		return cache.Nil
 	}
@@ -74,7 +74,7 @@ func (r *Redis) HashDel(ctx context.Context, hk, key string) error {
 }
 
 func (r *Redis) HashMGet(ctx context.Context, hk string, key ...string) (map[string]interface{}, error) {
-	vals, err := r.client.HMGet(hk, key...).Result()
+	vals, err := r.client.HMGet(ctx, hk, key...).Result()
 	result := make(map[string]interface{}, len(vals))
 	if len(vals) > 0 {
 		for i := range key {
@@ -84,25 +84,25 @@ func (r *Redis) HashMGet(ctx context.Context, hk string, key ...string) (map[str
 	return result, err
 }
 func (r *Redis) HashSetAll(ctx context.Context, hk string, val map[string]interface{}) (bool, error) {
-	return r.client.HMSet(hk, val).Result()
+	return r.client.HMSet(ctx, hk, val).Result()
 }
 
 func (r *Redis) HashExists(ctx context.Context, hk, key string) (bool, error) {
-	return r.client.HExists(hk, key).Result()
+	return r.client.HExists(ctx, hk, key).Result()
 }
 
 // Increase
 func (r *Redis) Increase(ctx context.Context, key string) (int64, error) {
-	return r.client.Incr(key).Result()
+	return r.client.Incr(ctx, key).Result()
 }
 
 func (r *Redis) Decrease(ctx context.Context, key string) (int64, error) {
-	return r.client.Decr(key).Result()
+	return r.client.Decr(ctx, key).Result()
 }
 
 // Set ttl
 func (r *Redis) Expire(ctx context.Context, key string, expire int) error {
-	err := r.client.Expire(key, time.Duration(expire)*time.Second).Err()
+	err := r.client.Expire(ctx, key, time.Duration(expire)*time.Second).Err()
 	if err == rds.Nil {
 		return cache.Nil
 	}
@@ -111,7 +111,7 @@ func (r *Redis) Expire(ctx context.Context, key string, expire int) error {
 
 // Exists
 func (r *Redis) Exists(ctx context.Context, key string) (bool, error) {
-	v, err := r.client.Exists(key).Result()
+	v, err := r.client.Exists(ctx, key).Result()
 	if err == rds.Nil {
 		return v > 0, cache.Nil
 	}

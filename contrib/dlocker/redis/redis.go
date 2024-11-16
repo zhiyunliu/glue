@@ -1,6 +1,8 @@
 package redis
 
 import (
+	"context"
+
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/redis"
 	"github.com/zhiyunliu/glue/dlocker"
@@ -27,14 +29,14 @@ func (r *Redis) Build(key string, opts ...dlocker.Option) dlocker.DLocker {
 }
 
 // Eval 执行脚本
-func (r *Redis) Eval(cmd string, keys []string, vals []string) (obj interface{}, err error) {
+func (r *Redis) Eval(ctx context.Context, cmd string, keys []string, vals []string) (obj interface{}, err error) {
 
 	args := make([]interface{}, len(vals))
 	for i := range vals {
 		args[i] = vals[i]
 	}
 
-	return r.client.Eval(cmd, keys, args...).Result()
+	return r.client.Eval(ctx, cmd, keys, args...).Result()
 }
 
 type redisResolver struct {
