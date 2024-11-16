@@ -20,15 +20,15 @@ type DLockerBuilder interface {
 }
 
 // cacheResover 定义配置文件转换方法
-type xResover interface {
+type xResolver interface {
 	Name() string
 	Resolve(configName string, setting config.Config) (DLockerBuilder, error)
 }
 
-var lockerResolvers = make(map[string]xResover)
+var lockerResolvers = make(map[string]xResolver)
 
 // RegisterCache 注册配置文件适配器
-func Register(resolver xResover) {
+func Register(resolver xResolver) {
 	proto := resolver.Name()
 	if _, ok := lockerResolvers[proto]; ok {
 		panic(fmt.Errorf("dlocker: 不能重复注册:%s", proto))

@@ -16,7 +16,7 @@ type Server interface {
 }
 
 // ServerResover 定义配置文件转换方法
-type ServerResover interface {
+type ServerResolver interface {
 	Name() string
 	Resolve(name string,
 		router *engine.RouterGroup,
@@ -24,10 +24,10 @@ type ServerResover interface {
 		opts ...engine.Option) (Server, error)
 }
 
-var serverResolvers = make(map[string]ServerResover)
+var serverResolvers = make(map[string]ServerResolver)
 
 // Register 注册配置文件适配器
-func RegisterServer(resolver ServerResover) {
+func RegisterServer(resolver ServerResolver) {
 	proto := resolver.Name()
 	if _, ok := serverResolvers[proto]; ok {
 		panic(fmt.Errorf("xrpc: 不能重复注册:%s", proto))

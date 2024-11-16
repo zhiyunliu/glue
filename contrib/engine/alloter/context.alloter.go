@@ -8,9 +8,9 @@ import (
 	"net/url"
 	"reflect"
 
+	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/constants"
 	vctx "github.com/zhiyunliu/glue/context"
-	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
 	gluesid "github.com/zhiyunliu/glue/session"
@@ -286,8 +286,8 @@ func (q *aquery) Values() xtypes.SMap {
 	}
 	return q.params
 }
-func (q *aquery) Scan(obj interface{}) error {
-	return q.Values().Scan(obj)
+func (q *aquery) ScanTo(obj interface{}) error {
+	return q.Values().ScanTo(obj)
 }
 
 func (q *aquery) String() string {

@@ -287,7 +287,7 @@ func (q *gquery) Values() xtypes.SMap {
 	}
 	return q.params
 }
-func (q *gquery) Scan(obj interface{}) error {
+func (q *gquery) ScanTo(obj interface{}) error {
 	return q.gctx.BindQuery(obj)
 }
 

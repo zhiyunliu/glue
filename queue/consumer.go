@@ -6,16 +6,16 @@ import (
 	"github.com/zhiyunliu/glue/config"
 )
 
-// mqcResover 定义消息消费解析器
-type MqcResover interface {
+// MqcResolver 定义消息消费解析器
+type MqcResolver interface {
 	Name() string
 	Resolve(configName string, setting config.Config) (IMQC, error)
 }
 
-var mqcResolvers = make(map[string]MqcResover)
+var mqcResolvers = make(map[string]MqcResolver)
 
 // RegisterConsumer 注册消息消费
-func RegisterConsumer(resolver MqcResover) {
+func RegisterConsumer(resolver MqcResolver) {
 	name := resolver.Name()
 	if _, ok := mqcResolvers[name]; ok {
 		panic(fmt.Errorf("mqc: 不能重复注册:%s", name))

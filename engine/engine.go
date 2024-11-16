@@ -16,15 +16,15 @@ type AdapterEngine interface {
 }
 type HandlerFunc func(context.Context)
 
-type Resover interface {
+type Resolver interface {
 	Name() string
 	Resolve(name string, config config.Config, opts ...Option) (AdapterEngine, error)
 }
 
-var engineResolvers = make(map[string]Resover)
+var engineResolvers = make(map[string]Resolver)
 
 // Register 注册配置文件适配器
-func Register(resolver Resover) {
+func Register(resolver Resolver) {
 	proto := resolver.Name()
 	if _, ok := engineResolvers[proto]; ok {
 		panic(fmt.Errorf("engine: 不能重复注册:%s", proto))

@@ -29,15 +29,15 @@ type ICache interface {
 }
 
 // cacheResover 定义配置文件转换方法
-type cacheResover interface {
+type Resolver interface {
 	Name() string
 	Resolve(setting config.Config, opts ...Option) (ICache, error)
 }
 
-var cacheResolvers = make(map[string]cacheResover)
+var cacheResolvers = make(map[string]Resolver)
 
 // RegisterCache 注册配置文件适配器
-func Register(resolver cacheResover) {
+func Register(resolver Resolver) {
 	proto := resolver.Name()
 	if _, ok := cacheResolvers[proto]; ok {
 		panic(fmt.Errorf("cache: 不能重复注册:%s", proto))

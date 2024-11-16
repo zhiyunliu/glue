@@ -7,15 +7,15 @@ import (
 )
 
 // MqpResover 定义配置文件转换方法
-type MqpResover interface {
+type MqpResolver interface {
 	Name() string
 	Resolve(setting config.Config, opts ...Option) (IMQP, error)
 }
 
-var mqpResolvers = make(map[string]MqpResover)
+var mqpResolvers = make(map[string]MqpResolver)
 
 // RegisterProducer 注册配置文件适配器
-func RegisterProducer(resolver MqpResover) {
+func RegisterProducer(resolver MqpResolver) {
 	proto := resolver.Name()
 	if _, ok := mqpResolvers[proto]; ok {
 		panic(fmt.Errorf("mqp: 不能重复注册:%s", proto))
