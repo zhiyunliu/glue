@@ -294,6 +294,10 @@ func (q *aquery) String() string {
 	return q.reqUrl.RawQuery
 }
 
+func (q *aquery) GetValues() url.Values {
+	return q.reqUrl.Query()
+}
+
 func (q *aquery) Close() {
 	q.actx = nil
 	q.reqUrl = nil

@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
-	_ "github.com/zhiyunliu/glue/encoding/binding"
-	_ "github.com/zhiyunliu/glue/encoding/text"
+	_ "github.com/zhiyunliu/xbinding/binding"
 )
 
 const (

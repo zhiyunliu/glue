@@ -21,18 +21,26 @@ type Server struct {
 	processor *processor
 }
 
-func newServer(cfg *serverConfig,
+func newServer(srvcfg *serverConfig,
 	router *engine.RouterGroup,
 	opts ...engine.Option) (server *Server, err error) {
 
 	server = &Server{
-		srvCfg: cfg,
+		srvCfg: srvcfg,
 		engine: alloter.New(),
 	}
 
-	for _, m := range cfg.Middlewares {
-		router.Use(middleware.Resolve(&m))
+	var midwares []middleware.Middleware
+	for _, m := range srvcfg.Middlewares {
+		midware, ierr := middleware.Resolve(&m)
+		if ierr != nil {
+			err = ierr
+			return
+		}
+		midwares = append(midwares, midware)
+
 	}
+	router.Use(midwares...)
 
 	adapterEngine := enginealloter.NewAlloterEngine(server.engine, opts...)
 	engine.RegistryEngineRoute(adapterEngine, router)

@@ -1,7 +1,10 @@
 package metrics
 
 import (
-	"github.com/zhiyunliu/glue/encoding"
+	"fmt"
+
+	"github.com/zhiyunliu/xbinding"
+
 	"github.com/zhiyunliu/glue/middleware"
 )
 
@@ -15,8 +18,18 @@ type xBuilder struct {
 func (xBuilder) Name() string {
 	return "metrics"
 }
-func (xBuilder) Build(cfg *middleware.Config) middleware.Middleware {
+func (xBuilder) Build(cfg *middleware.Config) (middleware.Middleware, error) {
 	mCfg := &Config{}
-	encoding.GetCodec(cfg.Data.Codec).Unmarshal(cfg.Data.Data, mCfg)
-	return serverByConfig(mCfg)
+	data := cfg.Data
+
+	codec, err := xbinding.GetCodec(xbinding.WithContentType(data.Codec))
+	if err != nil {
+		return nil, fmt.Errorf("metrics err:%w", err)
+	}
+
+	if err = codec.Bind(xbinding.BytesReader(data.Data), mCfg); err != nil {
+		return nil, err
+	}
+
+	return serverByConfig(mCfg), nil
 }

@@ -6,12 +6,11 @@ import (
 
 	"github.com/zhiyunliu/glue/cli"
 	"github.com/zhiyunliu/glue/compatible"
-	_ "github.com/zhiyunliu/glue/encoding/binding"
-	_ "github.com/zhiyunliu/glue/encoding/text"
-	"github.com/zhiyunliu/glue/global"
 
 	_ "github.com/zhiyunliu/glue/contrib/engine/alloter"
 	_ "github.com/zhiyunliu/glue/contrib/engine/gin"
+	"github.com/zhiyunliu/glue/global"
+	_ "github.com/zhiyunliu/xbinding/binding"
 )
 
 // MicroApp  微服务应用
