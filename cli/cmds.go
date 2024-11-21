@@ -3,10 +3,10 @@ package cli
 import (
 	"sync"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli"
 )
 
-var cmds []*cli.Command = make([]*cli.Command, 0)
+var cmds []cli.Command = make([]cli.Command, 0)
 var funcs []func(cfg *Options) *cli.Command = make([]func(cfg *Options) *cli.Command, 0, 1)
 var once sync.Once
 
@@ -16,10 +16,10 @@ func RegisterFunc(f ...func(cfg *Options) *cli.Command) {
 }
 
 // GetCmds 获取所有命令
-func GetCmds(options *Options) []*cli.Command {
+func GetCmds(options *Options) []cli.Command {
 	once.Do(func() {
 		for _, f := range funcs {
-			cmds = append(cmds, f(options))
+			cmds = append(cmds, *f(options))
 		}
 	})
 	return cmds

@@ -3,7 +3,7 @@ package cli
 import (
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli"
 	"github.com/zhiyunliu/glue/compatible"
 )
 

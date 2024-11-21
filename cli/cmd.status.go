@@ -3,7 +3,7 @@ package cli
 import (
 	svc "github.com/kardianos/service"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli"
 )
 
 func init() {

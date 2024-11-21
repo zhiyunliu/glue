@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
@@ -121,7 +121,7 @@ func RegistrarTimeout(timeout int64) Option {
 
 func Command(cmd *cli.Command) Option {
 	return func(o *Options) {
-		cmds = append(cmds, cmd)
+		cmds = append(cmds, *cmd)
 	}
 }
 

@@ -2,6 +2,7 @@ package expression
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"sync"
@@ -126,21 +127,21 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 		case []byte:
 			return "", xdb.NewMissDataTypeError(item.GetPropName())
 		default:
-			// refVal := reflect.ValueOf(value)
-			// if !(refVal.Kind() == reflect.Array ||
-			// 	refVal.Kind() == reflect.Slice) {
-			// 	return "", xdb.NewMissDataTypeError(item.GetPropName())
-			// }
-			// arrayLen := refVal.Len()
-			// if arrayLen <= 0 {
-			// 	return
-			// }
-			// for i := 0; i < arrayLen; i++ {
-			// 	ele := refVal.Index(i)
-			// 	ele.Interface().(xdb.DBParamItem)
-
-			// }
-			return "", xdb.NewMissDataTypeError(item.GetPropName())
+			refVal := reflect.ValueOf(value)
+			if !(refVal.Kind() == reflect.Array ||
+				refVal.Kind() == reflect.Slice) {
+				return "", xdb.NewMissDataTypeError(item.GetPropName())
+			}
+			arrayLen := refVal.Len()
+			if arrayLen <= 0 {
+				return
+			}
+			tmpStrArray := make([]string, arrayLen)
+			for i := 0; i < arrayLen; i++ {
+				ele := refVal.Index(i)
+				tmpStrArray[i] = fmt.Sprint(ele.Interface())
+			}
+			val = sqlInjectionPreventionArray(tmpStrArray)
 		}
 
 		operCallback, ok := item.GetOperatorCallback()

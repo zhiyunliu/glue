@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/golibs/xfile"

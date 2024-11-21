@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli"
 )
 
 // getFlags 获取运行时的参数
