@@ -23,7 +23,7 @@ func NewInExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption) 
 		opts[i](mopts)
 	}
 
-	const pattern = `[&|\|](({in\s+(\w+(\.\w+)?)\s*})|({(\w+(\.\w+)?)\s+in\s+(\w+)\s*}))`
+	const pattern = `[&|\|](({(in|notin)\s+(\w+(\.\w+)?)\s*})|({(\w+(\.\w+)?)\s+(in|notin)\s+(\w+)\s*}))`
 
 	matcher := &inExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
@@ -73,25 +73,29 @@ func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.Express
 		item = &xdb.ExpressionItem{
 			Symbol:  getExpressionSymbol(m.symbolMap, expression),
 			Matcher: m,
-			Oper:    m.Name(),
 		}
 		fullField string
 		propName  string
+		oper      string
 	)
 	// fullfield,oper,oper
 	//&{in tbl.field} => 3,in,prop(3)
 	//&{tt.field  in    property} => 6,in, 8
 
-	if parties[3] != "" {
-		fullField = parties[3]
+	if parties[4] != "" {
+		oper = parties[3]
+		fullField = parties[4]
 		propName = getExpressionPropertyName(fullField)
+
 	} else {
-		fullField = parties[6]
-		propName = parties[8]
+		oper = parties[9]
+		fullField = parties[7]
+		propName = parties[10]
 	}
 
 	item.FullField = fullField
 	item.PropName = propName
+	item.Oper = oper
 
 	item.ExpressionBuildCallback = m.defaultBuildCallback()
 	if m.buildCallback != nil {
@@ -154,11 +158,16 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 }
 func (m *inExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
 
-	operCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+	inCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 		return fmt.Sprintf("%s %s in (%s)", item.GetSymbol().Concat(), item.GetFullfield(), value)
 	}
+	notinCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s not in (%s)", item.GetSymbol().Concat(), item.GetFullfield(), value)
+	}
+
 	operList := []xdb.Operator{
-		xdb.NewOperator("in", operCallback),
+		xdb.NewOperator("in", inCallback),
+		xdb.NewOperator("notin", notinCallback),
 	}
 
 	if optMap != nil {
