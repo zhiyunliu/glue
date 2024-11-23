@@ -128,6 +128,11 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "9b.", matcher: likeMatcher, fullKey: "&{tbl.field like property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "like%", wantSymbol: "&", wantExpr: "and tbl.field like ?+'%'"},
 		{name: "10b.", matcher: likeMatcher, fullKey: "&{tbl.field like %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like%", wantSymbol: "&", wantExpr: "and tbl.field like '%'+?+'%'"},
 
+		{name: "not-1a.", matcher: likeMatcher, fullKey: "&{notlike   field}", wantFullfield: "field", wantPropName: "field", wantOper: "notlike", wantSymbol: "&", wantExpr: "and field not like ?"},
+		{name: "not-8b.", matcher: likeMatcher, fullKey: "&{tbl.field notlike %property}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?"},
+		{name: "not-9b.", matcher: likeMatcher, fullKey: "&{tbl.field notlike property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like ?+'%'"},
+		{name: "not-10b.", matcher: likeMatcher, fullKey: "&{tbl.field notlike %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?+'%'"},
+
 		{name: "notin-8.", matcher: inMatcher, fullKey: "&{notin tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "notin", wantSymbol: "&", wantExpr: "and tbl.infield not in (1,2)"},
 		{name: "8.", matcher: inMatcher, fullKey: "&{in tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and tbl.infield in (1,2)"},
 		{name: "9.", matcher: inMatcher, fullKey: "&{in infield}", wantFullfield: "infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in (1,2)"},

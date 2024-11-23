@@ -35,7 +35,7 @@ func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption
 		opts[i](mopts)
 	}
 
-	const pattern = `[&|\|](({like\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+like\s+(%?\w+%?)}))`
+	const pattern = `[&|\|](({(like|notlike)\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+(like|notlike)\s+(%?\w+%?)}))`
 
 	matcher := &likeExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
@@ -84,17 +84,18 @@ func (m *likeExpressionMatcher) MatchString(expression string) (valuer xdb.Expre
 	var (
 		prefix   string
 		suffix   string
-		oper     string = m.Name()
+		oper     string
 		fullkey  string
 		propName string
 	)
-	if parties[3] != "" {
-
-		propName = parties[3]
+	if parties[4] != "" {
+		oper = parties[3]
+		propName = parties[4]
 		fullkey = strings.Trim(propName, SPEC_CHAR)
 	} else {
-		fullkey = parties[6]
-		propName = parties[8]
+		oper = parties[9]
+		fullkey = parties[7]
+		propName = parties[10]
 	}
 
 	if strings.HasPrefix(propName, SPEC_CHAR) {
@@ -164,6 +165,22 @@ func (m *likeExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Opera
 
 		xdb.NewOperator("%like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like '%%'+%s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
+		}),
+
+		xdb.NewOperator("notlike", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+			return fmt.Sprintf("%s %s not like %s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
+		}),
+
+		xdb.NewOperator("%notlike", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+			return fmt.Sprintf("%s %s not like '%%'+%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
+		}),
+
+		xdb.NewOperator("notlike%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+			return fmt.Sprintf("%s %s not like %s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
+		}),
+
+		xdb.NewOperator("%notlike%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+			return fmt.Sprintf("%s %s not like '%%'+%s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
 		}),
 	}
 
