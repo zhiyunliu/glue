@@ -122,45 +122,45 @@ func main() {
 
 ## 自定义数据体解析encoding
 
-```golang 
-type urlecoded struct {
-}
+功能已迁移到 github.com/zhiyunliu/xbinding 模块
+ 
 
-func (u urlecoded) Marshal(v interface{}) ([]byte, error) {
-	return nil, nil
-}
-
-func (u *urlecoded) Unmarshal(data []byte, v interface{}) error {
-	values, err := url.ParseQuery(string(data))
-	if err != nil {
-		return err
-	}
-	var mapdata = xtypes.XMap{}
-	for k := range values {
-		mapdata[k] = values.Get(k)
-	}
-	return mapdata.Scan(v)
-}
-
-func (u urlecoded) Name() string {
-	return "x-www-form-urlencoded"
-}
-
-// github.com/zhiyunliu/glue/encoding
-encoding.RegisterCodec(&urlecoded{})
-
-```
-
-## 自定义数据解析方法 WithDecodeRequestFunc
+## 自定义数据解析方法 WithDecodeRequestFunc/WithEncodeResponseFunc
 
 ```golang 
 
 样例（cron,mqc,rpc 有同样的方法）：
- 	apiSrv := api.New("cronserver", api.WithDecodeRequestFunc(func(ctx context.Context, obj interface{}) error {
-		//解析数据
-	}))
+ 	apiSrv := api.New("cronserver", 
+		api.WithDecodeRequestFunc(func(ctx context.Context, obj interface{}) error {
+		//自定义解析数据
+	}),
+		api.WithEncodeResponseFunc(func(ctx context.Context, obj interface{}) ([]byte, error) {
+			//自定义输出内容解析
+			return json.Marshal(obj)
+		}),
+	)
 
 ```
+
+
+## 自定义数据结构
+
+```golang 
+
+type ResponseEntity interface{
+	StatusCode() int
+	Header() map[string]string
+	Body() (bytes []byte, err error)
+}
+
+type UserResp struct {}
+func (u *UserResp) StatusCode() int { return 200}
+func (u *UserResp) Header()  map[string]string { return make(map[string]string)}
+func (u *UserResp) Body() (bytes []byte, err error) { return []byte(`custome bytes`),nil}
+
+
+```
+
 
 
 # SQL解析支持
@@ -287,11 +287,13 @@ select * from table t where t.id in ('1','2','3')--id:["1","2","3"]
 
 ```
 
-## like 支持
+## like / not like 支持
 
 ```sql
 &{like field} ，&{like %field}， &{like field%} ，&{like %field%}
+&{notlike field} ，&{notlike %field}， &{notlike field%} ，&{notlike %field%}
 &{t.field like property} ，&{t.field like %property}， &{t.field like property%} ，&{t.field like %property%}
+&{t.field notlike property} ，&{t.field notlike %property}， &{t.field notlike property%} ，&{t.field notlike %property%}
 ----(|符号类似)
 
 样例： 
@@ -329,13 +331,15 @@ select * from table t where t.id = @p_id and t.name = @p_myinputname
 ``` 
 
 
-## in表达式支持
+## in/not in 表达式支持
 
 ```sql
 ---注意：in表达式只接受数组切片数据,其他类似直接返回空
 
 &{in field} ,&{in t.field}
+&{notin field} ,&{notin t.field}
 &{t.field in property}
+&{t.field notin property}
 ----(|符号类似)
 
 

@@ -52,7 +52,7 @@ func (e *GinEngine) NoRoute() {
 		actx := e.pool.Get().(*GinContext)
 		actx.reset(ctx)
 		actx.opts = e.opts
-		actx.Log().Errorf("[%s][%s]No Route for [%s]%s", actx.ServerType(), actx.ServerName(), ctx.Request.Method, actx.Request().Path().GetURL())
+		actx.Log().Errorf("[%s][%s]No Route for [%s]%s clientip:%s", actx.ServerType(), actx.ServerName(), ctx.Request.Method, actx.Request().Path().GetURL(), actx.Request().GetClientIP())
 		actx.Close()
 		e.pool.Put(actx)
 	})
