@@ -39,7 +39,7 @@ func (e *AlloterEngine) NoMethod() {
 		actx.reset(ctx)
 		actx.opts = e.opts
 
-		actx.Log().Errorf("No Method for %s,%s", actx.Request().Path().FullPath(), actx.Request().GetMethod())
+		actx.Log().Errorf("No Method for %s,%s,clientip:%s", actx.Request().Path().FullPath(), actx.Request().GetMethod(), actx.Request().GetClientIP())
 
 		actx.Close()
 		e.pool.Put(actx)
