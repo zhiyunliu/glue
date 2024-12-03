@@ -40,7 +40,7 @@ func (e *GinEngine) NoMethod() {
 		actx.reset(ctx)
 		actx.opts = e.opts
 
-		actx.Log().Errorf("No Method for %s", actx.Request().Path().FullPath())
+		actx.Log().Errorf("No Method for %s,%s,clientip:%s", actx.Request().Path().FullPath(), actx.Request().GetMethod(), actx.Request().GetClientIP())
 
 		actx.Close()
 		e.pool.Put(actx)
