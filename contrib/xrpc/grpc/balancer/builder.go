@@ -3,7 +3,6 @@ package balancer
 import (
 	"context"
 	"net/url"
-	"sync"
 
 	"github.com/zhiyunliu/glue/registry"
 	"google.golang.org/grpc/resolver"
@@ -23,7 +22,7 @@ type Builder interface {
 }
 */
 
-//ResolverBuilder creates a resolver that will be used to watch name resolution updates.
+// ResolverBuilder creates a resolver that will be used to watch name resolution updates.
 type registrarBuilder struct {
 	ctx       context.Context
 	registrar registry.Registrar
@@ -32,7 +31,7 @@ type registrarBuilder struct {
 
 var _ resolver.Builder = &registrarBuilder{}
 
-//NewRegistrarBuilder 新建builder
+// NewRegistrarBuilder 新建builder
 func NewRegistrarBuilder(ctx context.Context, registrar registry.Registrar, path *url.URL) resolver.Builder {
 
 	builder := &registrarBuilder{
@@ -51,18 +50,7 @@ func (b *registrarBuilder) Scheme() string {
 
 // Build
 func (b *registrarBuilder) Build(target resolver.Target, clientConn resolver.ClientConn, bopts resolver.BuildOptions) (resolver.Resolver, error) {
-
-	rr := &registrarResolver{
-		ctx:            b.ctx,
-		registrar:      b.registrar,
-		serviceName:    b.reqPath.Host,
-		clientConn:     clientConn,
-		waitGroup:      sync.WaitGroup{},
-		resolveNowChan: make(chan struct{}, 1),
-	}
-	rr.waitGroup.Add(1)
-	go rr.watcher()
-
+	rr := NewResolver(b.registrar, b.reqPath.Host, clientConn)
 	rr.ResolveNow(resolver.ResolveNowOptions{})
 	return rr, nil
 }

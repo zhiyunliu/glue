@@ -14,38 +14,59 @@ import (
 
 type registrarResolver struct {
 	ctx            context.Context
+	cancelFunc     context.CancelFunc
 	registrar      registry.Registrar
 	serviceName    string //ip:port 或者服务名称
 	clientConn     resolver.ClientConn
-	waitGroup      sync.WaitGroup
+	waitGroup      *sync.WaitGroup
 	resolveNowChan chan struct{}
 }
 
+func NewResolver(registrar registry.Registrar, serviceName string, clientConn resolver.ClientConn) resolver.Resolver {
+	rr := &registrarResolver{
+		registrar:      registrar,
+		serviceName:    serviceName,
+		clientConn:     clientConn,
+		waitGroup:      &sync.WaitGroup{},
+		resolveNowChan: make(chan struct{}, 1),
+	}
+	rr.ctx, rr.cancelFunc = context.WithCancel(context.Background())
+	rr.doWatch()
+	return rr
+}
+
 // ResolveNow resolves immediately
-func (r *registrarResolver) ResolveNow(resolver.ResolveNowOptions) {
+func (r *registrarResolver) ResolveNow(opts resolver.ResolveNowOptions) {
 	select {
-	case r.resolveNowChan <- struct{}{}:
+	case r.resolveNowChan <- opts:
 	default:
 	}
 }
 
 func (r *registrarResolver) Close() {
+	if r.cancelFunc != nil {
+		r.cancelFunc()
+	}
 	r.waitGroup.Wait()
 }
 
-func (r *registrarResolver) watcher() {
-	defer r.waitGroup.Done()
-
+func (r *registrarResolver) doWatch() {
 	address, ok := r.isServiceNameIpAddress()
 	if ok {
 		r.clientConn.UpdateState(resolver.State{Addresses: address})
 		return
 	}
-
 	if r.registrar == nil {
 		return
 	}
+
+	go r.watchResolver()
 	go r.watchRegistrar()
+}
+
+func (r *registrarResolver) watchResolver() {
+	r.waitGroup.Add(1)
+	defer r.waitGroup.Done()
 
 	for {
 		select {
@@ -59,9 +80,30 @@ func (r *registrarResolver) watcher() {
 			log.Errorf("grpc:registrar.GetService=%s,error:%+v", r.serviceName, err)
 		}
 
-		address = r.buildAddress(instances)
-
+		address := r.buildAddress(instances)
 		r.clientConn.UpdateState(resolver.State{Addresses: address})
+	}
+}
+
+func (r *registrarResolver) watchRegistrar() {
+	r.waitGroup.Add(1)
+	defer r.waitGroup.Done()
+
+	watcher, _ := r.registrar.Watch(r.ctx, r.serviceName)
+	for {
+
+		select {
+		case <-r.ctx.Done():
+			return
+		default:
+			instances, err := watcher.Next()
+			if err != nil {
+				log.Errorf("grpc:registrar.Watch=%s,error:%+v", r.serviceName, err)
+				continue
+			}
+			addresses := r.buildAddress(instances)
+			r.clientConn.UpdateState(resolver.State{Addresses: addresses})
+		}
 	}
 }
 
@@ -90,28 +132,6 @@ func (r *registrarResolver) buildAddress(instances []*registry.ServiceInstance) 
 	}
 
 	return addresses
-}
-
-func (r *registrarResolver) watchRegistrar() {
-	if r.registrar == nil {
-		return
-	}
-	watcher, _ := r.registrar.Watch(r.ctx, r.serviceName)
-	for {
-
-		select {
-		case <-r.ctx.Done():
-			return
-		default:
-			instances, err := watcher.Next()
-			if err != nil {
-				log.Errorf("grpc:registrar.Watch=%s,error:%+v", r.serviceName, err)
-				continue
-			}
-			addresses := r.buildAddress(instances)
-			r.clientConn.UpdateState(resolver.State{Addresses: addresses})
-		}
-	}
 }
 
 func (r *registrarResolver) isServiceNameIpAddress() (address []resolver.Address, ok bool) {

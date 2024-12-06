@@ -12,6 +12,7 @@ import (
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/dlocker"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/standard"
 	"github.com/zhiyunliu/glue/xcron"
@@ -143,9 +144,11 @@ func (s *processor) checkMonopoly(j *xcron.Job) (err error) {
 		if exist {
 			return valueInMap
 		}
+		lockKey := fmt.Sprintf("cron:dlocker:%s:%s", global.AppName, j.GetKey())
+
 		return &monopolyJob{
 			job:    j,
-			locker: sdlocker.GetDLocker().Build(fmt.Sprintf("glue:cron:locker:%s", j.GetKey()), dlocker.WithData(j.GetLockData())),
+			locker: sdlocker.GetDLocker().Build(lockKey, dlocker.WithData(j.GetLockData())),
 			expire: j.CalcExpireSeconds(),
 		}
 	})

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"sync"
 
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
@@ -16,9 +15,10 @@ type httpSelector struct {
 	ctx         context.Context
 	serviceName string
 	registrar   registry.Registrar
-	waitGroup   sync.WaitGroup
 	selector    selector.Selector
 }
+
+var _ selector.Selector = (*httpSelector)(nil)
 
 func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url.URL, selectorName string) (selector.Selector, error) {
 	tmpselector, err := selector.GetSelector(selectorName)
@@ -30,11 +30,9 @@ func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url
 		ctx:         ctx,
 		registrar:   registrar,
 		serviceName: reqPath.Host,
-		waitGroup:   sync.WaitGroup{},
 	}
 	rr.selector = tmpselector
 	if strings.EqualFold(reqPath.Scheme, "xhttp") {
-		rr.waitGroup.Add(1)
 		go rr.watcher()
 		rr.resolveNow()
 	} else {
@@ -52,18 +50,14 @@ func (r *httpSelector) Apply(nodes []selector.Node) {
 	r.selector.Apply(nodes)
 }
 
-func (r *httpSelector) Close() {
-	r.waitGroup.Wait()
-}
-
-// ResolveNow resolves immediately
+// resolveNow resolves immediately
 func (r *httpSelector) resolveNow() {
 	if r.registrar == nil {
 		return
 	}
 	instances, err := r.registrar.GetService(r.ctx, r.serviceName)
 	if err != nil {
-		log.Errorf("http:registrar.GetService=%s,error:%+v", r.serviceName, err)
+		log.Errorf("http:registrar.GetService=%s,error:%s", r.serviceName, err.Error())
 		return
 	}
 	r.Apply(r.buildServiceNode(instances))
@@ -92,13 +86,13 @@ func (r *httpSelector) buildServiceNode(instances []*registry.ServiceInstance) [
 	return addresses
 }
 
-func (r *httpSelector) watchRegistrar() {
+func (r *httpSelector) watcher() {
 	if r.registrar == nil {
 		return
 	}
+
 	watcher, _ := r.registrar.Watch(r.ctx, r.serviceName)
 	for {
-
 		select {
 		case <-r.ctx.Done():
 			return
@@ -112,15 +106,4 @@ func (r *httpSelector) watchRegistrar() {
 			r.Apply(addresses)
 		}
 	}
-}
-
-func (r *httpSelector) watcher() {
-	defer r.waitGroup.Done()
-
-	if r.registrar == nil {
-		return
-	}
-	go r.watchRegistrar()
-
-	<-r.ctx.Done()
 }

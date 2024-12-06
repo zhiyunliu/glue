@@ -43,7 +43,9 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 	if err != nil {
 		return nil, err
 	}
-	client.tracer = tracing.NewTracer(trace.SpanKindClient)
+	if setting.Trace {
+		client.tracer = tracing.NewTracer(trace.SpanKindClient)
+	}
 	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
 
 	client.selector, err = balancer.NewSelector(client.ctx, registrar, reqPath, setting.Balancer)
@@ -96,19 +98,16 @@ func (c *Client) RequestByString(ctx context.Context, reqPath *url.URL, input []
 
 // Close 关闭RPC客户端连接
 func (c *Client) Close() {
-	c.ctxCancel()
+	if c.ctxCancel != nil {
+		c.ctxCancel()
+	}
 }
 
 func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.Options, input []byte) (response xhttp.Body, err error) {
-
-	//node, done, err := c.selector.Select(ctx, selector.WithFilter(filter.Version(o.Version)))
-	node, done, err := c.selector.Select(ctx)
+	node, err := c.getServiceNode(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		done(ctx, selector.DoneInfo{Err: err})
-	}()
 
 	httpOpts := make([]httputil.Option, 0)
 	for k, v := range o.Header {
@@ -121,6 +120,17 @@ func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.O
 		queryParam = "?" + reqPath.RawQuery
 	}
 	return httputil.Request(o.Method, fmt.Sprintf("%s%s%s", node.Address(), reqPath.Path, queryParam), input, httpOpts...)
+}
+
+func (c *Client) getServiceNode(ctx context.Context) (selector.Node, error) {
+	node, done, err := c.selector.Select(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		done(ctx, selector.DoneInfo{Err: err})
+	}()
+	return node, nil
 }
 
 func (c *Client) getTlsConfig() (*tls.Config, error) {
