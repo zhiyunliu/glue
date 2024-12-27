@@ -175,10 +175,16 @@ type SQLTemplate interface {
 	GetSQLContext(tpl string, input map[string]any, opts ...TemplateOption) (sql string, args []any, err error)
 	//注册表达式匹配解析器
 	RegistExpressionMatcher(matchers ...ExpressionMatcher)
+	//注册参数处理回调
+	RegistStmtDbTypeHandler(handler ...StmtDbTypeHandler)
 	//处理一般表达式
 	HandleExpr(item SqlState, sqlTpl string, param DBParam) (sql string, err error)
 	//获取sql状态
 	GetSqlState(*TemplateOptions) SqlState
+	//sql状态释放
+	ReleaseSqlState(SqlState)
+	//sql参数处理
+	StmtDbTypeWrap(param any, opt TagOptions) any
 }
 
 
@@ -214,8 +220,28 @@ func RegistExpressionMatcher(proto string, matcher ExpressionMatcher) (err error
 
 ```
 
+## 指定生成脚本数据类型
+```golang
+
+type Item struct{
+	F1 string `form:"f1" json:"f1"`
+	F2 string `form:"f2" json:"f2"`
+}
+
+type param struct {
+	A string `form:"a" json:"a,dbtype:varchar"`
+	D string `form:"d" json:"d" xdb:"d,dbtype:varchar"`
+	List []Item `json:"list" xdb:"list,dbtype:tvp=ut_db_item"`
+}
+
+
+```
+* dbtype:varchar 指定生成数据库参数得数据类型为varchar
+* dbtype:tvp=ut_db_item 指定生成数据库参数得数据类型值类型，数据是数据库自定义ut_db_item （具体tvp类型数据使用参考官方文档https://learn.microsoft.com/zh-cn/sql/relational-databases/tables/use-table-valued-parameters-database-engine?view=sql-server-ver16
+* 可以通过`RegistStmtDbTypeHandler`自定义参数处理数据类型得实现逻辑
 
  
+
 
 ## 参数化支持
 
