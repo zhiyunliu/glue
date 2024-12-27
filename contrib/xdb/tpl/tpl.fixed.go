@@ -9,10 +9,11 @@ import (
 
 // FixedTemplate  模板
 type FixedTemplate struct {
-	name         string
-	prefix       string
-	matcher      xdb.TemplateMatcher
-	sqlStatePool *sync.Pool
+	name          string
+	prefix        string
+	matcher       xdb.TemplateMatcher
+	stmtProcessor xdb.StmtDbTypeProcessor
+	sqlStatePool  *sync.Pool
 }
 
 type fixedPlaceHolder struct {
@@ -35,14 +36,15 @@ func (ph *fixedPlaceHolder) NamedArg(propName string) (phName string) {
 
 var _ xdb.SQLTemplate = &FixedTemplate{}
 
-func NewFixed(name, prefix string, matcher xdb.TemplateMatcher) *FixedTemplate {
+func NewFixed(name, prefix string, matcher xdb.TemplateMatcher, stmtProcessor xdb.StmtDbTypeProcessor) *FixedTemplate {
 	if matcher == nil {
 		panic(fmt.Errorf("NewFixed ,TemplateMatcher Can't be nil"))
 	}
 	template := &FixedTemplate{
-		name:    name,
-		prefix:  prefix,
-		matcher: matcher,
+		name:          name,
+		prefix:        prefix,
+		matcher:       matcher,
+		stmtProcessor: stmtProcessor,
 	}
 	template.sqlStatePool = &sync.Pool{
 		New: func() interface{} {
@@ -82,4 +84,11 @@ func (template *FixedTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.Sql
 func (template *FixedTemplate) ReleaseSqlState(state xdb.SqlState) {
 	state.Reset()
 	template.sqlStatePool.Put(state)
+}
+
+func (template *FixedTemplate) StmtDbTypeWrap(param any, tagOpts xdb.TagOptions) any {
+	return template.stmtProcessor.Process(param, tagOpts)
+}
+func (template *FixedTemplate) RegistStmtDbTypeHandler(handler ...xdb.StmtDbTypeHandler) {
+	template.stmtProcessor.RegistHandler(handler...)
 }

@@ -191,7 +191,7 @@ func Test_analyzeParamFields(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotParams, err := analyzeParamFields(tt.input)
+			gotParams, err := analyzeParamFields(tt.input, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("analyzeParamFields() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -230,7 +230,7 @@ func TestResolveParams(t *testing.T) {
 		{name: "10.", input: &dbstructJson{A: "1"}, wantParams: map[string]any{"a": "1"}, wantErr: false}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotParams, err := ResolveParams(tt.input)
+			gotParams, err := ResolveParams(tt.input, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ResolveParams() error = %v, wantErr %v", err, tt.wantErr)
 				return

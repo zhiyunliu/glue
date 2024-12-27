@@ -9,10 +9,11 @@ import (
 
 // SeqTemplate 参数化时使用@+参数名作为占位符的SQL数据库如:oracle,sql server
 type SeqTemplate struct {
-	name         string
-	prefix       string
-	matcher      xdb.TemplateMatcher
-	sqlStatePool *sync.Pool
+	name          string
+	prefix        string
+	matcher       xdb.TemplateMatcher
+	stmtProcessor xdb.StmtDbTypeProcessor
+	sqlStatePool  *sync.Pool
 }
 
 type seqPlaceHolder struct {
@@ -39,14 +40,15 @@ func (ph *seqPlaceHolder) NamedArg(propName string) (phName string) {
 
 var _ xdb.SQLTemplate = &SeqTemplate{}
 
-func NewSeq(name, prefix string, matcher xdb.TemplateMatcher) *SeqTemplate {
+func NewSeq(name, prefix string, matcher xdb.TemplateMatcher, stmtProcessor xdb.StmtDbTypeProcessor) *SeqTemplate {
 	if matcher == nil {
 		panic(fmt.Errorf("NewFixed ,TemplateMatcher Can't be nil"))
 	}
 	template := &SeqTemplate{
-		name:    name,
-		prefix:  prefix,
-		matcher: matcher,
+		name:          name,
+		prefix:        prefix,
+		matcher:       matcher,
+		stmtProcessor: stmtProcessor,
 	}
 
 	template.sqlStatePool = &sync.Pool{
@@ -88,4 +90,11 @@ func (template *SeqTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlSt
 func (template *SeqTemplate) ReleaseSqlState(state xdb.SqlState) {
 	state.Reset()
 	template.sqlStatePool.Put(state)
+}
+
+func (template *SeqTemplate) StmtDbTypeWrap(param any, tagOpts xdb.TagOptions) any {
+	return template.stmtProcessor.Process(param, tagOpts)
+}
+func (template *SeqTemplate) RegistStmtDbTypeHandler(handler ...xdb.StmtDbTypeHandler) {
+	template.stmtProcessor.RegistHandler(handler...)
 }

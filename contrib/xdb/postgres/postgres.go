@@ -30,6 +30,8 @@ func (s *postgresResolver) Resolve(connName string, setting config.Config, opts 
 }
 func init() {
 	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
+	tplstmtProcessor := xdb.NewStmtDbTypeProcessor()
+
 	xdb.Register(&postgresResolver{})
-	xdb.RegistTemplate(tpl.NewFixed(Proto, "$", tplMatcher))
+	xdb.RegistTemplate(tpl.NewFixed(Proto, "$", tplMatcher, tplstmtProcessor))
 }

@@ -4,12 +4,18 @@ go 1.22
 
 require (
 	github.com/zhiyunliu/alloter v0.1.0
-	github.com/zhiyunliu/golibs v0.2.9
+	github.com/zhiyunliu/golibs v0.3.1
 	github.com/zhiyunliu/redisqueue/v3 v3.0.1
 	github.com/zhiyunliu/stack v1.9.0 // indirect
 	github.com/zhiyunliu/xbinding v0.1.2
 
 )
+
+//replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
+
+//replace github.com/zhiyunliu/redisqueue/v3 => ../../../github.com/zhiyunliu/redisqueue
+
+//replace github.com/zhiyunliu/xbinding => ../../../github.com/zhiyunliu/xbinding
 
 require (
 	github.com/emirpasic/gods/v2 v2.0.0-alpha
@@ -72,6 +78,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
@@ -119,7 +126,6 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
@@ -136,9 +142,3 @@ require (
 	golang.org/x/text v0.18.0 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 )
-
-//replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
-
-//replace github.com/zhiyunliu/redisqueue/v3 => ../../../github.com/zhiyunliu/redisqueue
-
-//replace github.com/zhiyunliu/xbinding => ../../../github.com/zhiyunliu/xbinding

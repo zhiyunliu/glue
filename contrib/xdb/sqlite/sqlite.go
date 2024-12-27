@@ -30,7 +30,8 @@ func (s *sqliteResolver) Resolve(connName string, setting config.Config, opts ..
 }
 func init() {
 	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
+	tplstmtProcessor := xdb.NewStmtDbTypeProcessor()
 
 	xdb.Register(&sqliteResolver{})
-	xdb.RegistTemplate(tpl.NewFixed(Proto, "?", tplMatcher))
+	xdb.RegistTemplate(tpl.NewFixed(Proto, "?", tplMatcher, tplstmtProcessor))
 }

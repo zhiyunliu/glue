@@ -10,7 +10,11 @@ import (
 
 func Test_NewFixed_AnalyzeTPLFromCache(t *testing.T) {
 
-	fixedtemplate := NewFixed("test", "?", NewDefaultTemplateMatcher(expression.DefaultExpressionMatchers...))
+	fixedtemplate := NewFixed("test",
+		"?",
+		NewDefaultTemplateMatcher(expression.DefaultExpressionMatchers...),
+		NewDefaultStmtDbTypeProcessor(),
+	)
 
 	tests := []struct {
 		name       string
@@ -94,7 +98,11 @@ func Test_NewFixed_AnalyzeTPLFromCache(t *testing.T) {
 
 func Test_NewSeq_AnalyzeTPLFromCache(t *testing.T) {
 
-	fixedtemplate := NewSeq("test", ":", NewDefaultTemplateMatcher(expression.DefaultExpressionMatchers...))
+	fixedtemplate := NewSeq("test",
+		":",
+		NewDefaultTemplateMatcher(expression.DefaultExpressionMatchers...),
+		NewDefaultStmtDbTypeProcessor(),
+	)
 
 	tests := []struct {
 		name       string

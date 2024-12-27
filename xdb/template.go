@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/zhiyunliu/golibs/xreflect"
 )
 
 var (
@@ -11,6 +13,9 @@ var (
 	// 新建一个模板匹配器
 	NewTemplateMatcher func(matchers ...ExpressionMatcher) TemplateMatcher
 )
+
+type TagOptions = xreflect.TagOptions
+type StmtDbTypeWrap = func(param any, opt TagOptions) any
 
 // Template 模板上下文
 type SQLTemplate interface {
@@ -20,12 +25,16 @@ type SQLTemplate interface {
 	GetSQLContext(tpl string, input map[string]any, opts ...TemplateOption) (sql string, args []any, err error)
 	//注册表达式匹配解析器
 	RegistExpressionMatcher(matchers ...ExpressionMatcher)
+	//注册参数处理回调
+	RegistStmtDbTypeHandler(handler ...StmtDbTypeHandler)
 	//处理一般表达式
 	HandleExpr(item SqlState, sqlTpl string, param DBParam) (sql string, err error)
 	//获取sql状态
 	GetSqlState(*TemplateOptions) SqlState
 	//sql状态释放
 	ReleaseSqlState(SqlState)
+	//sql参数处理
+	StmtDbTypeWrap(param any, opt TagOptions) any
 }
 
 type ExpressionCache interface {
