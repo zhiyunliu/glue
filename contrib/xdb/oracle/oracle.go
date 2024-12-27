@@ -30,8 +30,9 @@ func (s *oracleResolver) Resolve(connName string, setting config.Config, opts ..
 }
 func init() {
 	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
+	tplstmtProcessor := xdb.NewStmtDbTypeProcessor()
 
 	xdb.Register(&oracleResolver{})
-	xdb.RegistTemplate(tpl.NewSeq(Proto, ":", tplMatcher))
+	xdb.RegistTemplate(tpl.NewSeq(Proto, ":", tplMatcher, tplstmtProcessor))
 
 }

@@ -11,10 +11,11 @@ import (
 
 // MssqlTemplate  模板
 type MssqlTemplate struct {
-	name         string
-	prefix       string
-	matcher      xdb.TemplateMatcher
-	sqlStatePool *sync.Pool
+	name          string
+	prefix        string
+	matcher       xdb.TemplateMatcher
+	stmtProcessor xdb.StmtDbTypeProcessor
+	sqlStatePool  *sync.Pool
 }
 
 type mssqlPlaceHolder struct {
@@ -40,15 +41,16 @@ func (ph *mssqlPlaceHolder) BuildArgVal(argName string, val any) any {
 
 }
 
-func New(name, prefix string, matcher xdb.TemplateMatcher) xdb.SQLTemplate {
+func New(name, prefix string, matcher xdb.TemplateMatcher, stmtProcessor xdb.StmtDbTypeProcessor) xdb.SQLTemplate {
 
 	if matcher == nil {
 		panic(fmt.Errorf("New ,TemplateMatcher Can't be nil"))
 	}
 	template := &MssqlTemplate{
-		name:    name,
-		prefix:  prefix,
-		matcher: matcher,
+		name:          name,
+		prefix:        prefix,
+		matcher:       matcher,
+		stmtProcessor: stmtProcessor,
 	}
 
 	template.sqlStatePool = &sync.Pool{
@@ -89,4 +91,11 @@ func (template *MssqlTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.Sql
 func (template *MssqlTemplate) ReleaseSqlState(state xdb.SqlState) {
 	state.Reset()
 	template.sqlStatePool.Put(state)
+}
+
+func (template *MssqlTemplate) StmtDbTypeWrap(param any, tagOpts xdb.TagOptions) any {
+	return template.stmtProcessor.Process(param, tagOpts)
+}
+func (template *MssqlTemplate) RegistStmtDbTypeHandler(handler ...xdb.StmtDbTypeHandler) {
+	template.stmtProcessor.RegistHandler(handler...)
 }

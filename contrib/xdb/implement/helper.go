@@ -219,7 +219,7 @@ func ResolveMultiRows(proto string, rows *sql.Rows) (datasetRows []xdb.Rows, err
 	}
 }
 
-func ResolveParams(input any) (params xtypes.XMap, err error) {
+func ResolveParams(input any, callback xdb.StmtDbTypeWrap) (params xtypes.XMap, err error) {
 	if input == nil {
 		return xtypes.XMap{}, nil
 	}
@@ -248,12 +248,12 @@ func ResolveParams(input any) (params xtypes.XMap, err error) {
 	case xdb.DbParamConverter:
 		return t.ToDbParam(), nil
 	default:
-		return analyzeParamFields(t)
+		return analyzeParamFields(t, callback)
 	}
 
 }
 
-func analyzeParamFields(input any) (params xtypes.XMap, err error) {
+func analyzeParamFields(input any, callback xdb.StmtDbTypeWrap) (params xtypes.XMap, err error) {
 	params = make(xtypes.XMap)
 	refval := reflect.ValueOf(input)
 	//获取最终的类型值
@@ -269,6 +269,9 @@ func analyzeParamFields(input any) (params xtypes.XMap, err error) {
 
 	for _, f := range fields.ExactName {
 		if val, ok := f.Encoder(refval); ok {
+			if callback != nil {
+				val = callback(val, f.TagOpts)
+			}
 			params[f.Name] = val
 		}
 	}

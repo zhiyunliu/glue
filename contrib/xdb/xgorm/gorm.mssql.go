@@ -15,14 +15,16 @@ func init() {
 
 	tplMatcher := xdb.NewTemplateMatcher(expression.DefaultExpressionMatchers...)
 
+	tplstmtProcessor := xdb.NewStmtDbTypeProcessor()
+
 	resolver := &mssqlResolver{Proto: "grom.mssql"}
 	xdb.Register(resolver)
-	xdb.RegistTemplate(tpl.NewFixed(resolver.Proto, "?", tplMatcher))
+	xdb.RegistTemplate(tpl.NewFixed(resolver.Proto, "?", tplMatcher, tplstmtProcessor))
 	callbackCache[resolver.Proto] = sqlserver.Open
 
 	rresolver := &mssqlResolver{Proto: "gorm.mssql"}
 	xdb.Register(rresolver)
-	xdb.RegistTemplate(tpl.NewFixed(rresolver.Proto, "?", tplMatcher))
+	xdb.RegistTemplate(tpl.NewFixed(rresolver.Proto, "?", tplMatcher, tplstmtProcessor))
 	callbackCache[rresolver.Proto] = sqlserver.Open
 }
 

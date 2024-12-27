@@ -90,7 +90,7 @@ func (db *transWrap) Scalar(ctx context.Context, sqls string, input any, opts ..
 
 func (d *transWrap) Exec(ctx context.Context, sql string, input any, opts ...xdb.TemplateOption) (r xdb.Result, err error) {
 
-	dbParam, err := implement.ResolveParams(input)
+	dbParam, err := implement.ResolveParams(input, d.tpl.StmtDbTypeWrap)
 	if err != nil {
 		return
 	}
@@ -125,7 +125,7 @@ func (db *transWrap) FirstAs(ctx context.Context, sqls string, input any, result
 }
 
 func (db *transWrap) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback, opts ...xdb.TemplateOption) (result any, err error) {
-	dbParam, err := implement.ResolveParams(input)
+	dbParam, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
 		return
 	}
@@ -147,7 +147,7 @@ func (db *transWrap) dbQuery(ctx context.Context, sql string, input any, callbac
 }
 
 func (db *transWrap) dbQueryAs(_ context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback, opts ...xdb.TemplateOption) (err error) {
-	dbParam, err := implement.ResolveParams(input)
+	dbParam, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
 		return
 	}

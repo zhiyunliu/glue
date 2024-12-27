@@ -104,7 +104,7 @@ func (db *xDB) Scalar(ctx context.Context, sqls string, input any, opts ...xdb.T
 // Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xDB) Exec(ctx context.Context, sql string, input any, opts ...xdb.TemplateOption) (r xdb.Result, err error) {
 
-	dbParam, err := implement.ResolveParams(input)
+	dbParam, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
 		return
 	}
@@ -189,7 +189,7 @@ func (db *xDB) Close() error {
 }
 
 func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback, opts ...xdb.TemplateOption) (result any, err error) {
-	dbParams, err := implement.ResolveParams(input)
+	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
 		return
 	}
@@ -218,7 +218,7 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback impl
 }
 
 func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback, opts ...xdb.TemplateOption) (err error) {
-	dbParams, err := implement.ResolveParams(input)
+	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
 		return
 	}

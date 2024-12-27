@@ -9,6 +9,9 @@ import (
 )
 
 func TestIsNil(t *testing.T) {
+
+	type Str string
+
 	tests := []struct {
 		name  string
 		input interface{}
@@ -29,7 +32,8 @@ func TestIsNil(t *testing.T) {
 		{name: "12.", input: sql.Named("a", "a"), want: false},
 		{name: "12.", input: &sql.NamedArg{Name: "a", Value: nil}, want: true},
 
-		{name: "12.", input: nil, want: true},
+		{name: "12.", input: Str("aaa"), want: false},
+		{name: "12.", input: Str(""), want: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

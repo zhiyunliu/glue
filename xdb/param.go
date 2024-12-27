@@ -135,7 +135,14 @@ func DefaultIsNil(input interface{}) bool {
 	}
 
 	rv := reflect.ValueOf(input)
-	if rv.Kind() == reflect.Ptr {
+	switch rv.Kind() {
+	case reflect.String:
+		return rv.Len() <= 0
+	// case reflect.Slice, reflect.Array:
+	// 	return rv.Len() <= 0
+	// case reflect.Map:
+	// 	return rv.Len() <= 0
+	case reflect.Ptr:
 		return rv.IsNil()
 	}
 	return false
