@@ -114,6 +114,9 @@ func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.O
 		httpOpts = append(httpOpts, httputil.WithHeader(k, v))
 	}
 	httpOpts = append(httpOpts, httputil.WithClient(c.client))
+	if o.Handler != nil {
+		httpOpts = append(httpOpts, httputil.WithRespHandler(o.Handler))
+	}
 
 	queryParam := ""
 	if reqPath.RawQuery != "" {
