@@ -13,6 +13,7 @@ import (
 
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
+	grpcproto.UnimplementedGRPCServer
 	engine *alloter.Engine
 }
 
@@ -50,4 +51,20 @@ func (s *processor) Process(ctx context.Context, request *grpcproto.Request) (re
 	response.Headers = resp.Header()
 	return response, nil
 
+}
+
+// StreamProcess 处理流式请求
+func (s *processor) StreamProcess(stream grpcproto.GRPC_StreamProcessServer) error {
+
+	req, err := newStreamRequest(stream)
+	if err != nil {
+		return err
+	}
+	resp := newServerResponse()
+	//发起本地处理
+	err = s.engine.HandleRequest(req, resp)
+	if err != nil {
+		return fmt.Errorf("grpc.StreamProcess:%s,err:%+v", req.GetService(), err.Error())
+	}
+	return nil
 }

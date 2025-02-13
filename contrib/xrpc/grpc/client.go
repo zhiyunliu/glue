@@ -77,6 +77,45 @@ func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xrpc
 	return response, err
 }
 
+// RequestByString 发送Request请求
+func (c *Client) RequestByStream(ctx context.Context, processor xrpc.StreamProcessor, opts ...xrpc.RequestOption) (err error) {
+	//处理可选参数
+	o := &xrpc.Options{
+		Method: http.MethodPost,
+		Header: make(map[string]string),
+	}
+	for _, opt := range opts {
+		opt(o)
+	}
+
+	servicePath := c.reqPath.Path
+	if len(o.Query) > 0 {
+		servicePath = fmt.Sprintf("%s?%s", servicePath, o.Query)
+	}
+	steamClient, err := c.client.StreamProcess(ctx, grpc.WaitForReady(o.WaitForReady))
+	if err != nil {
+		return err
+	}
+
+	//发送服务分发数据信息
+	err = steamClient.Send(&grpcproto.Request{
+		Method:  o.Method,
+		Service: servicePath,
+		Header:  o.Header,
+	})
+	if err != nil {
+		return err
+	}
+	err = processor(&grpcClientStreamRequest{
+		servicePath:  servicePath,
+		header:       o.Header,
+		method:       o.Method,
+		streamClient: steamClient,
+	})
+
+	return err
+}
+
 // Close 关闭RPC客户端连接
 func (c *Client) Close() {
 	if c.conn != nil {

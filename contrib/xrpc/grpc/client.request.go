@@ -50,39 +50,11 @@ func (r *Request) Swap(ctx context.Context, service string, opts ...xrpc.Request
 // RequestByCtx RPC请求，可通过context撤销请求
 // service=grpc://servername/path
 func (r *Request) Request(ctx sctx.Context, service string, input interface{}, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
-
-	pathVal, err := url.Parse(service)
+	client, err := r.getClient(service)
 	if err != nil {
-		err = fmt.Errorf("grpc.Request url.Parse=%s,Error:%w", service, err)
 		return
 	}
 
-	//todo:当前是通过url 进行client 构建，是否考虑只通过服务来构建客户端？
-	key := fmt.Sprintf("%s:%s", r.clientConfig.Name, service)
-	tmpClient := r.requests.Upsert(key, pathVal, func(exist bool, valueInMap interface{}, newValue interface{}) interface{} {
-		if exist {
-			return valueInMap
-		}
-
-		var registrar registry.Registrar
-		var err error
-		_, _, ok := xrpc.IsIpPortAddr(pathVal.Host)
-		if !ok {
-			registrar, err = registry.GetRegistrar(global.Config)
-			if err != nil {
-				panic(err)
-			}
-		}
-
-		pathVal = newValue.(*url.URL)
-		client, err := NewClient(registrar, r.clientConfig, pathVal)
-		if err != nil {
-			panic(err)
-		}
-		return client
-	})
-
-	client := tmpClient.(*Client)
 	nopts := make([]xrpc.RequestOption, 0, len(opts)+2)
 	nopts = append(nopts, opts...)
 	nopts = append(nopts, xrpc.WithSourceName())
@@ -108,6 +80,29 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	return client.RequestByString(ctx, bodyBytes, nopts...)
 }
 
+// RequestByCtx RPC请求，可通过context撤销请求
+// service=grpc://servername/path
+func (r *Request) StreamRequest(ctx sctx.Context, service string, processor xrpc.StreamProcessor, opts ...xrpc.RequestOption) (err error) {
+	if processor == nil {
+		return fmt.Errorf("grpc.Request StreamRequest processor is nil")
+	}
+
+	client, err := r.getClient(service)
+	if err != nil {
+		return
+	}
+	nopts := make([]xrpc.RequestOption, 0, len(opts)+2)
+	nopts = append(nopts, opts...)
+	nopts = append(nopts, xrpc.WithSourceName())
+
+	if logger, ok := log.FromContext(ctx); ok {
+		nopts = append(nopts, xrpc.WithXRequestID(logger.SessionID()))
+	}
+
+	err = client.RequestByStream(ctx, processor, nopts...)
+	return
+}
+
 // Close 关闭RPC连接
 func (r *Request) Close() error {
 	r.requests.IterCb(func(key string, v interface{}) {
@@ -116,4 +111,39 @@ func (r *Request) Close() error {
 	})
 	r.requests.Clear()
 	return nil
+}
+
+func (r *Request) getClient(service string) (client *Client, err error) {
+	pathVal, err := url.Parse(service)
+	if err != nil {
+		err = fmt.Errorf("grpc.Request url.Parse=%s,Error:%w", service, err)
+		return
+	}
+
+	//todo:当前是通过url 进行client 构建，是否考虑只通过服务来构建客户端？
+	key := fmt.Sprintf("%s:%s", r.clientConfig.Name, service)
+	cientObj := r.requests.Upsert(key, pathVal, func(exist bool, valueInMap interface{}, newValue interface{}) interface{} {
+		if exist {
+			return valueInMap
+		}
+
+		var registrar registry.Registrar
+		var err error
+		_, _, ok := xrpc.IsIpPortAddr(pathVal.Host)
+		if !ok {
+			registrar, err = registry.GetRegistrar(global.Config)
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		pathVal = newValue.(*url.URL)
+		tclient, err := NewClient(registrar, r.clientConfig, pathVal)
+		if err != nil {
+			panic(err)
+		}
+		return tclient
+	})
+
+	return cientObj.(*Client), nil
 }

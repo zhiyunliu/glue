@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"bytes"
-	"context"
 	sctx "context"
 	"encoding/json"
 	"io"
@@ -29,7 +28,7 @@ type serverRequest struct {
 }
 
 // NewRequest 构建任务请求
-func newServerRequest(ctx context.Context, rpcReq *grpcproto.Request) (r *serverRequest, err error) {
+func newServerRequest(ctx sctx.Context, rpcReq *grpcproto.Request) (r *serverRequest, err error) {
 
 	r = &serverRequest{
 		rpcReq: rpcReq,

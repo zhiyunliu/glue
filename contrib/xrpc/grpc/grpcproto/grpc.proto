@@ -18,7 +18,10 @@ message Response{
 }
 
 
-service GRPC{
+// 定义服务
+service GRPC {
+    // 定义单向流方法
     rpc Process(Request)returns(Response){}
+    // 定义双向流方法
+    rpc StreamProcess(stream Request) returns (stream Response);
 }
-
