@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -12,11 +13,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/xhttp/http/balancer"
 	"github.com/zhiyunliu/glue/middleware/tracing"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/selector"
 	"github.com/zhiyunliu/glue/xhttp"
+	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/httputil"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -70,26 +73,24 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 }
 
 // RequestByString 发送Request请求
-func (c *Client) RequestByString(ctx context.Context, reqPath *url.URL, input []byte, opts ...xhttp.RequestOption) (res xhttp.Body, err error) {
+func (c *Client) RequestByString(ctx context.Context, reqPath *url.URL, input any, opt *xhttp.Options) (res xhttp.Body, err error) {
 	//处理可选参数
-	o := &xhttp.Options{
-		Method: http.MethodGet,
-		Header: make(map[string]string),
+
+	var bodyBytes []byte
+
+	switch t := input.(type) {
+	case []byte:
+		bodyBytes = t
+	case string:
+		bodyBytes = bytesconv.StringToBytes(t)
+	case *string:
+		bodyBytes = bytesconv.StringToBytes(*t)
+	default:
+		bodyBytes, _ = json.Marshal(t)
+		xhttp.WithContentType(constants.ContentTypeApplicationJSON)(opt)
 	}
-	for _, opt := range opts {
-		opt(o)
-	}
-	if c.setting.Trace {
-		ctx, span := c.tracer.Start(ctx, reqPath.Path, o.Header)
-		defer func() {
-			if err != nil {
-				c.tracer.End(ctx, span, err)
-				return
-			}
-			c.tracer.End(ctx, span, res.GetStatus())
-		}()
-	}
-	response, err := c.clientRequest(ctx, reqPath, o, input)
+
+	response, err := c.clientRequest(ctx, reqPath, opt, bodyBytes)
 	if err != nil {
 		return newBodyByError(err), err
 	}

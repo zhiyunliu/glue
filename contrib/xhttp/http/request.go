@@ -2,8 +2,8 @@ package http
 
 import (
 	sctx "context"
-	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -11,9 +11,9 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/xhttp"
-	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
 // Request RPC Request
@@ -58,27 +58,37 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	}
 
 	client := r.getClient(pathVal)
-	nopts := make([]xhttp.RequestOption, 0, len(opts)+1)
+	nopts := make([]xhttp.RequestOption, 0, len(opts)+2)
 	nopts = append(nopts, opts...)
-	if reqidVal := ctx.Value(constants.HeaderRequestId); reqidVal != nil {
-		nopts = append(nopts, xhttp.WithXRequestID(fmt.Sprintf("%+v", reqidVal)))
+	nopts = append(nopts, xhttp.WithSourceName())
+
+	if logger, ok := log.FromContext(ctx); ok {
+		nopts = append(nopts, xhttp.WithXRequestID(logger.SessionID()))
 	}
 
-	var bodyBytes []byte
-
-	switch t := input.(type) {
-	case []byte:
-		bodyBytes = t
-	case string:
-		bodyBytes = bytesconv.StringToBytes(t)
-	case *string:
-		bodyBytes = bytesconv.StringToBytes(*t)
-	default:
-		bodyBytes, _ = json.Marshal(t)
-		nopts = append(nopts, xhttp.WithContentType(constants.ContentTypeApplicationJSON))
+	opt := &xhttp.Options{
+		Method: http.MethodGet,
+		Header: make(map[string]string),
+	}
+	for i := range nopts {
+		nopts[i](opt)
+	}
+	if client.setting.Trace {
+		ctx, span := client.tracer.Start(ctx, pathVal.Path, opt.Header)
+		defer func() {
+			if err != nil {
+				client.tracer.End(ctx, span, err)
+				return
+			}
+			status := int32(http.StatusOK)
+			if res != nil {
+				status = res.GetStatus()
+			}
+			client.tracer.End(ctx, span, status)
+		}()
 	}
 
-	return client.RequestByString(ctx, pathVal, bodyBytes, nopts...)
+	return client.RequestByString(ctx, pathVal, input, opt)
 }
 
 // Close 关闭RPC连接

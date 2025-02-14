@@ -2,19 +2,17 @@ package grpc
 
 import (
 	sctx "context"
-	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 
-	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/xrpc"
-	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
 // Request RPC Request
@@ -63,21 +61,41 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 		nopts = append(nopts, xrpc.WithXRequestID(logger.SessionID()))
 	}
 
-	var bodyBytes []byte
-
-	switch t := input.(type) {
-	case []byte:
-		bodyBytes = t
-	case string:
-		bodyBytes = bytesconv.StringToBytes(t)
-	case *string:
-		bodyBytes = bytesconv.StringToBytes(*t)
-	default:
-		bodyBytes, _ = json.Marshal(t)
-		nopts = append(nopts, xrpc.WithContentType(constants.ContentTypeApplicationJSON))
+	//处理可选参数
+	opt := &xrpc.Options{
+		Method: http.MethodPost,
+		Header: make(map[string]string),
+	}
+	for i := range nopts {
+		nopts[i](opt)
 	}
 
-	return client.RequestByString(ctx, bodyBytes, nopts...)
+	if client.setting.Trace {
+		ctx, span := client.tracer.Start(ctx, client.reqPath.Path, opt.Header)
+		defer func() {
+			if err != nil {
+				client.tracer.End(ctx, span, err)
+				return
+			}
+			status := int32(http.StatusOK)
+			if res != nil {
+				status = res.GetStatus()
+			}
+			client.tracer.End(ctx, span, status)
+		}()
+	}
+
+	if !opt.UseStream {
+		return client.RequestByString(ctx, input, opt)
+	}
+
+	streamProcessor, err := buildDefaultStreamProcess(input)
+	if err != nil {
+		return xrpc.NewEmptyBody(), err
+	}
+
+	err = client.RequestByStream(ctx, streamProcessor, opt)
+	return xrpc.NewEmptyBody(), err
 }
 
 // RequestByCtx RPC请求，可通过context撤销请求
@@ -99,7 +117,27 @@ func (r *Request) StreamRequest(ctx sctx.Context, service string, processor xrpc
 		nopts = append(nopts, xrpc.WithXRequestID(logger.SessionID()))
 	}
 
-	err = client.RequestByStream(ctx, processor, nopts...)
+	//处理可选参数
+	opt := &xrpc.Options{
+		Method: http.MethodPost,
+		Header: make(map[string]string),
+	}
+	for i := range nopts {
+		nopts[i](opt)
+	}
+
+	if client.setting.Trace {
+		ctx, span := client.tracer.Start(ctx, client.reqPath.Path, opt.Header)
+		defer func() {
+			if err != nil {
+				client.tracer.End(ctx, span, err)
+				return
+			}
+			client.tracer.End(ctx, span, http.StatusOK)
+		}()
+	}
+
+	err = client.RequestByStream(ctx, processor, opt)
 	return
 }
 

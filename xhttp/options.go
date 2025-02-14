@@ -2,6 +2,7 @@ package xhttp
 
 import (
 	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/golibs/httputil"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
@@ -70,5 +71,15 @@ func WithContentTypeUrlencoded() RequestOption {
 func WithRespHandler(handler RespHandler) RequestOption {
 	return func(o *Options) {
 		o.Handler = handler
+	}
+}
+
+// WithSourceName 设置来源服务名
+func WithSourceName() RequestOption {
+	return func(o *Options) {
+		if o.Header == nil {
+			o.Header = make(map[string]string)
+		}
+		o.Header[constants.HeaderSourceName] = global.AppName
 	}
 }

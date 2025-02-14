@@ -13,6 +13,7 @@ type Options struct {
 	Method       string      // 请求方法
 	Query        string      // 请求参数
 	WaitForReady bool        // 是否等待服务端响应
+	UseStream    bool        // 是否使用流传输
 }
 
 // WithQuery 设置请求参数
@@ -72,5 +73,12 @@ func WithSourceName() RequestOption {
 			o.Header = make(map[string]string)
 		}
 		o.Header[constants.HeaderSourceName] = global.AppName
+	}
+}
+
+// WithUseStream 设置使用流传输
+func WithUseStream() RequestOption {
+	return func(o *Options) {
+		o.UseStream = true
 	}
 }

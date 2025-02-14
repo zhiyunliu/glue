@@ -2,16 +2,18 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/balancer"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/glue/middleware/tracing"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/xrpc"
+	"github.com/zhiyunliu/golibs/bytesconv"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -50,27 +52,22 @@ func NewClient(registrar registry.Registrar, setting *clientConfig, reqPath *url
 }
 
 // RequestByString 发送Request请求
-func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
-	//处理可选参数
-	o := &xrpc.Options{
-		Method: http.MethodPost,
-		Header: make(map[string]string),
-	}
-	for _, opt := range opts {
-		opt(o)
-	}
-	if c.setting.Trace {
-		ctx, span := c.tracer.Start(ctx, c.reqPath.Path, o.Header)
-		defer func() {
-			if err != nil {
-				c.tracer.End(ctx, span, err)
-				return
-			}
-			c.tracer.End(ctx, span, res.GetStatus())
-		}()
+func (c *Client) RequestByString(ctx context.Context, input any, opt *xrpc.Options) (res xrpc.Body, err error) {
+
+	var bodyBytes []byte
+	switch t := input.(type) {
+	case []byte:
+		bodyBytes = t
+	case string:
+		bodyBytes = bytesconv.StringToBytes(t)
+	case *string:
+		bodyBytes = bytesconv.StringToBytes(*t)
+	default:
+		bodyBytes, _ = json.Marshal(input)
+		xrpc.WithContentType(constants.ContentTypeApplicationJSON)(opt)
 	}
 
-	response, err := c.clientRequest(ctx, o, input)
+	response, err := c.clientRequest(ctx, opt, bodyBytes)
 	if err != nil {
 		return newBodyByError(err), err
 	}
@@ -78,38 +75,30 @@ func (c *Client) RequestByString(ctx context.Context, input []byte, opts ...xrpc
 }
 
 // RequestByString 发送Request请求
-func (c *Client) RequestByStream(ctx context.Context, processor xrpc.StreamProcessor, opts ...xrpc.RequestOption) (err error) {
-	//处理可选参数
-	o := &xrpc.Options{
-		Method: http.MethodPost,
-		Header: make(map[string]string),
-	}
-	for _, opt := range opts {
-		opt(o)
-	}
+func (c *Client) RequestByStream(ctx context.Context, processor xrpc.StreamProcessor, opts *xrpc.Options) (err error) {
 
 	servicePath := c.reqPath.Path
-	if len(o.Query) > 0 {
-		servicePath = fmt.Sprintf("%s?%s", servicePath, o.Query)
+	if len(opts.Query) > 0 {
+		servicePath = fmt.Sprintf("%s?%s", servicePath, opts.Query)
 	}
-	steamClient, err := c.client.StreamProcess(ctx, grpc.WaitForReady(o.WaitForReady))
+	steamClient, err := c.client.StreamProcess(ctx, grpc.WaitForReady(opts.WaitForReady))
 	if err != nil {
 		return err
 	}
 
 	//发送服务分发数据信息
 	err = steamClient.Send(&grpcproto.Request{
-		Method:  o.Method,
+		Method:  opts.Method,
 		Service: servicePath,
-		Header:  o.Header,
+		Header:  opts.Header,
 	})
 	if err != nil {
 		return err
 	}
 	err = processor(&grpcClientStreamRequest{
 		servicePath:  servicePath,
-		header:       o.Header,
-		method:       o.Method,
+		header:       opts.Header,
+		method:       opts.Method,
 		streamClient: steamClient,
 	})
 
@@ -132,14 +121,15 @@ func (c *Client) Close() {
 func (c *Client) connect() (err error) {
 	c.balancerBuilder = balancer.NewRegistrarBuilder(c.ctx, c.registrar, c.reqPath)
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Duration(c.setting.ConnTimeout)*time.Second)
-	c.conn, err = grpc.DialContext(ctx,
+	c.conn, err = grpc.NewClient(
 		c.reqPath.String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultServiceConfig(string(c.setting.ServerConfig)),
-		//grpc.WithBalancerName(c.setting.Balancer),
 		grpc.WithResolvers(c.balancerBuilder),
 		grpc.WithDefaultCallOptions(grpc.UseCompressor(Snappy)),
+		grpc.WithConnectParams(grpc.ConnectParams{
+			MinConnectTimeout: time.Duration(c.setting.ConnTimeout) * time.Second,
+		}),
 	)
 
 	if err != nil {
@@ -149,7 +139,7 @@ func (c *Client) connect() (err error) {
 	return nil
 }
 
-func (c *Client) clientRequest(ctx context.Context, o *xrpc.Options, input []byte) (response *grpcproto.Response, err error) {
+func (c *Client) clientRequest(ctx context.Context, o *xrpc.Options, bodyBytes []byte) (response *grpcproto.Response, err error) {
 	servicePath := c.reqPath.Path
 	if len(o.Query) > 0 {
 		servicePath = fmt.Sprintf("%s?%s", servicePath, o.Query)
@@ -159,7 +149,7 @@ func (c *Client) clientRequest(ctx context.Context, o *xrpc.Options, input []byt
 			Method:  o.Method, //借用http的method
 			Service: servicePath,
 			Header:  o.Header,
-			Body:    input,
+			Body:    bodyBytes,
 		},
 		grpc.WaitForReady(o.WaitForReady))
 
