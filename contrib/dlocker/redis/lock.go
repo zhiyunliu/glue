@@ -15,19 +15,25 @@ import (
 )
 
 const (
-	lockCommand = `if redis.call("GET", KEYS[1]) == ARGV[1] then
+	lockCommand = `
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+	if ARGV[3] == "false" then
+		return "NOK"
+	end 
     redis.call("SET", KEYS[1], ARGV[1], "PX", ARGV[2])
     return "OK"
 else
     return redis.call("SET", KEYS[1], ARGV[1], "NX", "PX", ARGV[2])
 end`
-	delCommand = `if redis.call("GET", KEYS[1]) == ARGV[1] then
+	delCommand = `
+if redis.call("GET", KEYS[1]) == ARGV[1] then
     return redis.call("DEL", KEYS[1])
 else
     return 0
 end`
 
-	leaseCommand = `if redis.call("GET", KEYS[1]) == ARGV[1] then
+	leaseCommand = `
+if redis.call("GET", KEYS[1]) == ARGV[1] then
     return redis.call("PEXPIRE", KEYS[1], ARGV[2])
 else
     return 0
@@ -79,9 +85,15 @@ func (rl *Lock) Acquire(ctx context.Context, expire int) (bool, error) {
 	}
 	// 获取过期时间
 	// 默认锁过期时间为500ms，防止死锁
-	resp, err := rl.client.Eval(ctx, lockCommand, []string{rl.key}, []string{
-		rl.rndVal, strconv.Itoa(expire*1000 + tolerance), //换算成毫秒
-	})
+	resp, err := rl.client.Eval(ctx,
+		lockCommand,
+		[]string{rl.key},
+		[]string{
+			rl.rndVal,
+			strconv.Itoa(expire*1000 + tolerance), //换算成毫秒
+			strconv.FormatBool(rl.opts.Reentrant),
+		},
+	)
 	if err == goredis.Nil {
 		return false, nil
 	} else if err != nil {
@@ -93,7 +105,7 @@ func (rl *Lock) Acquire(ctx context.Context, expire int) (bool, error) {
 	reply, ok := resp.(string)
 	if ok && strings.EqualFold(reply, "OK") {
 		if rl.opts.AutoRenewal {
-			rl.autoRenewalCallback(expire)
+			_ = rl.autoRenewalCallback(expire)
 		}
 		return true, nil
 	}
@@ -173,7 +185,7 @@ func (rl *Lock) autoRenewalCallback(expire int) error {
 		for {
 			select {
 			case <-ticker.C:
-				rl.Renewal(context.Background(), expire)
+				_ = rl.Renewal(context.Background(), expire)
 			case <-rl.releaseChan:
 				rl.state.Store(false)
 				return nil
