@@ -47,7 +47,7 @@ func (r *Request) Swap(ctx context.Context, service string, opts ...xrpc.Request
 
 // RequestByCtx RPC请求，可通过context撤销请求
 // service=grpc://servername/path
-func (r *Request) Request(ctx sctx.Context, service string, input interface{}, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
+func (r *Request) Request(ctx sctx.Context, service string, input any, opts ...xrpc.RequestOption) (res xrpc.Body, err error) {
 	client, err := r.getClient(service)
 	if err != nil {
 		return
@@ -85,60 +85,10 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 		}()
 	}
 
-	if !opt.UseStream {
+	if opt.StreamProcessor == nil {
 		return client.RequestByString(ctx, input, opt)
 	}
-
-	streamProcessor, err := buildDefaultStreamProcess(input)
-	if err != nil {
-		return xrpc.NewEmptyBody(), err
-	}
-
-	err = client.RequestByStream(ctx, streamProcessor, opt)
-	return xrpc.NewEmptyBody(), err
-}
-
-// RequestByCtx RPC请求，可通过context撤销请求
-// service=grpc://servername/path
-func (r *Request) StreamRequest(ctx sctx.Context, service string, processor xrpc.StreamProcessor, opts ...xrpc.RequestOption) (err error) {
-	if processor == nil {
-		return fmt.Errorf("grpc.Request StreamRequest processor is nil")
-	}
-
-	client, err := r.getClient(service)
-	if err != nil {
-		return
-	}
-	nopts := make([]xrpc.RequestOption, 0, len(opts)+2)
-	nopts = append(nopts, opts...)
-	nopts = append(nopts, xrpc.WithSourceName())
-
-	if logger, ok := log.FromContext(ctx); ok {
-		nopts = append(nopts, xrpc.WithXRequestID(logger.SessionID()))
-	}
-
-	//处理可选参数
-	opt := &xrpc.Options{
-		Method: http.MethodPost,
-		Header: make(map[string]string),
-	}
-	for i := range nopts {
-		nopts[i](opt)
-	}
-
-	if client.setting.Trace {
-		ctx, span := client.tracer.Start(ctx, client.reqPath.Path, opt.Header)
-		defer func() {
-			if err != nil {
-				client.tracer.End(ctx, span, err)
-				return
-			}
-			client.tracer.End(ctx, span, http.StatusOK)
-		}()
-	}
-
-	err = client.RequestByStream(ctx, processor, opt)
-	return
+	return client.RequestByStream(ctx, input, opt)
 }
 
 // Close 关闭RPC连接

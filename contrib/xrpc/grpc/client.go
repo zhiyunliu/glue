@@ -52,7 +52,7 @@ func NewClient(registrar registry.Registrar, setting *clientConfig, reqPath *url
 }
 
 // RequestByString 发送Request请求
-func (c *Client) RequestByString(ctx context.Context, input any, opt *xrpc.Options) (res xrpc.Body, err error) {
+func (c *Client) RequestByString(ctx context.Context, input any, opts *xrpc.Options) (res xrpc.Body, err error) {
 
 	var bodyBytes []byte
 	switch t := input.(type) {
@@ -64,45 +64,14 @@ func (c *Client) RequestByString(ctx context.Context, input any, opt *xrpc.Optio
 		bodyBytes = bytesconv.StringToBytes(*t)
 	default:
 		bodyBytes, _ = json.Marshal(input)
-		xrpc.WithContentType(constants.ContentTypeApplicationJSON)(opt)
+		xrpc.WithContentType(constants.ContentTypeApplicationJSON)(opts)
 	}
 
-	response, err := c.clientRequest(ctx, opt, bodyBytes)
+	response, err := c.clientRequest(ctx, opts, bodyBytes)
 	if err != nil {
 		return newBodyByError(err), err
 	}
 	return response, err
-}
-
-// RequestByString 发送Request请求
-func (c *Client) RequestByStream(ctx context.Context, processor xrpc.StreamProcessor, opts *xrpc.Options) (err error) {
-
-	servicePath := c.reqPath.Path
-	if len(opts.Query) > 0 {
-		servicePath = fmt.Sprintf("%s?%s", servicePath, opts.Query)
-	}
-	steamClient, err := c.client.StreamProcess(ctx, grpc.WaitForReady(opts.WaitForReady))
-	if err != nil {
-		return err
-	}
-
-	//发送服务分发数据信息
-	err = steamClient.Send(&grpcproto.Request{
-		Method:  opts.Method,
-		Service: servicePath,
-		Header:  opts.Header,
-	})
-	if err != nil {
-		return err
-	}
-	err = processor(&grpcClientStreamRequest{
-		servicePath:  servicePath,
-		header:       opts.Header,
-		method:       opts.Method,
-		streamClient: steamClient,
-	})
-
-	return err
 }
 
 // Close 关闭RPC客户端连接
@@ -139,11 +108,25 @@ func (c *Client) connect() (err error) {
 	return nil
 }
 
+func (c *Client) buildGrpcOpts(opts *xrpc.Options) []grpc.CallOption {
+	grpcOpts := []grpc.CallOption{
+		grpc.WaitForReady(opts.WaitForReady),
+	}
+	if opts.MaxCallRecvMsgSize > 0 {
+		grpcOpts = append(grpcOpts, grpc.MaxCallRecvMsgSize(opts.MaxCallRecvMsgSize))
+	}
+	if opts.MaxCallSendMsgSize > 0 {
+		grpcOpts = append(grpcOpts, grpc.MaxCallSendMsgSize(opts.MaxCallSendMsgSize))
+	}
+	return grpcOpts
+}
+
 func (c *Client) clientRequest(ctx context.Context, o *xrpc.Options, bodyBytes []byte) (response *grpcproto.Response, err error) {
 	servicePath := c.reqPath.Path
 	if len(o.Query) > 0 {
 		servicePath = fmt.Sprintf("%s?%s", servicePath, o.Query)
 	}
+
 	return c.client.Process(ctx,
 		&grpcproto.Request{
 			Method:  o.Method, //借用http的method
@@ -151,6 +134,33 @@ func (c *Client) clientRequest(ctx context.Context, o *xrpc.Options, bodyBytes [
 			Header:  o.Header,
 			Body:    bodyBytes,
 		},
-		grpc.WaitForReady(o.WaitForReady))
+		c.buildGrpcOpts(o)...)
 
+}
+
+// RequestByString 发送Request请求
+func (c *Client) RequestByStream(ctx context.Context, input any, opts *xrpc.Options) (body xrpc.Body, err error) {
+
+	switch processor := opts.StreamProcessor.(type) {
+	//双向流
+	case xrpc.BidirectionalStreamProcessor:
+		return xrpc.NewEmptyBody(), c.BidirectionalStreamProcessor(ctx, processor, opts)
+	case func(xrpc.BidirectionalStreamClient) error:
+		return xrpc.NewEmptyBody(), c.BidirectionalStreamProcessor(ctx, processor, opts)
+
+	//客户端流
+	case func(xrpc.ClientStreamClient) (err error):
+		return c.ClientStreamProcessor(ctx, processor, opts)
+	case xrpc.ClientStreamProcessor:
+		return c.ClientStreamProcessor(ctx, processor, opts)
+
+	//服务端流
+	case func(xrpc.ServerStreamClient) (err error):
+		return xrpc.NewEmptyBody(), c.ServerStreamProcessor(ctx, processor, input, opts)
+	case xrpc.ServerStreamProcessor:
+		return xrpc.NewEmptyBody(), c.ServerStreamProcessor(ctx, processor, input, opts)
+	default:
+
+	}
+	return xrpc.NewEmptyBody(), fmt.Errorf("未知的xrpc.StreamProcessor类型")
 }

@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GRPC_Process_FullMethodName       = "/grpcproto.GRPC/Process"
-	GRPC_StreamProcess_FullMethodName = "/grpcproto.GRPC/StreamProcess"
+	GRPC_Process_FullMethodName                    = "/grpcproto.GRPC/Process"
+	GRPC_BidirectionalStreamProcess_FullMethodName = "/grpcproto.GRPC/BidirectionalStreamProcess"
+	GRPC_ClientStreamProcess_FullMethodName        = "/grpcproto.GRPC/ClientStreamProcess"
+	GRPC_ServerStreamProcess_FullMethodName        = "/grpcproto.GRPC/ServerStreamProcess"
 )
 
 // GRPCClient is the client API for GRPC service.
@@ -29,9 +31,14 @@ const (
 //
 // 定义服务
 type GRPCClient interface {
+	// 定义单次请求方法
 	Process(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
-	// 定义双向流方法
-	StreamProcess(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[Request, Response], error)
+	// 双向流传输方法
+	BidirectionalStreamProcess(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[Request, Response], error)
+	// 客户端流传输方法
+	ClientStreamProcess(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Request, Response], error)
+	// 服务端流传输方法
+	ServerStreamProcess(ctx context.Context, in *Request, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Response], error)
 }
 
 type gRPCClient struct {
@@ -52,9 +59,9 @@ func (c *gRPCClient) Process(ctx context.Context, in *Request, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *gRPCClient) StreamProcess(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[Request, Response], error) {
+func (c *gRPCClient) BidirectionalStreamProcess(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[Request, Response], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &GRPC_ServiceDesc.Streams[0], GRPC_StreamProcess_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &GRPC_ServiceDesc.Streams[0], GRPC_BidirectionalStreamProcess_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +70,39 @@ func (c *gRPCClient) StreamProcess(ctx context.Context, opts ...grpc.CallOption)
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type GRPC_StreamProcessClient = grpc.BidiStreamingClient[Request, Response]
+type GRPC_BidirectionalStreamProcessClient = grpc.BidiStreamingClient[Request, Response]
+
+func (c *gRPCClient) ClientStreamProcess(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Request, Response], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GRPC_ServiceDesc.Streams[1], GRPC_ClientStreamProcess_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[Request, Response]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GRPC_ClientStreamProcessClient = grpc.ClientStreamingClient[Request, Response]
+
+func (c *gRPCClient) ServerStreamProcess(ctx context.Context, in *Request, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Response], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &GRPC_ServiceDesc.Streams[2], GRPC_ServerStreamProcess_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[Request, Response]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GRPC_ServerStreamProcessClient = grpc.ServerStreamingClient[Response]
 
 // GRPCServer is the server API for GRPC service.
 // All implementations must embed UnimplementedGRPCServer
@@ -71,9 +110,14 @@ type GRPC_StreamProcessClient = grpc.BidiStreamingClient[Request, Response]
 //
 // 定义服务
 type GRPCServer interface {
+	// 定义单次请求方法
 	Process(context.Context, *Request) (*Response, error)
-	// 定义双向流方法
-	StreamProcess(grpc.BidiStreamingServer[Request, Response]) error
+	// 双向流传输方法
+	BidirectionalStreamProcess(grpc.BidiStreamingServer[Request, Response]) error
+	// 客户端流传输方法
+	ClientStreamProcess(grpc.ClientStreamingServer[Request, Response]) error
+	// 服务端流传输方法
+	ServerStreamProcess(*Request, grpc.ServerStreamingServer[Response]) error
 	mustEmbedUnimplementedGRPCServer()
 }
 
@@ -87,8 +131,14 @@ type UnimplementedGRPCServer struct{}
 func (UnimplementedGRPCServer) Process(context.Context, *Request) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Process not implemented")
 }
-func (UnimplementedGRPCServer) StreamProcess(context.Context,grpc.BidiStreamingServer[Request, Response]) error {
-	return status.Errorf(codes.Unimplemented, "method StreamProcess not implemented")
+func (UnimplementedGRPCServer) BidirectionalStreamProcess(grpc.BidiStreamingServer[Request, Response]) error {
+	return status.Errorf(codes.Unimplemented, "method BidirectionalStreamProcess not implemented")
+}
+func (UnimplementedGRPCServer) ClientStreamProcess(grpc.ClientStreamingServer[Request, Response]) error {
+	return status.Errorf(codes.Unimplemented, "method ClientStreamProcess not implemented")
+}
+func (UnimplementedGRPCServer) ServerStreamProcess(*Request, grpc.ServerStreamingServer[Response]) error {
+	return status.Errorf(codes.Unimplemented, "method ServerStreamProcess not implemented")
 }
 func (UnimplementedGRPCServer) mustEmbedUnimplementedGRPCServer() {}
 func (UnimplementedGRPCServer) testEmbeddedByValue()              {}
@@ -129,12 +179,30 @@ func _GRPC_Process_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GRPC_StreamProcess_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(GRPCServer).StreamProcess(&grpc.GenericServerStream[Request, Response]{ServerStream: stream})
+func _GRPC_BidirectionalStreamProcess_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GRPCServer).BidirectionalStreamProcess(&grpc.GenericServerStream[Request, Response]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type GRPC_StreamProcessServer = grpc.BidiStreamingServer[Request, Response]
+type GRPC_BidirectionalStreamProcessServer = grpc.BidiStreamingServer[Request, Response]
+
+func _GRPC_ClientStreamProcess_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GRPCServer).ClientStreamProcess(&grpc.GenericServerStream[Request, Response]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GRPC_ClientStreamProcessServer = grpc.ClientStreamingServer[Request, Response]
+
+func _GRPC_ServerStreamProcess_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Request)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GRPCServer).ServerStreamProcess(m, &grpc.GenericServerStream[Request, Response]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type GRPC_ServerStreamProcessServer = grpc.ServerStreamingServer[Response]
 
 // GRPC_ServiceDesc is the grpc.ServiceDesc for GRPC service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -150,10 +218,20 @@ var GRPC_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "StreamProcess",
-			Handler:       _GRPC_StreamProcess_Handler,
+			StreamName:    "BidirectionalStreamProcess",
+			Handler:       _GRPC_BidirectionalStreamProcess_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "ClientStreamProcess",
+			Handler:       _GRPC_ClientStreamProcess_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "ServerStreamProcess",
+			Handler:       _GRPC_ServerStreamProcess_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "grpc.proto",

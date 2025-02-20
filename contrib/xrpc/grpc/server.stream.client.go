@@ -2,34 +2,32 @@ package grpc
 
 import (
 	sctx "context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 
 	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
-	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/xrpc"
 	"google.golang.org/grpc/peer"
 )
 
-var _ alloter.IRequest = (*streamRequest)(nil)
-var _ xrpc.StreamRequest = (*streamRequest)(nil)
+var _ alloter.IRequest = (*clientStreamRequest)(nil)
+var _ xrpc.ClientStreamRequest = (*clientStreamRequest)(nil)
 
 // Request 处理任务请求
-type streamRequest struct {
+type clientStreamRequest struct {
 	ctx      sctx.Context
 	firstReq *grpcproto.Request
 	url      *url.URL
 	method   string
 	params   map[string]string
 	header   map[string]string
-	stream   grpcproto.GRPC_StreamProcessServer
+	stream   grpcproto.GRPC_ClientStreamProcessServer
 }
 
 // newStreamRequest 构建任务请求
-func newStreamRequest(stream grpcproto.GRPC_StreamProcessServer) (r *streamRequest, err error) {
+func newClientStreamRequest(stream grpcproto.GRPC_ClientStreamProcessServer) (r *clientStreamRequest, err error) {
 
 	// 接收第一个请求(服务分发数据信息)
 	firstReq, err := stream.Recv()
@@ -38,7 +36,7 @@ func newStreamRequest(stream grpcproto.GRPC_StreamProcessServer) (r *streamReque
 		return
 	}
 
-	r = &streamRequest{
+	r = &clientStreamRequest{
 		firstReq: firstReq,
 		stream:   stream,
 		method:   firstReq.Method,
@@ -49,22 +47,21 @@ func newStreamRequest(stream grpcproto.GRPC_StreamProcessServer) (r *streamReque
 		r.header = map[string]string{}
 	}
 	r.ctx = stream.Context()
-
 	return r, nil
 }
 
 // GetName 获取任务名称
-func (m *streamRequest) GetName() string {
+func (m *clientStreamRequest) GetName() string {
 	return m.firstReq.Service
 }
 
 // GetService 服务名()
-func (m *streamRequest) GetService() string {
+func (m *clientStreamRequest) GetService() string {
 	return m.firstReq.Service
 }
 
 // GetService 服务名()
-func (m *streamRequest) GetURL() *url.URL {
+func (m *clientStreamRequest) GetURL() *url.URL {
 	if m.url == nil {
 		m.url, _ = url.Parse(m.firstReq.Service)
 	}
@@ -72,71 +69,38 @@ func (m *streamRequest) GetURL() *url.URL {
 }
 
 // GetMethod 方法名
-func (m *streamRequest) GetMethod() string {
+func (m *clientStreamRequest) GetMethod() string {
 	return m.method
 }
 
-func (m *streamRequest) Params() map[string]string {
+func (m *clientStreamRequest) Params() map[string]string {
 	return m.params
 }
 
-func (m *streamRequest) GetHeader() map[string]string {
+func (m *clientStreamRequest) GetHeader() map[string]string {
 	return m.header
 }
 
-func (m *streamRequest) Body() []byte {
+func (m *clientStreamRequest) Body() []byte {
 	return []byte{}
 }
 
-func (m *streamRequest) GetRemoteAddr() string {
+func (m *clientStreamRequest) GetRemoteAddr() string {
 	if p, ok := peer.FromContext(m.ctx); ok {
 		return p.Addr.String()
 	}
 	return m.header[constants.HeaderRemoteHeader]
 }
 
-func (m *streamRequest) Context() sctx.Context {
+func (m *clientStreamRequest) Context() sctx.Context {
 	return m.ctx
 }
-func (m *streamRequest) WithContext(ctx sctx.Context) {
+func (m *clientStreamRequest) WithContext(ctx sctx.Context) {
 	m.ctx = ctx
 }
 
-//// StreamRequest ////
-
-func (m *streamRequest) Send(obj any) (err error) {
-
-	respObj := &grpcproto.Response{
-		Status: 200,
-	}
-	// 处理选项
-	if entity, ok := obj.(engine.ResponseEntity); ok {
-		respObj.Headers = entity.Header()
-		respObj.Status = int32(entity.StatusCode())
-		respObj.Result, err = entity.Body()
-		if err != nil {
-			return err
-		}
-	} else {
-		respObj.Result, err = json.Marshal(obj)
-		if err != nil {
-			err = fmt.Errorf("server.grpc.stream.Marshal:%v", err)
-			return err
-		}
-		respObj.Headers = map[string]string{
-			constants.ContentTypeName: constants.ContentTypeApplicationJSON,
-		}
-	}
-	err = m.stream.Send(respObj)
-	if err != nil {
-		err = fmt.Errorf("server.grpc.stream.Send:%v", err)
-		return err
-	}
-	return nil
-}
-
 // Recv 反序列化请求体
-func (m *streamRequest) Recv(obj any, opts ...xrpc.StreamRevcOption) (closed bool, err error) {
+func (m *clientStreamRequest) Recv(obj any, opts ...xrpc.StreamRevcOption) (closed bool, err error) {
 	req, err := m.stream.Recv()
 	if err != nil {
 		if err.Error() != "EOF" {
@@ -147,7 +111,7 @@ func (m *streamRequest) Recv(obj any, opts ...xrpc.StreamRevcOption) (closed boo
 	}
 
 	opt := xrpc.StreamRecvOptions{
-		Unmarshal: unmarshaler,
+		Unmarshal: defaultUnmarshaler,
 	}
 	for _, o := range opts {
 		o(&opt)

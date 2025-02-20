@@ -6,14 +6,26 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
+// StreamType is the type of stream.
+type StreamType int
+
+const (
+	UnknownStream       StreamType = 0
+	BidirectionalStream StreamType = 1
+	ClientStream        StreamType = 2
+	ServerStream        StreamType = 3
+)
+
 type RequestOption func(*Options)
 
 type Options struct {
-	Header       xtypes.SMap // 请求头
-	Method       string      // 请求方法
-	Query        string      // 请求参数
-	WaitForReady bool        // 是否等待服务端响应
-	UseStream    bool        // 是否使用流传输
+	Header             xtypes.SMap // 请求头
+	Method             string      // 请求方法
+	Query              string      // 请求参数
+	WaitForReady       bool        // 是否等待服务端响应
+	MaxCallRecvMsgSize int         // 最大接收消息体大小，默认4M(maximum message size in bytes the client can receive)
+	MaxCallSendMsgSize int         // 最大发送消息体大小，默认4M(maximum message size in bytes the client can send)
+	StreamProcessor    any         // 是否使用流传输
 }
 
 // WithQuery 设置请求参数
@@ -76,9 +88,38 @@ func WithSourceName() RequestOption {
 	}
 }
 
-// WithUseStream 设置使用流传输
-func WithUseStream() RequestOption {
+// WithStreamProcessor 设置使用流传输
+func WithStreamProcessor(processor any) RequestOption {
 	return func(o *Options) {
-		o.UseStream = true
+		o.StreamProcessor = processor
+	}
+}
+
+// MaxCallRecvMsgSize
+func MaxCallRecvMsgSize(size int) RequestOption {
+	return func(o *Options) {
+		o.MaxCallRecvMsgSize = size
+	}
+}
+
+// MaxCallSendMsgSize
+func MaxCallSendMsgSize(size int) RequestOption {
+	return func(o *Options) {
+		o.MaxCallSendMsgSize = size
+	}
+}
+
+// StreamRecvOptions is a struct that contains options for receiving messages.
+type StreamRecvOptions struct {
+	Unmarshal StreamUnmarshaler
+}
+
+// StreamRevcOption is a function that sets an option for receiving messages.
+type StreamRevcOption func(*StreamRecvOptions)
+
+// WithStreamUnmarshal sets the callback function to unmarshal a received message.
+func WithStreamUnmarshal(callback StreamUnmarshaler) StreamRevcOption {
+	return func(sro *StreamRecvOptions) {
+		sro.Unmarshal = callback
 	}
 }

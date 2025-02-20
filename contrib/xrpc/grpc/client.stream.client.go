@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -13,36 +14,16 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var _ xrpc.StreamClient = (*grpcClientStreamRequest)(nil)
+var _ xrpc.ClientStreamClient = (*grpcClientStreamRequest)(nil)
 
 type grpcClientStreamRequest struct {
 	servicePath  string
 	header       xtypes.SMap
 	method       string
-	streamClient grpcproto.GRPC_StreamProcessClient
+	streamClient grpcproto.GRPC_ClientStreamProcessClient
 	onceLock     sync.Once
 }
 
-func (c *grpcClientStreamRequest) Recv(obj any, opts ...xrpc.StreamRevcOption) (closed bool, err error) {
-	opt := xrpc.StreamRecvOptions{
-		Unmarshal: unmarshaler,
-	}
-	for _, o := range opts {
-		o(&opt)
-	}
-	resp, err := c.streamClient.Recv()
-	if err != nil {
-		if err.Error() != "EOF" {
-			err = fmt.Errorf("client.grpc.stream.Recv:%v", err)
-			return
-		}
-		return true, nil
-	}
-	if obj == nil {
-		return false, nil
-	}
-	return false, opt.Unmarshal(resp.Result, obj)
-}
 func (c *grpcClientStreamRequest) Send(obj any) error {
 	var bodyBytes []byte
 	switch t := obj.(type) {
@@ -64,16 +45,43 @@ func (c *grpcClientStreamRequest) Send(obj any) error {
 	})
 }
 
-func (c *grpcClientStreamRequest) CloseSend() (err error) {
-	c.onceLock.Do(func() {
-		if c.streamClient != nil {
-			err = c.streamClient.CloseSend()
-		}
+func (c *Client) ClientStreamProcessor(ctx context.Context, processor xrpc.ClientStreamProcessor, opts *xrpc.Options) (body xrpc.Body, err error) {
+	servicePath := c.reqPath.Path
+	if len(opts.Query) > 0 {
+		servicePath = fmt.Sprintf("%s?%s", servicePath, opts.Query)
+	}
+	grpcOpts := c.buildGrpcOpts(opts)
+
+	clientStream, err := c.client.ClientStreamProcess(ctx, grpcOpts...)
+	if err != nil {
+		return xrpc.NewEmptyBody(), err
+	}
+
+	//发送服务分发数据信息
+	err = clientStream.Send(&grpcproto.Request{
+		Method:  opts.Method,
+		Service: servicePath,
+		Header:  opts.Header,
 	})
-	return err
+	if err != nil {
+		return xrpc.NewEmptyBody(), err
+	}
+
+	err = processor(&grpcClientStreamRequest{
+		servicePath:  servicePath,
+		header:       opts.Header,
+		method:       opts.Method,
+		streamClient: clientStream,
+	})
+
+	resp, err := clientStream.CloseAndRecv()
+	if err != nil {
+		return nil, err
+	}
+	return resp, err
 }
 
-func buildDefaultStreamProcess(input any) (processor xrpc.StreamProcessor, err error) {
+func buildDefaultStreamProcess(input any) (processor xrpc.BidirectionalStreamProcessor, err error) {
 	refval := reflect.ValueOf(input)
 	if refval.IsNil() {
 		return nil, fmt.Errorf("input is nil")
@@ -91,7 +99,7 @@ func buildDefaultStreamProcess(input any) (processor xrpc.StreamProcessor, err e
 		return nil, fmt.Errorf("input is []byte array")
 	}
 
-	return func(client xrpc.StreamClient) error {
+	return func(client xrpc.BidirectionalStreamClient) error {
 		errGroup := errgroup.Group{}
 		//调用grpc服务
 		errGroup.Go(func() error {

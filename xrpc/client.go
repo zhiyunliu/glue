@@ -17,9 +17,6 @@ type Client interface {
 
 	//RequestByCtx RPC请求，可通过context撤销请求
 	Request(ctx sctx.Context, service string, input interface{}, opts ...RequestOption) (res Body, err error)
-
-	//StreamRequest 发送流式RPC请求
-	StreamRequest(ctx sctx.Context, service string, processor StreamProcessor, opts ...RequestOption) (err error)
 }
 
 // ClientResover 定义配置文件转换方法
