@@ -104,6 +104,10 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 		propName := item.GetPropName()
 		value, err := param.GetVal(propName)
 		if err != nil {
+			if isNilNeedArg {
+				return
+			}
+			err = nil //忽略错误 &,|,$符号没有参数，则不报错
 			return
 		}
 
