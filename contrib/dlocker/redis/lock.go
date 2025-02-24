@@ -182,6 +182,7 @@ func (rl *Lock) autoRenewalCallback(expire int) error {
 
 	rl.group.Go(func() error {
 		ticker := time.NewTicker(time.Second * time.Duration(autoRenewalTick))
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:

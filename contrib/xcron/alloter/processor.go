@@ -294,6 +294,7 @@ func (j *monopolyJob) Start(ctx sctx.Context) {
 	go func() {
 		//过期时间前一秒执行续约
 		ticker := time.NewTicker(time.Second * time.Duration(j.expire-1))
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
