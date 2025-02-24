@@ -245,6 +245,7 @@ func (s *processor) handle(req *Request) {
 
 func (s *processor) handleImmediatelyJob() {
 	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-s.closeChan:
