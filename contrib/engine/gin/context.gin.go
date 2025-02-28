@@ -391,7 +391,9 @@ func (q *ginResponse) GetStatusCode() int {
 	}
 	return q.statusCode
 }
-
+func (q *ginResponse) GetHeader(key string) string {
+	return q.gctx.Writer.Header().Get(key)
+}
 func (q *ginResponse) Header(key, val string) {
 	q.gctx.Writer.Header().Set(key, val)
 }
@@ -425,7 +427,10 @@ func (q *ginResponse) ContentType() string {
 func (q *ginResponse) ResponseBytes() []byte {
 	return q.writebytes
 }
-
+func (q *ginResponse) Flush() error {
+	q.gctx.Writer.Flush()
+	return nil
+}
 func (q *ginResponse) Close() {
 	q.vctx = nil
 	q.gctx = nil

@@ -371,7 +371,8 @@ type alloterResponse struct {
 }
 
 func (q *alloterResponse) Redirect(statusCode int, location string) {
-
+	q.Status(statusCode)
+	q.Header("Location", location)
 }
 
 func (q *alloterResponse) Status(statusCode int) {
@@ -384,6 +385,9 @@ func (q *alloterResponse) GetStatusCode() int {
 		q.statusCode = http.StatusOK
 	}
 	return q.statusCode
+}
+func (q *alloterResponse) GetHeader(key string) string {
+	return q.actx.Writer.Header().Get(key)
 }
 
 func (q *alloterResponse) Header(key, val string) {
@@ -419,7 +423,9 @@ func (q *alloterResponse) ContentType() string {
 func (q *alloterResponse) ResponseBytes() []byte {
 	return q.writebytes
 }
-
+func (q *alloterResponse) Flush() error {
+	return q.actx.Writer.Flush()
+}
 func (q *alloterResponse) Close() {
 	q.vctx = nil
 	q.actx = nil

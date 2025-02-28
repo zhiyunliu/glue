@@ -4,11 +4,16 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/golibs/httputil"
+	"github.com/zhiyunliu/golibs/xsse"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 type RequestOption func(*Options)
 type RespHandler = httputil.RespHandler
+type SSEHandler = httputil.SSEHandler
+type SSEOption = httputil.SSEOption
+type ServerSentEvents = xsse.ServerSentEvents
+type SSE = xsse.ServerSentEvents
 
 var (
 	ContentTypeApplicationJSON = constants.ContentTypeApplicationJSON
@@ -17,10 +22,12 @@ var (
 )
 
 type Options struct {
-	Method  string
-	Version string
-	Header  xtypes.SMap
-	Handler RespHandler
+	Method      string
+	Version     string
+	Header      xtypes.SMap
+	RespHandler RespHandler
+	SSEHandler  SSEHandler
+	SSEOptions  []SSEOption
 }
 
 // WithMethod sets the method for the request.
@@ -70,7 +77,14 @@ func WithContentTypeUrlencoded() RequestOption {
 // WithRespHandler sets the response handler for the request.
 func WithRespHandler(handler RespHandler) RequestOption {
 	return func(o *Options) {
-		o.Handler = handler
+		o.RespHandler = handler
+	}
+}
+
+func WithSSEHandler(handler SSEHandler, opts ...SSEOption) RequestOption {
+	return func(o *Options) {
+		o.SSEHandler = handler
+		o.SSEOptions = opts
 	}
 }
 

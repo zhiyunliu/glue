@@ -11,6 +11,7 @@ import (
 
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/golibs/bytesconv"
+	"github.com/zhiyunliu/golibs/xsse"
 	"github.com/zhiyunliu/xbinding"
 )
 
@@ -20,6 +21,16 @@ const (
 
 // SupportPackageIsVersion1 These constants should not be referenced from any other code.
 const SupportPackageIsVersion1 = true
+
+type IoWriterWrapper func(bytes []byte) error
+
+func (f IoWriterWrapper) Write(bytes []byte) (int, error) {
+	err := f(bytes)
+	if err != nil {
+		return 0, err
+	}
+	return len(bytes), nil
+}
 
 type DataEncoder interface {
 	Render(ctx context.Context) error
@@ -83,11 +94,29 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 	if render, ok := v.(DataEncoder); ok {
 		return render.Render(ctx)
 	}
+	resp := ctx.Response()
+
+	if sseEntity, ok := v.(ServerSentEvents); ok {
+		resp.Header(constants.ContentTypeName, xsse.ContentType)
+		if cacheVal := resp.GetHeader(constants.ContentTypeCacheControl); cacheVal == "" {
+			resp.Header(constants.ContentTypeCacheControl, constants.ContentTypeNoCache)
+		}
+		for {
+			evt, ok := sseEntity.GetEvent()
+			if !ok {
+				break
+			}
+			err := xsse.Encode(IoWriterWrapper(resp.WriteBytes), evt)
+			if err != nil {
+				return err
+			}
+			resp.Flush()
+		}
+		return nil
+	}
 
 	//判定对象是否实现了响应体接口
 	if entity, ok := v.(ResponseEntity); ok {
-		resp := ctx.Response()
-
 		resp.Status(entity.StatusCode())
 		header := entity.Header()
 		if len(header) > 0 {
@@ -114,8 +143,8 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 	if err != nil {
 		return err
 	}
-	ctx.Response().Header(ContentTypeName, codec.ContentType())
-	err = ctx.Response().WriteBytes(data)
+	resp.Header(ContentTypeName, codec.ContentType())
+	err = resp.WriteBytes(data)
 	return err
 }
 

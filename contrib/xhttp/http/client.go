@@ -115,8 +115,11 @@ func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.O
 		httpOpts = append(httpOpts, httputil.WithHeader(k, v))
 	}
 	httpOpts = append(httpOpts, httputil.WithClient(c.client))
-	if o.Handler != nil {
-		httpOpts = append(httpOpts, httputil.WithRespHandler(o.Handler))
+	if o.RespHandler != nil {
+		httpOpts = append(httpOpts, httputil.WithRespHandler(o.RespHandler))
+	}
+	if o.SSEHandler != nil {
+		httpOpts = append(httpOpts, httputil.WithSSEHandler(o.SSEHandler, o.SSEOptions...))
 	}
 
 	queryParam := ""
