@@ -4,21 +4,29 @@ package grpcproto;
 option go_package ="./grpcproto";   
 
 
-message Request{  
-    string service=1; //服务名称
-    string method=2;  //请求方法,GET
-    map<string, string> header=3; //请求头信息map[string]string
-    bytes body=4; //请求参数 json
-   
-}
-message Response{
-    int32 status=1; //状态码
-    map<string, string> header=2; //返回头信息，map[string]string
-    bytes result=3; //返回结果，default=json,according to content-type
-}
-
-
-service GRPC{
+// 定义服务
+service GRPC {
+    // 定义单次请求方法
     rpc Process(Request)returns(Response){}
+    // 双向流传输方法
+    rpc BidirectionalStreamProcess(stream Request) returns (stream Response);
+    // 客户端流传输方法
+    rpc ClientStreamProcess(stream Request) returns (Response);
+    // 服务端流传输方法
+    rpc ServerStreamProcess(Request) returns (stream Response);
 }
 
+// 定义请求消息
+message Request {
+    string service = 1; // 服务名称
+    string method = 2;  // 请求方法, GET
+    map<string, string> header = 3; // 请求头信息 map[string]string
+    bytes body = 4; // 请求参数 json
+}
+
+// 定义响应消息
+message Response {
+    int32 status = 1; // 状态码
+    map<string, string> header = 2; // 返回头信息，map[string]string
+    bytes result = 3; // 返回结果，default=json,according to content-type
+}

@@ -20,7 +20,9 @@ func (r *Redis) GetImpl() interface{} {
 
 // Build 构建锁
 func (r *Redis) Build(key string, opts ...dlocker.Option) dlocker.DLocker {
-	opt := &dlocker.Options{}
+	opt := &dlocker.Options{
+		Reentrant: true,
+	}
 	for i := range opts {
 		opts[i](opt)
 	}

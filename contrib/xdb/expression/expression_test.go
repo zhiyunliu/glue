@@ -1,6 +1,7 @@
 package expression
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/zhiyunliu/glue/xdb"
@@ -267,6 +268,63 @@ func (s *demoSymbols) DynamicType() xdb.DynamicType {
 
 func (s *demoSymbols) Concat() string {
 	return "demo"
+}
+
+func Test_NormalMatcher(t *testing.T) {
+
+	matcher := NewNormalExpressionMatcher(DefaultSymbols)
+	state := xdb.NewSqlState(&testPlaceHolder{prefix: "?"})
+	state.WithTemplateOptions(&xdb.TemplateOptions{UseExprCache: true})
+
+	propValuer, ok := matcher.MatchString("@{field}")
+	if !ok {
+		t.Error("propValuer is null")
+		return
+	}
+	_, err := propValuer.Build(state, map[string]any{})
+	if err == nil {
+		t.Error(fmt.Errorf("@无参时候应该报错,但error is nil"))
+	}
+
+	_, err = propValuer.Build(state, map[string]any{
+		"field": "",
+	})
+	if err != nil {
+		t.Error(fmt.Errorf("@空参时候不应该报错,但error =%v", err))
+	}
+
+	expr, err := propValuer.Build(state, map[string]any{
+		"field": "f",
+	})
+	if err != nil {
+		t.Error(fmt.Errorf("@空参时候不应该报错,但error =%v", err))
+	}
+	if expr != "?" {
+		t.Error(fmt.Errorf("@空参时候不应该报错,但expr =%v", expr))
+	}
+
+	propValuer2, _ := matcher.MatchString("&{field}")
+	_, err = propValuer2.Build(state, map[string]any{})
+	if err != nil {
+		t.Error(fmt.Errorf("&无参时候应该报错,但error=%v", err))
+	}
+
+	_, err = propValuer2.Build(state, map[string]any{
+		"field": "",
+	})
+	if err != nil {
+		t.Error(fmt.Errorf("&无参时候应该报错,但error=%v", err))
+	}
+
+	expr, err = propValuer2.Build(state, map[string]any{
+		"field": "f",
+	})
+	if err != nil {
+		t.Error(fmt.Errorf("@空参时候不应该报错,但error =%v", err))
+	}
+	if expr != "and field=?" {
+		t.Error(fmt.Errorf("@空参时候不应该报错,但expr =%v", expr))
+	}
 }
 
 func Benchmark_NormalMatcher(b *testing.B) {
