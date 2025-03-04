@@ -159,6 +159,14 @@ func (c *Client) RequestByStream(ctx context.Context, input any, opts *xrpc.Opti
 		return xrpc.NewEmptyBody(), c.ServerStreamProcessor(ctx, processor, input, opts)
 	case xrpc.ServerStreamProcessor:
 		return xrpc.NewEmptyBody(), c.ServerStreamProcessor(ctx, processor, input, opts)
+
+	//默认流处理器--使用客户端流
+	case xrpc.DefaultProcessor:
+		defaultProcessor, err := xrpc.BuildDefaultClientStreamProcess(input)
+		if err != nil {
+			return xrpc.NewEmptyBody(), err
+		}
+		return c.ClientStreamProcessor(ctx, defaultProcessor, opts)
 	default:
 
 	}

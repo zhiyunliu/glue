@@ -95,6 +95,13 @@ func WithStreamProcessor(processor any) RequestOption {
 	}
 }
 
+// WithStreamDefaultProcessor 设置使用默认流传输
+func WithStreamDefaultProcessor() RequestOption {
+	return func(o *Options) {
+		o.StreamProcessor = DefaultProcessor{}
+	}
+}
+
 // MaxCallRecvMsgSize
 func MaxCallRecvMsgSize(size int) RequestOption {
 	return func(o *Options) {
