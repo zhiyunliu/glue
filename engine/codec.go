@@ -98,6 +98,7 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 
 	if sseEntity, ok := v.(ServerSentEvents); ok {
 		resp.Header(constants.ContentTypeName, xsse.ContentType)
+		resp.Header(http.CanonicalHeaderKey("Connection"), "keep-alive")
 		if cacheVal := resp.GetHeader(constants.ContentTypeCacheControl); cacheVal == "" {
 			resp.Header(constants.ContentTypeCacheControl, constants.ContentTypeNoCache)
 		}
