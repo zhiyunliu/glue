@@ -15,6 +15,9 @@ func (s *orSymbols) DynamicType() xdb.DynamicType {
 func (s *orSymbols) Concat() string {
 	return "or"
 }
+func (s *orSymbols) IsDynamic() bool {
+	return true
+}
 
 // func (s *orSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
 // 	item.SetDynamic(s.DynamicType())

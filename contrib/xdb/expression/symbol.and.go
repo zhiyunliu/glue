@@ -16,6 +16,10 @@ func (s *andSymbols) Concat() string {
 	return "and"
 }
 
+func (s *andSymbols) IsDynamic() bool {
+	return true
+}
+
 // func (s *andSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
 // 	item.SetDynamic(s.DynamicType())
 // 	propName := valuer.GetPropName()

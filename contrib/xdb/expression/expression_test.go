@@ -128,6 +128,7 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "8b.", matcher: likeMatcher, fullKey: "&{tbl.field like %property}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like", wantSymbol: "&", wantExpr: "and tbl.field like '%'+?"},
 		{name: "9b.", matcher: likeMatcher, fullKey: "&{tbl.field like property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "like%", wantSymbol: "&", wantExpr: "and tbl.field like ?+'%'"},
 		{name: "10b.", matcher: likeMatcher, fullKey: "&{tbl.field like %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%like%", wantSymbol: "&", wantExpr: "and tbl.field like '%'+?+'%'"},
+		{name: "11b.", matcher: likeMatcher, fullKey: "&{tbl.field like %notexists%}", wantFullfield: "tbl.field", wantPropName: "notexists", wantOper: "%like%", wantSymbol: "&", wantExpr: ""},
 
 		{name: "not-1a.", matcher: likeMatcher, fullKey: "&{notlike   field}", wantFullfield: "field", wantPropName: "field", wantOper: "notlike", wantSymbol: "&", wantExpr: "and field not like ?"},
 		{name: "not-8b.", matcher: likeMatcher, fullKey: "&{tbl.field notlike %property}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?"},
@@ -268,6 +269,10 @@ func (s *demoSymbols) DynamicType() xdb.DynamicType {
 
 func (s *demoSymbols) Concat() string {
 	return "demo"
+}
+
+func (s *demoSymbols) IsDynamic() bool {
+	return false
 }
 
 func Test_NormalMatcher(t *testing.T) {

@@ -23,9 +23,6 @@ func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpti
 		expressionCache: &sync.Map{},
 		symbolMap:       symbolMap,
 		buildCallback:   mopts.BuildCallback,
-		nilNeedArgMap: map[string]bool{
-			xdb.SymbolAt: true,
-		},
 	}
 	matcher.operatorMap = matcher.getOperatorMap(mopts.OperatorMap)
 
@@ -38,7 +35,6 @@ type normalExpressionMatcher struct {
 	expressionCache *sync.Map
 	operatorMap     xdb.OperatorMap
 	buildCallback   xdb.ExpressionBuildCallback
-	nilNeedArgMap   map[string]bool
 }
 
 func (m *normalExpressionMatcher) Name() string {
@@ -90,31 +86,22 @@ func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.Exp
 	return item, ok
 }
 
-func (m *normalExpressionMatcher) IsNilNeedArg(symbol string) bool {
-	return m.nilNeedArgMap[symbol]
-}
-
 func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
 	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
 		var (
-			phName       string
-			isNilNeedArg bool = m.IsNilNeedArg(item.GetSymbol().Name())
+			phName   string
+			propName = item.GetPropName()
 		)
-
-		propName := item.GetPropName()
 		value, err := param.GetVal(propName)
 		if err != nil {
-			if isNilNeedArg {
-				return
+			//没有值，并且是可空
+			if item.GetSymbol().IsDynamic() {
+				return "", nil
 			}
-			err = nil //忽略错误 &,|,$符号没有参数，则不报错
 			return
 		}
-
-		isNil := xdb.CheckIsNil(value)
-
-		//是空&&不需要参数，则退出
-		if isNil && !isNilNeedArg {
+		err = nil
+		if xdb.CheckIsNil(value) && item.GetSymbol().IsDynamic() {
 			return
 		}
 

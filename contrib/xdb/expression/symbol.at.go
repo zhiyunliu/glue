@@ -17,6 +17,9 @@ func (s *atSymbols) DynamicType() xdb.DynamicType {
 func (s *atSymbols) Concat() string {
 	return ""
 }
+func (s *atSymbols) IsDynamic() bool {
+	return false
+}
 
 // func (s *atSymbols) Callback(item xdb.SqlState, valuer xdb.ExpressionValuer, input xdb.DBParam) (string, xdb.MissError) {
 // 	item.SetDynamic(s.DynamicType())

@@ -105,9 +105,14 @@ func (m *compareExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCal
 		propName := item.GetPropName()
 		value, err := param.GetVal(propName)
 		if err != nil {
+			//没有值，并且是可空
+			if item.GetSymbol().IsDynamic() {
+				return "", nil
+			}
 			return
 		}
-		if xdb.CheckIsNil(value) {
+		err = nil
+		if xdb.CheckIsNil(value) && item.GetSymbol().IsDynamic() {
 			return
 		}
 
