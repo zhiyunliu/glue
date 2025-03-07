@@ -110,9 +110,14 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
 		value, err := param.GetVal(item.GetPropName())
 		if err != nil {
+			//没有值，并且是可空
+			if item.GetSymbol().IsDynamic() {
+				return "", nil
+			}
 			return
 		}
-		if xdb.CheckIsNil(value) {
+		err = nil
+		if xdb.CheckIsNil(value) && item.GetSymbol().IsDynamic() {
 			return
 		}
 

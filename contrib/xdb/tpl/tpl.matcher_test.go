@@ -225,6 +225,9 @@ func (s *testSymbol) DynamicType() xdb.DynamicType {
 func (s *testSymbol) Concat() string {
 	return ""
 }
+func (s *testSymbol) IsDynamic() bool {
+	return false
+}
 
 type test2Symbol struct{}
 
@@ -238,4 +241,7 @@ func (s *test2Symbol) DynamicType() xdb.DynamicType {
 
 func (s *test2Symbol) Concat() string {
 	return ""
+}
+func (s *test2Symbol) IsDynamic() bool {
+	return true
 }
