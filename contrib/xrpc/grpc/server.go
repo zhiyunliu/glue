@@ -53,9 +53,12 @@ func newServer(srvcfg *serverConfig,
 		return
 	}
 
-	for _, m := range srvcfg.Middlewares {
-		router.Use(middleware.Resolve(&m))
+	midwares, err := middleware.BuildMiddlewareList(srvcfg.Middlewares)
+	if err != nil {
+		err = fmt.Errorf("engine:[%s] BuildMiddlewareList,%w", srvcfg.Config.Proto, err)
+		return
 	}
+	router.Use(midwares...)
 
 	adapterEngine := enginealloter.NewAlloterEngine(server.engine, opts...)
 	engine.RegistryEngineRoute(adapterEngine, router)

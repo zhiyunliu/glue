@@ -32,9 +32,12 @@ func (e *Server) resoverEngineRoute() (err error) {
 	}
 	e.opts.handler = httpEngine
 
-	for _, m := range e.opts.srvCfg.Middlewares {
-		e.opts.router.Use(middleware.Resolve(&m))
+	midwares, err := middleware.BuildMiddlewareList(e.opts.srvCfg.Middlewares)
+	if err != nil {
+		err = fmt.Errorf("engine:[%s] BuildMiddlewareList,%w", e.opts.srvCfg.Config.Engine, err)
+		return
 	}
+	e.opts.router.Use(midwares...)
 
 	for _, s := range e.opts.static {
 		if s.FileSystem != nil {
