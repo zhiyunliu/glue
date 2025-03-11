@@ -2,6 +2,7 @@ package robfigcron
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/zhiyunliu/glue/contrib/alloter"
 	enginealloter "github.com/zhiyunliu/glue/contrib/engine/alloter"
@@ -21,19 +22,22 @@ type Server struct {
 	router    *engine.RouterGroup
 }
 
-func newServer(cfg *serverConfig,
+func newServer(srvcfg *serverConfig,
 	router *engine.RouterGroup,
 	opts ...engine.Option) (server *Server, err error) {
 
 	server = &Server{
-		srvCfg: cfg,
+		srvCfg: srvcfg,
 		router: router,
 		engine: alloter.New(),
 	}
 
-	for _, m := range cfg.Middlewares {
-		router.Use(middleware.Resolve(&m))
+	midwares, err := middleware.BuildMiddlewareList(srvcfg.Middlewares)
+	if err != nil {
+		err = fmt.Errorf("engine:[%s] BuildMiddlewareList,%w", srvcfg.Config.Proto, err)
+		return
 	}
+	router.Use(midwares...)
 
 	adapterEngine := enginealloter.NewAlloterEngine(server.engine, opts...)
 	engine.RegistryEngineRoute(adapterEngine, router)

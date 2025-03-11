@@ -286,12 +286,22 @@ func (q *aquery) Values() xtypes.SMap {
 	}
 	return q.params
 }
+
+// Deprecated: use ScanTo instead
 func (q *aquery) Scan(obj interface{}) error {
-	return q.Values().Scan(obj)
+	return q.ScanTo(obj)
+}
+
+func (q *aquery) ScanTo(obj interface{}) error {
+	return q.Values().ScanTo(obj)
 }
 
 func (q *aquery) String() string {
 	return q.reqUrl.RawQuery
+}
+
+func (q *aquery) GetValues() url.Values {
+	return q.reqUrl.Query()
 }
 
 func (q *aquery) Close() {
@@ -306,7 +316,6 @@ type abody struct {
 	actx      *alloter.Context
 	vctx      *AlloterContext
 	hasRead   bool
-	reader    *bytes.Reader
 	bodyBytes []byte
 	closed    bool
 }
@@ -320,7 +329,8 @@ func (q *abody) Read(p []byte) (n int, err error) {
 	if err != nil {
 		return
 	}
-	return q.reader.Read(p)
+	reader := bytes.NewReader(q.bodyBytes)
+	return reader.Read(p)
 }
 
 func (q *abody) Len() int {
@@ -343,14 +353,12 @@ func (q *abody) loadBody() (err error) {
 	if len(q.bodyBytes) == 0 && !q.hasRead {
 		q.hasRead = true
 		q.bodyBytes = q.actx.Request.Body()
-		q.reader = bytes.NewReader(q.bodyBytes)
 	}
 	return nil
 }
 
 func (q *abody) Close() {
 	q.bodyBytes = nil
-	q.reader = nil
 	q.actx = nil
 	q.closed = true
 	q.hasRead = false

@@ -213,6 +213,7 @@ func (r *ginRequest) Path() vctx.Path {
 func (r *ginRequest) Query() vctx.Query {
 	if r.gquery.closed {
 		r.gquery.gctx = r.gctx
+		r.gquery.reqUrl = r.gctx.Request.URL
 		r.gquery.closed = false
 	}
 	return r.gquery
@@ -266,10 +267,10 @@ func (q *gpath) Close() {
 	q.closed = true
 }
 
-//-gquery---------------------------------
-
+// -gquery---------------------------------
 type gquery struct {
 	gctx   *gin.Context
+	reqUrl *url.URL
 	params xtypes.SMap
 	closed bool
 }
@@ -279,7 +280,7 @@ func (q *gquery) Get(name string) string {
 }
 func (q *gquery) Values() xtypes.SMap {
 	if q.params == nil {
-		vals := q.gctx.Request.URL.Query()
+		vals := q.reqUrl.Query()
 		q.params = make(xtypes.SMap)
 		for k := range vals {
 			q.params[k] = vals.Get(k)
@@ -287,17 +288,28 @@ func (q *gquery) Values() xtypes.SMap {
 	}
 	return q.params
 }
+
+// Deprecated: use ScanTo instead
 func (q *gquery) Scan(obj interface{}) error {
+	return q.ScanTo(obj)
+}
+
+func (q *gquery) ScanTo(obj interface{}) error {
 	return q.gctx.BindQuery(obj)
 }
 
 func (q *gquery) String() string {
-	return q.gctx.Request.URL.RawQuery
+	return q.reqUrl.RawQuery
+}
+
+func (q *gquery) GetValues() url.Values {
+	return q.reqUrl.Query()
 }
 
 func (q *gquery) Close() {
 	q.gctx = nil
 	q.params = nil
+	q.reqUrl = nil
 	q.closed = true
 }
 

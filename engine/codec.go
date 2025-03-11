@@ -1,18 +1,17 @@
 package engine
 
 import (
-	"io"
+	"fmt"
+	"mime"
 	"net/http"
 	"strings"
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/xbinding"
 
-	"github.com/zhiyunliu/glue/encoding"
-	"github.com/zhiyunliu/glue/encoding/text"
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/golibs/httputil"
 )
 
 const (
@@ -43,24 +42,40 @@ type EncodeErrorFunc func(context.Context, error)
 
 // DefaultRequestDecoder decodes the request body to object.
 func DefaultRequestDecoder(ctx context.Context, v interface{}) (err error) {
-	var data []byte
-	if strings.EqualFold(string(MethodGet), ctx.Request().GetMethod()) {
-		data = []byte(ctx.Request().Query().String())
-	} else {
-		data, err = io.ReadAll(ctx.Request().Body())
-		if err != nil {
-			return errors.BadRequest("CODEC", err.Error())
-		}
+
+	method := ctx.Request().GetMethod()
+	cttType := ctx.Request().GetHeader(ContentTypeName)
+	mediaType, params, err := mime.ParseMediaType(cttType)
+	if err != nil {
+		return fmt.Errorf("DefaultRequestDecoder.ParseMediaType,%w,value=%s", err, cttType)
 	}
 
-	codec, ok := CodecForRequest(ctx, ContentTypeName, ctx.Request().GetMethod())
-	if !ok {
-		return errors.BadRequest("CODEC", ctx.Request().GetHeader(ContentTypeName))
+	codec, err := xbinding.GetCodec(
+		xbinding.WithMethod(method),
+		xbinding.WithContentType(mediaType))
+	if err != nil {
+		return
 	}
-	if err = codec.Unmarshal(data, v); err != nil {
-		return errors.BadRequest("CODEC", err.Error())
+
+	//MethodGet
+	if strings.EqualFold(string(MethodGet), method) {
+		return codec.Bind(xbinding.MapReader(ctx.Request().Query().GetValues()), v)
 	}
-	return nil
+
+	//MIMEMultipartPOSTForm
+	if strings.EqualFold(mediaType, xbinding.MIMEMultipartPOSTForm) {
+		return codec.Bind(&xbinding.ReaderWrapper{
+			Data: &xbinding.MultipartReqestInfo{
+				Boundary: params["boundary"],
+				Body:     ctx.Request().Body(),
+			},
+		}, v)
+	}
+
+	//normal
+	return codec.Bind(&xbinding.ReaderWrapper{
+		Data: ctx.Request().Body(),
+	}, v)
 }
 
 // DefaultResponseEncoder encodes the object to the HTTP response.
@@ -69,10 +84,10 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 		return render.Render(ctx)
 	}
 
+	resp := ctx.Response()
+
 	//判定对象是否实现了响应体接口
 	if entity, ok := v.(ResponseEntity); ok {
-		resp := ctx.Response()
-
 		resp.Status(entity.StatusCode())
 		header := entity.Header()
 		if len(header) > 0 {
@@ -88,19 +103,19 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 		return err
 	}
 
-	var codec encoding.Codec
+	var codec xbinding.Codec
 	if _, ok := v.(string); ok {
-		codec = encoding.GetCodec(text.Name)
+		codec, _ = xbinding.GetCodec(xbinding.WithContentType("text"))
 	} else {
-		codec, _ = CodecForRequest(ctx, "Accept", "")
+		codec, _ = CodecForRequest(ctx, "Accept")
 	}
 
 	data, err := codec.Marshal(v)
 	if err != nil {
 		return err
 	}
-	ctx.Response().Header(ContentTypeName, httputil.ContentType(codec.Name()))
-	err = ctx.Response().WriteBytes(data)
+	resp.Header(ContentTypeName, codec.ContentType())
+	err = resp.WriteBytes(data)
 	return err
 }
 
@@ -133,29 +148,24 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 	}
 
 	se := errors.FromError(err)
-	codec, _ := CodecForRequest(ctx, "Accept", "")
+	codec, _ := CodecForRequest(ctx, "Accept")
 	body, err := codec.Marshal(se)
 	if err != nil {
 		resp.Status(http.StatusInternalServerError)
 		resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
 		return
 	}
-	resp.Header(ContentTypeName, httputil.ContentType(codec.Name()))
+	resp.Header(ContentTypeName, codec.ContentType())
 	resp.Status(se.Code)
 	resp.WriteBytes(body)
 }
 
-// CodecForRequest get encoding.Codec via http.Request
-func CodecForRequest(ctx context.Context, headerName string, method string) (encoding.Codec, bool) {
+func CodecForRequest(ctx context.Context, headerName string) (xbinding.Codec, bool) {
 	headVal := ctx.Request().GetHeader(headerName)
-	if method != "" && strings.EqualFold(method, http.MethodGet) {
-		codec := encoding.GetCodec("form")
+	codec, err := xbinding.GetCodec(xbinding.WithContentType(headVal))
+	if err == nil && codec != nil {
 		return codec, true
 	}
-
-	codec := encoding.GetCodec(httputil.ContentSubtype(headVal))
-	if codec != nil {
-		return codec, true
-	}
-	return encoding.GetCodec("json"), false
+	codec, _ = xbinding.GetCodec(xbinding.WithContentType("json"))
+	return codec, false
 }

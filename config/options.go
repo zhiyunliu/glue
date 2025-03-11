@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/zhiyunliu/glue/encoding"
 	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/xbinding"
 )
 
 // Decoder is config decoder.
@@ -74,8 +74,8 @@ func defaultDecoder(src *KeyValue, target map[string]interface{}) error {
 		}
 		return nil
 	}
-	if codec := encoding.GetCodec(src.Format); codec != nil {
-		return codec.Unmarshal(src.Value, &target)
+	if codec, err := xbinding.GetCodec(xbinding.WithContentType(src.Format)); err == nil {
+		return codec.Bind(xbinding.BytesReader(src.Value), &target)
 	}
 	return fmt.Errorf("unsupported key: %s format: %s", src.Key, src.Format)
 }
