@@ -2,7 +2,6 @@ module github.com/zhiyunliu/glue
 
 go 1.22
 
-
 require (
 	github.com/zhiyunliu/golibs v0.2.9
 	github.com/zhiyunliu/redisqueue/v2 v2.3.0
