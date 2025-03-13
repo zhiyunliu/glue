@@ -11,7 +11,7 @@ var (
 
 type Logger interface {
 	Name() string
-	Log(ctx context.Context, elapsed int64, sql string, args ...interface{})
+	Log(ctx context.Context, elapsed int64, connName, sql string, args ...interface{})
 }
 
 func RegistryLogger(logger Logger) {
