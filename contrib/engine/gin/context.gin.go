@@ -289,6 +289,12 @@ func (q *gquery) Values() xtypes.SMap {
 	}
 	return q.params
 }
+
+// Deprecated: Use ScanTo() instead.
+func (q *gquery) Scan(obj interface{}) error {
+	return q.ScanTo(obj)
+}
+
 func (q *gquery) ScanTo(obj interface{}) error {
 	return q.gctx.BindQuery(obj)
 }
@@ -316,8 +322,13 @@ type gbody struct {
 	closed    bool
 }
 
-func (q *gbody) Scan(obj interface{}) error {
+func (q *gbody) ScanTo(obj interface{}) error {
 	return q.gctx.ShouldBind(obj)
+}
+
+// Deprecated: Use ScanTo() instead.
+func (q *gbody) Scan(obj interface{}) error {
+	return q.ScanTo(obj)
 }
 
 func (q *gbody) Read(p []byte) (n int, err error) {
