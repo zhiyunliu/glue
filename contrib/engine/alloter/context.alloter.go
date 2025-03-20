@@ -317,6 +317,7 @@ type abody struct {
 	vctx      *AlloterContext
 	hasRead   bool
 	bodyBytes []byte
+	reader    *bytes.Reader
 	closed    bool
 }
 
@@ -329,8 +330,7 @@ func (q *abody) Read(p []byte) (n int, err error) {
 	if err != nil {
 		return
 	}
-	reader := bytes.NewReader(q.bodyBytes)
-	return reader.Read(p)
+	return q.reader.Read(p)
 }
 
 func (q *abody) Len() int {
@@ -353,6 +353,7 @@ func (q *abody) loadBody() (err error) {
 	if len(q.bodyBytes) == 0 && !q.hasRead {
 		q.hasRead = true
 		q.bodyBytes = q.actx.Request.Body()
+		q.reader = bytes.NewReader(q.bodyBytes)
 	}
 	return nil
 }
@@ -362,6 +363,7 @@ func (q *abody) Close() {
 	q.actx = nil
 	q.closed = true
 	q.hasRead = false
+	q.reader = nil
 }
 
 // gresponse --------------------------------

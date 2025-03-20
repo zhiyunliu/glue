@@ -5,7 +5,9 @@ go 1.22
 require (
 	github.com/zhiyunliu/golibs v0.2.9
 	github.com/zhiyunliu/redisqueue/v2 v2.3.0
-	github.com/zhiyunliu/xbinding v0.1.2
+	github.com/zhiyunliu/stack v1.9.0 // indirect
+	github.com/zhiyunliu/xbinding v0.1.3
+
 )
 
 require (
@@ -75,7 +77,6 @@ require (
 	github.com/tklauser/numcpus v0.5.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	github.com/zhiyunliu/stack v1.9.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
 )
