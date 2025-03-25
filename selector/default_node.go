@@ -1,10 +1,14 @@
 package selector
 
 import (
+	"net/url"
 	"strconv"
 
 	"github.com/zhiyunliu/glue/registry"
 )
+
+var _ Node = (*DefaultNode)(nil)
+var _ AddrInfo = (*DefaultNode)(nil)
 
 // DefaultNode is selector node
 type DefaultNode struct {
@@ -13,6 +17,7 @@ type DefaultNode struct {
 	version  string
 	name     string
 	metadata map[string]string
+	addrUrl  *url.URL
 }
 
 // Address is node address
@@ -38,6 +43,27 @@ func (n *DefaultNode) Version() string {
 // Metadata is node metadata
 func (n *DefaultNode) Metadata() map[string]string {
 	return n.metadata
+}
+
+func (n *DefaultNode) Scheme() string {
+	n.init()
+	return n.addrUrl.Scheme
+}
+
+func (n *DefaultNode) Host() string {
+	n.init()
+	return n.addrUrl.Hostname()
+}
+
+func (n *DefaultNode) Port() string {
+	n.init()
+	return n.addrUrl.Port()
+}
+
+func (n *DefaultNode) init() {
+	if n.addrUrl == nil {
+		n.addrUrl, _ = url.Parse(n.addr)
+	}
 }
 
 // NewNode new node
