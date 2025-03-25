@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/zhiyunliu/glue/constants"
@@ -105,7 +106,7 @@ func (c *Client) Close() {
 }
 
 func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.Options, input []byte) (response xhttp.Body, err error) {
-	node, err := c.getServiceNode(ctx)
+	node, err := c.getServiceNode(ctx, o)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +130,27 @@ func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.O
 	return httputil.Request(o.Method, fmt.Sprintf("%s%s%s", node.Address(), reqPath.Path, queryParam), input, httpOpts...)
 }
 
-func (c *Client) getServiceNode(ctx context.Context) (selector.Node, error) {
-	node, done, err := c.selector.Select(ctx)
+func (c *Client) getServiceNode(ctx context.Context, opts *xhttp.Options) (selector.Node, error) {
+	node, done, err := c.selector.Select(ctx, selector.WithFilter(func(ctx context.Context, nodes []selector.Node) []selector.Node {
+		if opts.SpecifyIP == "" {
+			return nodes
+		}
+		for _, cur := range nodes {
+			wnode, ok := cur.(selector.WeightedNode)
+			if !ok {
+				return nodes
+			}
+
+			addrInfo, ok := wnode.Raw().(selector.AddrInfo)
+			if !ok {
+				return nodes
+			}
+			if strings.EqualFold(addrInfo.Host(), opts.SpecifyIP) {
+				return []selector.Node{cur}
+			}
+		}
+		return []selector.Node{}
+	}))
 	if err != nil {
 		return nil, err
 	}

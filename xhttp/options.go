@@ -28,6 +28,7 @@ type Options struct {
 	RespHandler RespHandler
 	SSEHandler  SSEHandler
 	SSEOptions  []SSEOption
+	SpecifyIP   string
 }
 
 // WithMethod sets the method for the request.
@@ -95,5 +96,12 @@ func WithSourceName() RequestOption {
 			o.Header = make(map[string]string)
 		}
 		o.Header[constants.HeaderSourceName] = global.AppName
+	}
+}
+
+// WithSpecifyIP 设置指定Ip
+func WithSpecifyIP(ip string) RequestOption {
+	return func(o *Options) {
+		o.SpecifyIP = ip
 	}
 }

@@ -30,6 +30,12 @@ type Builder interface {
 	Build() Selector
 }
 
+type AddrInfo interface {
+	Scheme() string
+	Host() string
+	Port() string
+}
+
 // Node is node interface.
 type Node interface {
 	// Address is the unique address under the same service
