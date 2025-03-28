@@ -5,27 +5,14 @@ import (
 	"github.com/zhiyunliu/glue/metrics"
 )
 
-var _ metrics.Observer = (*histogram)(nil)
+var _ metrics.Histogram = (*histogram)(nil)
 
 type histogram struct {
-	hv  *prometheus.HistogramVec
-	lvs []string
+	hv *prometheus.HistogramVec
 }
 
 // NewHistogram new a prometheus histogram and returns Histogram.
-func NewHistogram(hv *prometheus.HistogramVec) metrics.Observer {
-	return &histogram{
-		hv: hv,
-	}
-}
 
-func (h *histogram) With(lvs ...string) metrics.Observer {
-	return &histogram{
-		hv:  h.hv,
-		lvs: lvs,
-	}
-}
-
-func (h *histogram) Observe(value float64) {
-	h.hv.WithLabelValues(h.lvs...).Observe(value)
+func (h *histogram) Record(value float64, lbvs ...string) {
+	h.hv.WithLabelValues(lbvs...).Observe(value)
 }

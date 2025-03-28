@@ -60,6 +60,7 @@ func (ctx *GinContext) ServerType() string {
 func (ctx *GinContext) ServerName() string {
 	return ctx.opts.SrvName
 }
+
 func (ctx *GinContext) Meta() map[string]interface{} {
 	return ctx.meta
 }
@@ -78,7 +79,7 @@ func (ctx *GinContext) Bind(obj interface{}) error {
 		return fmt.Errorf("Bind只接收Ptr类型的数据,目前是:%s", val.Kind())
 	}
 
-	err := ctx.Request().Body().Scan(obj)
+	err := ctx.Request().Body().ScanTo(obj)
 	if err != nil {
 		return err
 	}
@@ -178,6 +179,10 @@ func (r *ginRequest) GetClientIP() string {
 	return r.gctx.ClientIP()
 }
 
+func (r *ginRequest) GetRemoteAddr() string {
+	return r.gctx.Request.RemoteAddr
+}
+
 func (r *ginRequest) RequestID() string {
 	return r.vctx.Log().SessionID()
 }
@@ -192,6 +197,10 @@ func (r *ginRequest) Header() vctx.Header {
 	}
 
 	return r.gheader
+}
+
+func (r *ginRequest) GetContentLength() int64 {
+	return r.gctx.Request.ContentLength
 }
 
 func (r *ginRequest) GetHeader(key string) string {
@@ -437,6 +446,10 @@ func (q *ginResponse) ContentType() string {
 
 func (q *ginResponse) ResponseBytes() []byte {
 	return q.writebytes
+}
+
+func (q *ginResponse) Size() int {
+	return len(q.writebytes)
 }
 func (q *ginResponse) Flush() error {
 	q.gctx.Writer.Flush()

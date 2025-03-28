@@ -21,6 +21,7 @@ import (
 
 // Consumer Consumer
 type Consumer struct {
+	proto            string
 	configName       string
 	EnableDeadLetter bool //开启死信队列
 	DeadLetterQueue  string
@@ -59,13 +60,19 @@ func (s QueueItem) GetBufferSize() int {
 }
 
 // NewConsumerByConfig 创建新的Consumer
-func NewConsumer(configName string, config config.Config) (consumer *Consumer, err error) {
-	consumer = &Consumer{}
-	consumer.configName = configName
-	consumer.config = config
-	consumer.closeCh = make(chan struct{})
-	consumer.queues = cmap.New[*QueueItem]()
+func NewConsumer(proto string, configName string, config config.Config) (consumer *Consumer, err error) {
+	consumer = &Consumer{
+		proto:      proto,
+		configName: configName,
+		config:     config,
+		closeCh:    make(chan struct{}),
+		queues:     cmap.New[*QueueItem](),
+	}
 	return
+}
+
+func (consumer *Consumer) ServerURL() string {
+	return fmt.Sprintf("%s://%s-%s", consumer.proto, global.LocalIp, consumer.configName)
 }
 
 // Connect  连接服务器
@@ -228,7 +235,7 @@ func (consumer *Consumer) writeToDeadLetter(queue string, vals xtypes.XMap) {
 	deadMsg["q"] = queue
 	deadMsg["m"] = vals
 
-	consumer.producer.Enqueue(context.Background(), &redisqueue.Message{Stream: consumer.DeadLetterQueue, Values: deadMsg})
+	_ = consumer.producer.Enqueue(context.Background(), &redisqueue.Message{Stream: consumer.DeadLetterQueue, Values: deadMsg})
 }
 
 type consumeResolver struct {
@@ -239,7 +246,11 @@ func (s *consumeResolver) Name() string {
 }
 
 func (s *consumeResolver) Resolve(configName string, setting config.Config) (queue.IMQC, error) {
-	return NewConsumer(configName, setting)
+	consumer, err := NewConsumer(s.Name(), configName, setting)
+	if err != nil {
+		return nil, err
+	}
+	return consumer, nil
 }
 func init() {
 	queue.RegisterConsumer(&consumeResolver{})

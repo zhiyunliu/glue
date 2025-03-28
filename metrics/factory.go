@@ -1,46 +1,30 @@
 package metrics
 
-import (
-	"fmt"
+import "github.com/zhiyunliu/glue/config"
 
-	"github.com/zhiyunliu/glue/config"
-)
-
-type Provider interface {
-	Name() string
-	Counter() Counter
-	Observer() Observer
-	Gauge() Gauge
-	GetImpl() interface{}
+type Factory interface {
+	Counter(metric config.Config, opts *Options) Counter
+	Timer(metric config.Config, opts *Options) Timer
+	Gauge(metric config.Config, opts *Options) Gauge
+	Histogram(metric config.Config, opts *Options) Histogram
 }
 
-// resover 定义配置文件转换方法
-type Resolver interface {
-	Name() string
-	Resolve(name string, config config.Config) (Provider, error)
+var noopFactory Factory = xnoopFactory{}
+
+type xnoopFactory struct{}
+
+func (xnoopFactory) Counter(config.Config, *Options) Counter {
+	return NoopCounter
 }
 
-var resolvers = make(map[string]Resolver)
-
-// Register 注册配置文件适配器
-func Register(resolver Resolver) {
-	proto := resolver.Name()
-	if _, ok := resolvers[proto]; ok {
-		panic(fmt.Errorf("metrics: 不能重复注册:%s", proto))
-	}
-	resolvers[proto] = resolver
+func (xnoopFactory) Timer(config.Config, *Options) Timer {
+	return NoopTimer
 }
 
-// Deregister 清理配置适配器
-func Deregister(name string) {
-	delete(resolvers, name)
+func (xnoopFactory) Gauge(config.Config, *Options) Gauge {
+	return NoopGauge
 }
 
-// newProvider 根据适配器名称及参数返回配置处理器
-func newProvider(proto string, setting config.Config) (Provider, error) {
-	resolver, ok := resolvers[proto]
-	if !ok {
-		return nil, fmt.Errorf("metrics: 未知的协议类型:%s", proto)
-	}
-	return resolver.Resolve(proto, setting)
+func (xnoopFactory) Histogram(config.Config, *Options) Histogram {
+	return NoopHistogram
 }

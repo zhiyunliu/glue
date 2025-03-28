@@ -2,7 +2,6 @@ package engine
 
 import (
 	"bytes"
-	"net/http"
 	"time"
 
 	"github.com/zhiyunliu/glue/constants"
@@ -57,8 +56,7 @@ func procHandler(engine AdapterEngine, group *RouterWrapper, middlewares ...midd
 func buildHandler(engine AdapterEngine, group *RouterWrapper, middlewares []middleware.Middleware, v *router.Unit) HandlerFunc {
 	return func(ctx context.Context) {
 		var (
-			code      int    = http.StatusOK
-			kind             = ctx.ServerType()
+			kind      string = ctx.ServerType()
 			fullPath  string = ctx.Request().Path().GetURL().Path
 			logMethod string = ctx.Request().GetMethod()
 		)
@@ -77,7 +75,7 @@ func buildHandler(engine AdapterEngine, group *RouterWrapper, middlewares []midd
 		if rerr, ok := resp.(error); ok {
 			err = rerr
 		}
-		code = ctx.Response().GetStatusCode()
+		code := ctx.Response().GetStatusCode()
 		if se := errors.FromError(err); se != nil {
 			code = se.Code
 		}

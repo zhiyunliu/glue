@@ -70,7 +70,7 @@ func newMsgBody(msg map[string]interface{}) *queue.MsgItem {
 	}
 	switch val := msg["header"].(type) {
 	case string:
-		json.Unmarshal([]byte(val), &body.HeaderMap)
+		_ = json.Unmarshal([]byte(val), &body.HeaderMap)
 	case map[string]interface{}:
 		for k, v := range val {
 			body.HeaderMap[k] = fmt.Sprint(v)

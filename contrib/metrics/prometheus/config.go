@@ -22,29 +22,26 @@ type gateway struct {
 	Addr     string `json:"addr"`
 	Interval int    `json:"interval"`
 }
-type counterOpts struct {
+
+type normalOpts struct {
 	Namespace string   `json:"namespace"`
 	Subsystem string   `json:"subsystem"`
 	Name      string   `json:"name"`
 	Help      string   `json:"help"`
 	Labels    []string `json:"labels"`
+}
+
+type counterOpts struct {
+	normalOpts
 }
 
 type histogramOpts struct {
-	Namespace string    `json:"namespace"`
-	Subsystem string    `json:"subsystem"`
-	Name      string    `json:"name"`
-	Help      string    `json:"help"`
-	Buckets   []float64 `json:"buckets"`
-	Labels    []string  `json:"labels"`
+	normalOpts
+	Buckets []float64 `json:"buckets"`
 }
 
 type gaugeOpts struct {
-	Namespace string   `json:"namespace"`
-	Subsystem string   `json:"subsystem"`
-	Name      string   `json:"name"`
-	Help      string   `json:"help"`
-	Labels    []string `json:"labels"`
+	normalOpts
 }
 
 func (c *prometheusConfig) GetCounter() (opts prometheus.CounterOpts, labels []string) {

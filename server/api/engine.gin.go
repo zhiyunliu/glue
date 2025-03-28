@@ -12,6 +12,7 @@ func (e *Server) resoverEngineRoute() (err error) {
 	adapterEngine, err := engine.NewEngine(e.opts.srvCfg.Config.Engine, e.opts.config,
 		engine.WithSrvType(e.Type()),
 		engine.WithSrvName(e.Name()),
+		engine.WithSvcName(e.ServiceName()),
 		engine.WithLogOptions(e.opts.logOpts),
 		engine.WithErrorEncoder(e.opts.encErr),
 		engine.WithRequestDecoder(e.opts.decReq),

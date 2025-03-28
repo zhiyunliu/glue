@@ -52,6 +52,7 @@ type ConsumeCallback func(IMQCMessage)
 
 // IMQC consumer接口
 type IMQC interface {
+	ServerURL() string
 	Connect() error
 	Consume(task TaskInfo, callback ConsumeCallback) (err error)
 	Unconsume(queue string)

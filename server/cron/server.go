@@ -90,6 +90,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 		engine.WithLogOptions(e.opts.logOpts),
 		engine.WithSrvType(e.Type()),
 		engine.WithSrvName(e.Name()),
+		engine.WithSvcName(e.ServiceName()),
 		engine.WithErrorEncoder(e.opts.encErr),
 		engine.WithRequestDecoder(e.opts.decReq),
 		engine.WithResponseEncoder(e.opts.encResp),

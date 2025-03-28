@@ -3,6 +3,7 @@ package context
 type Request interface {
 	GetMethod() string
 	GetClientIP() string
+	GetRemoteAddr() string
 	RequestID() string
 	ContentType() string
 	Header() Header
@@ -11,5 +12,6 @@ type Request interface {
 	Path() Path
 	Query() Query
 	Body() Body
+	GetContentLength() int64
 	GetImpl() interface{}
 }

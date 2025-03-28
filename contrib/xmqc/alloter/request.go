@@ -72,7 +72,7 @@ func (m *Request) GetService() string {
 // GetService 服务名()
 func (m *Request) GetURL() *url.URL {
 	if m.url == nil {
-		m.url, _ = url.Parse(m.task.GetService())
+		m.url, _ = url.Parse(m.task.GetFullPath())
 	}
 	return m.url
 }

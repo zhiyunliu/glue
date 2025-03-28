@@ -9,6 +9,7 @@ type Response interface {
 	WriteBytes([]byte) error
 	ContentType() string
 	ResponseBytes() []byte
+	Size() int
 	Redirect(statusCode int, location string)
 	Flush() error
 }

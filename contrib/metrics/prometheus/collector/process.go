@@ -26,6 +26,7 @@ type (
 )
 
 func NewProcessCollector() (p prometheus.Collector, err error) {
+
 	processes, err := process.Processes()
 	if err != nil {
 		err = fmt.Errorf("process.Processes;err:%w", err)

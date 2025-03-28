@@ -7,8 +7,11 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/engine"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var _ engine.AdapterEngine = (*GinEngine)(nil)
@@ -24,6 +27,13 @@ func NewGinEngine(ginEngine *gin.Engine, opts ...engine.Option) engine.AdapterEn
 		Engine: ginEngine,
 		opts:   engine.DefaultOptions(),
 	}
+
+	g.Engine.Use(otelgin.Middleware(g.opts.SvcName, otelgin.WithMetricAttributeFn(func(req *http.Request) []attribute.KeyValue {
+		return []attribute.KeyValue{
+			attribute.String("sid", req.Header.Get(constants.HeaderRequestId)),
+		}
+	})))
+
 	for i := range opts {
 		opts[i](g.opts)
 	}
@@ -59,11 +69,20 @@ func (e *GinEngine) NoRoute() {
 }
 
 func (e *GinEngine) Handle(method string, path string, callfunc engine.HandlerFunc) {
+
+	// provider := otel.GetTracerProvider()
+	// otelhttpHandler := otelhttp.NewHandler(
+	// 	otelhttp.WithRouteTag(path, traceResponseHandler(callfunc)),
+	// 	path,
+	// 	otelhttp.WithTracerProvider(provider))
+
 	e.Engine.Handle(method, path, func(gctx *gin.Context) {
 		actx := e.pool.Get().(*GinContext)
 		actx.reset(gctx)
 		actx.opts = e.opts
+
 		callfunc(actx)
+
 		actx.Gctx.Writer.Flush()
 		actx.Close()
 		e.pool.Put(actx)

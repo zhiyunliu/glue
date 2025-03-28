@@ -81,7 +81,7 @@ func (ctx *AlloterContext) Bind(obj interface{}) error {
 		return fmt.Errorf("Bind只接收Ptr类型的数据,目前是:%s", val.Kind())
 	}
 
-	err := ctx.Request().Body().Scan(obj)
+	err := ctx.Request().Body().ScanTo(obj)
 	if err != nil {
 		return err
 	}
@@ -181,6 +181,9 @@ func (r *alloterRequest) RequestID() string {
 func (r *alloterRequest) GetClientIP() string {
 	return r.actx.ClientIP()
 }
+func (r *alloterRequest) GetRemoteAddr() string {
+	return ""
+}
 
 func (r *alloterRequest) Header() vctx.Header {
 	return xtypes.SMap(r.actx.Request.GetHeader())
@@ -192,6 +195,10 @@ func (r *alloterRequest) GetHeader(key string) string {
 
 func (r *alloterRequest) SetHeader(key, val string) {
 	r.actx.Header(key, val)
+}
+
+func (r *alloterRequest) GetContentLength() int64 {
+	return int64(len(r.actx.Request.Body()))
 }
 
 func (r *alloterRequest) Path() vctx.Path {
@@ -430,6 +437,10 @@ func (q *alloterResponse) ContentType() string {
 
 func (q *alloterResponse) ResponseBytes() []byte {
 	return q.writebytes
+}
+
+func (q *alloterResponse) Size() int {
+	return len(q.writebytes)
 }
 func (q *alloterResponse) Flush() error {
 	return q.actx.Writer.Flush()
