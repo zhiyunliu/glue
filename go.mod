@@ -4,10 +4,10 @@ go 1.22
 
 require (
 	github.com/zhiyunliu/alloter v0.1.0
-	github.com/zhiyunliu/golibs v0.3.3
+	github.com/zhiyunliu/golibs v0.3.5
 	github.com/zhiyunliu/redisqueue/v3 v3.0.1
 	github.com/zhiyunliu/stack v1.9.0 // indirect
-	github.com/zhiyunliu/xbinding v0.1.2
+	github.com/zhiyunliu/xbinding v0.1.3
 
 )
 
