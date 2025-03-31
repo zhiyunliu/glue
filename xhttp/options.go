@@ -12,6 +12,9 @@ type RequestOption func(*Options)
 type RespHandler = httputil.RespHandler
 type SSEHandler = httputil.SSEHandler
 type SSEOption = httputil.SSEOption
+type ReqChangeCall = httputil.ReqChangeCall
+type ReqChangeCalls = httputil.ReqChangeCalls
+
 type ServerSentEvents = xsse.ServerSentEvents
 type SSE = xsse.ServerSentEvents
 
@@ -22,13 +25,14 @@ var (
 )
 
 type Options struct {
-	Method      string
-	Version     string
-	Header      xtypes.SMap
-	RespHandler RespHandler
-	SSEHandler  SSEHandler
-	SSEOptions  []SSEOption
-	SpecifyIP   string
+	Method         string
+	Version        string
+	Header         xtypes.SMap
+	RespHandler    RespHandler
+	SSEHandler     SSEHandler
+	SSEOptions     []SSEOption
+	SpecifyIP      string
+	ReqChangeCalls ReqChangeCalls
 }
 
 // WithMethod sets the method for the request.
@@ -103,5 +107,12 @@ func WithSourceName() RequestOption {
 func WithSpecifyIP(ip string) RequestOption {
 	return func(o *Options) {
 		o.SpecifyIP = ip
+	}
+}
+
+// WithRequestHost 设置修改http.Request对象的自定义方法
+func WithReqChangeCall(calls ...ReqChangeCall) RequestOption {
+	return func(o *Options) {
+		o.ReqChangeCalls = append(o.ReqChangeCalls, calls...)
 	}
 }

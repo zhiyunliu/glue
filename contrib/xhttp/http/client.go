@@ -122,6 +122,9 @@ func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.O
 	if o.SSEHandler != nil {
 		httpOpts = append(httpOpts, httputil.WithSSEHandler(o.SSEHandler, o.SSEOptions...))
 	}
+	if len(o.ReqChangeCalls) > 0 {
+		httpOpts = append(httpOpts, httputil.WithReqChangeCall(o.ReqChangeCalls...))
+	}
 
 	queryParam := ""
 	if reqPath.RawQuery != "" {
