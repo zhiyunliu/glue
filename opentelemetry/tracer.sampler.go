@@ -4,43 +4,48 @@ import (
 	"math/rand/v2"
 	"sync/atomic"
 
+	"github.com/zhiyunliu/glue/config"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
 )
 
 var (
-	zeroTraceID trace.TraceID
-	_           sdktrace.Sampler = (*DynamicSampler)(nil)
+	_ sdktrace.Sampler = (*DynamicSampler)(nil)
+)
+
+const (
+	SamplerMaxRate = 100
 )
 
 // 1. 实现动态采样器
 type DynamicSampler struct {
 	//0~100
-	rateBits uint64 // 使用原子操作存储的采样率
+	rateBits    int64 // 使用原子操作存储的采样率
+	serviceName string
+	config      config.Config
 }
 
-func NewDynamicSampler(initialRate uint64) sdktrace.Sampler {
+func NewDynamicSampler(serviceName string, initialRate int64, config config.Config) *DynamicSampler {
 	return &DynamicSampler{
-		rateBits: initialRate,
+		rateBits:    initialRate,
+		serviceName: serviceName,
+		config:      config,
 	}
 }
 
-func (s *DynamicSampler) SetRate(rate uint64) {
-	atomic.StoreUint64(&s.rateBits, rate)
+func (s *DynamicSampler) SetRate(rate int64) {
+	atomic.StoreInt64(&s.rateBits, rate)
 }
 
-func (s *DynamicSampler) GetRate() uint64 {
-	return atomic.LoadUint64(&s.rateBits)
+func (s *DynamicSampler) GetRate() int64 {
+	return atomic.LoadInt64(&s.rateBits)
 }
 
 func (s *DynamicSampler) ShouldSample(p sdktrace.SamplingParameters) sdktrace.SamplingResult {
 	rate := s.GetRate()
-	if rate >= 1 {
+	if rate >= SamplerMaxRate {
 		return sdktrace.SamplingResult{Decision: sdktrace.RecordAndSample}
 	}
-	//todo:这个地方需要检查远程的Span采样情况
-
-	if rate <= 0 || rand.Uint64N(100) > rate {
+	if rand.Int64N(SamplerMaxRate) > rate {
 		return sdktrace.SamplingResult{Decision: sdktrace.Drop}
 	}
 
@@ -49,4 +54,11 @@ func (s *DynamicSampler) ShouldSample(p sdktrace.SamplingParameters) sdktrace.Sa
 
 func (s *DynamicSampler) Description() string {
 	return "DynamicSampler"
+}
+
+func (s *DynamicSampler) Watch() error {
+	return s.config.Watch("sampler_rate", func(key string, val config.Value) {
+		rateVal, _ := val.Int()
+		s.SetRate(rateVal)
+	})
 }

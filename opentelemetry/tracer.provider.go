@@ -2,16 +2,24 @@ package opentelemetry
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
-	"github.com/zhiyunliu/glue/opentelemetry/metrics"
+	"github.com/zhiyunliu/glue/config"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
+)
+
+const (
+	defaultMetricsProto = "prometheus"
+	opentelemetry       = "opentelemetry"
 )
 
 // 2. 实现可开关的 Span 处理器
@@ -23,7 +31,7 @@ type SwitchableProcessor struct {
 
 func NewSwitchableProcessor(realProcessor sdktrace.SpanProcessor) *SwitchableProcessor {
 	return &SwitchableProcessor{
-		enabled:       true,
+		enabled:       false,
 		realProcessor: realProcessor,
 	}
 }
@@ -58,26 +66,46 @@ func (p *SwitchableProcessor) SetEnabled(enabled bool) {
 	p.enabled = enabled
 }
 
-func NewTracerProvider(serviceName string, endpoint string) *sdktrace.TracerProvider {
+// NewTracerProvider creates a new TracerProvider with the given configuration.
+func NewTracerProvider(serviceName string, config config.Config) (*sdktrace.TracerProvider, error) {
+	telemetryConfig := config.Root().Get(opentelemetry)
 
 	res, err := resource.New(
 		context.Background(),
-		resource.WithSchemaURL(semconv.SchemaURL),
 		resource.WithAttributes(semconv.ServiceNameKey.String(serviceName)),
 		resource.WithTelemetrySDK(),
 		resource.WithHost(),
-		resource.WithOSType(),
 	)
+	if err != nil {
+		err = fmt.Errorf("failed to create resource: %w", err)
+		return nil, err
+	}
+	cfg := &Config{}
+	err = telemetryConfig.ScanTo(cfg)
+	if err != nil {
+		err = fmt.Errorf("failed to load config: %w", err)
+		return nil, err
+	}
+	var opts = []otlptracehttp.Option{otlptracehttp.WithEndpoint(cfg.Endpoint)}
+	if cfg.Insecure {
+		opts = append(opts, otlptracehttp.WithInsecure())
+	}
 
-	var opts = []otlptracehttp.Option{otlptracehttp.WithInsecure()}
 	exporter, err := otlptrace.New(
 		context.Background(),
 		otlptracehttp.NewClient(opts...),
 	)
+	if err != nil {
+		err = fmt.Errorf("failed to create exporter: %w", err)
+		return nil, err
+	}
 
-	dynamicSampler := NewDynamicSampler(0)
-
-	metricsObserver := metrics.NewObserver(metricsFactory, metrics.DefaultNameNormalizer)
+	dynamicSampler := NewDynamicSampler(serviceName, cfg.SamplerRate, telemetryConfig)
+	err = dynamicSampler.Watch()
+	if err != nil {
+		err = fmt.Errorf("failed to watch sampler rate: %w", err)
+		return nil, err
+	}
 
 	sampler := sdktrace.ParentBased(
 		dynamicSampler, // 根Span使用动态采样
@@ -85,11 +113,21 @@ func NewTracerProvider(serviceName string, endpoint string) *sdktrace.TracerProv
 		sdktrace.WithRemoteParentNotSampled(sdktrace.NeverSample()), // 远程父Span未采样
 	)
 
+	metricsProto := cfg.MetricsProto
+	if metricsProto == "" {
+		metricsProto = defaultMetricsProto
+	}
+
+ 
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sampler),
 		sdktrace.WithBatcher(exporter, sdktrace.WithBatchTimeout(time.Second)),
-		sdktrace.WithSpanProcessor(metricsObserver),
-		sdktrace.WithResource(res),
+ 		sdktrace.WithResource(res),
 	)
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.Baggage{}, propagation.TraceContext{}))
+
+	return tp, nil
 
 }

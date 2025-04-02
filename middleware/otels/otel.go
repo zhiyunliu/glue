@@ -1,19 +1,20 @@
 package otels
 
 import (
-	sctx "context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/opentelemetry/metrics"
+	"github.com/zhiyunliu/glue/standard"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/metric"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	stdmetrics "github.com/zhiyunliu/glue/metrics"
 	"github.com/zhiyunliu/glue/middleware"
 	gsemconv "github.com/zhiyunliu/glue/middleware/otels/semconv"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
@@ -21,42 +22,42 @@ import (
 
 const (
 	ScopeName = "github.com/zhiyunliu/glue/middleware/otels"
+	maxNumber = 1000
 )
 
 // Server is middleware server-side metrics.
-func serverByOptions(op *options) middleware.Middleware {
+func Server() middleware.Middleware {
 
 	cfg := config{}
-
 	if cfg.TracerProvider == nil {
 		cfg.TracerProvider = otel.GetTracerProvider()
 	}
-	tracer := cfg.TracerProvider.Tracer(
-		ScopeName,
-		oteltrace.WithInstrumentationVersion(Version()),
-	)
+	tracer := cfg.TracerProvider.Tracer(ScopeName)
 	if cfg.Propagators == nil {
 		cfg.Propagators = otel.GetTextMapPropagator()
 	}
 	if cfg.MeterProvider == nil {
 		cfg.MeterProvider = otel.GetMeterProvider()
 	}
-	meter := cfg.MeterProvider.Meter(
-		ScopeName,
-		metric.WithInstrumentationVersion(Version()),
-	)
+
+	stdInstance := standard.GetInstance(stdmetrics.TypeNode).(stdmetrics.StandardMetric)
+	metricsProvider := stdInstance.GetProvider("prometheus")
+	mets := &metrics.Metrics{}
+	metricsProvider.Build(mets)
 
 	return func(handler middleware.Handler) middleware.Handler {
-
 		return func(c context.Context) (reply interface{}) {
-
-			requestStartTime := time.Now()
-			fullPath := c.Request().Path().FullPath()
+			serverKind := c.ServerType()
 			savedCtx := c.Context()
+			fullPath := c.Request().Path().FullPath()
+			mets.RequestProcessing.Add(1, serverKind, fullPath)
+			startTime := time.Now()
+
 			defer func() {
+				mets.RequestProcessing.Sub(1, serverKind, fullPath)
 				c.ResetContext(savedCtx)
 			}()
-			additionalAttributes := gsemconv.RequestTraceAttrs(op.svcName, c.Request())
+			additionalAttributes := gsemconv.RequestTraceAttrs(c.ServerName(), c.Request())
 			ctx := cfg.Propagators.Extract(savedCtx, c.Request().Header())
 			opts := []oteltrace.SpanStartOption{
 				oteltrace.WithAttributes(additionalAttributes...),
@@ -64,8 +65,7 @@ func serverByOptions(op *options) middleware.Middleware {
 				oteltrace.WithAttributes(gsemconv.XRequestID(c.Request().RequestID())),
 				oteltrace.WithSpanKind(oteltrace.SpanKindServer),
 			}
-			var spanName string = c.Request().Path().FullPath()
-			ctx, span := tracer.Start(ctx, spanName, opts...)
+			ctx, span := tracer.Start(ctx, fullPath, opts...)
 			defer span.End()
 
 			// pass the span through the request context
@@ -98,7 +98,6 @@ func serverByOptions(op *options) middleware.Middleware {
 			if statusCode == 0 {
 				statusCode = http.StatusOK
 			}
-
 			span.SetStatus(gsemconv.Status(statusCode))
 			if statusCode > 0 {
 				span.SetAttributes(semconv.HTTPResponseStatusCode(statusCode))
@@ -108,49 +107,8 @@ func serverByOptions(op *options) middleware.Middleware {
 				span.SetStatus(codes.Error, err.Error())
 				span.RecordError(err)
 			}
-
-			RecordMetrics(ctx, gsemconv.ServerMetricData{
-				ServerName:   op.svcName,
-				ResponseSize: int64(c.Response().Size()),
-				MetricAttributes: gsemconv.MetricAttributes{
-					Req:                  c.Request(),
-					StatusCode:           statusCode,
-					AdditionalAttributes: additionalAttributes,
-				},
-				MetricData: gsemconv.MetricData{
-					RequestSize: c.Request().GetContentLength(),
-					ElapsedTime: float64(time.Since(requestStartTime)) / float64(time.Millisecond),
-				},
-			})
+			mets.RequestLatency.Record(time.Since(startTime), serverKind, fullPath, strconv.Itoa(statusCode))
 			return reply
 		}
 	}
-}
-
-func RecordMetrics(ctx sctx.Context, md gsemconv.ServerMetricData) {
-
-	if s.requestBytesCounter != nil && s.responseBytesCounter != nil && s.serverLatencyMeasure != nil {
-		attributes := OldHTTPServer{}.MetricAttributes(md.ServerName, md.Req, md.StatusCode, md.AdditionalAttributes)
-		o := metric.WithAttributeSet(attribute.NewSet(attributes...))
-		addOpts := metricAddOptionPool.Get().(*[]metric.AddOption)
-		*addOpts = append(*addOpts, o)
-		s.requestBytesCounter.Add(ctx, md.RequestSize, *addOpts...)
-		s.responseBytesCounter.Add(ctx, md.ResponseSize, *addOpts...)
-		s.serverLatencyMeasure.Record(ctx, md.ElapsedTime, o)
-		*addOpts = (*addOpts)[:0]
-		metricAddOptionPool.Put(addOpts)
-	}
-
-	if s.duplicate && s.requestDurationHistogram != nil && s.requestBodySizeHistogram != nil && s.responseBodySizeHistogram != nil {
-		attributes := CurrentHTTPServer{}.MetricAttributes(md.ServerName, md.Req, md.StatusCode, md.AdditionalAttributes)
-		o := metric.WithAttributeSet(attribute.NewSet(attributes...))
-		recordOpts := metricRecordOptionPool.Get().(*[]metric.RecordOption)
-		*recordOpts = append(*recordOpts, o)
-		s.requestBodySizeHistogram.Record(ctx, md.RequestSize, *recordOpts...)
-		s.responseBodySizeHistogram.Record(ctx, md.ResponseSize, *recordOpts...)
-		s.requestDurationHistogram.Record(ctx, md.ElapsedTime/1000.0, o)
-		*recordOpts = (*recordOpts)[:0]
-		metricRecordOptionPool.Put(recordOpts)
-	}
-
 }

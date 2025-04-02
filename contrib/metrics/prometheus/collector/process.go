@@ -4,66 +4,58 @@ import (
 	"fmt"
 	"os"
 
+	"log"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
-var (
-	processCPUPercent = prometheus.NewDesc(
-		"namedprocess_cpu_percent",
-		"named process cpu percentage",
-		[]string{"processname"},
-		nil)
-
-	_ prometheus.Collector = &NamedProcessCollector{}
-)
-
-type (
-	NamedProcessCollector struct {
-		processInfo *process.Process
-		name        string
-	}
-)
-
-func NewProcessCollector() (p prometheus.Collector, err error) {
-
-	processes, err := process.Processes()
-	if err != nil {
-		err = fmt.Errorf("process.Processes;err:%w", err)
-		return
-	}
-	curPid := os.Getpid()
-
-	var curProcess *process.Process
-	for _, p := range processes {
-		if p.Pid == int32(curPid) {
-			curProcess = p
-			break
-		}
-	}
-	name, err := curProcess.Name()
-	if err != nil {
-		err = fmt.Errorf("Process.Name();err:%w", err)
-		return
-	}
-	p = &NamedProcessCollector{
-		name:        name,
-		processInfo: curProcess,
-	}
-
-	return p, nil
+type ProcessCPUCollector struct {
+	cpuUsage    *prometheus.GaugeVec
+	proc        *process.Process // 使用 gopsutil 的进程对象
+	processname string
 }
 
-// Describe implements prometheus.Collector.
-func (p *NamedProcessCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- processCPUPercent
+func NewProcessCPUCollector() (*ProcessCPUCollector, error) {
+	var pid int32 = int32(os.Getpid())
+	// 初始化进程对象
+	p, err := process.NewProcess(pid)
+	if err != nil {
+		return nil, fmt.Errorf("process %d not found: %v", pid, err)
+	}
+	processname, err := p.Name()
+	if err != nil {
+		return nil, fmt.Errorf("process %d ,get name failed: %v", pid, err)
+	}
+
+	return &ProcessCPUCollector{
+		cpuUsage: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "process_cpu_usage_percent",
+				Help: "CPU usage percentage for target process",
+			},
+			[]string{"processname"},
+		),
+		proc:        p,
+		processname: processname,
+	}, nil
 }
 
-// Collect implements prometheus.Collector.
-func (p *NamedProcessCollector) Collect(ch chan<- prometheus.Metric) {
-	cpuPercent, err := p.processInfo.CPUPercent()
+func (c *ProcessCPUCollector) Describe(ch chan<- *prometheus.Desc) {
+	c.cpuUsage.Describe(ch)
+}
+
+func (c *ProcessCPUCollector) Collect(ch chan<- prometheus.Metric) {
+	// 获取 CPU 使用率
+	percent, err := c.proc.CPUPercent()
 	if err != nil {
-		cpuPercent = -1
+		log.Printf("Failed to get CPU percent: %v", err)
+		return
 	}
-	ch <- prometheus.MustNewConstMetric(processCPUPercent, prometheus.CounterValue, cpuPercent, p.name)
+	// 更新指标
+	c.cpuUsage.WithLabelValues(
+		c.processname,
+	).Set(percent)
+
+	c.cpuUsage.Collect(ch)
 }

@@ -12,12 +12,14 @@ import (
 
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/middleware/otels"
 	"github.com/zhiyunliu/glue/middleware/recovery"
 )
 
 func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup) {
 	defaultMiddlewares := []middleware.Middleware{
 		recovery.Recovery(),
+		otels.Server(),
 	}
 	engine.NoMethod()
 	engine.NoRoute()

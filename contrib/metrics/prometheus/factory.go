@@ -13,16 +13,15 @@ var _ metrics.Factory = (*Factory)(nil)
 type options struct {
 	registerer     prometheus.Registerer
 	defaultBuckets []float64
-	separator      string
 	namespace      string
 	subsystem      string
 }
 
 type Option func(*options)
 
-func WithNameSpace(space string) Option {
+func WithNameSpace(namespace string) Option {
 	return func(opts *options) {
-		opts.namespace = space
+		opts.namespace = namespace
 	}
 }
 
@@ -45,7 +44,6 @@ func WithDefaultBuckets(buckets ...float64) Option {
 }
 
 type Factory struct {
-	scope      string
 	cache      *metricCache
 	normalizer *strings.Replacer
 	options    *options
@@ -71,8 +69,8 @@ func (f *Factory) Counter(cfg config.Config, opts *metrics.Options) metrics.Coun
 
 	copts := prometheus.CounterOpts{
 		Namespace: f.getNamespace(opts.Namespace),
-		Subsystem: f.getNamespace(opts.Subsystem),
-		Name:      opts.Name,
+		Subsystem: f.getSubSystem(opts.Subsystem),
+		Name:      f.normalizer.Replace(opts.Name),
 		Help:      f.getHelp(opts),
 	}
 	cv := f.cache.getOrCreateCounter(copts, opts.Labels)
@@ -84,8 +82,8 @@ func (f *Factory) Counter(cfg config.Config, opts *metrics.Options) metrics.Coun
 func (f *Factory) Timer(cfg config.Config, opts *metrics.Options) metrics.Timer {
 	hopts := prometheus.HistogramOpts{
 		Namespace: f.getNamespace(opts.Namespace),
-		Subsystem: f.getNamespace(opts.Subsystem),
-		Name:      opts.Name,
+		Subsystem: f.getSubSystem(opts.Subsystem),
+		Name:      f.normalizer.Replace(opts.Name),
 		Help:      f.getHelp(opts),
 		Buckets:   f.getBuckets(opts.Buckets),
 	}
@@ -99,8 +97,8 @@ func (f *Factory) Gauge(cfg config.Config, opts *metrics.Options) metrics.Gauge 
 
 	gopts := prometheus.GaugeOpts{
 		Namespace: f.getNamespace(opts.Namespace),
-		Subsystem: f.getNamespace(opts.Subsystem),
-		Name:      opts.Name,
+		Subsystem: f.getSubSystem(opts.Subsystem),
+		Name:      f.normalizer.Replace(opts.Name),
 		Help:      f.getHelp(opts),
 	}
 	gv := f.cache.getOrCreateGauge(gopts, opts.Labels)
@@ -113,8 +111,8 @@ func (f *Factory) Histogram(cfg config.Config, opts *metrics.Options) metrics.Hi
 
 	hopts := prometheus.HistogramOpts{
 		Namespace: f.getNamespace(opts.Namespace),
-		Subsystem: f.getNamespace(opts.Subsystem),
-		Name:      opts.Name,
+		Subsystem: f.getSubSystem(opts.Subsystem),
+		Name:      f.normalizer.Replace(opts.Name),
 		Help:      f.getHelp(opts),
 		Buckets:   f.getBuckets(opts.Buckets),
 	}
