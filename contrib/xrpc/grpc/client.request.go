@@ -23,7 +23,6 @@ type Request struct {
 
 // NewRequest 构建请求
 func NewRequest(clientCfg *clientConfig) *Request {
-
 	req := &Request{
 		clientConfig: clientCfg,
 		requests:     cmap.New[any](),
@@ -68,21 +67,6 @@ func (r *Request) Request(ctx sctx.Context, service string, input any, opts ...x
 	}
 	for i := range nopts {
 		nopts[i](opt)
-	}
-
-	if client.setting.Trace {
-		ctx, span := client.tracer.Start(ctx, client.reqPath.Path, opt.Header)
-		defer func() {
-			if err != nil {
-				client.tracer.End(ctx, span, err)
-				return
-			}
-			status := int32(http.StatusOK)
-			if res != nil {
-				status = res.GetStatus()
-			}
-			client.tracer.End(ctx, span, status)
-		}()
 	}
 
 	if opt.StreamProcessor == nil {

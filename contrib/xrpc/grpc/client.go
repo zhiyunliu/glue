@@ -10,11 +10,9 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/balancer"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
-	"github.com/zhiyunliu/glue/middleware/tracing"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
@@ -29,7 +27,6 @@ type Client struct {
 	balancerBuilder resolver.Builder
 	ctx             context.Context
 	ctxCancel       context.CancelFunc
-	tracer          *tracing.Tracer
 }
 
 // NewClient 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
@@ -39,7 +36,6 @@ func NewClient(registrar registry.Registrar, setting *clientConfig, reqPath *url
 		setting:   setting,
 		reqPath:   reqPath,
 	}
-	client.tracer = tracing.NewTracer(trace.SpanKindClient)
 
 	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
 
