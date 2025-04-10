@@ -15,7 +15,7 @@ type IDB interface {
 	Begin() (ITrans, error)
 	Close() error
 	GetImpl() interface{}
-	Transaction(TransactionCallback) error
+	Transaction(context.Context, TransactionCallback) error
 }
 
 // ITrans 数据库事务接口

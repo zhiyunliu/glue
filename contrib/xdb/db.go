@@ -9,6 +9,7 @@ import (
 
 	"github.com/zhiyunliu/glue/contrib/xdb/implement"
 	"github.com/zhiyunliu/glue/xdb"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // DB 数据库操作类
@@ -103,6 +104,13 @@ func (db *xDB) Scalar(ctx context.Context, sqls string, input any, opts ...xdb.T
 
 // Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xDB) Exec(ctx context.Context, sql string, input any, opts ...xdb.TemplateOption) (r xdb.Result, err error) {
+	ctx, span := GetSpanFromContext(ctx)
+	defer func() {
+		span.SetAttributes(
+			attribute.String("sql", sql),
+		)
+		span.End()
+	}()
 
 	dbParam, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
@@ -152,7 +160,12 @@ func (db *xDB) Begin() (t xdb.ITrans, err error) {
 }
 
 // Transaction 执行事务
-func (db *xDB) Transaction(callback xdb.TransactionCallback) (err error) {
+func (db *xDB) Transaction(ctx context.Context, callback xdb.TransactionCallback) (err error) {
+	ctx, span := GetSpanFromContext(ctx)
+	defer func() {
+		span.End()
+	}()
+
 	tt := &xTrans{
 		cfg: db.cfg,
 	}
@@ -189,6 +202,14 @@ func (db *xDB) Close() error {
 }
 
 func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback, opts ...xdb.TemplateOption) (result any, err error) {
+	ctx, span := GetSpanFromContext(ctx)
+	defer func() {
+		span.SetAttributes(
+			attribute.String("sql", sql),
+		)
+		span.End()
+	}()
+
 	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
 		return
@@ -218,6 +239,14 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback impl
 }
 
 func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback, opts ...xdb.TemplateOption) (err error) {
+	ctx, span := GetSpanFromContext(ctx)
+	defer func() {
+		span.SetAttributes(
+			attribute.String("sql", sql),
+		)
+		span.End()
+	}()
+
 	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
 		return
