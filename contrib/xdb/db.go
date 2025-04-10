@@ -116,7 +116,7 @@ func (db *xDB) Exec(ctx context.Context, sql string, input any, opts ...xdb.Temp
 
 	start := time.Now()
 	debugPrint(ctx, db.cfg, query, execArgs...)
-	r, err = db.db.Exec(query, execArgs...)
+	r, err = db.db.Exec(ctx, query, execArgs...)
 	if err != nil {
 		return r, implement.GetError(err, query, execArgs...)
 	}
@@ -203,7 +203,7 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback impl
 	start := time.Now()
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
-	rows, err := db.db.Query(query, execArgs...)
+	rows, err := db.db.Query(ctx, query, execArgs...)
 	if err != nil {
 		return nil, implement.GetError(err, query, execArgs...)
 	}
@@ -232,7 +232,7 @@ func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any,
 	start := time.Now()
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
-	rows, err := db.db.Query(query, execArgs...)
+	rows, err := db.db.Query(ctx, query, execArgs...)
 	if err != nil {
 		return implement.GetError(err, query, execArgs...)
 	}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -97,6 +98,8 @@ func ResolveFirstDataResult(proto string, rows *sql.Rows, result any) (err error
 				return
 			}
 			err = scanIntoMap(mapval, values, columns)
+		} else {
+			return xdb.EmptyError
 		}
 
 	case reflect.Struct:
@@ -112,6 +115,8 @@ func ResolveFirstDataResult(proto string, rows *sql.Rows, result any) (err error
 				return
 			}
 			err = scanInToStruct(fields, rv, columns, values)
+		} else {
+			return xdb.EmptyError
 		}
 	default:
 		return &xdb.InvalidArgTypeError{Type: rv.Type()}
@@ -123,6 +128,11 @@ func ResolveFirstDataResult(proto string, rows *sql.Rows, result any) (err error
 func ResolveRowsDataResult(proto string, rows *sql.Rows, result any) (err error) {
 
 	rv := reflect.ValueOf(result)
+
+	if reader := xdb.GetRowDataReader(result); reader != nil {
+		return resolveRowsToReader(proto, rows, reader)
+	}
+
 	if rv.Kind() != reflect.Pointer {
 		return &xdb.InvalidArgTypeError{Type: rv.Type()}
 	}
@@ -434,4 +444,21 @@ func resolveRowsToMap(proto string, rows *sql.Rows, itemType reflect.Type) (refl
 		}
 	}
 	return
+}
+
+func resolveRowsToReader(proto string, rows *sql.Rows, reader xdb.RowDataReader) (err error) {
+	rowItem := reader.GetRowItem()
+	defer reader.Close()
+	for {
+		err = ResolveFirstDataResult(proto, rows, rowItem)
+		if err != nil {
+			if errors.Is(err, xdb.EmptyError) {
+				return nil
+			}
+			return
+		}
+		if err = reader.FillRowItem(rowItem); err != nil {
+			return
+		}
+	}
 }

@@ -1,6 +1,7 @@
 package xdb
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -11,6 +12,10 @@ const (
 	MissTypeOper       = "oper"
 	MissTypeSymbol     = "symbol"
 	MissDataTypeSymbol = "datatype"
+)
+
+var (
+	EmptyError = errors.New("empty")
 )
 
 type DbError interface {

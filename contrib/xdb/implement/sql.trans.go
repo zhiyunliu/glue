@@ -1,13 +1,14 @@
 package implement
 
 import (
+	"context"
 	"database/sql"
 )
 
 // ISysTrans 数据库事务接口
 type ISysTrans interface {
-	Query(string, ...interface{}) (*sql.Rows, error)
-	Execute(string, ...interface{}) (sql.Result, error)
+	Query(context.Context, string, ...interface{}) (*sql.Rows, error)
+	Execute(context.Context, string, ...interface{}) (sql.Result, error)
 	Rollback() error
 	Commit() error
 }
@@ -18,8 +19,8 @@ type sysTrans struct {
 }
 
 // Query 执行查询
-func (t *sysTrans) Query(query string, args ...interface{}) (rows *sql.Rows, err error) {
-	rows, err = t.tx.Query(query, args...)
+func (t *sysTrans) Query(ctx context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
+	rows, err = t.tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return
 	}
@@ -27,8 +28,8 @@ func (t *sysTrans) Query(query string, args ...interface{}) (rows *sql.Rows, err
 }
 
 // Executes 执行SQL操作语句
-func (t *sysTrans) Execute(query string, args ...interface{}) (result sql.Result, err error) {
-	result, err = t.tx.Exec(query, args...)
+func (t *sysTrans) Execute(ctx context.Context, query string, args ...interface{}) (result sql.Result, err error) {
+	result, err = t.tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return
 	}
