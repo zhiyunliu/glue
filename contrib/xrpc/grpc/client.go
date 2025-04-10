@@ -117,23 +117,6 @@ func (c *Client) buildGrpcOpts(opts *xrpc.Options) []grpc.CallOption {
 	return grpcOpts
 }
 
-func (c *Client) clientRequest(ctx context.Context, o *xrpc.Options, bodyBytes []byte) (response *grpcproto.Response, err error) {
-	servicePath := c.reqPath.Path
-	if len(o.Query) > 0 {
-		servicePath = fmt.Sprintf("%s?%s", servicePath, o.Query)
-	}
-
-	return c.client.Process(ctx,
-		&grpcproto.Request{
-			Method:  o.Method, //借用http的method
-			Service: servicePath,
-			Header:  o.Header,
-			Body:    bodyBytes,
-		},
-		c.buildGrpcOpts(o)...)
-
-}
-
 // RequestByString 发送Request请求
 func (c *Client) RequestByStream(ctx context.Context, input any, opts *xrpc.Options) (body xrpc.Body, err error) {
 
@@ -141,17 +124,17 @@ func (c *Client) RequestByStream(ctx context.Context, input any, opts *xrpc.Opti
 	//双向流
 	case xrpc.BidirectionalStreamProcessor:
 		return xrpc.NewEmptyBody(), c.BidirectionalStreamProcessor(ctx, processor, opts)
-	case func(xrpc.BidirectionalStreamClient) error:
+	case func(context.Context, xrpc.BidirectionalStreamClient) error:
 		return xrpc.NewEmptyBody(), c.BidirectionalStreamProcessor(ctx, processor, opts)
 
 	//客户端流
-	case func(xrpc.ClientStreamClient) (err error):
+	case func(context.Context, xrpc.ClientStreamClient) (err error):
 		return c.ClientStreamProcessor(ctx, processor, opts)
 	case xrpc.ClientStreamProcessor:
 		return c.ClientStreamProcessor(ctx, processor, opts)
 
 	//服务端流
-	case func(xrpc.ServerStreamClient) (err error):
+	case func(context.Context, xrpc.ServerStreamClient) (err error):
 		return xrpc.NewEmptyBody(), c.ServerStreamProcessor(ctx, processor, input, opts)
 	case xrpc.ServerStreamProcessor:
 		return xrpc.NewEmptyBody(), c.ServerStreamProcessor(ctx, processor, input, opts)

@@ -10,6 +10,8 @@ import (
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/xtypes"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 var _ xrpc.ServerStreamClient = (*grpcServerStreamRequest)(nil)
@@ -20,6 +22,7 @@ type grpcServerStreamRequest struct {
 	method       string
 	streamClient grpcproto.GRPC_ServerStreamProcessClient
 	onceLock     sync.Once
+	RecvCount    int
 }
 
 func (c *grpcServerStreamRequest) Recv(obj any, opts ...xrpc.StreamRevcOption) (closed bool, err error) {
@@ -29,6 +32,7 @@ func (c *grpcServerStreamRequest) Recv(obj any, opts ...xrpc.StreamRevcOption) (
 	for _, o := range opts {
 		o(&opt)
 	}
+	c.RecvCount++
 	resp, err := c.streamClient.Recv()
 	if err != nil {
 		if err.Error() != "EOF" {
@@ -62,22 +66,45 @@ func (c *Client) ServerStreamProcessor(ctx context.Context, processor xrpc.Serve
 		bodyBytes, _ = json.Marshal(t)
 	}
 
-	serverStream, err := c.client.ServerStreamProcess(ctx, &grpcproto.Request{
+	req := &grpcproto.Request{
 		Method:  opts.Method,
 		Service: servicePath,
 		Header:  opts.Header,
 		Body:    bodyBytes,
-	}, grpcOpts...)
+	}
+
+	ctx, span := GetStreamSpanFromContext(ctx, req)
+	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("rpc.type", "serverstream"),
+		attribute.Int("rpc.request.body.size", len(bodyBytes)),
+	)
+
+	serverStream, err := c.client.ServerStreamProcess(ctx, req, grpcOpts...)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
 
-	err = processor(&grpcServerStreamRequest{
+	serverStreamRequest := &grpcServerStreamRequest{
 		servicePath:  servicePath,
 		header:       opts.Header,
 		method:       opts.Method,
 		streamClient: serverStream,
-	})
+	}
 
+	err = processor(ctx, serverStreamRequest)
+
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+
+	span.SetAttributes(
+		attribute.Int("rpc.stream.recv", serverStreamRequest.RecvCount),
+	)
 	return err
 }

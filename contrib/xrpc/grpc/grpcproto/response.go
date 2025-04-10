@@ -1,5 +1,15 @@
 package grpcproto
 
+import (
+	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/xrpc"
+)
+
+var (
+	_ xrpc.Body             = (*Response)(nil)
+	_ engine.ResponseEntity = (*Response)(nil)
+)
+
 // Deprecated: As of Go v0.5.22, this function simply calls [StatusCode].
 func (x *Response) GetStatus() int32 {
 	return int32(x.StatusCode())

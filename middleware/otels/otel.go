@@ -8,7 +8,9 @@ import (
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/opentelemetry/metrics"
+	gsemconv "github.com/zhiyunliu/glue/opentelemetry/semconv"
 	"github.com/zhiyunliu/glue/standard"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 
@@ -16,12 +18,11 @@ import (
 
 	stdmetrics "github.com/zhiyunliu/glue/metrics"
 	"github.com/zhiyunliu/glue/middleware"
-	gsemconv "github.com/zhiyunliu/glue/middleware/otels/semconv"
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
 const (
-	ScopeName = "github.com/zhiyunliu/glue/middleware/otels"
+	ScopeName = "middleware/otels"
 	maxNumber = 1000
 )
 
@@ -41,6 +42,7 @@ func Server() middleware.Middleware {
 	}
 
 	stdInstance := standard.GetInstance(stdmetrics.TypeNode).(stdmetrics.StandardMetric)
+	//todo
 	metricsProvider := stdInstance.GetProvider("prometheus")
 	mets := &metrics.Metrics{}
 	metricsProvider.Build(mets)
@@ -57,12 +59,10 @@ func Server() middleware.Middleware {
 				mets.RequestProcessing.Sub(1, serverKind, fullPath)
 				c.ResetContext(savedCtx)
 			}()
-			additionalAttributes := gsemconv.RequestTraceAttrs(c.ServerName(), c.Request())
+			attributes := gsemconv.RequestTraceAttrs(c)
 			ctx := cfg.Propagators.Extract(savedCtx, c.Request().Header())
 			opts := []oteltrace.SpanStartOption{
-				oteltrace.WithAttributes(additionalAttributes...),
-				oteltrace.WithAttributes(semconv.HTTPRoute(fullPath)),
-				oteltrace.WithAttributes(gsemconv.XRequestID(c.Request().RequestID())),
+				oteltrace.WithAttributes(attributes...),
 				oteltrace.WithSpanKind(oteltrace.SpanKindServer),
 			}
 			ctx, span := tracer.Start(ctx, fullPath, opts...)

@@ -102,7 +102,7 @@ func (r *registrarResolver) watchRegistrar() {
 				continue
 			}
 			addresses := r.buildAddress(instances)
-			r.clientConn.UpdateState(resolver.State{Addresses: addresses})
+			_ = r.clientConn.UpdateState(resolver.State{Addresses: addresses})
 		}
 	}
 }
@@ -135,7 +135,6 @@ func (r *registrarResolver) buildAddress(instances []*registry.ServiceInstance) 
 }
 
 func (r *registrarResolver) isServiceNameIpAddress() (address []resolver.Address, ok bool) {
-	ok = false
 	parties := strings.SplitN(r.serviceName, ":", 2)
 	if len(parties) <= 1 {
 		ok = false

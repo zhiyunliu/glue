@@ -6,15 +6,22 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
 )
 
-func RequestTraceAttrs(server string, req context.Request) []attribute.KeyValue {
-	count := 3 // ServerAddress, Method, Scheme
-
+func RequestTraceAttrs(ctx context.Context) []attribute.KeyValue {
+	count := 7 // ServerAddress, Method, Scheme
+	req := ctx.Request()
 	clientIP := req.GetClientIP()
 
 	attrs := make([]attribute.KeyValue, 0, count)
 	attrs = append(attrs,
+		attribute.String("content.type", req.ContentType()),
+		attribute.String("server.type", ctx.ServerType()),
 		semconv.HTTPRequestMethodKey.String(req.GetMethod()),
+		XRequestID(req.RequestID()),
 	)
+	query := req.Query()
+	if qval := query.GetValues(); len(qval) > 0 {
+		attrs = append(attrs, semconv.URLQuery(qval.Encode()))
+	}
 
 	if useragent := req.GetHeader("User-Agent"); useragent != "" {
 		attrs = append(attrs, semconv.UserAgentName(useragent))
@@ -22,10 +29,6 @@ func RequestTraceAttrs(server string, req context.Request) []attribute.KeyValue 
 
 	if clientIP != "" {
 		attrs = append(attrs, semconv.ClientAddress(clientIP))
-	}
-
-	if req.Path().GetURL() != nil && req.Path().GetURL().Path != "" {
-		attrs = append(attrs, semconv.URLPath(req.Path().GetURL().Path))
 	}
 
 	return attrs

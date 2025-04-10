@@ -73,7 +73,6 @@ func NewTracerProvider(serviceName string, config config.Config) (*sdktrace.Trac
 	res, err := resource.New(
 		context.Background(),
 		resource.WithAttributes(semconv.ServiceNameKey.String(serviceName)),
-		resource.WithTelemetrySDK(),
 		resource.WithHost(),
 	)
 	if err != nil {
@@ -118,11 +117,10 @@ func NewTracerProvider(serviceName string, config config.Config) (*sdktrace.Trac
 		metricsProto = defaultMetricsProto
 	}
 
- 
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sampler),
 		sdktrace.WithBatcher(exporter, sdktrace.WithBatchTimeout(time.Second)),
- 		sdktrace.WithResource(res),
+		sdktrace.WithResource(res),
 	)
 
 	otel.SetTracerProvider(tp)
