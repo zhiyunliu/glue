@@ -10,6 +10,8 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/session"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 var Nil error = errors.New("queue nil")
@@ -51,7 +53,7 @@ func (q *queue) BatchSend(ctx context.Context, key string, values ...interface{}
 		if err != nil {
 			return err
 		}
-		msgList[i] = msg
+		msgList = append(msgList, msg)
 	}
 
 	return q.q.BatchPush(ctx, key, msgList...)
@@ -81,7 +83,9 @@ func (q *queue) buildMessage(ctx context.Context, value any) (msg Message, err e
 	if sid, ok := session.FromContext(ctx); ok {
 		msg.Header()[constants.HeaderRequestId] = sid
 	}
-
+	// 注入跟踪信息到请求头
+	propagator := otel.GetTextMapPropagator()
+	propagator.Inject(ctx, propagation.MapCarrier(msg.Header()))
 	return msg, nil
 }
 
