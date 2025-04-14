@@ -9,7 +9,6 @@ import (
 
 	"github.com/zhiyunliu/glue/contrib/xdb/implement"
 	"github.com/zhiyunliu/glue/xdb"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // DB 数据库操作类
@@ -104,13 +103,8 @@ func (db *xDB) Scalar(ctx context.Context, sqls string, input any, opts ...xdb.T
 
 // Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xDB) Exec(ctx context.Context, sql string, input any, opts ...xdb.TemplateOption) (r xdb.Result, err error) {
-	ctx, span := GetSpanFromContext(ctx)
-	defer func() {
-		span.SetAttributes(
-			attribute.String("sql", sql),
-		)
-		span.End()
-	}()
+	ctx, span := GetSpanFromContext(ctx, db.proto, sql, "EXECUTE", 2)
+	defer span.End()
 
 	dbParam, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
@@ -148,35 +142,27 @@ func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any, 
 
 // Begin 创建事务
 func (db *xDB) Begin() (t xdb.ITrans, err error) {
-	tt := &xTrans{
-		cfg: db.cfg,
-	}
-	tt.tx, err = db.db.Begin()
-	if err != nil {
-		return
-	}
-	tt.tpl = db.tpl
-	return tt, nil
+	return db.BeginTx(context.Background())
+}
+
+func (db *xDB) BeginTx(ctx context.Context) (t xdb.ITrans, err error) {
+	ctx, span := GetSpanFromContext(ctx, db.proto, "", "BeginTx", 2)
+	defer span.End()
+	return db.createTrans(ctx)
 }
 
 // Transaction 执行事务
 func (db *xDB) Transaction(ctx context.Context, callback xdb.TransactionCallback) (err error) {
-	ctx, span := GetSpanFromContext(ctx)
-	defer func() {
-		span.End()
-	}()
+	ctx, span := GetSpanFromContext(ctx, db.proto, "", "Transaction", 2)
+	defer span.End()
 
-	tt := &xTrans{
-		cfg: db.cfg,
-	}
-	tt.tx, err = db.db.Begin()
+	tx, err := db.createTrans(ctx)
 	if err != nil {
 		return
 	}
-	tt.tpl = db.tpl
 	defer func() {
 		if robj := recover(); robj != nil {
-			tt.Rollback()
+			tx.Rollback()
 			rerr, ok := robj.(error)
 			if !ok {
 				rerr = fmt.Errorf("%+v", robj)
@@ -187,12 +173,12 @@ func (db *xDB) Transaction(ctx context.Context, callback xdb.TransactionCallback
 			err = xdb.NewPanicError(rerr, string(buf))
 		}
 	}()
-	err = callback(tt)
+	err = callback(ctx, tx)
 	if err != nil {
-		tt.Rollback()
+		tx.Rollback()
 		return
 	}
-	tt.Commit()
+	err = tx.Commit()
 	return
 }
 
@@ -202,13 +188,8 @@ func (db *xDB) Close() error {
 }
 
 func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback, opts ...xdb.TemplateOption) (result any, err error) {
-	ctx, span := GetSpanFromContext(ctx)
-	defer func() {
-		span.SetAttributes(
-			attribute.String("sql", sql),
-		)
-		span.End()
-	}()
+	ctx, span := GetSpanFromContext(ctx, db.proto, sql, "SELECT", 3)
+	defer span.End()
 
 	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
@@ -239,13 +220,8 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback impl
 }
 
 func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback, opts ...xdb.TemplateOption) (err error) {
-	ctx, span := GetSpanFromContext(ctx)
-	defer func() {
-		span.SetAttributes(
-			attribute.String("sql", sql),
-		)
-		span.End()
-	}()
+	ctx, span := GetSpanFromContext(ctx, db.proto, sql, "SELECT", 3)
+	defer span.End()
 
 	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
 	if err != nil {
@@ -273,4 +249,17 @@ func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any,
 	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 	err = callback(rows, result)
 	return
+}
+
+func (db *xDB) createTrans(ctx context.Context) (t xdb.ITrans, err error) {
+	tt := &xTrans{
+		cfg:   db.cfg,
+		proto: db.proto,
+	}
+	tt.tx, err = db.db.BeginTx(ctx)
+	if err != nil {
+		return
+	}
+	tt.tpl = db.tpl
+	return tt, nil
 }

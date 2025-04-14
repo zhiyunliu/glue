@@ -26,7 +26,9 @@ var nameMap = xtypes.SMap{
 type ISysDB interface {
 	Query(context.Context, string, ...interface{}) (*sql.Rows, error)
 	Exec(context.Context, string, ...interface{}) (sql.Result, error)
+	//Deprecated: Use BeginTx instead
 	Begin() (ISysTrans, error)
+	BeginTx(context.Context) (ISysTrans, error)
 	Close() error
 }
 
@@ -111,8 +113,13 @@ func (db *sysDB) Exec(ctx context.Context, query string, args ...interface{}) (r
 
 // Begin 创建一个事务请求
 func (db *sysDB) Begin() (r ISysTrans, err error) {
+	r, err = db.BeginTx(context.Background())
+	return r, err
+}
+
+func (db *sysDB) BeginTx(ctx context.Context) (r ISysTrans, err error) {
 	t := &sysTrans{}
-	t.tx, err = db.db.Begin()
+	t.tx, err = db.db.BeginTx(ctx, nil)
 	return t, err
 }
 
