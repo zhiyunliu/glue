@@ -3,7 +3,6 @@ package alloter
 import (
 	"bytes"
 	sctx "context"
-	"encoding/json"
 	"io"
 	"net/url"
 	"strconv"
@@ -27,7 +26,7 @@ type Request struct {
 	url    *url.URL
 	params map[string]string
 	header engine.Header
-	body   cbody
+	body   *cbody
 }
 
 // NewRequest 构建任务请求
@@ -48,7 +47,7 @@ func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request) {
 			r.header.Set(k, v)
 		}
 	}
-	r.body = message.Body()
+	r.body = &cbody{bytes: message.Body()}
 	r.ctx = sctx.Background()
 	r.header.Set("retry_count", strconv.FormatInt(m.RetryCount(), 10))
 	r.header.Set("x-xmqc-msg-id", m.MessageId())
@@ -77,7 +76,7 @@ func (m *Request) GetService() string {
 // GetService 服务名()
 func (m *Request) GetURL() *url.URL {
 	if m.url == nil {
-		m.url, _ = url.Parse(m.task.GetFullPath())
+		m.url, _ = url.Parse(m.task.GetService())
 	}
 	return m.url
 }
@@ -96,7 +95,7 @@ func (m *Request) GetHeader() engine.Header {
 }
 
 func (m *Request) Body() []byte {
-	return m.body
+	return m.body.bytes
 }
 
 func (m *Request) GetRemoteAddr() string {
@@ -110,17 +109,22 @@ func (m *Request) WithContext(ctx sctx.Context) {
 	m.ctx = ctx
 }
 
-type Body interface {
-	io.Reader
-	Scan(obj interface{}) error
+var (
+	_ io.Reader = (*cbody)(nil)
+)
+
+type cbody struct {
+	reader *bytes.Reader
+	bytes  []byte
 }
 
-type cbody []byte
-
-func (b cbody) Read(p []byte) (n int, err error) {
-	return bytes.NewReader(b).Read(p)
+func (b *cbody) Bytes() []byte {
+	return b.bytes
 }
 
-func (b cbody) Scan(obj interface{}) error {
-	return json.Unmarshal(b, obj)
+func (b *cbody) Read(p []byte) (n int, err error) {
+	if b.reader == nil {
+		b.reader = bytes.NewReader(b.bytes)
+	}
+	return b.reader.Read(p)
 }

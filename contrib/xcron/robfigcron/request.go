@@ -4,6 +4,7 @@ import (
 	"bytes"
 	sctx "context"
 	"encoding/json"
+	"io"
 	"net/url"
 	"sync"
 	"sync/atomic"
@@ -150,6 +151,10 @@ func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap[string, *monopolyJob]
 	}
 	return true, nil
 }
+
+var (
+	_ io.Reader = (*cbody)(nil)
+)
 
 type cbody struct {
 	reader *bytes.Reader

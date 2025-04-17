@@ -56,7 +56,8 @@ func DefaultRequestDecoder(ctx context.Context, v interface{}) (err error) {
 	}
 
 	//MethodGet
-	if strings.EqualFold(string(MethodGet), method) {
+	if strings.EqualFold(string(MethodGet), method) &&
+		strings.EqualFold(codec.ContentType(), xbinding.MIMEPOSTForm) {
 		return codec.Bind(xbinding.MapReader(ctx.Request().Query().GetValues()), v)
 	}
 

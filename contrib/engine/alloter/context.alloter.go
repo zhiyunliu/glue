@@ -330,10 +330,6 @@ func (q *abody) ScanTo(obj interface{}) error {
 	return q.vctx.opts.RequestDecoder(q.vctx, obj)
 }
 
-// Deprecated: Use ScanTo() instead.
-func (q *abody) Scan(obj interface{}) error {
-	return q.ScanTo(obj)
-}
 func (q *abody) Read(p []byte) (n int, err error) {
 	err = q.loadBody()
 	if err != nil {

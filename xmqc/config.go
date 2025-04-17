@@ -14,7 +14,7 @@ type Config struct {
 type Task struct {
 	Queue             string            `json:"queue"`
 	Service           string            `json:"service,omitempty"`
-	FullPath          string            `json:"service,omitempty"`
+	FullPath          string            `json:"-"`
 	Disable           bool              `json:"disable"`
 	Concurrency       int               `json:"concurrency,omitempty"`
 	BufferSize        int               `json:"buffersize,omitempty"`

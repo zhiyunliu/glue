@@ -1,6 +1,7 @@
 package otels
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -65,7 +66,7 @@ func Server() middleware.Middleware {
 				oteltrace.WithAttributes(attributes...),
 				oteltrace.WithSpanKind(oteltrace.SpanKindServer),
 			}
-			ctx, span := tracer.Start(ctx, fullPath, opts...)
+			ctx, span := tracer.Start(ctx, fmt.Sprintf("%s %s", serverKind, fullPath), opts...)
 			defer span.End()
 
 			// pass the span through the request context
