@@ -186,7 +186,7 @@ func (r *alloterRequest) GetRemoteAddr() string {
 }
 
 func (r *alloterRequest) Header() vctx.Header {
-	return xtypes.SMap(r.actx.Request.GetHeader())
+	return engine.Header(r.actx.Request.GetHeader())
 }
 
 func (r *alloterRequest) GetHeader(key string) string {

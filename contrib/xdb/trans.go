@@ -62,7 +62,7 @@ func (db *xTrans) Scalar(ctx context.Context, sqls string, input any, opts ...xd
 
 // Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xTrans) Exec(ctx context.Context, sql string, input any, opts ...xdb.TemplateOption) (r xdb.Result, err error) {
-	ctx, span := GetSpanFromContext(ctx, db.proto, sql, "EXECUTE", 2)
+	ctx, span := GetSpanFromContext(ctx, db.cfg, sql, "EXECUTE", 2)
 	defer span.End()
 
 	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
@@ -109,7 +109,7 @@ func (t *xTrans) Commit() error {
 }
 
 func (db *xTrans) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback, opts ...xdb.TemplateOption) (result any, err error) {
-	ctx, span := GetSpanFromContext(ctx, db.proto, sql, "SELECT", 3)
+	ctx, span := GetSpanFromContext(ctx, db.cfg, sql, "SELECT", 3)
 	defer span.End()
 
 	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
@@ -141,7 +141,7 @@ func (db *xTrans) dbQuery(ctx context.Context, sql string, input any, callback i
 }
 
 func (db *xTrans) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback, opts ...xdb.TemplateOption) (err error) {
-	ctx, span := GetSpanFromContext(ctx, db.proto, sql, "SELECT", 3)
+	ctx, span := GetSpanFromContext(ctx, db.cfg, sql, "SELECT", 3)
 	defer span.End()
 
 	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)

@@ -26,7 +26,7 @@ type Request struct {
 	method string
 	url    *url.URL
 	params map[string]string
-	header map[string]string
+	header engine.Header
 	body   cbody
 }
 
@@ -37,26 +37,31 @@ func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request) {
 		task:        task,
 		method:      string(engine.MethodPost),
 		params:      make(map[string]string),
+		header:      engine.Header{},
 	}
 
 	//将消息原串转换为map
 	message := m.GetMessage()
-
-	r.header = message.Header()
+	mheader := message.Header()
+	if len(mheader) > 0 {
+		for k, v := range mheader {
+			r.header.Set(k, v)
+		}
+	}
 	r.body = message.Body()
 	r.ctx = sctx.Background()
-	r.header["retry_count"] = strconv.FormatInt(m.RetryCount(), 10)
-	r.header["x-xmqc-msg-id"] = m.MessageId()
-	r.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
+	r.header.Set("retry_count", strconv.FormatInt(m.RetryCount(), 10))
+	r.header.Set("x-xmqc-msg-id", m.MessageId())
+	r.header.Set(constants.ContentTypeName, constants.ContentTypeApplicationJSON)
 
 	return r
 }
 
 func (m Request) GetSid() string {
-	if m.header[constants.HeaderRequestId] == "" {
-		m.header[constants.HeaderRequestId] = session.Create()
+	if m.header.Get(constants.HeaderRequestId) == "" {
+		m.header.Set(constants.HeaderRequestId, session.Create())
 	}
-	return m.header[constants.HeaderRequestId]
+	return m.header.Get(constants.HeaderRequestId)
 }
 
 // GetName 获取任务名称
@@ -86,7 +91,7 @@ func (m *Request) Params() map[string]string {
 	return m.params
 }
 
-func (m *Request) GetHeader() map[string]string {
+func (m *Request) GetHeader() engine.Header {
 	return m.header
 }
 
@@ -95,7 +100,7 @@ func (m *Request) Body() []byte {
 }
 
 func (m *Request) GetRemoteAddr() string {
-	return m.header[constants.HeaderRemoteHeader]
+	return m.header.Get(constants.HeaderRemoteHeader)
 }
 
 func (m *Request) Context() sctx.Context {

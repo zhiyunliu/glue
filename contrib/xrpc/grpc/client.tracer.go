@@ -6,6 +6,7 @@ import (
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
 	gsemconv "github.com/zhiyunliu/glue/opentelemetry/semconv"
 	"go.opentelemetry.io/otel"
@@ -41,7 +42,7 @@ func GetNormalSpanFromContext(ctx context.Context, req *grpcproto.Request) (nctx
 	)
 	// 注入跟踪信息到请求头
 	propagator := otel.GetTextMapPropagator()
-	propagator.Inject(ctx, propagation.MapCarrier(req.Header))
+	propagator.Inject(ctx, engine.Header(req.Header))
 
 	return ctx, span
 }

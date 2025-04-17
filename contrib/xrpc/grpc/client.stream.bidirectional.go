@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/golibs/xtypes"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 )
@@ -18,7 +18,7 @@ var _ xrpc.BidirectionalStreamClient = (*grpcBidirectionalClientStreamRequest)(n
 
 type grpcBidirectionalClientStreamRequest struct {
 	servicePath  string
-	header       xtypes.SMap
+	header       engine.Header
 	method       string
 	streamClient grpcproto.GRPC_BidirectionalStreamProcessClient
 	onceLock     sync.Once

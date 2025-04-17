@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/golibs/xtypes"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 )
@@ -19,10 +18,9 @@ var _ xrpc.ClientStreamClient = (*grpcClientStreamRequest)(nil)
 
 type grpcClientStreamRequest struct {
 	servicePath  string
-	header       xtypes.SMap
+	header       engine.Header
 	method       string
 	streamClient grpcproto.GRPC_ClientStreamProcessClient
-	onceLock     sync.Once
 	SendCount    int
 }
 

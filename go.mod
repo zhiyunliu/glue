@@ -1,20 +1,21 @@
 module github.com/zhiyunliu/glue
 
-go 1.23.7
-
-toolchain go1.24.1
+go 1.23.0
 
 require (
 	github.com/zhiyunliu/alloter v0.1.0
-	github.com/zhiyunliu/golibs v0.3.5
+	github.com/zhiyunliu/golibs v0.3.8
 	github.com/zhiyunliu/redisqueue/v3 v3.0.1
-	github.com/zhiyunliu/stack v1.9.0 // indirect
+	github.com/zhiyunliu/stack v1.10.1
 	github.com/zhiyunliu/xbinding v0.1.3
 
 )
 
 replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
-replace github.com/zhiyunliu/stack => ../../../github.com/zhiyunliu/stack
+
+replace github.com/zhiyunliu/alloter => ../../../github.com/zhiyunliu/alloter
+
+//replace github.com/zhiyunliu/stack => ../../../github.com/zhiyunliu/stack
 //replace github.com/zhiyunliu/redisqueue/v3 => ../../../github.com/zhiyunliu/redisqueue
 
 //replace github.com/zhiyunliu/xbinding => ../../../github.com/zhiyunliu/xbinding

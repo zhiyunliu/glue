@@ -103,7 +103,7 @@ func (db *xDB) Scalar(ctx context.Context, sqls string, input any, opts ...xdb.T
 
 // Execute 根据包含@名称占位符的语句执行查询语句
 func (db *xDB) Exec(ctx context.Context, sql string, input any, opts ...xdb.TemplateOption) (r xdb.Result, err error) {
-	ctx, span := GetSpanFromContext(ctx, db.proto, sql, "EXECUTE", 2)
+	ctx, span := GetSpanFromContext(ctx, db.cfg, sql, "EXECUTE", 2)
 	defer span.End()
 
 	dbParam, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
@@ -146,14 +146,14 @@ func (db *xDB) Begin() (t xdb.ITrans, err error) {
 }
 
 func (db *xDB) BeginTx(ctx context.Context) (t xdb.ITrans, err error) {
-	ctx, span := GetSpanFromContext(ctx, db.proto, "", "BeginTx", 2)
+	ctx, span := GetSpanFromContext(ctx, db.cfg, "", "BeginTx", 2)
 	defer span.End()
 	return db.createTrans(ctx)
 }
 
 // Transaction 执行事务
 func (db *xDB) Transaction(ctx context.Context, callback xdb.TransactionCallback) (err error) {
-	ctx, span := GetSpanFromContext(ctx, db.proto, "", "Transaction", 2)
+	ctx, span := GetSpanFromContext(ctx, db.cfg, "", "Transaction", 2)
 	defer span.End()
 
 	tx, err := db.createTrans(ctx)
@@ -188,7 +188,7 @@ func (db *xDB) Close() error {
 }
 
 func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback implement.DbResolveMapValCallback, opts ...xdb.TemplateOption) (result any, err error) {
-	ctx, span := GetSpanFromContext(ctx, db.proto, sql, "SELECT", 3)
+	ctx, span := GetSpanFromContext(ctx, db.cfg, sql, "SELECT", 3)
 	defer span.End()
 
 	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)
@@ -220,7 +220,7 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback impl
 }
 
 func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any, callback implement.DbResolveResultCallback, opts ...xdb.TemplateOption) (err error) {
-	ctx, span := GetSpanFromContext(ctx, db.proto, sql, "SELECT", 3)
+	ctx, span := GetSpanFromContext(ctx, db.cfg, sql, "SELECT", 3)
 	defer span.End()
 
 	dbParams, err := implement.ResolveParams(input, db.tpl.StmtDbTypeWrap)

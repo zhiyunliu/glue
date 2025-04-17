@@ -8,9 +8,9 @@ import (
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
-
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/golibs/bytesconv"
+	"github.com/zhiyunliu/golibs/engine"
 	"github.com/zhiyunliu/golibs/xsse"
 	"github.com/zhiyunliu/xbinding"
 )
@@ -22,25 +22,12 @@ const (
 // SupportPackageIsVersion1 These constants should not be referenced from any other code.
 const SupportPackageIsVersion1 = true
 
-type IoWriterWrapper func(bytes []byte) error
-
-func (f IoWriterWrapper) Write(bytes []byte) (int, error) {
-	err := f(bytes)
-	if err != nil {
-		return 0, err
-	}
-	return len(bytes), nil
-}
-
+type IoWriterWrapper = engine.IoWriterWrapper
 type DataEncoder interface {
 	Render(ctx context.Context) error
 }
 
-type ResponseEntity interface {
-	StatusCode() int
-	Header() map[string]string
-	Body() (bytes []byte, err error)
-}
+type ResponseEntity = engine.ResponseEntity
 
 // DecodeRequestFunc is decode request func.
 type DecodeRequestFunc func(context.Context, interface{}) error

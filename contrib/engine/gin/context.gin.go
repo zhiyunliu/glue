@@ -157,7 +157,7 @@ func (ctx *GinContext) GetImpl() interface{} {
 type ginRequest struct {
 	gctx    *gin.Context
 	vctx    *GinContext
-	gheader xtypes.SMap
+	gheader engine.Header
 	gpath   *gpath
 	gquery  *gquery
 	gbody   *gbody

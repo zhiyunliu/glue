@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/zhiyunliu/alloter"
-	"github.com/zhiyunliu/golibs/xtypes"
+	"github.com/zhiyunliu/golibs/engine"
 )
 
 var _ alloter.ResponseWriter = (*serverResponse)(nil)
@@ -20,7 +20,7 @@ const (
 type serverResponse struct {
 	status int
 	size   int
-	header xtypes.SMap
+	header engine.Header
 	data   *bufio.Writer
 	buffer *bytes.Buffer
 }
@@ -29,7 +29,7 @@ type serverResponse struct {
 func newServerResponse() (r *serverResponse) {
 
 	r = &serverResponse{
-		header: make(xtypes.SMap),
+		header: make(engine.Header),
 		size:   noWritten,
 		status: defaultStatus,
 	}
@@ -57,7 +57,7 @@ func (r *serverResponse) WriteHeader(code int) {
 		r.status = code
 	}
 }
-func (r *serverResponse) Header() xtypes.SMap {
+func (r *serverResponse) Header() engine.Header {
 	return r.header
 }
 func (r *serverResponse) Write(data []byte) (n int, err error) {

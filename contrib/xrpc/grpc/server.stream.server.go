@@ -74,7 +74,7 @@ func (m *serverStreamRequest) Params() map[string]string {
 	return m.params
 }
 
-func (m *serverStreamRequest) GetHeader() map[string]string {
+func (m *serverStreamRequest) GetHeader() engine.Header {
 	return m.header
 }
 
