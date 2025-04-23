@@ -382,11 +382,11 @@ type alloterResponse struct {
 }
 
 func (q *alloterResponse) Redirect(statusCode int, location string) {
-	q.Status(statusCode)
+	q.StatusCode(statusCode)
 	q.Header("Location", location)
 }
 
-func (q *alloterResponse) Status(statusCode int) {
+func (q *alloterResponse) StatusCode(statusCode int) {
 	q.statusCode = statusCode
 	q.actx.Writer.WriteHeader(statusCode)
 }

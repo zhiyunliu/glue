@@ -1,7 +1,7 @@
 package context
 
 type Response interface {
-	Status(int)
+	StatusCode(int)
 	GetStatusCode() int
 	GetHeader(key string) string
 	Header(key, val string)

@@ -106,7 +106,7 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 
 	//判定对象是否实现了响应体接口
 	if entity, ok := v.(ResponseEntity); ok {
-		resp.Status(entity.StatusCode())
+		resp.StatusCode(entity.StatusCode())
 		header := entity.Header()
 		if len(header) > 0 {
 			for k, v := range header {
@@ -147,8 +147,7 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 
 	//判定对象是否实现了响应体接口
 	if entity, ok := err.(ResponseEntity); ok {
-
-		resp.Status(entity.StatusCode())
+		resp.StatusCode(entity.StatusCode())
 		header := entity.Header()
 		if len(header) > 0 {
 			for k, v := range header {
@@ -157,7 +156,7 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 		}
 		bytes, err := entity.Body()
 		if err != nil {
-			resp.Status(http.StatusInternalServerError)
+			resp.StatusCode(http.StatusInternalServerError)
 			resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
 			return
 		}
@@ -169,12 +168,12 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 	codec, _ := CodecForRequest(ctx, "Accept")
 	body, err := codec.Marshal(se)
 	if err != nil {
-		resp.Status(http.StatusInternalServerError)
+		resp.StatusCode(http.StatusInternalServerError)
 		resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
 		return
 	}
 	resp.Header(ContentTypeName, codec.ContentType())
-	resp.Status(se.Code)
+	resp.StatusCode(se.Code)
 	resp.WriteBytes(body)
 }
 

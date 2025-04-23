@@ -21,7 +21,6 @@ import (
 	"github.com/zhiyunliu/glue/xhttp"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/httputil"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -35,7 +34,7 @@ type Client struct {
 	registrar registry.Registrar
 	setting   *setting
 	client    *HTTPClient
-	selector  selector.Selector
+	selector  balancer.SelectorWrapper
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 }
@@ -70,9 +69,8 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 	client.client = &HTTPClient{
 		TracerProvider: tp,
 		Client: &http.Client{
-			Transport: otelhttp.NewTransport(
+			Transport: NewTransport(
 				httpTransport,
-				otelhttp.WithTracerProvider(tp),
 			),
 		},
 	}
@@ -169,7 +167,7 @@ func (c *Client) getServiceNode(ctx context.Context, opts *xhttp.Options) (selec
 		return []selector.Node{}
 	}))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("getServiceNode:%s,err:%w", c.selector.ServiceName(), err)
 	}
 	defer func() {
 		done(ctx, selector.DoneInfo{Err: err})

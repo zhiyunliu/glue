@@ -11,6 +11,10 @@ import (
 	"github.com/zhiyunliu/glue/selector"
 )
 
+type SelectorWrapper interface {
+	selector.Selector
+	ServiceName() string
+}
 type httpSelector struct {
 	ctx         context.Context
 	serviceName string
@@ -18,9 +22,9 @@ type httpSelector struct {
 	selector    selector.Selector
 }
 
-var _ selector.Selector = (*httpSelector)(nil)
+var _ SelectorWrapper = (*httpSelector)(nil)
 
-func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url.URL, selectorName string) (selector.Selector, error) {
+func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url.URL, selectorName string) (SelectorWrapper, error) {
 	tmpselector, err := selector.GetSelector(selectorName)
 	if err != nil {
 		return nil, err
@@ -48,6 +52,10 @@ func (r *httpSelector) Select(ctx context.Context, opts ...selector.SelectOption
 
 func (r *httpSelector) Apply(nodes []selector.Node) {
 	r.selector.Apply(nodes)
+}
+
+func (r *httpSelector) ServiceName() string {
+	return r.serviceName
 }
 
 // resolveNow resolves immediately

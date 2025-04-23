@@ -28,7 +28,7 @@ func NewResolver(registrar registry.Registrar, serviceName string, clientConn re
 		serviceName:    serviceName,
 		clientConn:     clientConn,
 		waitGroup:      &sync.WaitGroup{},
-		resolveNowChan: make(chan struct{}, 1),
+		resolveNowChan: make(chan struct{}),
 	}
 	rr.ctx, rr.cancelFunc = context.WithCancel(context.Background())
 	rr.doWatch()
@@ -81,7 +81,7 @@ func (r *registrarResolver) watchResolver() {
 		}
 
 		address := r.buildAddress(instances)
-		r.clientConn.UpdateState(resolver.State{Addresses: address})
+		_ = r.clientConn.UpdateState(resolver.State{Addresses: address})
 	}
 }
 

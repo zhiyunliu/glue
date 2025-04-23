@@ -400,7 +400,7 @@ func (q *ginResponse) Redirect(statusCode int, location string) {
 	q.gctx.Redirect(statusCode, location)
 }
 
-func (q *ginResponse) Status(statusCode int) {
+func (q *ginResponse) StatusCode(statusCode int) {
 	q.statusCode = statusCode
 	q.gctx.Writer.WriteHeader(statusCode)
 }
