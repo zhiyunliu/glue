@@ -3,17 +3,17 @@ module github.com/zhiyunliu/glue
 go 1.23.0
 
 require (
-	github.com/zhiyunliu/alloter v0.1.0
-	github.com/zhiyunliu/golibs v0.3.8
+	github.com/zhiyunliu/alloter v0.2.0
+	github.com/zhiyunliu/golibs v0.3.9
 	github.com/zhiyunliu/redisqueue/v3 v3.0.1
 	github.com/zhiyunliu/stack v1.10.1
-	github.com/zhiyunliu/xbinding v0.1.3
+	github.com/zhiyunliu/xbinding v0.1.4
 
 )
 
-replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
+//replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
 
-replace github.com/zhiyunliu/alloter => ../../../github.com/zhiyunliu/alloter
+//replace github.com/zhiyunliu/alloter => ../../../github.com/zhiyunliu/alloter
 
 //replace github.com/zhiyunliu/stack => ../../../github.com/zhiyunliu/stack
 //replace github.com/zhiyunliu/redisqueue/v3 => ../../../github.com/zhiyunliu/redisqueue
@@ -44,12 +44,13 @@ require (
 	github.com/shirou/gopsutil/v3 v3.22.8
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli v1.22.16
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.60.0
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.35.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.57.0
 	go.opentelemetry.io/otel/metric v1.35.0
 	go.opentelemetry.io/otel/sdk v1.35.0
+	go.opentelemetry.io/otel/sdk/metric v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
 	golang.org/x/sync v0.12.0
 	google.golang.org/grpc v1.71.0
@@ -71,7 +72,6 @@ require (
 	github.com/cloudwego/base64x v0.1.5 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	"github.com/zhiyunliu/glue/config"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type Provider interface {
 	Name() string
-	Build(metric any) error
-	GetImpl() interface{}
+	GetImpl() any
+	metric.MeterProvider
 }
 
 // resover 定义配置文件转换方法

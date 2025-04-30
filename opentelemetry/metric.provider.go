@@ -13,3 +13,21 @@ package opentelemetry
 // 	metricsObserver := metrics.NewObserver(metricsProvider)
 // 	return metricsObserver
 // }
+
+import (
+	"github.com/zhiyunliu/glue/standard"
+	"go.opentelemetry.io/otel"
+
+	stdmetrics "github.com/zhiyunliu/glue/metrics"
+)
+
+func setMeterProvider(metricProto string) error {
+	if metricProto == "" {
+		metricProto = defaultMetricsProto
+	}
+	stdInstance := standard.GetInstance(stdmetrics.TypeNode).(stdmetrics.StandardMetric)
+	provider := stdInstance.GetProvider(metricProto)
+
+	otel.SetMeterProvider(provider)
+	return nil
+}

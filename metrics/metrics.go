@@ -6,20 +6,24 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/zhiyunliu/glue/config"
+	"go.opentelemetry.io/otel/metric"
 )
 
 var (
-	counterPtrType   = reflect.TypeOf((*Counter)(nil)).Elem()
-	gaugePtrType     = reflect.TypeOf((*Gauge)(nil)).Elem()
-	timerPtrType     = reflect.TypeOf((*Timer)(nil)).Elem()
-	histogramPtrType = reflect.TypeOf((*Histogram)(nil)).Elem()
+	counterPtrType        = reflect.TypeOf((*metric.Int64Counter)(nil)).Elem()
+	floatcounterPtrType   = reflect.TypeOf((*metric.Float64Counter)(nil)).Elem()
+	gaugePtrType          = reflect.TypeOf((*metric.Int64Gauge)(nil)).Elem()
+	floatGaugePtrType     = reflect.TypeOf((*metric.Float64Gauge)(nil)).Elem()
+	timerPtrType          = reflect.TypeOf((*Timer)(nil)).Elem()
+	histogramPtrType      = reflect.TypeOf((*metric.Int64Histogram)(nil)).Elem()
+	floatHistogramPtrType = reflect.TypeOf((*metric.Float64Histogram)(nil)).Elem()
 )
 
 // Init initializes the metrics with the given factory and config.
-func Init(m any, factory Factory, config config.Config) error {
-	if factory == nil {
-		factory = noopFactory
+func Init(m any, factory *Factory) error {
+	if m == nil {
+		return fmt.Errorf("metrics.Init: m cannot be nil")
+
 	}
 
 	rv := reflect.ValueOf(m)
@@ -32,31 +36,46 @@ func Init(m any, factory Factory, config config.Config) error {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 
-		metric := field.Tag.Get("metric")
-		if metric == "" {
+		metricName := field.Tag.Get("metric")
+		if metricName == "" {
 			//没有配置metric标签，跳过
 			continue
 		}
 
-		opts, err := prepareOptions(metric, &field)
+		opts, err := prepareOptions(metricName, &field)
 		if err != nil {
 			return err
 		}
 
-		mcfg := config.Get(metric)
+		descOpt := metric.WithDescription(opts.Help)
+
 		var obj any
 		switch {
 		case field.Type.AssignableTo(counterPtrType):
-			obj = factory.Counter(mcfg, opts)
+			obj, err = factory.CreateIntCounter(metricName, descOpt)
+		case field.Type.AssignableTo(floatcounterPtrType):
+			obj, err = factory.CreateFloatCounter(metricName, descOpt)
+
 		case field.Type.AssignableTo(gaugePtrType):
-			obj = factory.Gauge(mcfg, opts)
-		case field.Type.AssignableTo(timerPtrType):
-			obj = factory.Timer(mcfg, opts)
+			obj, err = factory.CreateIntGauge(metricName, descOpt)
+		case field.Type.AssignableTo(floatGaugePtrType):
+			obj, err = factory.CreateFloatGauge(metricName, descOpt)
+
 		case field.Type.AssignableTo(histogramPtrType):
-			obj = factory.Histogram(mcfg, opts)
+			obj, err = factory.CreateIntHistogram(metricName, descOpt, metric.WithExplicitBucketBoundaries(opts.Buckets...))
+		case field.Type.AssignableTo(floatHistogramPtrType):
+			obj, err = factory.CreateFloatHistogram(metricName, descOpt, metric.WithExplicitBucketBoundaries(opts.Buckets...))
+
+		case field.Type.AssignableTo(timerPtrType):
+			obj, err = factory.CreateTimer(metricName, descOpt, metric.WithExplicitBucketBoundaries(opts.Buckets...))
+
 		default:
 			continue
 		}
+		if err != nil {
+			return err
+		}
+
 		v.Field(i).Set(reflect.ValueOf(obj))
 	}
 	return nil
@@ -82,15 +101,6 @@ func prepareOptions(metricName string, field *reflect.StructField) (*Options, er
 		opts = append(opts, WithBuckets(bksv))
 	}
 
-	namespace := field.Tag.Get("namespace")
-	if namespace != "" {
-		opts = append(opts, WithNamespace(namespace))
-	}
-
-	subsystem := field.Tag.Get("subsystem")
-	if subsystem != "" {
-		opts = append(opts, WithSubsystem(subsystem))
-	}
 	mopts := &Options{}
 	for _, opt := range opts {
 		opt(mopts)

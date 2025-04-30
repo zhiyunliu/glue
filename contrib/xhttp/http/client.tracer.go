@@ -6,7 +6,7 @@ import (
 
 	"github.com/zhiyunliu/glue/constants"
 
-	gsemconv "github.com/zhiyunliu/glue/opentelemetry/semconv"
+	"github.com/zhiyunliu/glue/opentelemetry"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -59,7 +59,7 @@ func (t *TracerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	propagator.Inject(ctx, propagation.HeaderCarrier(req.Header))
 
 	if xrequestId := req.Header.Get(constants.HeaderRequestId); xrequestId != "" {
-		span.SetAttributes(gsemconv.XRequestID(xrequestId)) // 添加X-Request-ID到span的属性
+		span.SetAttributes(opentelemetry.XRequestID(xrequestId)) // 添加X-Request-ID到span的属性
 	}
 
 	res, err := t.base.RoundTrip(req)

@@ -6,11 +6,6 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-type options struct {
-	svcName string
-	Kind    string
-}
-
 type config struct {
 	TracerProvider oteltrace.TracerProvider
 	MeterProvider  metric.MeterProvider

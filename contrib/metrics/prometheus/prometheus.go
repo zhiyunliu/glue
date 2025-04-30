@@ -7,40 +7,61 @@ import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/metrics/prometheus/collector"
 	"github.com/zhiyunliu/glue/metrics"
+	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric" // 明确重命名为 sdkmetric
 )
 
 type xResover struct {
-	factory metrics.Factory
+	name string
 }
 
 func (r xResover) Name() string {
-	return Proto
+	return r.name
 }
 func (r *xResover) Resolve(name string, config config.Config) (metrics.Provider, error) {
-
 	provider := &xProvider{
-		factory: r.factory,
-		config:  config,
+		config: config,
 	}
+
+	cfgObj := &prometheusConfig{
+		Namespace: "server_requests",
+		Job:       "microsrv",
+	}
+	_ = config.ScanTo(cfgObj)
+
+	registerer := prometheus.NewRegistry()
+
+	procCounter := buildProcCollector()
+	if err := registerer.Register(procCounter); err != nil {
+		return nil, fmt.Errorf("register proc collector;err:%w", err)
+	}
+
+	exporter, err := otelprometheus.New(
+		otelprometheus.WithRegisterer(registerer),
+		otelprometheus.WithNamespace(cfgObj.Namespace),
+		otelprometheus.WithoutTargetInfo(),
+		otelprometheus.WithoutScopeInfo(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// 设置 Meter Provider（使用修正后的包路径）
+	meterProvider := sdkmetric.NewMeterProvider( // 使用 sdkmetric 替代 metric
+		sdkmetric.WithReader(exporter),
+	)
+
+	provider.MeterProvider = meterProvider
+	provider.StartPush(cfgObj, registerer)
 
 	return provider, nil
 }
 
 func init() {
 
-	var registerer prometheus.Registerer = prometheus.DefaultRegisterer
-
 	metrics.Register(&xResover{
-		factory: NewFactory(
-			WithNameSpace("server"),
-			WithSubsystem("requests"),
-			WithRegisterer(registerer),
-			WithDefaultBuckets(0.05, 0.1, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5),
-		),
+		name: Proto,
 	})
-
-	procCounter := buildProcCollector()
-	registerer.MustRegister(procCounter)
 }
 
 // 只需要初始化一次的collector

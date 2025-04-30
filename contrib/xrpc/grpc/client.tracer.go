@@ -8,7 +8,7 @@ import (
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
-	gsemconv "github.com/zhiyunliu/glue/opentelemetry/semconv"
+	"github.com/zhiyunliu/glue/opentelemetry"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
@@ -25,7 +25,7 @@ func getTracerAttributes(req *grpcproto.Request) []attribute.KeyValue {
 	)
 
 	if xrequestId := req.Header[constants.HeaderRequestId]; xrequestId != "" {
-		attris = append(attris, gsemconv.XRequestID(xrequestId)) // 添加X-Request-ID到span的属性
+		attris = append(attris, opentelemetry.XRequestID(xrequestId)) // 添加X-Request-ID到span的属性
 	}
 	return attris
 }

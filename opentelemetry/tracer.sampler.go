@@ -19,16 +19,14 @@ const (
 // 1. 实现动态采样器
 type DynamicSampler struct {
 	//0~100
-	rateBits    int64 // 使用原子操作存储的采样率
-	serviceName string
-	config      config.Config
+	rateBits int64 // 使用原子操作存储的采样率
+	config   config.Config
 }
 
-func NewDynamicSampler(serviceName string, initialRate int64, config config.Config) *DynamicSampler {
+func newDynamicSampler(initialRate int64, config config.Config) *DynamicSampler {
 	return &DynamicSampler{
-		rateBits:    initialRate,
-		serviceName: serviceName,
-		config:      config,
+		rateBits: initialRate,
+		config:   config,
 	}
 }
 
