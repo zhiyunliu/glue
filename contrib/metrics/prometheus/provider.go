@@ -6,6 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
+
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
@@ -23,7 +24,10 @@ var (
 )
 
 type xProvider struct {
-	config config.Config
+	config     config.Config
+	registerer prometheus.Registerer
+	gatherer   prometheus.Gatherer
+
 	metric.MeterProvider
 }
 
@@ -35,7 +39,7 @@ func (p *xProvider) GetImpl() any {
 	return p.MeterProvider
 }
 
-func (p *xProvider) StartPush(config *prometheusConfig, collectors ...prometheus.Collector) {
+func (p *xProvider) StartPush(config *prometheusConfig, gatherer prometheus.Gatherer) {
 	if config.Gateway == nil {
 		config.Gateway = &gateway{
 			Addr:     os.Getenv("PROMETHEUS_PUSH_GATEWAY_ADDR"),
@@ -62,9 +66,7 @@ func (p *xProvider) StartPush(config *prometheusConfig, collectors ...prometheus
 			Grouping("instance", global.LocalIp).
 			Grouping("srv", global.AppName)
 
-		for _, collector := range collectors {
-			pusher.Collector(collector)
-		}
+		pusher = pusher.Gatherer(p.gatherer)
 
 		for range ticker.C {
 			p.execPush(pusher)

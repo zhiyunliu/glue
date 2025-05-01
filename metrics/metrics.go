@@ -10,13 +10,14 @@ import (
 )
 
 var (
-	counterPtrType        = reflect.TypeOf((*metric.Int64Counter)(nil)).Elem()
-	floatcounterPtrType   = reflect.TypeOf((*metric.Float64Counter)(nil)).Elem()
-	gaugePtrType          = reflect.TypeOf((*metric.Int64Gauge)(nil)).Elem()
-	floatGaugePtrType     = reflect.TypeOf((*metric.Float64Gauge)(nil)).Elem()
+	upDownCounterPtrType  = reflect.TypeOf((*Int64UpDownCounter)(nil)).Elem()
+	counterPtrType        = reflect.TypeOf((*Int64Counter)(nil)).Elem()
+	floatcounterPtrType   = reflect.TypeOf((*Float64Counter)(nil)).Elem()
+	gaugePtrType          = reflect.TypeOf((*Int64Gauge)(nil)).Elem()
+	floatGaugePtrType     = reflect.TypeOf((*Float64Gauge)(nil)).Elem()
 	timerPtrType          = reflect.TypeOf((*Timer)(nil)).Elem()
-	histogramPtrType      = reflect.TypeOf((*metric.Int64Histogram)(nil)).Elem()
-	floatHistogramPtrType = reflect.TypeOf((*metric.Float64Histogram)(nil)).Elem()
+	histogramPtrType      = reflect.TypeOf((*Int64Histogram)(nil)).Elem()
+	floatHistogramPtrType = reflect.TypeOf((*Float64Histogram)(nil)).Elem()
 )
 
 // Init initializes the metrics with the given factory and config.
@@ -51,6 +52,9 @@ func Init(m any, factory *Factory) error {
 
 		var obj any
 		switch {
+		case field.Type.AssignableTo(upDownCounterPtrType):
+			obj, err = factory.CreateIntUpDownCounter(metricName, descOpt)
+
 		case field.Type.AssignableTo(counterPtrType):
 			obj, err = factory.CreateIntCounter(metricName, descOpt)
 		case field.Type.AssignableTo(floatcounterPtrType):
@@ -83,13 +87,7 @@ func Init(m any, factory *Factory) error {
 
 func prepareOptions(metricName string, field *reflect.StructField) (*Options, error) {
 
-	tagVal := field.Tag.Get("lbls")
-	if tagVal == "" {
-		return nil, fmt.Errorf("metrics.Init:lbls tag is required for metric %s", metricName)
-	}
-
-	lbls := strings.Split(tagVal, ",")
-	opts := []Option{WithName(metricName), WithLabels(lbls)}
+	opts := []Option{WithName(metricName)}
 
 	buckets := field.Tag.Get("buckets")
 	if buckets != "" {

@@ -95,12 +95,15 @@ func (e *GinEngine) GetImpl() any {
 }
 
 func (e *GinEngine) defaultHandle() {
+	//healthcheck
 	e.Engine.Handle(http.MethodGet, "/healthcheck", func(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusOK)
 	})
 
+	//pprof
 	pprof.Register(e.Engine)
 
+	//metrics
 	promHandler := promhttp.Handler()
 	e.Engine.Handle(http.MethodGet, "/metrics", func(ctx *gin.Context) {
 		promHandler.ServeHTTP(ctx.Writer, ctx.Request)

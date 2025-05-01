@@ -20,6 +20,11 @@ func NewFactory(meterProvider metric.MeterProvider, meterName string) *Factory {
 }
 
 // CreateCounter creates a new Counter instrument
+func (f *Factory) CreateIntUpDownCounter(name string, opts ...metric.Int64UpDownCounterOption) (metric.Int64UpDownCounter, error) {
+	return f.meter.Int64UpDownCounter(name, opts...)
+}
+
+// CreateCounter creates a new Counter instrument
 func (f *Factory) CreateIntCounter(name string, opts ...metric.Int64CounterOption) (metric.Int64Counter, error) {
 	return f.meter.Int64Counter(name, opts...)
 }
@@ -58,10 +63,6 @@ func (f *Factory) CreateTimer(name string, opts ...metric.Float64HistogramOption
 
 	return &xTimer{histogram: histogram}, nil
 
-}
-
-type Timer interface {
-	Record(ctx context.Context, start time.Time, opts ...metric.RecordOption)
 }
 
 // Timer is a convenience wrapper for measuring durations

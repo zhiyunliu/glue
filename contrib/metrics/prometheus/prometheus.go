@@ -20,7 +20,9 @@ func (r xResover) Name() string {
 }
 func (r *xResover) Resolve(name string, config config.Config) (metrics.Provider, error) {
 	provider := &xProvider{
-		config: config,
+		config:     config,
+		registerer: prometheus.DefaultRegisterer,
+		gatherer:   prometheus.DefaultGatherer,
 	}
 
 	cfgObj := &prometheusConfig{
@@ -29,15 +31,13 @@ func (r *xResover) Resolve(name string, config config.Config) (metrics.Provider,
 	}
 	_ = config.ScanTo(cfgObj)
 
-	registerer := prometheus.NewRegistry()
-
 	procCounter := buildProcCollector()
-	if err := registerer.Register(procCounter); err != nil {
+	if err := provider.registerer.Register(procCounter); err != nil {
 		return nil, fmt.Errorf("register proc collector;err:%w", err)
 	}
 
 	exporter, err := otelprometheus.New(
-		otelprometheus.WithRegisterer(registerer),
+		otelprometheus.WithRegisterer(provider.registerer),
 		otelprometheus.WithNamespace(cfgObj.Namespace),
 		otelprometheus.WithoutTargetInfo(),
 		otelprometheus.WithoutScopeInfo(),
@@ -52,7 +52,7 @@ func (r *xResover) Resolve(name string, config config.Config) (metrics.Provider,
 	)
 
 	provider.MeterProvider = meterProvider
-	provider.StartPush(cfgObj, registerer)
+	provider.StartPush(cfgObj, provider.gatherer)
 
 	return provider, nil
 }

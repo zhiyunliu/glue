@@ -2,11 +2,10 @@ package otels
 
 import (
 	"github.com/zhiyunliu/glue/metrics"
-	"go.opentelemetry.io/otel/metric"
 )
 
 type Metrics struct {
-	RequestCounter    metric.Int64Counter `metric:"code_total" lbls:"kind,path,code"`
-	RequestLatency    metrics.Timer       `metric:"duration_sec"  lbls:"kind,path,code"`
-	RequestProcessing metric.Int64Gauge   `metric:"cur_proc" lbls:"kind,path"`
+	RequestCounter    metrics.Int64Counter       `metric:"code_total"  `
+	RequestLatency    metrics.Timer              `metric:"duration_sec"  buckets:"10,50,100,200,500,1000,2000,5000,10000" `
+	RequestProcessing metrics.Int64UpDownCounter `metric:"cur_proc"  `
 }

@@ -59,11 +59,11 @@ func Server() middleware.Middleware {
 				attribute.String("path", fullPath),
 			}
 
-			mets.RequestProcessing.Record(savedCtx, 1, metric.WithAttributes(metricAttrs...))
+			mets.RequestProcessing.Add(savedCtx, 1, metric.WithAttributes(metricAttrs...))
 			startTime := time.Now()
 
 			defer func() {
-				mets.RequestProcessing.Record(savedCtx, -1, metric.WithAttributes(metricAttrs...))
+				mets.RequestProcessing.Add(savedCtx, -1, metric.WithAttributes(metricAttrs...))
 				c.ResetContext(savedCtx)
 			}()
 			attributes := requestTraceAttrs(c)
