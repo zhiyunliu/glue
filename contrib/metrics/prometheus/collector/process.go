@@ -8,12 +8,14 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/shirou/gopsutil/v3/process"
+	"github.com/zhiyunliu/glue/global"
 )
 
 type ProcessCPUCollector struct {
 	cpuUsage    *prometheus.GaugeVec
 	proc        *process.Process // 使用 gopsutil 的进程对象
 	processname string
+	appName     string
 }
 
 func NewProcessCPUCollector() (*ProcessCPUCollector, error) {
@@ -34,10 +36,11 @@ func NewProcessCPUCollector() (*ProcessCPUCollector, error) {
 				Name: "process_cpu_usage_percent",
 				Help: "CPU usage percentage for target process",
 			},
-			[]string{"processname"},
+			[]string{"processname", "srv"},
 		),
 		proc:        p,
 		processname: processname,
+		appName:     global.AppName,
 	}, nil
 }
 
@@ -55,6 +58,7 @@ func (c *ProcessCPUCollector) Collect(ch chan<- prometheus.Metric) {
 	// 更新指标
 	c.cpuUsage.WithLabelValues(
 		c.processname,
+		c.appName,
 	).Set(percent)
 
 	c.cpuUsage.Collect(ch)
