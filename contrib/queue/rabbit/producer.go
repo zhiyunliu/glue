@@ -29,6 +29,10 @@ func NewProducer(config config.Config, opts ...queue.Option) (m *Producer, err e
 	return
 }
 
+func (c *Producer) Name() string {
+	return Proto
+}
+
 // Push 向存于 key 的列表的尾部插入所有指定的值
 func (c *Producer) Push(ctx context.Context, key string, msg queue.Message) (err error) {
 	return c.client.Publish(ctx, key, msg)
