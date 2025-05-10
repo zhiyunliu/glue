@@ -17,7 +17,7 @@ func (l wrap) Scan(v interface{}) error {
 }
 
 func (l wrap) ScanTo(v interface{}) error {
-	return l.rootConfig.Value(l.curkey).Scan(v)
+	return l.rootConfig.Value(l.curkey).ScanTo(v)
 }
 
 func (l wrap) Value(key string) Value {

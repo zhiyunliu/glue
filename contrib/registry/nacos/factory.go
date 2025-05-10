@@ -37,7 +37,7 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 		Weight:  100,
 	}
 
-	err = cfg.Value("options").Scan(opts)
+	err = cfg.Value("options").ScanTo(opts)
 	if err != nil {
 		return nil, fmt.Errorf("nacos options error:%+v", err)
 	}

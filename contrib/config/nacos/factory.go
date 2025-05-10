@@ -33,7 +33,7 @@ func (f *nacosFactory) Create(cfg config.Config) (config.Source, error) {
 		DataID: fmt.Sprintf("%s.json", global.AppName),
 	}
 
-	err = cfg.Value("options").Scan(&opts)
+	err = cfg.Value("options").ScanTo(&opts)
 	if err != nil {
 		return nil, fmt.Errorf("nacos options error:%+v", err)
 	}

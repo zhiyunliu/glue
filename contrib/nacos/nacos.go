@@ -59,11 +59,11 @@ func GetClientParam(cfg config.Config) (param *vo.NacosClientParam, err error) {
 	}
 	serverConfigs := []ServerConfig{}
 
-	err = cfg.Value("client").Scan(clientConfig)
+	err = cfg.Value("client").ScanTo(clientConfig)
 	if err != nil {
 		return nil, fmt.Errorf("nacos ClientConfig Scan:%+v", err)
 	}
-	err = cfg.Value("server").Scan(&serverConfigs)
+	err = cfg.Value("server").ScanTo(&serverConfigs)
 	if err != nil {
 		return nil, fmt.Errorf("nacos ServerConfig Scan:%+v", err)
 	}
