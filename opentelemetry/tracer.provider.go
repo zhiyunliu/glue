@@ -49,14 +49,19 @@ func setTracerProvider(cfg *Config, res *resource.Resource, telemetryConfig conf
 }
 
 func buildTraceExporter(cfg *Config) (exporter sdktrace.SpanExporter, err error) {
+	if cfg.Endpoint == "" {
+		err = fmt.Errorf("buildTraceExporter: endpoint is empty")
+		return
+	}
+
 	urlObj, err := url.Parse(cfg.Endpoint)
 	if err != nil {
-		err = fmt.Errorf("buildTraceExporter.failed to parse endpoint: %w", err)
+		err = fmt.Errorf("buildTraceExporter: failed to parse endpoint: %w", err)
 		return
 	}
 	factory, ok := exporterMap[urlObj.Scheme]
 	if !ok {
-		return nil, fmt.Errorf("buildTraceExporter.unsupported scheme: %s", urlObj.Scheme)
+		return nil, fmt.Errorf("buildTraceExporter: unsupported scheme: %s", urlObj.Scheme)
 	}
 	return factory(cfg)
 }

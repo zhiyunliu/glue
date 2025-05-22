@@ -9,6 +9,7 @@ import (
 
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/opentelemetry"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/transport"
 	"github.com/zhiyunliu/golibs/xnet"
@@ -36,6 +37,12 @@ func (p *ServiceApp) apprun() error {
 		return err
 	}
 	global.StartRunning()
+
+	// 1. 初始化配置
+	if err := opentelemetry.InitOtel(global.AppName, p.options.Config); err != nil {
+		return err
+	}
+
 	p.closeWaitGroup.Add(len(p.options.Servers))
 	for _, srv := range p.options.Servers {
 		srv.Config(p.options.Config)

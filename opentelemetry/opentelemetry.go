@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/log"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -21,11 +22,14 @@ const (
 func InitOtel(serviceName string, config config.Config) (err error) {
 	telemetryConfig := config.Root().Get(opentelemetry)
 
-	cfg := &Config{}
-	err = telemetryConfig.ScanTo(cfg)
-	if err != nil {
-		err = fmt.Errorf("InitOtel:failed to load config: %w", err)
-		return err
+	cfg := &Config{
+		Insecure:     true,
+		Endpoint:     "",
+		SamplerRate:  0,
+		MetricsProto: defaultMetricsProto,
+	}
+	if err := telemetryConfig.ScanTo(cfg); err != nil {
+		log.Errorf("InitOtel:failed to load config: %s, use default config", err)
 	}
 
 	res, err := resource.New(
@@ -34,7 +38,7 @@ func InitOtel(serviceName string, config config.Config) (err error) {
 		resource.WithHost(),
 	)
 	if err != nil {
-		err = fmt.Errorf("failed to create resource: %w", err)
+		err = fmt.Errorf("InitOtel:failed to create resource: %w", err)
 		return err
 	}
 
@@ -43,8 +47,8 @@ func InitOtel(serviceName string, config config.Config) (err error) {
 		return err
 	}
 
-	if err = setTracerProvider(cfg, res, telemetryConfig); err != nil {
-		return err
+	if err := setTracerProvider(cfg, res, telemetryConfig); err != nil {
+		log.Errorf("InitOtel:%s", err)
 	}
 	return nil
 }
