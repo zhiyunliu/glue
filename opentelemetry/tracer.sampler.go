@@ -13,7 +13,9 @@ var (
 )
 
 const (
-	SamplerMaxRate = 100
+	SamplerMaxRate         = 100
+	SamplerMinRate         = 0
+	TraceSampleRate string = "trace_sample_rate" // 采样率配置项
 )
 
 // 1. 实现动态采样器
@@ -55,7 +57,7 @@ func (s *DynamicSampler) Description() string {
 }
 
 func (s *DynamicSampler) Watch() error {
-	return s.config.Watch("sampler_rate", func(key string, val config.Value) {
+	return s.config.Watch(TraceSampleRate, func(key string, val config.Value) {
 		rateVal, _ := val.Int()
 		s.SetRate(rateVal)
 	})

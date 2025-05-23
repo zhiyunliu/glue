@@ -23,7 +23,7 @@ func setTracerProvider(cfg *Config, res *resource.Resource, telemetryConfig conf
 		return err
 	}
 
-	dynamicSampler := newDynamicSampler(cfg.SamplerRate, telemetryConfig)
+	dynamicSampler := newDynamicSampler(cfg.TraceSampleRate, telemetryConfig)
 	err = dynamicSampler.Watch()
 	if err != nil {
 		err = fmt.Errorf("setTracerProvider.failed to watch sampler rate: %w", err)
@@ -49,12 +49,12 @@ func setTracerProvider(cfg *Config, res *resource.Resource, telemetryConfig conf
 }
 
 func buildTraceExporter(cfg *Config) (exporter sdktrace.SpanExporter, err error) {
-	if cfg.Endpoint == "" {
+	if cfg.TraceEndpoint == "" {
 		err = fmt.Errorf("buildTraceExporter: endpoint is empty")
 		return
 	}
 
-	urlObj, err := url.Parse(cfg.Endpoint)
+	urlObj, err := url.Parse(cfg.TraceEndpoint)
 	if err != nil {
 		err = fmt.Errorf("buildTraceExporter: failed to parse endpoint: %w", err)
 		return
@@ -75,7 +75,7 @@ var (
 func init() {
 
 	exporterMap["http"] = func(cfg *Config) (sdktrace.SpanExporter, error) {
-		urlObj, _ := url.Parse(cfg.Endpoint)
+		urlObj, _ := url.Parse(cfg.TraceEndpoint)
 		var opts = []otlptracehttp.Option{
 			otlptracehttp.WithEndpoint(urlObj.Host),
 		}
@@ -90,7 +90,7 @@ func init() {
 		return exporter, err
 	}
 	exporterMap["grpc"] = func(cfg *Config) (sdktrace.SpanExporter, error) {
-		urlObj, _ := url.Parse(cfg.Endpoint)
+		urlObj, _ := url.Parse(cfg.TraceEndpoint)
 		var opts = []otlptracegrpc.Option{
 			otlptracegrpc.WithEndpoint(urlObj.Host),
 		}

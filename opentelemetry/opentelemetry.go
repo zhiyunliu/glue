@@ -23,10 +23,10 @@ func InitOtel(serviceName string, config config.Config) (err error) {
 	telemetryConfig := config.Root().Get(opentelemetry)
 
 	cfg := &Config{
-		Insecure:     true,
-		Endpoint:     "",
-		SamplerRate:  0,
-		MetricsProto: defaultMetricsProto,
+		Insecure:        true,
+		TraceEndpoint:   "",
+		TraceSampleRate: 0,
+		MetricsProvider: defaultMetricsProto,
 	}
 	if err := telemetryConfig.ScanTo(cfg); err != nil {
 		log.Errorf("InitOtel:failed to load config: %s, use default config", err)
@@ -43,7 +43,7 @@ func InitOtel(serviceName string, config config.Config) (err error) {
 	}
 
 	setTextMapPropagator()
-	if err = setMeterProvider(cfg.MetricsProto); err != nil {
+	if err = setMeterProvider(cfg.MetricsProvider); err != nil {
 		return err
 	}
 
