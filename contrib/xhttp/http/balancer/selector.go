@@ -14,6 +14,7 @@ import (
 type SelectorWrapper interface {
 	selector.Selector
 	ServiceName() string
+	ResolveNow()
 }
 type httpSelector struct {
 	ctx         context.Context
@@ -38,7 +39,7 @@ func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url
 	rr.selector = tmpselector
 	if strings.EqualFold(reqPath.Scheme, "xhttp") {
 		go rr.watcher()
-		rr.resolveNow()
+		rr.ResolveNow()
 	} else {
 		rr.Apply(rr.buildAddress(reqPath))
 	}
@@ -58,8 +59,8 @@ func (r *httpSelector) ServiceName() string {
 	return r.serviceName
 }
 
-// resolveNow resolves immediately
-func (r *httpSelector) resolveNow() {
+// ResolveNow resolves immediately
+func (r *httpSelector) ResolveNow() {
 	if r.registrar == nil {
 		return
 	}
