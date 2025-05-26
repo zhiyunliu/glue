@@ -11,10 +11,11 @@ const (
 	HeaderXForwardedFor StrHeaderGetter = "X-Forwarded-For"
 	HeaderAuthorization StrHeaderGetter = "Authorization"
 	HeaderReferer       StrHeaderGetter = "Referer"
+	HeaderAuthUserId    StrHeaderGetter = AUTH_USER_ID
 )
 
 var (
-	DefaultHeaders = []HeaderGetter{HeaderXForwardedFor, HeaderReferer}
+	DefaultHeaders = []HeaderGetter{HeaderXForwardedFor, HeaderReferer, HeaderAuthUserId}
 )
 
 type Header interface {
