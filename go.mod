@@ -5,7 +5,6 @@ go 1.23.0
 require (
 	github.com/zhiyunliu/alloter v0.2.0
 	github.com/zhiyunliu/golibs v0.3.9
-	github.com/zhiyunliu/redisqueue/v3 v3.0.1
 	github.com/zhiyunliu/stack v1.10.1
 	github.com/zhiyunliu/xbinding v0.1.4
 
@@ -30,10 +29,9 @@ require (
 	github.com/hashicorp/consul/api v1.14.0
 	github.com/imdario/mergo v0.3.13
 	github.com/kardianos/service v1.2.1
-	github.com/nacos-group/nacos-sdk-go v1.1.4
+	github.com/nacos-group/nacos-sdk-go v1.1.5
 	github.com/orcaman/concurrent-map/v2 v2.0.1
 	github.com/prometheus/client_golang v1.21.1
-	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.6.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v3 v3.22.8

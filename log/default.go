@@ -20,76 +20,91 @@ func init() {
 	DefaultLogger = DefaultBuilder.Build(context.Background(), xlog.WithName("default"), xlog.WithSid(session.Create()))
 
 	xlog.RegistryFormater("@uid", func(e *xlog.Event, _ bool) string {
-		if e.Tags == nil {
-			return ""
-		}
-		uid := e.Tags["uid"]
-		if uid == "" {
-			return ""
-		}
-		return "[" + uid + "]"
+		// if e.Tags == nil {
+		// 	return ""
+		// }
+		// uid := e.Tags["uid"]
+		// if uid == "" {
+		// 	return ""
+		// }
+		// return "[" + uid + "]"
+		return ""
 	})
 
 	xlog.RegistryFormater("@cip", func(e *xlog.Event, _ bool) string {
-		if e.Tags == nil {
-			return ""
-		}
-		cip := e.Tags["cip"]
-		if cip == "" {
-			return ""
-		}
-		return "[" + cip + "]"
+		//if e.Tags == nil {
+		//	return ""
+		//}
+		//cip := e.Tags["cip"]
+		//if cip == "" {
+		//	return ""
+		//}
+		//return "[" + cip + "]"
+		return ""
+
 	})
 
 	xlog.RegistryFormater("uid", func(e *xlog.Event, _ bool) string {
-		if e.Tags == nil {
-			return ""
-		}
-		return e.Tags["uid"]
+		// if e.Tags == nil {
+		// 	return ""
+		// }
+		// return e.Tags["uid"]
+		return ""
+
 	})
 
 	xlog.RegistryFormater("cip", func(e *xlog.Event, _ bool) string {
-		if e.Tags == nil {
-			return ""
-		}
-		return e.Tags["cip"]
+		// if e.Tags == nil {
+		// 	return ""
+		// }
+		// return e.Tags["cip"]
+		return ""
+
 	})
 	//----------------------------------
 
 	xlog.RegistryFormater("@src_name", func(e *xlog.Event, _ bool) string {
-		if e.Tags == nil {
-			return ""
-		}
-		src_name := e.Tags["src_name"]
-		if src_name == "" {
-			return ""
-		}
-		return "[" + src_name + "]"
+		// if e.Tags == nil {
+		// 	return ""
+		// }
+		// src_name := e.Tags["src_name"]
+		// if src_name == "" {
+		// 	return ""
+		// }
+		// return "[" + src_name + "]"
+		return ""
+
 	})
 
 	xlog.RegistryFormater("@src_ip", func(e *xlog.Event, _ bool) string {
-		if e.Tags == nil {
-			return ""
-		}
-		src_ip := e.Tags["src_ip"]
-		if src_ip == "" {
-			return ""
-		}
-		return "[" + src_ip + "]"
+		// if e.Tags == nil {
+		// 	return ""
+		// }
+		// src_ip := e.Tags["src_ip"]
+		// if src_ip == "" {
+		// 	return ""
+		// }
+		// return "[" + src_ip + "]"
+		return ""
+
 	})
 
 	xlog.RegistryFormater("src_name", func(e *xlog.Event, _ bool) string {
-		if e.Tags == nil {
-			return ""
-		}
-		return e.Tags["src_name"]
+		// if e.Tags == nil {
+		// 	return ""
+		// }
+		// return e.Tags["src_name"]
+		return ""
+
 	})
 
 	xlog.RegistryFormater("src_ip", func(e *xlog.Event, _ bool) string {
-		if e.Tags == nil {
-			return ""
-		}
-		return e.Tags["src_ip"]
+		// if e.Tags == nil {
+		// 	return ""
+		// }
+		// return e.Tags["src_ip"]
+		return ""
+
 	})
 
 }
