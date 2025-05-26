@@ -82,6 +82,9 @@ func init() {
 		if cfg.Insecure {
 			opts = append(opts, otlptracehttp.WithInsecure())
 		}
+		if urlObj.Path != "" {
+			opts = append(opts, otlptracehttp.WithURLPath(urlObj.Path))
+		}
 
 		exporter, err := otlptrace.New(
 			context.Background(),
