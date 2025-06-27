@@ -1,5 +1,7 @@
 package global
 
+import "encoding/json"
+
 type RouterList interface {
 	GetType() string
 	GetPathList() []string
@@ -35,4 +37,8 @@ func (r *RouterPathList) Range(callback func(k string, v []RouterList) bool) {
 			break
 		}
 	}
+}
+
+func (r *RouterPathList) MarshalJSON() (bytes []byte, err error) {
+	return json.Marshal(r.serverRouterMap)
 }

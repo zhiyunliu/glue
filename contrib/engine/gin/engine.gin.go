@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/global"
 )
 
 var _ engine.AdapterEngine = (*GinEngine)(nil)
@@ -107,6 +108,11 @@ func (e *GinEngine) defaultHandle() {
 	promHandler := promhttp.Handler()
 	e.Engine.Handle(http.MethodGet, "/metrics", func(ctx *gin.Context) {
 		promHandler.ServeHTTP(ctx.Writer, ctx.Request)
+	})
+
+	//healthcheck
+	e.Engine.Handle(http.MethodGet, "/routers", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, global.ServerRouterPathList)
 	})
 }
 
