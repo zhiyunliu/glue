@@ -591,3 +591,49 @@ func Benchmark_fillRowToStruct(b *testing.B) {
 		}
 	}
 }
+
+func Test_fillRowToStruct_decodeError(t *testing.T) {
+	var (
+		testVal1 *anonymousInner = &anonymousInner{}
+		ptrInt   *int            = new(int)
+	)
+	*ptrInt = 3
+
+	tests := []struct {
+		name       string
+		fields     *xreflect.StructFields
+		reflectVal reflect.Value
+		result     any
+		vals       map[string]any
+		wantErr    bool
+		wantVal    *anonymousInner
+	}{
+		{name: "1.", result: testVal1,
+			vals: map[string]any{
+				"str": "strval",
+				"int": 2.0,
+			},
+			wantVal: &anonymousInner{Str: "strval", Int: 0},
+			wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.reflectVal = reflect.ValueOf(tt.result)
+			tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
+
+			vals := make([]any, len(tt.fields.List))
+			cols := make([]string, len(tt.fields.List))
+			i := 0
+			for _, k := range tt.fields.ExactName {
+				cols[i] = k.Name
+				vals[i] = tt.vals[k.Name]
+				i++
+			}
+
+			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
+				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+		})
+	}
+}
