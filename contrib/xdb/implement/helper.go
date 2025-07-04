@@ -353,7 +353,11 @@ func scanInToStruct(fields *xreflect.StructFields, rv reflect.Value, cols []stri
 		}
 		err = fields.Dencode(rv, col, vrf.Interface())
 		if err != nil {
-			err = xdb.NewError(fmt.Errorf("xdb.Dencode:field:%s,val:%+v,type:%s,err:%w", col, vrf.Interface(), vrf.Kind().String(), err), "", nil)
+			targetType := ""
+			if fieldType, ok := fields.GetFieldType(col); ok {
+				targetType = fieldType.Kind().String()
+			}
+			err = xdb.NewError(fmt.Errorf("xdb.Dencode:field:%s,val:%+v,targetType:%s,err:%w", col, vrf.Interface(), targetType, err), "", nil)
 			return
 		}
 
