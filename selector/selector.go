@@ -22,6 +22,7 @@ type Selector interface {
 type Rebalancer interface {
 	// Apply is apply all nodes when any changes happen
 	Apply(nodes []Node)
+	Nodes() []Node
 }
 
 // Builder build selector
