@@ -66,6 +66,18 @@ func (d *Default) Apply(nodes []Node) {
 	d.nodes.Store(weightedNodes)
 }
 
+func (d *Default) Nodes() []Node {
+	nodes, ok := d.nodes.Load().([]WeightedNode)
+	if !ok {
+		return make([]Node, 0)
+	}
+	newNodes := make([]Node, len(nodes))
+	for i, wc := range nodes {
+		newNodes[i] = wc
+	}
+	return newNodes
+}
+
 // DefaultBuilder is de
 type DefaultBuilder struct {
 	BuilderName string
