@@ -39,6 +39,7 @@ type QueueItem struct {
 	Concurrency       int
 	BufferSize        int
 	VisibilityTimeout time.Duration
+	DisableRetry      bool
 	callback          queue.ConsumeCallback
 }
 
@@ -56,6 +57,11 @@ func (s QueueItem) GetVisibilityTimeout() time.Duration {
 
 func (s QueueItem) GetBufferSize() int {
 	return s.BufferSize
+}
+
+// 是否支持重试
+func (s QueueItem) GetDisableRetry() bool {
+	return s.DisableRetry
 }
 
 // NewConsumerByConfig 创建新的Consumer
@@ -168,6 +174,7 @@ func (consumer *Consumer) Consume(task queue.TaskInfo, callback queue.ConsumeCal
 		Concurrency:       task.GetConcurrency(),
 		BufferSize:        task.GetBufferSize(),
 		VisibilityTimeout: time.Duration(task.GetVisibilityTimeout()) * time.Second,
+		DisableRetry:      task.GetDisableRetry(),
 		callback:          callback,
 	}
 	if item.Concurrency == 0 {

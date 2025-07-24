@@ -48,6 +48,10 @@ func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url
 	return rr, nil
 }
 
+func (r *httpSelector) ServiceName() string {
+	return r.serviceName
+}
+
 func (r *httpSelector) Select(ctx context.Context, opts ...selector.SelectOption) (selected selector.Node, done selector.DoneFunc, err error) {
 	return r.selector.Select(ctx, opts...)
 }

@@ -11,6 +11,8 @@ var ErrNoAvailable = errors.InternalServer("no_available_node")
 
 // Selector is node pick balancer.
 type Selector interface {
+	// ServiceName 服务名
+	ServiceName() string
 	Rebalancer
 
 	// Select nodes

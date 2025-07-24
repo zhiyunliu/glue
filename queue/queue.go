@@ -38,6 +38,7 @@ type TaskInfo interface {
 	GetConcurrency() int
 	GetVisibilityTimeout() int
 	GetBufferSize() int
+	GetDisableRetry() bool
 	GetMeta() metadata.Metadata
 }
 
@@ -61,6 +62,7 @@ type IMQC interface {
 
 // IMQP 消息生产
 type IMQP interface {
+	Name() string
 	Push(ctx context.Context, key string, value Message) error
 	BatchPush(ctx context.Context, key string, value ...Message) error
 	DelayPush(ctx context.Context, key string, value Message, delaySeconds int64) error

@@ -485,7 +485,7 @@ func main() {
     "servers":{
 		"mqc":{
 			"config":{"addr":"queues://default","status":"start"},
-			"tasks":[{"queue":"xx","disable":true},{"queue":"key"}]
+			"tasks":[{"queue":"xx","disable":true},{"queue":"key1","currency":10,"disable_retry":true},{"queue":"key2","service":"/demo/key2"}]
 		}
     }
 }
