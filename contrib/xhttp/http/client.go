@@ -155,7 +155,7 @@ func (c *Client) getServiceNode(ctx context.Context, opts *xhttp.Options) (selec
 		return []selector.Node{}
 	}))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Client.Select[%s].%+w", c.selector.ServiceName(), err)
 	}
 	defer func() {
 		done(ctx, selector.DoneInfo{Err: err})

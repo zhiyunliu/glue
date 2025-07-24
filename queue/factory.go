@@ -2,6 +2,7 @@ package queue
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"context"
@@ -38,7 +39,11 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 
 	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
 	msg.Header()[constants.HeaderSourceName] = global.AppName
-	return q.q.Push(ctx, key, msg)
+	err = q.q.Push(ctx, key, msg)
+	if err != nil {
+		return fmt.Errorf("[%s] queue.Send[%s],err:%w", q.q.Name(), key, err)
+	}
+	return nil
 }
 
 func (q *queue) BatchSend(ctx context.Context, key string, values ...interface{}) error {
@@ -54,7 +59,11 @@ func (q *queue) BatchSend(ctx context.Context, key string, values ...interface{}
 		msgList[i] = msg
 	}
 
-	return q.q.BatchPush(ctx, key, msgList...)
+	err := q.q.BatchPush(ctx, key, msgList...)
+	if err != nil {
+		return fmt.Errorf("[%s] queue.BatchSend[%s],err:%w", q.q.Name(), key, err)
+	}
+	return err
 }
 
 func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error {
@@ -65,7 +74,11 @@ func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, de
 	if err != nil {
 		return err
 	}
-	return q.q.DelayPush(ctx, key, msg, delaySeconds)
+	err = q.q.DelayPush(ctx, key, msg, delaySeconds)
+	if err != nil {
+		return fmt.Errorf("[%s] queue.DelaySend[%s],err:%w", q.q.Name(), key, err)
+	}
+	return nil
 }
 
 func (q *queue) buildMessage(ctx context.Context, value any) (msg Message, err error) {
