@@ -15,7 +15,6 @@ require (
 //replace github.com/zhiyunliu/alloter => ../../../github.com/zhiyunliu/alloter
 
 //replace github.com/zhiyunliu/stack => ../../../github.com/zhiyunliu/stack
-//replace github.com/zhiyunliu/redisqueue/v3 => ../../../github.com/zhiyunliu/redisqueue
 
 //replace github.com/zhiyunliu/xbinding => ../../../github.com/zhiyunliu/xbinding
 

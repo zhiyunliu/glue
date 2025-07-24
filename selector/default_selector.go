@@ -14,6 +14,10 @@ type Default struct {
 	nodes atomic.Value
 }
 
+func (d *Default) ServiceName() string {
+	return ""
+}
+
 // Select is select one node.
 func (d *Default) Select(ctx context.Context, opts ...SelectOption) (selected Node, done DoneFunc, err error) {
 	var (

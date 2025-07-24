@@ -54,16 +54,16 @@ func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url
 	return rr, nil
 }
 
+func (r *httpSelector) ServiceName() string {
+	return r.serviceName
+}
+
 func (r *httpSelector) Select(ctx context.Context, opts ...selector.SelectOption) (selected selector.Node, done selector.DoneFunc, err error) {
 	return r.selector.Select(ctx, opts...)
 }
 
 func (r *httpSelector) Apply(nodes []selector.Node) {
 	r.selector.Apply(nodes)
-}
-
-func (r *httpSelector) ServiceName() string {
-	return r.serviceName
 }
 
 func (r *httpSelector) Nodes() (nodes []selector.Node) {
@@ -76,7 +76,11 @@ func (r *httpSelector) ResolveNow() {
 		return
 	}
 
-	r.resolveNowChan <- struct{}{}
+	select {
+	case r.resolveNowChan <- struct{}{}:
+		return
+	default:
+	}
 }
 
 func (r *httpSelector) buildOriginAddress(reqPath *url.URL) []selector.Node {

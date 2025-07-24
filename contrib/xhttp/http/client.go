@@ -166,11 +166,12 @@ func (c *Client) getServiceNode(ctx context.Context, opts *xhttp.Options) (selec
 		}
 		return []selector.Node{}
 	}))
+
 	if err != nil {
 		if err == selector.ErrNoAvailable {
 			c.selector.ResolveNow()
 		}
-		return nil, fmt.Errorf("getServiceNode:%s,err:%w", c.selector.ServiceName(), err)
+		return nil, fmt.Errorf("Client.Select[%s].%+w", c.selector.ServiceName(), err)
 	}
 	defer func() {
 		done(ctx, selector.DoneInfo{Err: err})

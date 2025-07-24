@@ -38,6 +38,7 @@ type TaskInfo interface {
 	GetConcurrency() int
 	GetVisibilityTimeout() int
 	GetBufferSize() int
+	GetDisableRetry() bool
 	GetMeta() metadata.Metadata
 }
 

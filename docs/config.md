@@ -75,7 +75,7 @@
 			"middlewares": [{"name": "metrics","data": {"proto": "prometheus"}}],
 			"tasks":[
 				{"queue":"xx.xx.xx","service":"/xx/bb/cc","disable":true},
-				{"queue":"yy.yy.yy","service":"/xx/bb/yy","concurrency":10}
+				{"queue":"yy.yy.yy","service":"/xx/bb/yy","concurrency":10,"disable_retry":true}
 			],
 		},
 		"cronserver":{

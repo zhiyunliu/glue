@@ -19,6 +19,7 @@ type Task struct {
 	Concurrency       int               `json:"concurrency,omitempty"`
 	BufferSize        int               `json:"buffersize,omitempty"`
 	VisibilityTimeout int               `json:"visibility_timeout"`
+	DisableRetry      bool              `json:"disable_retry"`
 	Meta              metadata.Metadata `json:"meta,omitempty"`
 }
 
@@ -38,6 +39,10 @@ func (s Task) GetVisibilityTimeout() int {
 
 func (s Task) GetBufferSize() int {
 	return s.BufferSize
+}
+
+func (s Task) GetDisableRetry() bool {
+	return s.DisableRetry
 }
 
 func (s Task) GetMeta() metadata.Metadata {
