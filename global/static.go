@@ -2,4 +2,7 @@ package global
 
 import "github.com/zhiyunliu/golibs/xnet"
 
-var LocalIp = xnet.StaticLocalIP
+var (
+	IpMask  string
+	LocalIp = xnet.StaticLocalIP
+)

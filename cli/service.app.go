@@ -152,6 +152,7 @@ func (app *ServiceApp) loadAppSetting() error {
 		return fmt.Errorf("获取app配置出错:%+v", err)
 	}
 	global.Mode = string(app.options.setting.Mode)
+	global.IpMask = app.options.setting.IpMask
 	global.LocalIp = xnet.GetLocalIP(app.options.setting.IpMask)
 	return nil
 }
