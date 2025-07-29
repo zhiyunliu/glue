@@ -29,7 +29,7 @@ func InitOtel(serviceName string, config config.Config) (err error) {
 		MetricsProvider: defaultMetricsProto,
 	}
 	if err := telemetryConfig.ScanTo(cfg); err != nil {
-		log.Errorf("InitOtel:failed to load config: %s, use default config", err)
+		log.Warnf("InitOtel:failed to load config: %s, use default config", err)
 	}
 
 	res, err := resource.New(
@@ -48,7 +48,7 @@ func InitOtel(serviceName string, config config.Config) (err error) {
 	}
 
 	if err := setTracerProvider(cfg, res, telemetryConfig); err != nil {
-		log.Errorf("InitOtel:%s", err)
+		log.Warnf("InitOtel:%s", err)
 	}
 	return nil
 }
