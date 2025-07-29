@@ -36,7 +36,7 @@ func NewProcessCPUCollector() (*ProcessCPUCollector, error) {
 				Name: "process_cpu_usage_percent",
 				Help: "CPU usage percentage for target process",
 			},
-			[]string{"processname", "srv"},
+			[]string{"processname"},
 		),
 		proc:        p,
 		processname: processname,
@@ -58,7 +58,6 @@ func (c *ProcessCPUCollector) Collect(ch chan<- prometheus.Metric) {
 	// 更新指标
 	c.cpuUsage.WithLabelValues(
 		c.processname,
-		c.appName,
 	).Set(percent)
 
 	c.cpuUsage.Collect(ch)
