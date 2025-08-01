@@ -156,7 +156,7 @@ func (r *httpSelector) watchRegistrar() {
 		watcher, err = r.registrar.Watch(r.ctx, r.serviceName)
 		if err != nil {
 			log.Errorf("xhttp:watchRegistrar.Watch=%s.error:%+v", r.serviceName, err)
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Second)
 			continue
 		}
 		break
