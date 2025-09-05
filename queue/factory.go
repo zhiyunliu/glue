@@ -28,8 +28,8 @@ func newQueue(proto string, cfg config.Config, opts ...Option) (IQueue, error) {
 }
 
 // Send 发送消息
-func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
-	if len(strings.TrimSpace(key)) == 0 {
+func (q *queue) Send(ctx context.Context, queuename string, value interface{}) error {
+	if len(strings.TrimSpace(queuename)) == 0 {
 		return errors.New("queue.Send,queue name can't be empty")
 	}
 	msg, err := q.buildMessage(ctx, value)
@@ -39,18 +39,18 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 
 	msg.Header()[constants.HeaderSourceIp] = global.LocalIp
 	msg.Header()[constants.HeaderSourceName] = global.AppName
-	err = q.q.Push(ctx, key, msg)
+	err = q.q.Push(ctx, queuename, msg)
 	if err != nil {
-		return fmt.Errorf("[%s] queue.Send[%s],err:%w", q.q.Name(), key, err)
+		return fmt.Errorf("[%s] queue.Send[%s],err:%w", q.q.Name(), queuename, err)
 	}
 	return nil
 }
 
-func (q *queue) BatchSend(ctx context.Context, key string, values ...interface{}) error {
-	if len(strings.TrimSpace(key)) == 0 {
+func (q *queue) BatchSend(ctx context.Context, queuename string, values ...interface{}) error {
+	if len(strings.TrimSpace(queuename)) == 0 {
 		return errors.New("queue.BatchSend,queue name can't be empty")
 	}
-	msgList := make([]Message, 0, len(values))
+	msgList := make([]Message, len(values))
 	for i := range values {
 		msg, err := q.buildMessage(ctx, values[i])
 		if err != nil {
@@ -59,24 +59,24 @@ func (q *queue) BatchSend(ctx context.Context, key string, values ...interface{}
 		msgList[i] = msg
 	}
 
-	err := q.q.BatchPush(ctx, key, msgList...)
+	err := q.q.BatchPush(ctx, queuename, msgList...)
 	if err != nil {
-		return fmt.Errorf("[%s] queue.BatchSend[%s],err:%w", q.q.Name(), key, err)
+		return fmt.Errorf("[%s] queue.BatchSend[%s],err:%w", q.q.Name(), queuename, err)
 	}
 	return err
 }
 
-func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, delaySeconds int64) error {
-	if len(strings.TrimSpace(key)) == 0 {
+func (q *queue) DelaySend(ctx context.Context, queuename string, value interface{}, delaySeconds int64) error {
+	if len(strings.TrimSpace(queuename)) == 0 {
 		return errors.New("queue.DelaySend,queue name can't be empty")
 	}
 	msg, err := q.buildMessage(ctx, value)
 	if err != nil {
 		return err
 	}
-	err = q.q.DelayPush(ctx, key, msg, delaySeconds)
+	err = q.q.DelayPush(ctx, queuename, msg, delaySeconds)
 	if err != nil {
-		return fmt.Errorf("[%s] queue.DelaySend[%s],err:%w", q.q.Name(), key, err)
+		return fmt.Errorf("[%s] queue.DelaySend[%s],err:%w", q.q.Name(), queuename, err)
 	}
 	return nil
 }

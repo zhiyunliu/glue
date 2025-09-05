@@ -8,7 +8,6 @@ require (
 	github.com/zhiyunliu/redisqueue/v3 v3.1.0
 	github.com/zhiyunliu/stack v1.9.0 // indirect
 	github.com/zhiyunliu/xbinding v0.1.3
-
 )
 
 //replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
