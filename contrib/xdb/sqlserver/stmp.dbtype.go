@@ -1,6 +1,8 @@
 package sqlserver
 
 import (
+	"database/sql"
+
 	mssql "github.com/microsoft/go-mssqldb"
 	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/golibs/xreflect"
@@ -12,6 +14,7 @@ var (
 		&varcharMaxHandler{},
 		&nvarcharMaxHandler{},
 		&tvpHandler{},
+		&outputHandler{},
 	}
 )
 
@@ -64,4 +67,17 @@ func (h *tvpHandler) Handle(param any, args []string) any {
 		TypeName: args[1],
 		Value:    param,
 	}
+}
+
+type outputHandler struct {
+}
+
+func (h *outputHandler) Name() string {
+	return "output"
+}
+func (h *outputHandler) Handle(param any, args []string) any {
+	if len(args) != 2 {
+		return param
+	}
+	return sql.Named(args[1], sql.Out{Dest: param})
 }
