@@ -64,9 +64,10 @@ func New(opts ...Option) *App {
 	app.cliApp = cli.NewApp()
 	app.cliApp.Name = global.AppName
 	app.cliApp.Version = fmt.Sprintf(`
-	GitCommit = %s
+	GitCommit	 = %s
 	BuildTime    = %s
 	Version      = %s
+	PkgVersion   = %s
 	DisplayName  = %s
 	GoVersion    = %s
 	Usage        = %s
@@ -74,6 +75,7 @@ func New(opts ...Option) *App {
 		global.GitCommit,
 		global.BuildTime,
 		global.Version,
+		global.PkgVersion,
 		global.DisplayName,
 		runtime.Version(),
 		global.Usage,
