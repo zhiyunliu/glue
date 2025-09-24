@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"context"
+
 	"golang.org/x/sync/errgroup"
 )
 
@@ -44,13 +46,13 @@ type ServerStreamClient interface {
 }
 
 // BidirectionalStreamProcessor is a callback function that can be used to process a bidirectional stream.
-type BidirectionalStreamProcessor func(BidirectionalStreamClient) error
+type BidirectionalStreamProcessor func(context.Context, BidirectionalStreamClient) error
 
 // ClientStreamProcessor is a callback function that can be used to process a stream client.
-type ClientStreamProcessor func(ClientStreamClient) (err error)
+type ClientStreamProcessor func(context.Context, ClientStreamClient) (err error)
 
 // ServerStreamProcessor is a callback function that can be used to process a stream server.
-type ServerStreamProcessor func(ServerStreamClient) (err error)
+type ServerStreamProcessor func(context.Context, ServerStreamClient) (err error)
 
 // DefaultProcessor is a default implementation of StreamProcessor.
 type DefaultProcessor struct{}
@@ -96,7 +98,7 @@ func BuildDefaultClientStreamProcess(input any) (processor ClientStreamProcessor
 }
 
 func buildClientChanProcess(channel ClientStreamChan) (processor ClientStreamProcessor, err error) {
-	return func(client ClientStreamClient) error {
+	return func(ctx context.Context, client ClientStreamClient) error {
 		errGroup := errgroup.Group{}
 		//调用grpc服务
 		errGroup.Go(func() error {
@@ -114,7 +116,7 @@ func buildClientChanProcess(channel ClientStreamChan) (processor ClientStreamPro
 
 func buildClientSliceProcess(refval reflect.Value) (processor ClientStreamProcessor, err error) {
 
-	return func(client ClientStreamClient) error {
+	return func(ctx context.Context, client ClientStreamClient) error {
 		errGroup := errgroup.Group{}
 		//调用grpc服务
 		errGroup.Go(func() error {

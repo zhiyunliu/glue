@@ -145,19 +145,19 @@ func (c *Client) RequestByStream(ctx context.Context, input any, opts *xrpc.Opti
 	//双向流
 	case xrpc.BidirectionalStreamProcessor:
 		return xrpc.NewEmptyBody(), c.BidirectionalStreamProcessor(ctx, processor, opts)
-	case func(xrpc.BidirectionalStreamClient) error:
+	case func(context.Context, xrpc.BidirectionalStreamClient) error:
 		return xrpc.NewEmptyBody(), c.BidirectionalStreamProcessor(ctx, processor, opts)
 
-	//客户端流
-	case func(xrpc.ClientStreamClient) (err error):
-		return c.ClientStreamProcessor(ctx, processor, opts)
+		//客户端流
 	case xrpc.ClientStreamProcessor:
 		return c.ClientStreamProcessor(ctx, processor, opts)
+	case func(context.Context, xrpc.ClientStreamClient) (err error):
+		return c.ClientStreamProcessor(ctx, processor, opts)
 
-	//服务端流
-	case func(xrpc.ServerStreamClient) (err error):
-		return xrpc.NewEmptyBody(), c.ServerStreamProcessor(ctx, processor, input, opts)
+		//服务端流
 	case xrpc.ServerStreamProcessor:
+		return xrpc.NewEmptyBody(), c.ServerStreamProcessor(ctx, processor, input, opts)
+	case func(context.Context, xrpc.ServerStreamClient) (err error):
 		return xrpc.NewEmptyBody(), c.ServerStreamProcessor(ctx, processor, input, opts)
 
 	//默认流处理器--使用客户端流
