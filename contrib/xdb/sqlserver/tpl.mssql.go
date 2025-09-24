@@ -3,6 +3,7 @@ package sqlserver
 import (
 	"database/sql"
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/tpl"
@@ -93,8 +94,8 @@ func (template *MssqlTemplate) ReleaseSqlState(state xdb.SqlState) {
 	template.sqlStatePool.Put(state)
 }
 
-func (template *MssqlTemplate) StmtDbTypeWrap(param any, tagOpts xdb.TagOptions) any {
-	return template.stmtProcessor.Process(param, tagOpts)
+func (template *MssqlTemplate) StmtDbTypeWrap(fieldName string, param any, fv reflect.Value, tagOpts xdb.TagOptions) (any, error) {
+	return template.stmtProcessor.Process(fieldName, param, fv, tagOpts)
 }
 func (template *MssqlTemplate) RegistStmtDbTypeHandler(handler ...xdb.StmtDbTypeHandler) {
 	template.stmtProcessor.RegistHandler(handler...)

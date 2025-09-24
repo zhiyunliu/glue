@@ -9,6 +9,7 @@ import (
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
 	"google.golang.org/grpc/peer"
 
 	"github.com/zhiyunliu/alloter"
@@ -23,7 +24,7 @@ type serverRequest struct {
 	url    *url.URL
 	method string
 	params map[string]string
-	header map[string]string
+	header engine.Header
 	body   cbody
 }
 
@@ -73,7 +74,7 @@ func (m *serverRequest) Params() map[string]string {
 	return m.params
 }
 
-func (m *serverRequest) GetHeader() map[string]string {
+func (m *serverRequest) GetHeader() engine.Header {
 	return m.header
 }
 

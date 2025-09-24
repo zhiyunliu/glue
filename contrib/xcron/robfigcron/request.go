@@ -26,7 +26,7 @@ type Request struct {
 	method  string
 	url     *url.URL
 	params  xtypes.SMap
-	header  xtypes.SMap
+	header  engine.Header
 	body    cbody //map[string]string
 	session string
 	canProc uint32
@@ -80,7 +80,7 @@ func (m *Request) Params() map[string]string {
 	return m.params
 }
 
-func (m *Request) GetHeader() map[string]string {
+func (m *Request) GetHeader() engine.Header {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

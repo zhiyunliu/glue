@@ -75,10 +75,10 @@ func (ctx *GinContext) ResetContext(nctx context.Context) {
 func (ctx *GinContext) Bind(obj interface{}) error {
 	val := reflect.TypeOf(obj)
 	if val.Kind() != reflect.Ptr {
-		return fmt.Errorf("Bind只接收Ptr类型的数据,目前是:%s", val.Kind())
+		return fmt.Errorf("Bind只接收Ptr类型的数据,当前类型:%s", val.Kind())
 	}
 
-	err := ctx.Request().Body().Scan(obj)
+	err := ctx.Request().Body().ScanTo(obj)
 	if err != nil {
 		return err
 	}

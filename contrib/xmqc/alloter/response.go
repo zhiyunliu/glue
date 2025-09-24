@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/zhiyunliu/alloter"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/glue/xmqc"
-	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 var _ alloter.ResponseWriter = (*Response)(nil)
@@ -21,7 +21,7 @@ const (
 type Response struct {
 	status int
 	size   int
-	header xtypes.SMap
+	header engine.Header
 	msg    queue.IMQCMessage
 	//stream *bufio.Writer
 }
@@ -29,7 +29,7 @@ type Response struct {
 // newResponse 构建任务请求
 func newResponse(task *xmqc.Task, msg queue.IMQCMessage) (r *Response) {
 	r = &Response{
-		header: make(xtypes.SMap),
+		header: make(engine.Header),
 		size:   noWritten,
 		status: _sucessStatus,
 		msg:    msg,
@@ -57,7 +57,7 @@ func (r *Response) WriteHeader(code int) {
 		r.status = code
 	}
 }
-func (r *Response) Header() xtypes.SMap {
+func (r *Response) Header() engine.Header {
 	return r.header
 }
 func (r *Response) Write(data []byte) (n int, err error) {

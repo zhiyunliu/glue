@@ -25,7 +25,7 @@ type serverStreamRequest struct {
 	method    string
 	dataBytes []byte
 	params    map[string]string
-	header    map[string]string
+	header    engine.Header
 	stream    grpcproto.GRPC_ServerStreamProcessServer
 }
 
@@ -74,7 +74,7 @@ func (m *serverStreamRequest) Params() map[string]string {
 	return m.params
 }
 
-func (m *serverStreamRequest) GetHeader() map[string]string {
+func (m *serverStreamRequest) GetHeader() engine.Header {
 	return m.header
 }
 

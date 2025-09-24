@@ -26,7 +26,7 @@ type Request struct {
 	method string
 	url    *url.URL
 	params map[string]string
-	header map[string]string
+	header engine.Header
 	body   cbody
 }
 
@@ -86,7 +86,7 @@ func (m *Request) Params() map[string]string {
 	return m.params
 }
 
-func (m *Request) GetHeader() map[string]string {
+func (m *Request) GetHeader() engine.Header {
 	return m.header
 }
 

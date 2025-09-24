@@ -8,6 +8,7 @@ import (
 	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/xrpc"
 	"google.golang.org/grpc/peer"
 )
@@ -22,7 +23,7 @@ type clientStreamRequest struct {
 	url      *url.URL
 	method   string
 	params   map[string]string
-	header   map[string]string
+	header   engine.Header
 	stream   grpcproto.GRPC_ClientStreamProcessServer
 }
 
@@ -77,7 +78,7 @@ func (m *clientStreamRequest) Params() map[string]string {
 	return m.params
 }
 
-func (m *clientStreamRequest) GetHeader() map[string]string {
+func (m *clientStreamRequest) GetHeader() engine.Header {
 	return m.header
 }
 

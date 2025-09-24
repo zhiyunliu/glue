@@ -3,11 +3,11 @@ module github.com/zhiyunliu/glue
 go 1.22
 
 require (
-	github.com/zhiyunliu/alloter v0.1.0
-	github.com/zhiyunliu/golibs v0.3.5
+	github.com/zhiyunliu/alloter v0.2.0
+	github.com/zhiyunliu/golibs v0.3.11
 	github.com/zhiyunliu/redisqueue/v3 v3.1.0
-	github.com/zhiyunliu/stack v1.9.0 // indirect
-	github.com/zhiyunliu/xbinding v0.1.3
+	github.com/zhiyunliu/stack v1.10.1 // indirect
+	github.com/zhiyunliu/xbinding v0.1.4
 )
 
 //replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs

@@ -122,6 +122,9 @@ func (m *mockValue) Unmarshal(val interface{}) error {
 }
 
 func (m *mockValue) Scan(val interface{}) error {
+	return m.ScanTo(val)
+}
+func (m *mockValue) ScanTo(val interface{}) error {
 	return nil
 }
 
