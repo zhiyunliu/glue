@@ -2,6 +2,7 @@ package tpl
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/zhiyunliu/glue/xdb"
@@ -86,8 +87,8 @@ func (template *FixedTemplate) ReleaseSqlState(state xdb.SqlState) {
 	template.sqlStatePool.Put(state)
 }
 
-func (template *FixedTemplate) StmtDbTypeWrap(param any, tagOpts xdb.TagOptions) any {
-	return template.stmtProcessor.Process(param, tagOpts)
+func (template *FixedTemplate) StmtDbTypeWrap(fieldName string, param any, fv reflect.Value, tagOpts xdb.TagOptions) (any, error) {
+	return template.stmtProcessor.Process(fieldName, param, fv, tagOpts)
 }
 func (template *FixedTemplate) RegistStmtDbTypeHandler(handler ...xdb.StmtDbTypeHandler) {
 	template.stmtProcessor.RegistHandler(handler...)
