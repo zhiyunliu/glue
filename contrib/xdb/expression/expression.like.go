@@ -35,7 +35,7 @@ func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption
 		opts[i](mopts)
 	}
 
-	const pattern = `[&|\|](({(like|notlike)\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+(like|notlike)\s+(%?\w+%?)}))`
+	const pattern = `[&|\|](({(like|not\s*like)\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+(like|not\s*like)\s+(%?\w+%?)}))`
 
 	matcher := &likeExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
@@ -104,7 +104,7 @@ func (m *likeExpressionMatcher) MatchString(expression string) (valuer xdb.Expre
 	if strings.HasSuffix(propName, SPEC_CHAR) {
 		suffix = SPEC_CHAR
 	}
-
+	oper = strings.ReplaceAll(oper, " ", "")
 	oper = prefix + oper + suffix
 	propName = strings.Trim(propName, SPEC_CHAR)
 

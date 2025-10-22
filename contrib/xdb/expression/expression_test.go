@@ -131,9 +131,12 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "11b.", matcher: likeMatcher, fullKey: "&{tbl.field like %notexists%}", wantFullfield: "tbl.field", wantPropName: "notexists", wantOper: "%like%", wantSymbol: "&", wantExpr: ""},
 
 		{name: "not-1a.", matcher: likeMatcher, fullKey: "&{notlike   field}", wantFullfield: "field", wantPropName: "field", wantOper: "notlike", wantSymbol: "&", wantExpr: "and field not like ?"},
+		{name: "not-2a.", matcher: likeMatcher, fullKey: "&{not     like   field}", wantFullfield: "field", wantPropName: "field", wantOper: "notlike", wantSymbol: "&", wantExpr: "and field not like ?"},
+		{name: "not-3a.", matcher: likeMatcher, fullKey: "&{not like   field}", wantFullfield: "field", wantPropName: "field", wantOper: "notlike", wantSymbol: "&", wantExpr: "and field not like ?"},
 		{name: "not-8b.", matcher: likeMatcher, fullKey: "&{tbl.field notlike %property}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?"},
 		{name: "not-9b.", matcher: likeMatcher, fullKey: "&{tbl.field notlike property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like ?+'%'"},
 		{name: "not-10b.", matcher: likeMatcher, fullKey: "&{tbl.field notlike %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?+'%'"},
+		{name: "not-11b.", matcher: likeMatcher, fullKey: "&{tbl.field not   like %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?+'%'"},
 
 		{name: "8.", matcher: inMatcher, fullKey: "&{in tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and tbl.infield in (1,2)"},
 		{name: "9.", matcher: inMatcher, fullKey: "&{in infield}", wantFullfield: "infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in (1,2)"},
