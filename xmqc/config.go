@@ -3,6 +3,7 @@ package xmqc
 import (
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/metadata"
+	"github.com/zhiyunliu/glue/queue"
 )
 
 type Config struct {
@@ -21,6 +22,7 @@ type Task struct {
 	VisibilityTimeout int               `json:"visibility_timeout"`
 	DisableRetry      bool              `json:"disable_retry"`
 	Meta              metadata.Metadata `json:"meta,omitempty"`
+	MsgLastId         string            `json:"msg_last_id,omitempty"`
 }
 
 type TaskList []*Task
@@ -30,6 +32,9 @@ func (t Task) GetQueue() string {
 }
 
 func (t Task) GetConcurrency() int {
+	if t.Concurrency <= 0 {
+		t.Concurrency = queue.DefaultMaxQueueLen
+	}
 	return t.Concurrency
 }
 
@@ -57,6 +62,10 @@ func (t *Task) GetService() string {
 	return t.Service
 }
 
-func (t *Task) GetFullPath() string {
+func (t Task) GetFullPath() string {
 	return t.FullPath
+}
+
+func (t Task) GetMsgLastId() string {
+	return t.MsgLastId
 }

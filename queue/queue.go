@@ -39,6 +39,7 @@ type TaskInfo interface {
 	GetVisibilityTimeout() int
 	GetBufferSize() int
 	GetDisableRetry() bool
+	GetMsgLastId() string
 	GetMeta() metadata.Metadata
 }
 
