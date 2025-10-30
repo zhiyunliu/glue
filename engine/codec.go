@@ -186,7 +186,7 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 		return
 	}
 	resp.Header(ContentTypeName, codec.ContentType())
-	resp.Status(se.Code)
+	resp.Status(se.GetCode())
 	resp.WriteBytes(body)
 }
 

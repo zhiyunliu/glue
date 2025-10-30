@@ -70,7 +70,7 @@ func serverByOptions(op *options) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			var (
-				code   int = http.StatusOK
+				code   int
 				reason string
 				kind   string = ctx.ServerType()
 				path   string = ctx.Request().Path().FullPath()
@@ -82,15 +82,13 @@ func serverByOptions(op *options) middleware.Middleware {
 
 			reply = handler(ctx)
 
-			if respErr, ok := reply.(errors.RespError); ok {
-				code = respErr.GetCode()
+			code = ctx.Response().GetStatusCode()
+			if rerr, ok := reply.(error); ok {
+				if se := errors.FromError(rerr); se != nil {
+					code = int(se.GetCode())
+				}
 				if code == 0 {
 					code = ctx.Response().GetStatusCode()
-				}
-			} else if rerr, ok := reply.(error); ok {
-				code = http.StatusInternalServerError
-				if se := errors.FromError(rerr); se != nil {
-					code = int(se.Code)
 				}
 			}
 			if code == 0 {

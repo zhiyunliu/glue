@@ -9,55 +9,69 @@ const (
 	UnknownCode = 500
 )
 
+type Option func(*xError)
+
 type IgnoreError interface {
 	Ignore() bool
 }
 
-type RespError interface {
+type InnerError interface {
+	GetInner() error
+}
+
+type Error interface {
+	error
 	GetCode() int
+	GetSubCode() string
 	GetMessage() string
 }
 
-type Error struct {
-	Code     int               `json:"code,omitempty"`
-	Message  string            `json:"message,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
+type xError struct {
+	Code     int            `json:"code"`
+	SubCode  string         `json:"sub_code,omitempty"`
+	Message  string         `json:"message"`
+	innerErr error          `json:"-"`
+	ErrData  map[string]any `json:"errdata,omitempty"`
+	Data     any            `json:"data,omitempty"`
 }
 
-func (x Error) GetCode() int {
+func (x xError) GetCode() int {
 	return x.Code
 }
 
-func (x Error) GetMessage() string {
+func (x xError) GetSubCode() string {
+	return x.SubCode
+}
+func (x xError) GetMessage() string {
 	return x.Message
 }
 
-func (x Error) GetMetadata() map[string]string {
-	return x.Metadata
-
+func (x xError) GetInner() error {
+	return x.innerErr
 }
 
-func (e Error) Error() string {
-	return fmt.Sprintf("error: code = %d message = %s metadata = %+v", e.Code, e.Message, e.Metadata)
+func (x xError) Error() string {
+	return fmt.Sprintf("error:code=%d,subcode=%s,message=%s,errdata=%+v,inner=%s", x.Code, x.SubCode, x.Message, x.ErrData, x.innerErr)
 }
 
-func (e Error) Is(err error) bool {
-	if se := new(Error); errors.As(err, &se) {
-		return se.Code == e.Code
+func (x xError) Is(err error) bool {
+
+	var tmp Error
+	if As(err, &tmp) {
+		return tmp.GetCode() == x.Code
 	}
 	return false
 }
 
-func (e *Error) WithMetadata(md map[string]string) *Error {
-	e.Metadata = md
-	return e
-}
-
-func New(code int, message string) *Error {
-	return &Error{
+func New(code int, message string, opts ...Option) Error {
+	e := &xError{
 		Code:    code,
 		Message: message,
 	}
+	for _, opt := range opts {
+		opt(e)
+	}
+	return e
 }
 
 func Errorf(code int, format string, a ...interface{}) error {
@@ -70,26 +84,29 @@ func Code(err error) int {
 	if err == nil {
 		return 200 //nolint:gomnd
 	}
-	if xerr, ok := err.(*Error); ok {
-		return xerr.Code
+	if xerr, ok := err.(Error); ok {
+		return xerr.GetCode()
 	}
 
-	return -1
-}
+	var se Error
+	if errors.As(err, &se) {
+		return se.GetCode()
+	}
 
-// IsInternalServer determines if err is an error which indicates an Internal error.
-// It supports wrapped errors.
-func IsInternalServer(err error) bool {
-	return Code(err) == 500
+	return UnknownCode
 }
 
 // FromError try to convert an error to *Error.
 // It supports wrapped errors.
-func FromError(err error) *Error {
+func FromError(err error) Error {
 	if err == nil {
 		return nil
 	}
-	if se := new(Error); errors.As(err, &se) {
+	if xerr, ok := err.(Error); ok {
+		return xerr
+	}
+	var se Error
+	if errors.As(err, &se) {
 		return se
 	}
 	return New(UnknownCode, err.Error())

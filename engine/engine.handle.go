@@ -78,7 +78,7 @@ func buildHandler(engine AdapterEngine, group *RouterWrapper, middlewares []midd
 		}
 		code = ctx.Response().GetStatusCode()
 		if se := errors.FromError(err); se != nil {
-			code = se.Code
+			code = se.GetCode()
 		}
 
 		level, errInfo := extractError(err)
