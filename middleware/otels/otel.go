@@ -81,24 +81,18 @@ func Server() middleware.Middleware {
 			reply = handler(c)
 
 			var (
-				statusCode int = http.StatusOK
+				statusCode int = c.Response().GetStatusCode()
+				subcode    string
 				err        error
 			)
 
-			if respErr, ok := reply.(errors.RespError); ok {
-				statusCode = respErr.GetCode()
-				if statusCode == 0 {
-					statusCode = c.Response().GetStatusCode()
-				}
-				if err, ok = reply.(error); !ok {
-					err = errors.New(statusCode, respErr.GetMessage())
-				}
-
-			} else if rerr, ok := reply.(error); ok {
-				statusCode = http.StatusInternalServerError
+			if rerr, ok := reply.(error); ok {
 				err = rerr
-				if se := errors.FromError(rerr); se != nil {
-					statusCode = int(se.Code)
+				if respErr, ok := reply.(errors.Error); ok {
+					statusCode = respErr.GetCode()
+					subcode = respErr.GetSubCode()
+				} else {
+					statusCode = http.StatusInternalServerError
 				}
 			}
 
@@ -118,6 +112,7 @@ func Server() middleware.Middleware {
 				attribute.String("kind", serverKind),
 				attribute.String("path", fullPath),
 				attribute.Int("code", statusCode),
+				attribute.String("sub_code", subcode),
 			))
 
 			mets.RequestLatency.Record(ctx, startTime, metric.WithAttributes(metricAttrs...))

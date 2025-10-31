@@ -1,38 +1,46 @@
 // nolint:gomnd
 package errors
 
-func BadRequest(reason, message string) *Error {
-	return New(400, message)
+import "net/http"
+
+func BadRequest(reason, message string, opts ...Option) Error {
+	return New(http.StatusBadRequest, message)
 }
 
 func IsBadRequest(err error) bool {
-	return Code(err) == 400
+	return Code(err) == http.StatusBadRequest
 }
 
-func Unauthorized(message string) *Error {
-	return New(401, message)
+func Unauthorized(message string, opts ...Option) Error {
+	return New(http.StatusUnauthorized, message)
 }
 
 func IsUnauthorized(err error) bool {
-	return Code(err) == 401
+	return Code(err) == http.StatusUnauthorized
 }
 
-func Forbidden(message string) *Error {
-	return New(403, message)
+func Forbidden(message string, opts ...Option) Error {
+	return New(http.StatusForbidden, message)
 }
 
 func IsForbidden(err error) bool {
-	return Code(err) == 403
+	return Code(err) == http.StatusForbidden
 }
 
-func NotFound(message string) *Error {
-	return New(404, message)
+func NotFound(message string, opts ...Option) Error {
+	return New(http.StatusNotFound, message)
 }
 
 func IsNotFound(err error) bool {
-	return Code(err) == 404
+	return Code(err) == http.StatusNotFound
 }
 
-func InternalServer(message string) *Error {
-	return New(500, message)
+func InternalServer(message string, opts ...Option) Error {
+	return New(http.StatusInternalServerError, message)
+}
+
+// IsInternalServer determines if err is an error which indicates an Internal error.
+// It supports wrapped errors.
+func IsInternalServer(err error) bool {
+	return Code(err) == http.StatusInternalServerError
 }
