@@ -70,10 +70,10 @@ func serverByOptions(op *options) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			var (
-				code   int
-				reason string
-				kind   string = ctx.ServerType()
-				path   string = ctx.Request().Path().FullPath()
+				code    int
+				subcode string
+				kind    string = ctx.ServerType()
+				path    string = ctx.Request().Path().FullPath()
 			)
 			startTime := time.Now()
 			if op.gauge != nil {
@@ -85,7 +85,8 @@ func serverByOptions(op *options) middleware.Middleware {
 			code = ctx.Response().GetStatusCode()
 			if rerr, ok := reply.(error); ok {
 				if se := errors.FromError(rerr); se != nil {
-					code = int(se.GetCode())
+					code = se.GetCode()
+					subcode = se.GetSubCode()
 				}
 				if code == 0 {
 					code = ctx.Response().GetStatusCode()
@@ -96,7 +97,7 @@ func serverByOptions(op *options) middleware.Middleware {
 			}
 
 			if op.counter != nil {
-				op.counter.With(kind, path, strconv.Itoa(code), reason).Inc()
+				op.counter.With(kind, path, strconv.Itoa(code), subcode).Inc()
 			}
 			if op.observer != nil {
 				op.observer.With(kind, path).Observe(time.Since(startTime).Seconds())
