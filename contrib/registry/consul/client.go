@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 
@@ -105,10 +107,22 @@ func (c *Client) Register(_ context.Context, svc *registry.ServiceInstance, enab
 		checkAddresses = append(checkAddresses, net.JoinHostPort(addr, strconv.FormatUint(port, 10)))
 		addresses[raw.Scheme] = api.ServiceAddress{Address: item.EndpointURL, Port: int(port)}
 	}
+	var rmd = make(map[string]string)
+
+	for k, v := range svc.Metadata {
+		rmd[k] = v
+	}
+
+	rmd["version"] = svc.Version
+	rmd["hostname"], _ = os.Hostname()
+	rmd["pkgversion"] = global.PkgVersion
+	rmd["commitid"] = global.GitCommit
+	rmd["buildtime"] = global.BuildTime
+
 	asr := &api.AgentServiceRegistration{
 		ID:              svc.ID,
 		Name:            svc.Name,
-		Meta:            svc.Metadata,
+		Meta:            rmd,
 		Tags:            []string{fmt.Sprintf("version=%s", svc.Version)},
 		TaggedAddresses: addresses,
 	}
