@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"strconv"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/registry"
 )
 
@@ -80,6 +82,11 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 		}
 		rmd["scheme"] = u.Scheme
 		rmd["version"] = si.Version
+		rmd["hostname"], _ = os.Hostname()
+		rmd["pkgversion"] = global.PkgVersion
+		rmd["commitid"] = global.GitCommit
+		rmd["buildtime"] = global.BuildTime
+
 		_, e := r.cli.RegisterInstance(vo.RegisterInstanceParam{
 			Ip:          host,
 			Port:        uint64(p),
