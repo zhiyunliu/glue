@@ -2,6 +2,7 @@ package nacos
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/nacos-group/nacos-sdk-go/clients"
@@ -41,7 +42,12 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 	if err != nil {
 		return nil, fmt.Errorf("nacos options error:%+v", err)
 	}
-
+	if len(opts.Group) == 0 {
+		opts.Group = os.Getenv("NACOS_DISCOVERY_GROUP")
+	}
+	if len(opts.Cluster) == 0 {
+		opts.Cluster = os.Getenv("NACOS_DISCOVERY_CLUSTER")
+	}
 	addrs := make([]string, 0)
 
 	for _, s := range ncp.ServerConfigs {

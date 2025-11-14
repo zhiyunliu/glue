@@ -4,6 +4,11 @@ import (
 	"context"
 )
 
+type RegistrarOptions interface {
+	GetGroup() string
+	GetCluster() string
+}
+
 // Registrar is service registrar.
 type Registrar interface {
 	Name() string
@@ -21,6 +26,9 @@ type Registrar interface {
 
 	// GetAllServicesInfo return all services in memory.
 	GetAllServicesInfo(ctx context.Context) (ServiceList, error)
+
+	// GetOptions return the options of the registrar.
+	GetOptions() RegistrarOptions
 
 	// GetImpl return the implementation of the registrar.
 	GetImpl() any

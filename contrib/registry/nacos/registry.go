@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
-	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
 	"github.com/nacos-group/nacos-sdk-go/vo"
 
 	"github.com/zhiyunliu/glue/global"
@@ -28,12 +27,19 @@ type options struct {
 	serverConfigs string  `json:"-"`
 }
 
+func (o options) GetGroup() string {
+	return o.Group
+}
+
+func (o options) GetCluster() string {
+	return o.Cluster
+}
+
 // Registry is nacos registry.
 type Registry struct {
-	opts        *options
-	ncp         *vo.NacosClientParam
-	cli         naming_client.INamingClient
-	nacosServer *nacos_server.NacosServer
+	opts *options
+	ncp  *vo.NacosClientParam
+	cli  naming_client.INamingClient
 }
 
 // New new a nacos registry.
@@ -192,6 +198,9 @@ func (r Registry) GetAllServicesInfo(ctx context.Context) (list registry.Service
 	list.NameList = make([]string, len(tmplist.Doms))
 	copy(list.NameList, tmplist.Doms)
 	return
+}
+func (r Registry) GetOptions() registry.RegistrarOptions {
+	return r.opts
 }
 
 func (r Registry) GetImpl() any {
