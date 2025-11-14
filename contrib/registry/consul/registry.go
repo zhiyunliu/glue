@@ -61,13 +61,20 @@ func WithHealthCheckInterval(interval int) Option {
 }
 
 // Config is consul registry config
-type Config struct {
-	*api.Config
+type Config api.Config
+
+func (c Config) GetGroup() string {
+	return c.Datacenter
+}
+
+func (c Config) GetCluster() string {
+	return c.Partition
 }
 
 // Registry is consul registry
 type Registry struct {
 	cli               *Client
+	config            *Config
 	enableHealthCheck bool
 	addr              string
 	registry          map[string]*serviceSet
@@ -75,9 +82,11 @@ type Registry struct {
 }
 
 // New creates consul registry
-func New(apiClient *api.Client, opts ...Option) *Registry {
+func New(apiClient *api.Client, config *api.Config, opts ...Option) *Registry {
+	cfg := Config(*config)
 	r := &Registry{
 		cli:               NewClient(apiClient),
+		config:            &cfg,
 		registry:          make(map[string]*serviceSet),
 		enableHealthCheck: true,
 	}
@@ -225,6 +234,10 @@ func (r *Registry) GetAllServicesInfo(ctx context.Context) (list registry.Servic
 		idx++
 	}
 	return
+}
+
+func (r *Registry) GetOptions() registry.RegistrarOptions {
+	return r.config
 }
 
 func (r *Registry) GetImpl() any {
