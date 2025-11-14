@@ -5,7 +5,7 @@ import (
 	"github.com/zhiyunliu/glue/log"
 )
 
-//Stop Stop
+// Stop Stop
 func (p *ServiceApp) Stop(s service.Service) (err error) {
 	err = p.deregister(p.svcCtx)
 	if err != nil {
@@ -18,8 +18,14 @@ func (p *ServiceApp) Stop(s service.Service) (err error) {
 
 func (p *ServiceApp) stopServers() {
 	log.Infof("serviceApp close:%s stop servers", p.cliCtx.App.Name)
+	var servers = p.options.Servers
 	for i := range p.options.Servers {
-		p.options.Servers[i].Stop(p.svcCtx)
+		stopErr := servers[i].Stop(p.svcCtx)
+		stopMsg := "success"
+		if stopErr != nil {
+			stopMsg = stopErr.Error()
+		}
+		log.Infof("stop server[%s],%s", servers[i].Name(), stopMsg)
 		p.closeWaitGroup.Done()
 	}
 	p.closeWaitGroup.Wait()
