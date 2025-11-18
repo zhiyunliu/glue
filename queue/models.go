@@ -33,7 +33,7 @@ func WithHeader(key, val string) MsgOption {
 	}
 }
 
-func NewMsg(obj interface{}, opts ...MsgOption) (msg Message) {
+func NewMsg(obj interface{}, opts ...MsgOption) (msg Message, err error) {
 	var bytes []byte
 	switch val := obj.(type) {
 	case []byte:
@@ -41,9 +41,12 @@ func NewMsg(obj interface{}, opts ...MsgOption) (msg Message) {
 	case string:
 		bytes = bytesconv.StringToBytes(val)
 	case Message:
-		return val
+		return val, nil
 	default:
-		bytes, _ = json.Marshal(obj)
+		bytes, err = json.Marshal(obj)
+		if err != nil {
+			return nil, err
+		}
 	}
 	tmpmsg := &MsgWrap{
 		HeaderMap: make(xtypes.SMap),
@@ -53,7 +56,7 @@ func NewMsg(obj interface{}, opts ...MsgOption) (msg Message) {
 		opts[i](tmpmsg)
 	}
 
-	return tmpmsg
+	return tmpmsg, nil
 }
 
 func (w *MsgWrap) Header() map[string]string {

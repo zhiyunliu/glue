@@ -329,7 +329,10 @@ func TestQueueClose(t *testing.T) {
 
 func TestQueueMessageStructure(t *testing.T) {
 	// Test that message has correct structure
-	msg := NewMsg("test body", WithHeader("test-key", "test-value"))
+	msg, err := NewMsg("test body", WithHeader("test-key", "test-value"))
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
 	if msg.Header()["test-key"] != "test-value" {
 		t.Error("Expected header to be set")
 	}
@@ -343,8 +346,8 @@ func TestQueueMessageStructure(t *testing.T) {
 
 func TestQueueMessageWithXTypes(t *testing.T) {
 	data := xtypes.XMap{"key": "value"}
-	msg := NewMsg(data)
-	if msg == nil {
+	msg, err := NewMsg(data)
+	if msg == nil || err != nil {
 		t.Error("Expected message to be created from xtypes")
 	}
 }

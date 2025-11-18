@@ -89,8 +89,12 @@ func (q *queue) buildMessage(ctx context.Context, value any) (msg Message, err e
 
 	msg, ok := value.(Message)
 	if !ok {
-		msg = NewMsg(value)
+		msg, err = NewMsg(value)
+		if err != nil {
+			return
+		}
 	}
+
 	if sid, ok := session.FromContext(ctx); ok {
 		msg.Header()[constants.HeaderRequestId] = sid
 	}

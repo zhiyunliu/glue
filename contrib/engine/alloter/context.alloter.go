@@ -364,6 +364,12 @@ func (q *abody) Format(f fmt.State, verb rune) {
 	_, _ = f.Write(q.bodyBytes)
 }
 
+func (q *abody) ResetBytes(bodyBytes []byte) error {
+	q.bodyBytes = bodyBytes
+	q.reader = bytes.NewReader(q.bodyBytes)
+	return nil
+}
+
 func (q *abody) Close() {
 	q.bodyBytes = nil
 	q.reader = nil
