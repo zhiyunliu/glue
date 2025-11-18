@@ -368,6 +368,12 @@ func (q *gbody) loadBody() (err error) {
 	}
 	return nil
 }
+
+func (q *gbody) Format(f fmt.State, verb rune) {
+	_ = q.loadBody()
+	_, _ = f.Write(q.bodyBytes)
+}
+
 func (q *gbody) Close() {
 	q.bodyBytes = nil
 	q.reader = nil

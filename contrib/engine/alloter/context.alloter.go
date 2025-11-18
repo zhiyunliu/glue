@@ -359,6 +359,10 @@ func (q *abody) loadBody() (err error) {
 	}
 	return nil
 }
+func (q *abody) Format(f fmt.State, verb rune) {
+	_ = q.loadBody()
+	_, _ = f.Write(q.bodyBytes)
+}
 
 func (q *abody) Close() {
 	q.bodyBytes = nil
