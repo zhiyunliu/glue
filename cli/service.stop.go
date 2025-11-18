@@ -20,12 +20,7 @@ func (p *ServiceApp) stopServers() {
 	log.Infof("serviceApp close:%s stop servers", p.cliCtx.App.Name)
 	var servers = p.options.Servers
 	for i := range p.options.Servers {
-		stopErr := servers[i].Stop(p.svcCtx)
-		stopMsg := "success"
-		if stopErr != nil {
-			stopMsg = stopErr.Error()
-		}
-		log.Infof("stop server[%s],%s", servers[i].Name(), stopMsg)
+		_ = servers[i].Stop(p.svcCtx)
 		p.closeWaitGroup.Done()
 	}
 	p.closeWaitGroup.Wait()
