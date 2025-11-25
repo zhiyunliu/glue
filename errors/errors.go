@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+var _ Error = (*xError)(nil)
+
 const (
 	UnknownCode = 500
 )
@@ -27,12 +29,13 @@ type Error interface {
 }
 
 type xError struct {
-	Code     int            `json:"code"`
-	SubCode  string         `json:"sub_code,omitempty"`
-	Message  string         `json:"message"`
-	innerErr error          `json:"-"`
-	ErrData  map[string]any `json:"errdata,omitempty"`
-	Data     any            `json:"data,omitempty"`
+	Code       int            `json:"code"`
+	SubCode    string         `json:"sub_code,omitempty"`
+	Message    string         `json:"message"`
+	innerErr   error          `json:"-"`
+	ErrData    map[string]any `json:"errdata,omitempty"`
+	Data       any            `json:"data,omitempty"`
+	statusCode int            `json:"-"`
 }
 
 func (x xError) GetCode() int {
@@ -52,6 +55,16 @@ func (x xError) GetInner() error {
 
 func (x xError) Error() string {
 	return fmt.Sprintf("error:code=%d,subcode=%s,message=%s,errdata=%+v,inner=%s", x.Code, x.SubCode, x.Message, x.ErrData, x.innerErr)
+}
+func (x xError) GetStatusCode() int {
+	return x.statusCode
+}
+
+func (x xError) GetData() any {
+	return x.Data
+}
+func (x xError) GetErrData() map[string]any {
+	return x.ErrData
 }
 
 func (x xError) Is(err error) bool {
