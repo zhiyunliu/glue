@@ -7,4 +7,5 @@ type Body interface {
 	io.Reader
 	ScanTo(obj interface{}) error
 	Bytes() []byte
+	ResetBytes([]byte) error
 }

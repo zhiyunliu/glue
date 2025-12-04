@@ -9,6 +9,13 @@ func WithSubCode(subCode string) Option {
 	}
 }
 
+// WithData 设置数据
+func WithData(data any) Option {
+	return func(e *xError) {
+		e.Data = data
+	}
+}
+
 // WithErrData 设置错误数据
 
 func WithErrData(errData map[string]any) Option {
@@ -22,5 +29,10 @@ func WithErrData(errData map[string]any) Option {
 func WithInnerErr(inner error) Option {
 	return func(e *xError) {
 		e.innerErr = inner
+	}
+}
+func WithStatusCode(statusCode int) Option {
+	return func(e *xError) {
+		e.statusCode = statusCode
 	}
 }

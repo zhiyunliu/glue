@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+var _ Error = (*xError)(nil)
+
 const (
 	UnknownCode = 500
 )
@@ -22,12 +24,13 @@ type Error interface {
 }
 
 type xError struct {
-	Code     int            `json:"code"`
-	SubCode  string         `json:"sub_code,omitempty"`
-	Message  string         `json:"message"`
-	innerErr error          `json:"-"`
-	ErrData  map[string]any `json:"errdata,omitempty"`
-	Data     any            `json:"data,omitempty"`
+	Code       int            `json:"code"`
+	SubCode    string         `json:"sub_code,omitempty"`
+	Message    string         `json:"message"`
+	innerErr   error          `json:"-"`
+	ErrData    map[string]any `json:"errdata,omitempty"`
+	Data       any            `json:"data,omitempty"`
+	statusCode int            `json:"-"`
 }
 
 func (x xError) GetCode() int {
@@ -44,6 +47,17 @@ func (x xError) GetMessage() string {
 
 func (x xError) GetInner() error {
 	return x.innerErr
+}
+
+func (x xError) GetStatusCode() int {
+	return x.statusCode
+}
+
+func (x xError) GetData() any {
+	return x.Data
+}
+func (x xError) GetErrData() map[string]any {
+	return x.ErrData
 }
 
 func (x xError) Error() string {
@@ -90,8 +104,6 @@ func Code(err error) int {
 
 	return UnknownCode
 }
-
-
 
 // FromError try to convert an error to *xError.
 // It supports wrapped errors.

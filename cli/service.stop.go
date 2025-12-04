@@ -22,12 +22,7 @@ func (p *ServiceApp) stopServers() {
 	p.options.StopingHooks.Exec(p.svcCtx, log.DefaultLogger)
 	var servers = p.options.Servers
 	for i := range p.options.Servers {
-		stopErr := servers[i].Stop(p.svcCtx)
-		stopMsg := "success"
-		if stopErr != nil {
-			stopMsg = stopErr.Error()
-		}
-		log.Infof("stop server[%s]=%s", servers[i].Name(), stopMsg)
+		_ = servers[i].Stop(p.svcCtx)
 		p.closeWaitGroup.Done()
 	}
 	p.options.StopedHooks.Exec(p.svcCtx, log.DefaultLogger)

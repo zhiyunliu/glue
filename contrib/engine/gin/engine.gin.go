@@ -43,7 +43,10 @@ func (e *GinEngine) NoMethod() {
 		actx.opts = e.opts
 
 		actx.Log().Errorf("No Method for %s,%s,clientip:%s", actx.Request().Path().FullPath(), actx.Request().GetMethod(), actx.Request().GetClientIP())
-
+		if global.EnableNoRouteDetail {
+			actx.Log().Errorf("header:%v", actx.Request().Header())
+			actx.Log().Errorf("body:%v", actx.Request().Body())
+		}
 		actx.Close()
 		e.pool.Put(actx)
 	})
@@ -55,6 +58,11 @@ func (e *GinEngine) NoRoute() {
 		actx.reset(ctx)
 		actx.opts = e.opts
 		actx.Log().Errorf("[%s][%s]No Route for [%s]%s clientip:%s", actx.ServerType(), actx.ServerName(), ctx.Request.Method, actx.Request().Path().GetURL(), actx.Request().GetClientIP())
+		if global.EnableNoRouteDetail {
+			actx.Log().Errorf("header:%v", actx.Request().Header())
+			actx.Log().Errorf("body:%v", actx.Request().Body())
+		}
+
 		actx.Close()
 		e.pool.Put(actx)
 	})
