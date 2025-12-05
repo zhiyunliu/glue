@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -26,6 +27,14 @@ type Error interface {
 	GetCode() int
 	GetSubCode() string
 	GetMessage() string
+}
+
+type ErrorExt interface {
+	Error
+	InnerError
+	GetStatusCode() int
+	GetData() any
+	GetErrData() map[string]any
 }
 
 type xError struct {
@@ -74,6 +83,47 @@ func (x xError) Is(err error) bool {
 		return tmp.GetCode() == x.Code
 	}
 	return false
+}
+
+func (e xError) Format(f fmt.State, verb rune) {
+	bytes, err := json.Marshal(e)
+	if err != nil {
+		return
+	}
+	_, _ = f.Write(bytes)
+}
+
+// StatusCode 获取http状态码
+func (e xError) StatusCode() int {
+	return e.GetStatusCode()
+}
+
+// Header 获取响应头
+func (e xError) Header() map[string]string {
+	return map[string]string{
+		"Content-Type": "application/json; charset=utf-8",
+	}
+}
+
+// Body 获取响应体
+func (e xError) Body() (bytes []byte, err error) {
+	respData := map[string]any{
+		"code":    e.GetCode(),
+		"message": e.GetMessage(),
+	}
+	if e.SubCode != "" {
+		respData["sub_code"] = e.SubCode
+	}
+
+	if data := e.GetData(); data != nil {
+		respData["data"] = data
+	}
+
+	if e.ErrData != nil {
+		respData["errdata"] = e.ErrData
+	}
+
+	return json.Marshal(respData)
 }
 
 func New(code int, message string, opts ...Option) Error {
