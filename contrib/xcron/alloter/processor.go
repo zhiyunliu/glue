@@ -196,7 +196,7 @@ func (s *processor) closeMonopolyJobs() {
 
 func (s *processor) getOffset(now time.Time, next time.Time) (pos int, circle int) {
 	// 立即执行的任务放在下一秒执行
-	if now == next {
+	if now.Equal(next) {
 		return s.index + 1, 0
 	}
 	secs := next.Sub(now).Seconds() //剩余时间
