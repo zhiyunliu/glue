@@ -20,11 +20,12 @@ var (
 )
 
 type options struct {
-	Prefix        string  `json:"prefix"`
-	Weight        float64 `json:"weight"`
-	Cluster       string  `json:"cluster"`
-	Group         string  `json:"group"`
-	serverConfigs string  `json:"-"`
+	Prefix        string   `json:"prefix"`
+	Weight        float64  `json:"weight"`
+	Cluster       string   `json:"cluster"`
+	Clusters      []string `json:"clusters"`
+	Group         string   `json:"group"`
+	serverConfigs string   `json:"-"`
 }
 
 func (o options) GetGroup() string {
@@ -33,6 +34,13 @@ func (o options) GetGroup() string {
 
 func (o options) GetCluster() string {
 	return o.Cluster
+}
+
+func (o options) GetClusters() []string {
+	if len(o.Clusters) == 0 {
+		return []string{o.Cluster}
+	}
+	return o.Clusters
 }
 
 // Registry is nacos registry.
@@ -86,6 +94,7 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 				rmd[k] = v
 			}
 		}
+		rmd["cluster"] = r.opts.Cluster
 		rmd["scheme"] = u.Scheme
 		rmd["version"] = si.Version
 		rmd["hostname"], _ = os.Hostname()
@@ -147,7 +156,7 @@ func (r Registry) Deregister(_ context.Context, service *registry.ServiceInstanc
 
 // Watch creates a watcher according to the service name.
 func (r Registry) Watch(ctx context.Context, serviceName string) (registry.Watcher, error) {
-	return newWatcher(ctx, r.cli, serviceName, r.opts.Group, []string{r.opts.Cluster})
+	return newWatcher(ctx, r.cli, serviceName, r.opts.Group, r.opts.GetClusters())
 }
 
 // GetService return the service instances in memory according to the service name.
@@ -155,7 +164,7 @@ func (r Registry) GetService(_ context.Context, serviceName string) ([]*registry
 	res, err := r.cli.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: serviceName,
 		GroupName:   r.opts.Group,
-		Clusters:    []string{r.opts.Cluster},
+		Clusters:    r.opts.GetClusters(),
 		HealthyOnly: true,
 	})
 	if err != nil {
@@ -167,11 +176,19 @@ func (r Registry) GetService(_ context.Context, serviceName string) ([]*registry
 		if scheme == "" {
 			scheme = "http"
 		}
+
+		rmd := make(map[string]string, len(in.Metadata)+2)
+		rmd["scheme"] = scheme
+		rmd["cluster"] = in.ClusterName
+		for k, v := range in.Metadata {
+			rmd[k] = v
+		}
+
 		items = append(items, &registry.ServiceInstance{
 			ID:       in.InstanceId,
 			Name:     in.ServiceName,
 			Version:  in.Metadata["version"],
-			Metadata: in.Metadata,
+			Metadata: rmd,
 			Endpoints: []registry.ServerItem{
 				{
 					ServiceName: serviceName,
