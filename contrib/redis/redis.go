@@ -2,10 +2,12 @@ package redis
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/golibs/xtransform"
 )
 
 var Nil = redis.Nil
@@ -62,6 +64,21 @@ func newRedis(configName string, opts *Options, mapCfg map[string]any) (r *Clien
 	r = &Client{
 		configName: configName,
 	}
+	opts.Username = xtransform.TranslateCallback(opts.Username, func(param string) string {
+		val := os.Getenv(param)
+		if len(val) > 0 {
+			return val
+		}
+		return param
+	})
+
+	opts.Password = xtransform.TranslateCallback(opts.Password, func(param string) string {
+		val := os.Getenv(param)
+		if len(val) > 0 {
+			return val
+		}
+		return param
+	})
 	r.opts = opts
 
 	ropts := &redis.UniversalOptions{
