@@ -75,6 +75,7 @@ func NewNode(item registry.ServerItem, ins *registry.ServiceInstance) Node {
 		n.name = ins.Name
 		n.version = ins.Version
 		n.metadata = ins.Metadata
+		n.weight = &ins.Weight
 		if str, ok := ins.Metadata["weight"]; ok {
 			if weight, err := strconv.ParseInt(str, 10, 64); err == nil {
 				n.weight = &weight

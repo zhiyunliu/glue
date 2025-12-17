@@ -51,6 +51,7 @@ type ServiceInstance struct {
 	Name     string            `json:"name"`
 	Version  string            `json:"version"`
 	Metadata map[string]string `json:"metadata"`
+	Weight   int64             `json:"weight"`
 	//http://localhost:8000
 	Endpoints []ServerItem `json:"endpoints"`
 }
