@@ -113,7 +113,6 @@ func (r *httpSelector) watchResolver() {
 		case <-r.ctx.Done():
 			return
 		case <-r.resolveNowChan:
-
 		}
 		instances, err := r.registrar.GetService(r.ctx, r.serviceName)
 		if err != nil {
@@ -139,6 +138,11 @@ func (r *httpSelector) watchRegistrar() {
 		err     error
 	)
 	for {
+		select {
+		case <-r.ctx.Done():
+			return
+		default:
+		}
 		watcher, err = r.registrar.Watch(r.ctx, r.serviceName)
 		if err != nil {
 			log.Errorf("xhttp:watchRegistrar.Watch=%s.error:%+v", r.serviceName, err)
@@ -153,15 +157,15 @@ func (r *httpSelector) watchRegistrar() {
 		case <-r.ctx.Done():
 			return
 		default:
-			instances, err := watcher.Next()
-			if err != nil {
-				log.Errorf("xhttp:watchRegistrar.Next=%s,error:%+v", r.serviceName, err)
-				time.Sleep(time.Second * 2)
-				continue
-			}
-			addresses := r.buildAddress(instances)
-			r.Apply(addresses)
 		}
+		instances, err := watcher.Next()
+		if err != nil {
+			log.Errorf("xhttp:watchRegistrar.Next=%s,error:%+v", r.serviceName, err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+		addresses := r.buildAddress(instances)
+		r.Apply(addresses)
 	}
 }
 
