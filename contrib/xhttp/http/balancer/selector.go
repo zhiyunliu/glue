@@ -153,6 +153,11 @@ func (r *httpSelector) watchRegistrar() {
 		err     error
 	)
 	for {
+		select {
+		case <-r.ctx.Done():
+			return
+		default:
+		}
 		watcher, err = r.registrar.Watch(r.ctx, r.serviceName)
 		if err != nil {
 			log.Errorf("xhttp:watchRegistrar.Watch=%s.error:%+v", r.serviceName, err)
@@ -169,7 +174,7 @@ func (r *httpSelector) watchRegistrar() {
 		default:
 			instances, err := watcher.Next()
 			if err != nil {
-				log.Errorf("http:watchRegistrar.Watch.Next=%s,error:%+v", r.serviceName, err)
+				log.Errorf("http:watchRegistrar.Next=%s,error:%+v", r.serviceName, err)
 				time.Sleep(time.Second * 2)
 				continue
 			}
