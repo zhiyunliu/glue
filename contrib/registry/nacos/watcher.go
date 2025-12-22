@@ -2,7 +2,6 @@ package nacos
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/model"
@@ -52,33 +51,17 @@ func (w *watcher) Next() ([]*registry.ServiceInstance, error) {
 		return nil, w.ctx.Err()
 	case <-w.watchChan:
 	}
-	res, err := w.cli.GetService(vo.GetServiceParam{
+	res, err := w.cli.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: w.serviceName,
 		GroupName:   w.groupName,
 		Clusters:    w.clusters,
+		HealthyOnly: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	items := make([]*registry.ServiceInstance, 0, len(res.Hosts))
-	for _, in := range res.Hosts {
-		scheme := in.Metadata["scheme"]
-		if scheme == "" {
-			scheme = "http"
-		}
-		items = append(items, &registry.ServiceInstance{
-			ID:       in.InstanceId,
-			Name:     res.Name,
-			Version:  in.Metadata["version"],
-			Metadata: in.Metadata,
-			Endpoints: []registry.ServerItem{
-				{
-					ServiceName: res.Name,
-					EndpointURL: fmt.Sprintf("%s://%s:%d", scheme, in.Ip, in.Port),
-				},
-			},
-		})
-	}
+
+	items := buildServiceInstanceList(w.serviceName, res)
 	return items, nil
 }
 
