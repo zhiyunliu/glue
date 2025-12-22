@@ -116,7 +116,7 @@ func (r *Registry) Deregister(ctx context.Context, svc *registry.ServiceInstance
 }
 
 // GetService return service by name
-func (r *Registry) GetService(ctx context.Context, name string) (services []*registry.ServiceInstance, err error) {
+func (r *Registry) GetService(ctx context.Context, name string, opts ...registry.GetServiceOption) (services []*registry.ServiceInstance, err error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	set := r.registry[name]

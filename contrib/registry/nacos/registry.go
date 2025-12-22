@@ -159,12 +159,17 @@ func (r Registry) Watch(ctx context.Context, serviceName string) (registry.Watch
 }
 
 // GetService return the service instances in memory according to the service name.
-func (r Registry) GetService(_ context.Context, serviceName string) ([]*registry.ServiceInstance, error) {
+func (r Registry) GetService(_ context.Context, serviceName string, opts ...registry.GetServiceOption) ([]*registry.ServiceInstance, error) {
+	getOpt := &registry.GetServiceOptions{HealthyOnly: true}
+	for i := range opts {
+		opts[i](getOpt)
+	}
+
 	res, err := r.cli.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: serviceName,
 		GroupName:   r.opts.Group,
 		Clusters:    r.opts.GetClusters(),
-		HealthyOnly: true,
+		HealthyOnly: getOpt.HealthyOnly,
 	})
 	if err != nil {
 		return nil, err

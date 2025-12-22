@@ -51,15 +51,16 @@ func (w *watcher) Next() ([]*registry.ServiceInstance, error) {
 		return nil, w.ctx.Err()
 	case <-w.watchChan:
 	}
-	res, err := w.cli.GetService(vo.GetServiceParam{
+	res, err := w.cli.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: w.serviceName,
 		GroupName:   w.groupName,
 		Clusters:    w.clusters,
+		HealthyOnly: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	items := buildServiceInstanceList(res.Name, res.Hosts)
+	items := buildServiceInstanceList(w.serviceName, res)
 	return items, nil
 }
 

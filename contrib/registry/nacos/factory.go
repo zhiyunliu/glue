@@ -87,6 +87,7 @@ func buildServiceInstanceList(serviceName string, instances []model.Instance) []
 		items = append(items, &registry.ServiceInstance{
 			ID:       in.InstanceId,
 			Name:     in.ServiceName,
+			Healthy:  in.Healthy,
 			Weight:   int64(in.Weight),
 			Version:  in.Metadata["version"],
 			Metadata: rmd,
