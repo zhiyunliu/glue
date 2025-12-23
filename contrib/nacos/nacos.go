@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/golibs/xtransform"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -16,9 +16,8 @@ import (
 
 func init() {
 	logger.InitLogger(logger.Config{
-		Level:     "error",
-		LogDir:    "../log",
-		LogStdout: false,
+		Level:          "error",
+		AppendToStdout: false,
 		LogRollingConfig: &lumberjack.Logger{
 			Filename:   "nacos.log",
 			MaxAge:     7 * 24,
