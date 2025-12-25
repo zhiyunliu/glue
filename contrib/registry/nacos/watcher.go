@@ -3,9 +3,9 @@ package nacos
 import (
 	"context"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/zhiyunliu/glue/registry"
 )
 
@@ -35,7 +35,7 @@ func newWatcher(ctx context.Context, cli naming_client.INamingClient, serviceNam
 		ServiceName: serviceName,
 		Clusters:    clusters,
 		GroupName:   groupName,
-		SubscribeCallback: func(services []model.SubscribeService, err error) {
+		SubscribeCallback: func(services []model.Instance, err error) {
 			select {
 			case w.watchChan <- struct{}{}:
 			default:

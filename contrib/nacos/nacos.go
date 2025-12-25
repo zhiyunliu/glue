@@ -5,18 +5,16 @@ import (
 	"encoding/gob"
 	"fmt"
 
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
-	"github.com/nacos-group/nacos-sdk-go/common/logger"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/zhiyunliu/glue/config"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func init() {
 	logger.InitLogger(logger.Config{
-		Level:     "error",
-		LogDir:    "../log",
-		LogStdout: false,
+		Level: "error",
 		LogRollingConfig: &lumberjack.Logger{
 			Filename:   "nacos.log",
 			MaxAge:     7 * 24,
@@ -59,11 +57,11 @@ func GetClientParam(cfg config.Config) (param *vo.NacosClientParam, err error) {
 	}
 	serverConfigs := []ServerConfig{}
 
-	err = cfg.Value("client").Scan(clientConfig)
+	err = cfg.Value("client").ScanTo(clientConfig)
 	if err != nil {
 		return nil, fmt.Errorf("nacos ClientConfig Scan:%+v", err)
 	}
-	err = cfg.Value("server").Scan(&serverConfigs)
+	err = cfg.Value("server").ScanTo(&serverConfigs)
 	if err != nil {
 		return nil, fmt.Errorf("nacos ServerConfig Scan:%+v", err)
 	}
