@@ -7,6 +7,7 @@ import (
 type RegistrarOptions interface {
 	GetGroup() string
 	GetCluster() string
+	GetClusters() []string
 }
 
 // Registrar is service registrar.
