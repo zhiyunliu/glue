@@ -16,10 +16,14 @@ type IgnoreError interface {
 	Ignore() bool
 }
 
-type Error interface {
-	error
+type Response interface {
 	GetCode() int
 	GetSubCode() string
+}
+
+type Error interface {
+	error
+	Response
 	GetMessage() string
 }
 

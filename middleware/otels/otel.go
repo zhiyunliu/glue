@@ -9,6 +9,7 @@ import (
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/metrics"
 	"github.com/zhiyunliu/glue/opentelemetry"
+	"github.com/zhiyunliu/golibs/engine"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -23,7 +24,6 @@ import (
 
 const (
 	ScopeName = "glue-otels"
-	maxNumber = 1000
 )
 
 // Server is middleware server-side metrics.
@@ -54,10 +54,7 @@ func Server() middleware.Middleware {
 			savedCtx := c.Context()
 			fullPath := c.Request().Path().FullPath()
 
-			metricAttrs := []attribute.KeyValue{
-				attribute.String("kind", serverKind),
-				attribute.String("path", fullPath),
-			}
+			metricAttrs := GetMetricsAttributes(c)
 
 			mets.RequestProcessing.Add(savedCtx, 1, metric.WithAttributes(metricAttrs...))
 			startTime := time.Now()
@@ -86,33 +83,33 @@ func Server() middleware.Middleware {
 				err        error
 			)
 
-			if rerr, ok := reply.(error); ok {
+			if resp, ok := reply.(errors.Response); ok {
+				statusCode = resp.GetCode()
+				subcode = resp.GetSubCode()
+			} else if respEntity, ok := reply.(engine.ResponseEntity); ok {
+				statusCode = respEntity.StatusCode()
+				subcode = "entity.unknown"
+			} else if rerr, ok := reply.(error); ok {
 				err = rerr
-				if respErr, ok := reply.(errors.Error); ok {
-					statusCode = respErr.GetCode()
-					subcode = respErr.GetSubCode()
-				} else {
-					statusCode = http.StatusInternalServerError
-				}
+				statusCode = http.StatusInternalServerError
+				subcode = "error.unknown"
 			}
 
 			if statusCode == 0 {
 				statusCode = http.StatusOK
 			}
 			span.SetStatus(opentelemetry.Status(statusCode))
-			if statusCode > 0 {
-				span.SetAttributes(semconv.HTTPResponseStatusCode(statusCode))
-			}
+			span.SetAttributes(semconv.HTTPResponseStatusCode(statusCode))
 
 			if err != nil {
 				span.SetStatus(codes.Error, err.Error())
 				span.RecordError(err)
 			}
 			mets.RequestCounter.Add(savedCtx, 1, metric.WithAttributes(
-				attribute.String("kind", serverKind),
-				attribute.String("path", fullPath),
-				attribute.Int("code", statusCode),
-				attribute.String("sub_code", subcode),
+				append(metricAttrs,
+					attribute.Int("code", statusCode),
+					attribute.String("sub_code", subcode),
+				)...,
 			))
 
 			mets.RequestLatency.Record(ctx, startTime, metric.WithAttributes(metricAttrs...))
@@ -122,11 +119,11 @@ func Server() middleware.Middleware {
 }
 
 func requestTraceAttrs(ctx context.Context) []attribute.KeyValue {
-	count := 7 // ServerAddress, Method, Scheme
+	const CAP_COUNT = 7 // ServerAddress, Method, Scheme
 	req := ctx.Request()
 	clientIP := req.GetClientIP()
 
-	attrs := make([]attribute.KeyValue, 0, count)
+	attrs := make([]attribute.KeyValue, 0, CAP_COUNT)
 	attrs = append(attrs,
 		attribute.String("content.type", req.ContentType()),
 		attribute.String("server.type", ctx.ServerType()),
