@@ -7,6 +7,7 @@ import (
 
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/standard"
+	"github.com/zhiyunliu/golibs/engine"
 
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/metrics"
@@ -70,40 +71,40 @@ func serverByOptions(op *options) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 			var (
-				code    int
-				subcode string
-				kind    string = ctx.ServerType()
-				path    string = ctx.Request().Path().FullPath()
+				statusCode int
+				subcode    string
 			)
+			lvs := GetMetricsAttributes(ctx)
 			startTime := time.Now()
 			if op.gauge != nil {
-				op.gauge.With(kind, path).Add(1)
+				op.gauge.With(lvs...).Add(1)
 			}
 
 			reply = handler(ctx)
 
-			code = ctx.Response().GetStatusCode()
-			if rerr, ok := reply.(error); ok {
-				if se := errors.FromError(rerr); se != nil {
-					code = se.GetCode()
-					subcode = se.GetSubCode()
-				}
-				if code == 0 {
-					code = ctx.Response().GetStatusCode()
-				}
+			if resp, ok := reply.(errors.Response); ok {
+				statusCode = resp.GetCode()
+				subcode = resp.GetSubCode()
+			} else if respEntity, ok := reply.(engine.ResponseEntity); ok {
+				statusCode = respEntity.StatusCode()
+				subcode = "entity.unknown"
+			} else if _, ok := reply.(error); ok {
+				statusCode = http.StatusInternalServerError
+				subcode = "error.unknown"
 			}
-			if code == 0 {
-				code = http.StatusOK
+
+			if statusCode == 0 {
+				statusCode = http.StatusOK
 			}
 
 			if op.counter != nil {
-				op.counter.With(kind, path, strconv.Itoa(code), subcode).Inc()
+				op.counter.With(append(lvs, strconv.Itoa(statusCode), subcode)...).Inc()
 			}
 			if op.observer != nil {
-				op.observer.With(kind, path).Observe(time.Since(startTime).Seconds())
+				op.observer.With(lvs...).Observe(time.Since(startTime).Seconds())
 			}
 			if op.gauge != nil {
-				op.gauge.With(kind, path).Sub(1)
+				op.gauge.With(lvs...).Sub(1)
 			}
 			return reply
 		}
