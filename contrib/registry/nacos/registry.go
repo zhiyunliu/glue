@@ -74,7 +74,10 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 	if si.Name == "" {
 		return fmt.Errorf("nacos: serviceInstance.name can not be empty")
 	}
-
+	regParams := vo.BatchRegisterInstanceParam{
+		ServiceName: si.Name,
+		GroupName:   r.opts.Group,
+	}
 	for _, item := range si.Endpoints {
 		u, err := url.Parse(item.EndpointURL)
 		if err != nil {
@@ -102,7 +105,7 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 		rmd["commitid"] = global.GitCommit
 		rmd["buildtime"] = global.BuildTime
 
-		_, e := r.cli.RegisterInstance(vo.RegisterInstanceParam{
+		regParams.Instances = append(regParams.Instances, vo.RegisterInstanceParam{
 			Ip:          host,
 			Port:        uint64(p),
 			ServiceName: item.ServiceName,
@@ -114,11 +117,13 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 			ClusterName: r.opts.Cluster,
 			GroupName:   r.opts.Group,
 		})
-		if e != nil {
-			return fmt.Errorf("RegisterInstance err %v,%v", e, item.EndpointURL)
-		}
+
 	}
 
+	succ, e := r.cli.BatchRegisterInstance(regParams)
+	if !succ || e != nil {
+		return fmt.Errorf("RegisterInstance err %v,%v", e, regParams.ServiceName)
+	}
 	return nil
 }
 
