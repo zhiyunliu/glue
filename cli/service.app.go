@@ -147,7 +147,7 @@ func (app *ServiceApp) initApp() error {
 }
 
 func (app *ServiceApp) loadAppSetting() error {
-	err := app.options.Config.Value("app").Scan(app.options.setting)
+	err := app.options.Config.Value("app").ScanTo(app.options.setting)
 	if err != nil {
 		return fmt.Errorf("获取app配置出错:%+v", err)
 	}
