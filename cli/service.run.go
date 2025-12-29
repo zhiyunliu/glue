@@ -15,22 +15,6 @@ import (
 	"github.com/zhiyunliu/golibs/xnet"
 )
 
-func (p *ServiceApp) run() (err error) {
-
-	errChan := make(chan error, 1)
-	//p.svcCtx = context.Background()
-	err = p.apprun()
-	if err != nil {
-		errChan <- err
-	}
-	select {
-	case err = <-errChan:
-		return err
-	case <-time.After(time.Second):
-		return nil
-	}
-}
-
 func (p *ServiceApp) apprun() error {
 	p.svcCtx = context.Background()
 	if err := p.startingHooks(p.svcCtx); err != nil {

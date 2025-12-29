@@ -5,7 +5,7 @@ import (
 	"github.com/zhiyunliu/glue/log"
 )
 
-//Start Start
+// Start Start
 func (p *ServiceApp) Start(s service.Service) (err error) {
 	log.Infof("serviceApp start:%s", p.cliCtx.App.Name)
 
@@ -16,7 +16,7 @@ func (p *ServiceApp) Start(s service.Service) (err error) {
 		return err
 	}
 	log.Info("serviceApp init completed")
-	err = p.run()
+	err = p.apprun()
 	if err != nil {
 		return err
 	}
