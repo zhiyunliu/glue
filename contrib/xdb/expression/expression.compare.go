@@ -26,7 +26,7 @@ func NewCompareExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpt
 		opts[i](mopts)
 	}
 
-	const pattern = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|<>|=|<|<=)\s*(\w+)})|({(>|>=|<>|=|<|<=)\s*(\w+(\.\w+)?)}))`
+	const pattern = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|<>|!=|=|<|<=)\s*(\w+)})|({(>|>=|<>|!=|=|<|<=)\s*(\w+(\.\w+)?)}))`
 
 	matcher := &compareExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
@@ -136,6 +136,7 @@ func (m *compareExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Op
 		xdb.NewOperator(">", operCallback),
 		xdb.NewOperator(">=", operCallback),
 		xdb.NewOperator("<>", operCallback),
+		xdb.NewOperator("!=", operCallback),
 		xdb.NewOperator("=", operCallback),
 		xdb.NewOperator("<", operCallback),
 		xdb.NewOperator("<=", operCallback),

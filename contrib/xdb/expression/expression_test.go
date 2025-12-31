@@ -106,6 +106,7 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "1i.", matcher: compareMatcher, fullKey: "&{field <=   property}", wantFullfield: "field", wantPropName: "property", wantOper: "<=", wantSymbol: "&", wantExpr: "and field<=?"},
 		{name: "1j.", matcher: compareMatcher, fullKey: "&{t.field<property}", wantFullfield: "t.field", wantPropName: "property", wantOper: "<", wantSymbol: "&", wantExpr: "and t.field<?"},
 		{name: "1k.", matcher: compareMatcher, fullKey: "&{field<=property}", wantFullfield: "field", wantPropName: "property", wantOper: "<=", wantSymbol: "&", wantExpr: "and field<=?"},
+		{name: "1l.", matcher: compareMatcher, fullKey: "&{field!=property}", wantFullfield: "field", wantPropName: "property", wantOper: "!=", wantSymbol: "&", wantExpr: "and field!=?"},
 
 		{name: "1a.", matcher: likeMatcher, fullKey: "&{like   field}", wantFullfield: "field", wantPropName: "field", wantOper: "like", wantSymbol: "&", wantExpr: "and field like ?"},
 		{name: "3.", matcher: likeMatcher, fullKey: "&{like tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like", wantSymbol: "&", wantExpr: "and tbl.field like ?"},
