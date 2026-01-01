@@ -28,3 +28,8 @@ type SqlState interface {
 	WithTemplateOptions(*TemplateOptions)
 	Reset()
 }
+
+type SqlStatePool interface {
+	Get() SqlState
+	Put(state SqlState)
+}

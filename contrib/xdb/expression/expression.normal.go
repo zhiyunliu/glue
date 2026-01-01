@@ -16,8 +16,7 @@ func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpti
 	for i := range opts {
 		opts[i](mopts)
 	}
-
-	const pattern = `[$|@|&|\|]({(\w+(\.\w+)?\s*)})`
+	pattern := NormalPattern
 	matcher := &normalExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -65,7 +64,7 @@ func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.Exp
 	fullkey := strings.TrimSpace(parties[2])
 
 	item := &xdb.ExpressionItem{
-		Symbol:    getExpressionSymbol(m.symbolMap, expression),
+		Symbol:    GetExpressionSymbol(m.symbolMap, expression),
 		Matcher:   m,
 		FullField: fullkey,
 		PropName:  fullkey,

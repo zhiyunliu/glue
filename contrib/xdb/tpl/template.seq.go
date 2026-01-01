@@ -3,7 +3,6 @@ package tpl
 import (
 	"fmt"
 	"reflect"
-	"sync"
 
 	"github.com/zhiyunliu/glue/xdb"
 )
@@ -14,7 +13,7 @@ type SeqTemplate struct {
 	prefix        string
 	matcher       xdb.TemplateMatcher
 	stmtProcessor xdb.StmtDbTypeProcessor
-	sqlStatePool  *sync.Pool
+	StatePool     xdb.SqlStatePool
 }
 
 type seqPlaceHolder struct {
@@ -51,12 +50,10 @@ func NewSeq(name, prefix string, matcher xdb.TemplateMatcher, stmtProcessor xdb.
 		matcher:       matcher,
 		stmtProcessor: stmtProcessor,
 	}
+	template.StatePool = NewStatePool(func() interface{} {
+		return xdb.NewSqlState(template.Placeholder())
+	})
 
-	template.sqlStatePool = &sync.Pool{
-		New: func() interface{} {
-			return xdb.NewSqlState(template.Placeholder())
-		},
-	}
 	return template
 }
 
@@ -82,7 +79,7 @@ func (template *SeqTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, input 
 }
 
 func (template *SeqTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
-	sqlState := template.sqlStatePool.Get().(xdb.SqlState)
+	sqlState := template.StatePool.Get()
 	sqlState.WithPlaceholder(template.Placeholder())
 	sqlState.WithTemplateOptions(tplOpts)
 	return sqlState
@@ -90,7 +87,7 @@ func (template *SeqTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlSt
 
 func (template *SeqTemplate) ReleaseSqlState(state xdb.SqlState) {
 	state.Reset()
-	template.sqlStatePool.Put(state)
+	template.StatePool.Put(state)
 }
 
 func (template *SeqTemplate) StmtDbTypeWrap(fieldName string, param any, fv reflect.Value, tagOpts xdb.TagOptions) (any, error) {

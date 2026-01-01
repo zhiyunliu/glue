@@ -25,9 +25,7 @@ func NewCompareExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpt
 	for i := range opts {
 		opts[i](mopts)
 	}
-
-	const pattern = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|<>|!=|=|<|<=)\s*(\w+)})|({(>|>=|<>|!=|=|<|<=)\s*(\w+(\.\w+)?)}))`
-
+	pattern := ComparePattern
 	matcher := &compareExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -76,7 +74,7 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 	//{t.field=property} =3，5,6
 	//{<property} =9,8, get(9)
 	item := &xdb.ExpressionItem{
-		Symbol:  getExpressionSymbol(m.symbolMap, expression),
+		Symbol:  GetExpressionSymbol(m.symbolMap, expression),
 		Matcher: m,
 	}
 
@@ -89,7 +87,7 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 	if parties[8] != "" {
 		item.FullField = parties[9]
 		item.Oper = parties[8]
-		item.PropName = getExpressionPropertyName(item.FullField)
+		item.PropName = GetExpressionPropertyName(item.FullField)
 	}
 
 	item.ExpressionBuildCallback = m.defaultBuildCallback()

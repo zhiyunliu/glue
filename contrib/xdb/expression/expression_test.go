@@ -234,14 +234,14 @@ func Test_getExpressionPropertyName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getExpressionPropertyName(tt.fullkey); got != tt.want {
+			if got := GetExpressionPropertyName(tt.fullkey); got != tt.want {
 				t.Errorf("getExpressionPropertyName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_getExpressionSymbol(t *testing.T) {
+func Test_GetExpressionSymbol(t *testing.T) {
 	symbolMap := DefaultSymbols
 	symbolMap.Regist(&demoSymbols{})
 
@@ -258,8 +258,8 @@ func Test_getExpressionSymbol(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getExpressionSymbol(symbolMap, tt.fullkey); got.Name() != tt.want {
-				t.Errorf("getExpressionSymbol() = %v, want %v", got, tt.want)
+			if got := GetExpressionSymbol(symbolMap, tt.fullkey); got.Name() != tt.want {
+				t.Errorf("GetExpressionSymbol() = %v, want %v", got, tt.want)
 			}
 		})
 	}

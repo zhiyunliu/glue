@@ -3,7 +3,6 @@ package tpl
 import (
 	"fmt"
 	"reflect"
-	"sync"
 
 	"github.com/zhiyunliu/glue/xdb"
 )
@@ -14,7 +13,7 @@ type FixedTemplate struct {
 	prefix        string
 	matcher       xdb.TemplateMatcher
 	stmtProcessor xdb.StmtDbTypeProcessor
-	sqlStatePool  *sync.Pool
+	StatePool     xdb.SqlStatePool
 }
 
 type fixedPlaceHolder struct {
@@ -47,11 +46,9 @@ func NewFixed(name, prefix string, matcher xdb.TemplateMatcher, stmtProcessor xd
 		matcher:       matcher,
 		stmtProcessor: stmtProcessor,
 	}
-	template.sqlStatePool = &sync.Pool{
-		New: func() interface{} {
-			return xdb.NewSqlState(template.Placeholder())
-		},
-	}
+	template.StatePool = NewStatePool(func() interface{} {
+		return xdb.NewSqlState(template.Placeholder())
+	})
 	return template
 }
 
@@ -77,14 +74,14 @@ func (template *FixedTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, inpu
 }
 
 func (template *FixedTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
-	sqlState := template.sqlStatePool.Get().(xdb.SqlState)
+	sqlState := template.StatePool.Get()
 	sqlState.WithTemplateOptions(tplOpts)
 	return sqlState
 }
 
 func (template *FixedTemplate) ReleaseSqlState(state xdb.SqlState) {
 	state.Reset()
-	template.sqlStatePool.Put(state)
+	template.StatePool.Put(state)
 }
 
 func (template *FixedTemplate) StmtDbTypeWrap(fieldName string, param any, fv reflect.Value, tagOpts xdb.TagOptions) (any, error) {

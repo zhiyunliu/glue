@@ -22,9 +22,7 @@ func NewInExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption) 
 	for i := range opts {
 		opts[i](mopts)
 	}
-
-	const pattern = `[&|\|](({(in|not\s*in)\s+(\w+(\.\w+)?)\s*})|({(\w+(\.\w+)?)\s+(in|not\s*in)\s+(\w+)\s*}))`
-
+	pattern := InPattern
 	matcher := &inExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -71,7 +69,7 @@ func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.Express
 
 	var (
 		item = &xdb.ExpressionItem{
-			Symbol:  getExpressionSymbol(m.symbolMap, expression),
+			Symbol:  GetExpressionSymbol(m.symbolMap, expression),
 			Matcher: m,
 		}
 		fullField string
@@ -85,7 +83,7 @@ func (m *inExpressionMatcher) MatchString(expression string) (valuer xdb.Express
 	if parties[4] != "" {
 		oper = parties[3]
 		fullField = parties[4]
-		propName = getExpressionPropertyName(fullField)
+		propName = GetExpressionPropertyName(fullField)
 
 	} else {
 		oper = parties[9]
