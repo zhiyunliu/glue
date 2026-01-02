@@ -8,9 +8,9 @@ import (
 
 var (
 	DefaultExpressionMatchers []xdb.ExpressionMatcher
-	ComparePattern            = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|<>|!=|=|<|<=)\s*(\w+)})|({(>|>=|<>|!=|=|<|<=)\s*(\w+(\.\w+)?)}))`
-	InPattern                 = `[&|\|](({(in|not\s*in)\s+(\w+(\.\w+)?)\s*})|({(\w+(\.\w+)?)\s+(in|not\s*in)\s+(\w+)\s*}))`
-	LikePattern               = `[&|\|](({(like|not\s*like)\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+(like|not\s*like)\s+(%?\w+%?)}))`
+	ComparePattern            = `[@|&|\|](({((\w+\.)?\w+)\s*(>|>=|<>|!=|=|<|<=)\s*(\w+)})|({(>|>=|<>|!=|=|<|<=)\s*(\w+(\.\w+)?)}))`
+	InPattern                 = `[@|&|\|](({(in|not\s*in)\s+(\w+(\.\w+)?)\s*})|({(\w+(\.\w+)?)\s+(in|not\s*in)\s+(\w+)\s*}))`
+	LikePattern               = `[@|&|\|](({(like|not\s*like)\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+(like|not\s*like)\s+(%?\w+%?)}))`
 	NormalPattern             = `[$|@|&|\|]({(\w+(\.\w+)?\s*)})`
 )
 
