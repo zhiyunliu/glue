@@ -319,7 +319,7 @@ select * from table t where t.id in ('1','2','3')--id:["1","2","3"]
 &{like field} ，&{like %field}， &{like field%} ，&{like %field%}
 &{notlike field} ，&{notlike %field}， &{notlike field%} ，&{notlike %field%}
 &{t.field like property} ，&{t.field like %property}， &{t.field like property%} ，&{t.field like %property%}
-&{t.field notlike property} ，&{t.field notlike %property}， &{t.field notlike property%} ，&{t.field notlike %property%}
+&{t.field notlike property} ，&{t.field notlike %property}， &{t.field notlike property%} ，&{t.field notlike %property%}，&{t.field not like %property%}
 ----(|符号类似)
 
 样例： 
@@ -329,6 +329,7 @@ select * from table t where t.id = @{id} &{like name%}
 select * from table t where t.id = @{id} &{like %name%}
 
 select * from table t where t.id = @{id} &{t.field like %newname%}
+select * from table t where t.id = @{id} &{t.field not like %newname%}
 
 解析结果：
 select * from table t where t.id = @p_id and name like @p_name
@@ -337,10 +338,10 @@ select * from table t where t.id = @p_id and name like @p_name+'%'
 select * from table t where t.id = @p_id and name like '%'+@p_name+'%'
 
 select * from table t where t.id = @p_id and t.field like '%'+@p_newname+'%'
-
+select * from table t where t.id = @p_id and t.field not like '%'+@p_newname+'%'
 ```
 
-## 运算符支持（>,>=,=,<>,<,<=）,支持符号&,|
+## 运算符支持（>,>=,=,<>,!=,<,<=）,支持符号&,|
 
 ```sql
 &{> field} ,&{>= t.field}
@@ -366,6 +367,7 @@ select * from table t where t.id = @p_id and t.name = @p_myinputname
 &{notin field} ,&{notin t.field}
 &{t.field in property}
 &{t.field notin property}
+&{t.field not in property}
 ----(|符号类似)
 
 
