@@ -7,18 +7,33 @@ func initOperator() {
 }
 
 type DefaultOperator struct {
-	name     string
-	callback xdb.OperatorCallback
+	OperatorName           string
+	ExpressionCallback     xdb.ExpressionCallback
+	NormalizeValueCallback xdb.NormalizeValueCallback
 }
 
-func NewDefaultOperator(name string, callback xdb.OperatorCallback) xdb.Operator {
-	return &DefaultOperator{name: name, callback: callback}
+func NewDefaultOperator(name string, callback xdb.ExpressionCallback, normalize xdb.NormalizeValueCallback) xdb.Operator {
+	return &DefaultOperator{
+		OperatorName:           name,
+		ExpressionCallback:     callback,
+		NormalizeValueCallback: normalize,
+	}
 }
 
 func (d *DefaultOperator) Name() string {
-	return d.name
+	return d.OperatorName
 }
 
 func (d *DefaultOperator) Callback(valuer xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-	return d.callback(valuer, param, phName, value)
+	if d.ExpressionCallback == nil {
+		return ""
+	}
+	return d.ExpressionCallback(valuer, param, phName, value)
+}
+
+func (d *DefaultOperator) NormalizeValue(valuer xdb.ExprName, param xdb.DBParam, value any) (newVal any, err xdb.MissError) {
+	if d.NormalizeValueCallback == nil {
+		return value, nil
+	}
+	return d.NormalizeValueCallback(valuer, param, value)
 }

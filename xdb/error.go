@@ -258,3 +258,21 @@ func NewPanicError(err error, strace string) error {
 		stackTrace: strace,
 	}
 }
+
+type xOperNormalizeError struct {
+	propName string
+	value    any
+	message  string
+}
+
+func (e xOperNormalizeError) Error() string {
+	return fmt.Sprintf("Operator参数格式化错误:[%s]=[%v],%s", e.propName, e.value, e.message)
+}
+
+func NewOperNormalizeError(propName string, value any, message string) error {
+	return &xOperNormalizeError{
+		propName: propName,
+		value:    value,
+		message:  message,
+	}
+}

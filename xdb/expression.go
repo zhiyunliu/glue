@@ -23,7 +23,10 @@ type ExpressionMatcherMap interface {
 // xdb表达式
 type ExpressionValuer interface {
 	GetMatcher() ExpressionMatcher
-	GetOperatorCallback() (callback OperatorCallback, ok bool)
+	//Deprecated: GetOperatorCallback 方法请使用 GetOperExprCallback
+	GetOperatorCallback() (callback ExpressionCallback, ok bool)
+	GetOperExprCallback() (callback ExpressionCallback, ok bool)
+	GetOperValueNormalizeCallback() (callback NormalizeValueCallback, ok bool)
 	GetPropName() string
 	GetFullfield() string
 	GetOper() string
@@ -33,6 +36,8 @@ type ExpressionValuer interface {
 
 // 表达式回调
 type ExpressionBuildCallback func(item ExpressionValuer, state SqlState, param DBParam) (expression string, err MissError)
+
+var _ ExpressionValuer = (*ExpressionItem)(nil)
 
 type ExpressionItem struct {
 	Matcher                 ExpressionMatcher
@@ -71,10 +76,22 @@ func (m *ExpressionItem) Build(state SqlState, param DBParam) (expression string
 	return m.ExpressionBuildCallback(m, state, param)
 }
 
-func (m *ExpressionItem) GetOperatorCallback() (callback OperatorCallback, ok bool) {
+func (m *ExpressionItem) GetOperatorCallback() (callback ExpressionCallback, ok bool) {
+	return m.GetOperExprCallback()
+}
+
+func (m *ExpressionItem) GetOperExprCallback() (callback ExpressionCallback, ok bool) {
 	operator, ok := m.Matcher.GetOperatorMap().Load(m.Oper)
 	if !ok {
 		return nil, false
 	}
 	return operator.Callback, true
+}
+
+func (m *ExpressionItem) GetOperValueNormalizeCallback() (callback NormalizeValueCallback, ok bool) {
+	operator, ok := m.Matcher.GetOperatorMap().Load(m.Oper)
+	if !ok {
+		return nil, false
+	}
+	return operator.NormalizeValue, true
 }

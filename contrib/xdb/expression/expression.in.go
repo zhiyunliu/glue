@@ -119,6 +119,34 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 			return
 		}
 
+		normalizeCall, ok := item.GetOperValueNormalizeCallback()
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		value, err = normalizeCall(item, param, value)
+		if err != nil {
+			return
+		}
+
+		operCallback, ok := item.GetOperExprCallback()
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		return operCallback(item, param, "", value), nil
+	}
+}
+func (m *inExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
+
+	inCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s in (%s)", item.GetSymbol().Concat(), item.GetFullfield(), value)
+	}
+	notinCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
+		return fmt.Sprintf("%s %s not in (%s)", item.GetSymbol().Concat(), item.GetFullfield(), value)
+	}
+
+	emptyNormalize := func(exprName xdb.ExprName, param xdb.DBParam, value any) (newVal any, err xdb.MissError) {
 		var val string
 		switch t := value.(type) {
 		case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
@@ -132,12 +160,12 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 			}
 			val = sqlInjectionPreventionArray(t)
 		case []byte:
-			return "", xdb.NewMissDataTypeError(item.GetPropName())
+			return "", xdb.NewMissDataTypeError(exprName.GetPropName())
 		default:
 			refVal := reflect.ValueOf(value)
 			if !(refVal.Kind() == reflect.Array ||
 				refVal.Kind() == reflect.Slice) {
-				return "", xdb.NewMissDataTypeError(item.GetPropName())
+				return "", xdb.NewMissDataTypeError(exprName.GetPropName())
 			}
 			arrayLen := refVal.Len()
 			if arrayLen <= 0 {
@@ -150,27 +178,12 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 			}
 			val = sqlInjectionPreventionArray(tmpStrArray)
 		}
-
-		operCallback, ok := item.GetOperatorCallback()
-		if !ok {
-			err = xdb.NewMissOperError(item.GetOper())
-			return
-		}
-		return operCallback(item, param, "", val), nil
-	}
-}
-func (m *inExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
-
-	inCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s in (%s)", item.GetSymbol().Concat(), item.GetFullfield(), value)
-	}
-	notinCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
-		return fmt.Sprintf("%s %s not in (%s)", item.GetSymbol().Concat(), item.GetFullfield(), value)
+		return val, nil
 	}
 
 	operList := []xdb.Operator{
-		xdb.NewOperator("in", inCallback),
-		xdb.NewOperator("notin", notinCallback),
+		xdb.NewOperator("in", inCallback, emptyNormalize),
+		xdb.NewOperator("notin", notinCallback, emptyNormalize),
 	}
 
 	if optMap != nil {

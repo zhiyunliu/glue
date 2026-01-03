@@ -40,6 +40,9 @@ func (o *emptyOperator) Name() string {
 func (o *emptyOperator) Callback(valuer xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 	return "empty"
 }
+func (o *emptyOperator) NormalizeValue(valuer xdb.ExprName, param xdb.DBParam, value any) (newVal any, err xdb.MissError) {
+	return value, nil
+}
 
 func TestDefaultGetPropName(t *testing.T) {
 	normalMatcher := NewNormalExpressionMatcher(DefaultSymbols, xdb.WithOperator(&emptyOperator{}))

@@ -69,15 +69,19 @@ func (m *testExpressionMatcher) Pattern() string {
 }
 
 func (m *testExpressionMatcher) GetOperatorMap() xdb.OperatorMap {
+	emptyNormalize := func(valuer xdb.ExprName, param xdb.DBParam, value any) (newVal any, err xdb.MissError) {
+		return value, nil
+	}
+
 	operList := []xdb.Operator{
 
 		xdb.NewOperator("@", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return phName
-		}),
+		}, emptyNormalize),
 
 		xdb.NewOperator("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, emptyNormalize),
 	}
 
 	return xdb.NewOperatorMap(operList...)
@@ -118,7 +122,7 @@ func (m *testExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallba
 		if err != nil {
 			return
 		}
-		phName := state.AppendExpr(item.GetPropName(), val)
+		phName := state.AppendExpr(item, val)
 		return phName, nil
 	}
 }
@@ -141,13 +145,17 @@ func (m *test2ExpressionMatcher) GetOperatorMap() xdb.OperatorMap {
 	operCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 		return fmt.Sprintf("%s %s%s%s", item.GetSymbol().Concat(), item.GetFullfield(), item.GetOper(), phName)
 	}
+	emptyNormalize := func(valuer xdb.ExprName, param xdb.DBParam, value any) (newVal any, err xdb.MissError) {
+		return value, nil
+	}
+
 	operList := []xdb.Operator{
-		xdb.NewOperator(">", operCallback),
-		xdb.NewOperator(">=", operCallback),
-		xdb.NewOperator("<>", operCallback),
-		xdb.NewOperator("=", operCallback),
-		xdb.NewOperator("<", operCallback),
-		xdb.NewOperator("<=", operCallback),
+		xdb.NewOperator(">", operCallback, emptyNormalize),
+		xdb.NewOperator(">=", operCallback, emptyNormalize),
+		xdb.NewOperator("<>", operCallback, emptyNormalize),
+		xdb.NewOperator("=", operCallback, emptyNormalize),
+		xdb.NewOperator("<", operCallback, emptyNormalize),
+		xdb.NewOperator("<=", operCallback, emptyNormalize),
 	}
 
 	return xdb.NewOperatorMap(operList...)
@@ -183,7 +191,7 @@ func (m *test2ExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallb
 		if err != nil {
 			return
 		}
-		phName := state.AppendExpr(item.GetPropName(), val)
+		phName := state.AppendExpr(item, val)
 
 		return fmt.Sprintf("and %s%s%s", item.GetFullfield(), item.GetOper(), phName), nil
 	}

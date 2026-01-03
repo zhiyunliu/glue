@@ -14,14 +14,20 @@ var (
 	NewSqlState func(Placeholder) SqlState
 )
 
+type ExprName interface {
+	GetPropName() string
+	GetOper() string
+	GetMatcher() ExpressionMatcher
+}
+
 // SqlState 用户记录sql状态
 type SqlState interface {
-	GetNames() []string
+	GetNames() []ExprName
 	GetValues() []any
 	UseExprCache() bool
 	SetDynamic(DynamicType)
 	HasDynamic(DynamicType) bool
-	AppendExpr(propName string, value any) (phName string)
+	AppendExpr(exprName ExprName, value any) (phName string)
 	CanCache() bool
 	BuildCache(sql string) ExpressionCache
 	WithPlaceholder(Placeholder)

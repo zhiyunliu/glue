@@ -140,9 +140,19 @@ func (m *likeExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallba
 			return
 		}
 
-		phName := state.AppendExpr(propName, value)
+		normalizeCall, ok := item.GetOperValueNormalizeCallback()
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		value, err = normalizeCall(item, param, value)
+		if err != nil {
+			return
+		}
 
-		operCallback, ok := item.GetOperatorCallback()
+		phName := state.AppendExpr(item, value)
+
+		operCallback, ok := item.GetOperExprCallback()
 		if !ok {
 			err = xdb.NewMissOperError(item.GetOper())
 			return
@@ -156,35 +166,34 @@ func (m *likeExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Opera
 	operList := []xdb.Operator{
 		xdb.NewOperator("like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like %s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("%like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like '%%'+%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
-
+		}, nil),
 		xdb.NewOperator("like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like %s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("%like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like '%%'+%s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("notlike", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s not like %s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("%notlike", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s not like '%%'+%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("notlike%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s not like %s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("%notlike%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s not like '%%'+%s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 	}
 
 	if optMap != nil {

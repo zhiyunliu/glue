@@ -104,11 +104,21 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 			return
 		}
 
-		if !strings.EqualFold(item.GetSymbol().Name(), xdb.SymbolReplace) {
-			phName = state.AppendExpr(propName, value)
+		normalizeCall, ok := item.GetOperValueNormalizeCallback()
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		value, err = normalizeCall(item, param, value)
+		if err != nil {
+			return
 		}
 
-		operCallback, ok := item.GetOperatorCallback()
+		if !strings.EqualFold(item.GetSymbol().Name(), xdb.SymbolReplace) {
+			phName = state.AppendExpr(item, value)
+		}
+
+		operCallback, ok := item.GetOperExprCallback()
 		if !ok {
 			err = xdb.NewMissOperError(item.GetOper())
 			return
@@ -118,19 +128,20 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 }
 
 func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
+
 	operList := []xdb.Operator{
 
 		xdb.NewOperator("@", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return phName
-		}),
+		}, nil),
 
 		xdb.NewOperator("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("|", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("$", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) (val string) {
 
@@ -144,7 +155,7 @@ func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Ope
 				val = sqlInjectionPrevention(val)
 			}
 			return val
-		}),
+		}, nil),
 	}
 	if optMap != nil {
 		optMap.Range(func(name string, operator xdb.Operator) bool {
