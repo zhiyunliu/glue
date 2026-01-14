@@ -1,8 +1,7 @@
 package xdb
 
 import (
-	"os"
-
+	"github.com/zhiyunliu/golibs/xenv"
 	"github.com/zhiyunliu/golibs/xtransform"
 )
 
@@ -19,11 +18,11 @@ func DefaultRefactor(connName string, cfg *Config) (newcfg *Config, err error) {
 	}
 	//优化数据库链接配置
 	newcfg.Conn = xtransform.TranslateCallback(newcfg.Conn, func(argName string) string {
-		val := os.Getenv(argName)
+		val := xenv.Get(argName)
 		if len(val) > 0 {
 			return val
 		}
-		return argName
+		return ""
 	})
 
 	if ConnRefactor != nil {

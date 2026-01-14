@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	DefaultHeaders = []HeaderGetter{HeaderXForwardedFor, HeaderReferer, HeaderAuthUserId}
+	DefaultHeaders = []HeaderGetter{HeaderXForwardedFor, HeaderReferer, HeaderAuthUserId, StrHeaderGetter(HeaderSourceName), StrHeaderGetter(HeaderSourceIp)}
 )
 
 type Header interface {

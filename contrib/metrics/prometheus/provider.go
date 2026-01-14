@@ -1,7 +1,6 @@
 package prometheus
 
 import (
-	"os"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,6 +10,7 @@ import (
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/metrics"
+	"github.com/zhiyunliu/golibs/xenv"
 	"go.opentelemetry.io/otel/metric"
 	"golang.org/x/sync/errgroup"
 )
@@ -42,7 +42,7 @@ func (p *xProvider) GetImpl() any {
 func (p *xProvider) StartPush(config *prometheusConfig, gatherer prometheus.Gatherer) {
 	if config.Gateway == nil {
 		config.Gateway = &gateway{
-			Addr:     os.Getenv("PROMETHEUS_PUSH_GATEWAY_ADDR"),
+			Addr:     xenv.Get("PROMETHEUS_PUSH_GATEWAY_ADDR"),
 			Interval: 15,
 		}
 	}

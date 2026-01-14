@@ -2,7 +2,6 @@ package nacos
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients"
@@ -11,6 +10,7 @@ import (
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/nacos"
 	"github.com/zhiyunliu/glue/registry"
+	"github.com/zhiyunliu/golibs/xenv"
 )
 
 type nacosFactory struct {
@@ -44,10 +44,10 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 		return nil, fmt.Errorf("nacos options error:%+v", err)
 	}
 	if len(opts.Group) == 0 {
-		opts.Group = os.Getenv("NACOS_DISCOVERY_GROUP")
+		opts.Group = xenv.Get("NACOS_DISCOVERY_GROUP")
 	}
 	if len(opts.Cluster) == 0 {
-		opts.Cluster = os.Getenv("NACOS_DISCOVERY_CLUSTER")
+		opts.Cluster = xenv.Get("NACOS_DISCOVERY_CLUSTER")
 	}
 	addrs := make([]string, 0)
 
