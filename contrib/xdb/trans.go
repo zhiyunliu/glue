@@ -3,6 +3,7 @@ package xdb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/implement"
@@ -94,7 +95,13 @@ func (db *xTrans) QueryAs(ctx context.Context, sqls string, input any, results a
 
 func (db *xTrans) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return implement.ResolveFirstDataResult(db.proto, r, result)
+		if ierr := implement.ResolveFirstDataResult(db.proto, r, result); ierr != nil {
+			if errors.Is(err, xdb.EmptyError) {
+				return nil
+			}
+			return ierr
+		}
+		return nil
 	}, opts...)
 }
 

@@ -3,6 +3,7 @@ package xdb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"runtime"
 	"time"
@@ -136,7 +137,13 @@ func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any,
 
 func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, val any) error {
-		return implement.ResolveFirstDataResult(db.proto, r, val)
+		if ierr := implement.ResolveFirstDataResult(db.proto, r, val); ierr != nil {
+			if errors.Is(err, xdb.EmptyError) {
+				return nil
+			}
+			return ierr
+		}
+		return nil
 	}, opts...)
 }
 
