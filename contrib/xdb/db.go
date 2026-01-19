@@ -129,16 +129,16 @@ func (db *xDB) Exec(ctx context.Context, sql string, input any, opts ...xdb.Temp
 }
 
 // Query 查询数据
-func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any, opts ...xdb.TemplateOption) (err error) {
+func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any, opts ...xdb.TemplateOption) error {
 	return db.dbQueryAs(ctx, sqls, input, results, func(r *sql.Rows, val any) error {
 		return implement.ResolveRowsDataResult(db.proto, r, val)
 	}, opts...)
 }
 
-func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) (err error) {
+func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) error {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, val any) error {
 		if ierr := implement.ResolveFirstDataResult(db.proto, r, val); ierr != nil {
-			if errors.Is(err, xdb.EmptyError) {
+			if errors.Is(ierr, xdb.EmptyError) {
 				return nil
 			}
 			return ierr
