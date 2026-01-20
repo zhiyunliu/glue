@@ -21,6 +21,11 @@ type GinEngine struct {
 }
 
 func NewGinEngine(ginEngine *gin.Engine, opts ...engine.Option) engine.AdapterEngine {
+
+	if global.TrustedPlatform != "" {
+		ginEngine.TrustedPlatform = global.TrustedPlatform
+	}
+
 	g := &GinEngine{
 		Engine: ginEngine,
 		opts:   engine.DefaultOptions(),

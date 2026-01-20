@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/opentelemetry"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/transport"
+	"github.com/zhiyunliu/golibs/xenv"
 	"github.com/zhiyunliu/golibs/xnet"
 )
 
@@ -21,6 +23,9 @@ func (p *ServiceApp) apprun() error {
 		return err
 	}
 	global.StartRunning()
+
+	//根据环境变量获取TrustedPlatform
+	global.TrustedPlatform = xenv.Get(constants.TrustedPlatform)
 
 	// 1. 初始化配置
 	if err := opentelemetry.InitOtel(global.AppName, p.options.Config); err != nil {

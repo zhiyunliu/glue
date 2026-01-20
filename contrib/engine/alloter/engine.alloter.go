@@ -18,6 +18,10 @@ type AlloterEngine struct {
 }
 
 func NewAlloterEngine(innerEngine *alloter.Engine, opts ...engine.Option) *AlloterEngine {
+
+	if global.TrustedPlatform != "" {
+		innerEngine.TrustedPlatform = global.TrustedPlatform
+	}
 	g := &AlloterEngine{
 		Engine: innerEngine,
 		pool:   sync.Pool{},
