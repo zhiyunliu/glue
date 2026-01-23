@@ -71,6 +71,10 @@ func (c Config) GetCluster() string {
 	return c.Partition
 }
 
+func (c Config) GetClusters() []string {
+	return []string{c.Partition}
+}
+
 // Registry is consul registry
 type Registry struct {
 	cli               *Client
