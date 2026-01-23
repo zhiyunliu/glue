@@ -37,7 +37,7 @@ func (o options) GetCluster() string {
 }
 
 func (o options) GetClusters() []string {
-	if len(o.Clusters) < 0 {
+	if len(o.Clusters) <= 0 {
 		return []string{o.Cluster}
 	}
 	return o.Clusters
