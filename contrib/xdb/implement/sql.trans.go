@@ -20,7 +20,7 @@ type sysTrans struct {
 
 // Query 执行查询
 func (t *sysTrans) Query(ctx context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
-	rows, err = t.tx.QueryContext(ctx, query, args...)
+	rows, err = t.tx.Query(query, args...)
 	if err != nil {
 		return
 	}
@@ -29,7 +29,7 @@ func (t *sysTrans) Query(ctx context.Context, query string, args ...interface{})
 
 // Executes 执行SQL操作语句
 func (t *sysTrans) Execute(ctx context.Context, query string, args ...interface{}) (result sql.Result, err error) {
-	result, err = t.tx.ExecContext(ctx, query, args...)
+	result, err = t.tx.Exec(query, args...)
 	if err != nil {
 		return
 	}

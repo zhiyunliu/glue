@@ -92,7 +92,7 @@ func (db *sysDB) GetSqlDB() *sql.DB {
 
 // Query 执行SQL查询语句
 func (db *sysDB) Query(ctx context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
-	rows, err = db.db.QueryContext(ctx, query, args...)
+	rows, err = db.db.Query(query, args...)
 	if err != nil {
 		if rows != nil {
 			rows.Close()
@@ -104,7 +104,7 @@ func (db *sysDB) Query(ctx context.Context, query string, args ...interface{}) (
 
 // Exec 执行SQL操作语句
 func (db *sysDB) Exec(ctx context.Context, query string, args ...interface{}) (result sql.Result, err error) {
-	result, err = db.db.ExecContext(ctx, query, args...)
+	result, err = db.db.Exec(query, args...)
 	if err != nil {
 		return
 	}
