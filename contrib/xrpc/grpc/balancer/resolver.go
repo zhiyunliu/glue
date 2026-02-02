@@ -156,7 +156,7 @@ func (r *registrarResolver) watchRegistrar() {
 }
 
 // 定时刷新
-func (r registrarResolver) tickRefresh() {
+func (r *registrarResolver) tickRefresh() {
 	ticker := time.NewTicker(time.Second * 30) //30s刷新一次
 
 	r.waitGroup.Add(1)
