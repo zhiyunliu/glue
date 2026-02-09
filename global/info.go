@@ -8,6 +8,7 @@ import (
 var (
 	//开启无路由时候显示详细
 	EnableNoRouteDetail bool = false
+	Nostd               bool = false
 )
 
 var (
