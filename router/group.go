@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -171,7 +172,7 @@ func (g *Group) IsValid() error {
 		for i := range errs {
 			errStrs[i] = errs[i].Error()
 		}
-		return fmt.Errorf(strings.Join(errStrs, "\n"))
+		return errors.New(strings.Join(errStrs, "\n"))
 	}
 	return nil
 }

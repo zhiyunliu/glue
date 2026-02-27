@@ -234,8 +234,46 @@ type param struct {
 	List []Item `json:"list" xdb:"list,dbtype:tvp=ut_db_item"`
 }
 
+type param2 struct {
+	A string `form:"a" json:"a,dbtype:varchar"`
+	D string `form:"d" json:"d" xdb:"d,dbtype:varchar"`
+	Count int  `json:"count" xdb:"count,dbtype:ouput"`
+}
+
 
 ```
+
+## 指定参数数据类型为output
+
+```golang
+type param struct {
+		A         string `json:"a"`
+		OutValue1 string `xdb:"outputvalue1,dbtype:output"`
+		OutValue2 string `json:"outputvalue2,dbtype:output"`
+	}
+
+	const compare = `
+		declare @c varchar(50) = newid()
+		set @{outputvalue1}=@c
+		set @{outputvalue2}=@c
+		`
+
+	dataParam := param{	}
+
+	dbObj := glue.DB(GetDbName(ctx))
+	results, err := dbObj.Query(ctx.Context(), compare, &dataParam)
+	if err != nil {
+		return err
+	}
+
+	return map[string]any{
+		"out1": dataParam.OutValue1,
+		"out2": dataParam.OutValue2,
+		"data": results,
+	}
+```
+
+
 * dbtype:varchar 指定生成数据库参数得数据类型为varchar
 * dbtype:tvp=ut_db_item 指定生成数据库参数得数据类型值类型，数据是数据库自定义ut_db_item （具体tvp类型数据使用参考官方文档https://learn.microsoft.com/zh-cn/sql/relational-databases/tables/use-table-valued-parameters-database-engine?view=sql-server-ver16
 * 可以通过`RegistStmtDbTypeHandler`自定义参数处理数据类型得实现逻辑

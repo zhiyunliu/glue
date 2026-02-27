@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -24,11 +25,11 @@ type Factory interface {
 // Register 添加注册中心工厂对象
 func Register(factory Factory) {
 	if factory == nil {
-		panic(fmt.Errorf("registry: factory is nil"))
+		panic(errors.New("registry: factory is nil"))
 	}
 	name := factory.Name()
 	if _, ok := _factoryMap[name]; ok {
-		panic(fmt.Errorf("registry: factory called twice:" + name))
+		panic(errors.New("registry: factory called twice:" + name))
 	}
 	_factoryMap[name] = factory
 }
