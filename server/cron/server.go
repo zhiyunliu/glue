@@ -69,12 +69,12 @@ func (e *Server) Type() string {
 	return Type
 }
 
-func (e *Server) Config(cfg config.Config) {
+func (e *Server) Config(cfg config.Config) error {
 	if cfg == nil {
-		return
+		return nil
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(e.serverPath()).ScanTo(e.opts.srvCfg)
+	return cfg.Get(e.serverPath()).ScanTo(e.opts.srvCfg)
 }
 
 // Start 开始

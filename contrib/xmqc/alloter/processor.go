@@ -128,11 +128,12 @@ func (s *processor) consume(task *xmqc.Task) error {
 
 // Close 退出
 func (s *processor) Close() error {
+	var err error
 	s.onceLock.Do(func() {
 		close(s.closeChan)
-		s.Pause()
+		_, err = s.Pause()
 	})
-	return nil
+	return err
 }
 
 func (s *processor) handleCallback(task *xmqc.Task) func(queue.IMQCMessage) {
@@ -149,7 +150,7 @@ func (s *processor) handleCallback(task *xmqc.Task) func(queue.IMQCMessage) {
 
 		err := s.engine.HandleRequest(req, resp)
 		if err != nil {
-			m.Nack(err)
+			_ = m.Nack(err)
 			panic(err)
 		}
 	}

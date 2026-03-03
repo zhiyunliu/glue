@@ -95,7 +95,7 @@ func (db *sysDB) Query(ctx context.Context, query string, args ...interface{}) (
 	rows, err = db.db.Query(query, args...)
 	if err != nil {
 		if rows != nil {
-			rows.Close()
+			_ = rows.Close()
 		}
 		return
 	}

@@ -78,7 +78,7 @@ func Server() middleware.Middleware {
 			reply = handler(c)
 
 			var (
-				statusCode int = c.Response().GetStatusCode()
+				statusCode = c.Response().GetStatusCode()
 				subcode    string
 				err        error
 			)

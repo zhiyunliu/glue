@@ -96,7 +96,7 @@ func (db *xTrans) QueryAs(ctx context.Context, sqls string, input any, results a
 func (db *xTrans) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) error {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
 		if ierr := implement.ResolveFirstDataResult(db.proto, r, result); ierr != nil {
-			if errors.Is(ierr, xdb.EmptyError) {
+			if errors.Is(ierr, xdb.ErrEmptyError) {
 				return nil
 			}
 			return ierr

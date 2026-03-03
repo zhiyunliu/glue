@@ -34,8 +34,11 @@ func (p *ServiceApp) apprun() error {
 
 	p.closeWaitGroup.Add(len(p.options.Servers))
 	for _, srv := range p.options.Servers {
-		srv.Config(p.options.Config)
-		err := srv.Start(context.Background())
+		err := srv.Config(p.options.Config)
+		if err != nil {
+			return err
+		}
+		err = srv.Start(context.Background())
 		if err != nil {
 			return err
 		}

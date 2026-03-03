@@ -35,7 +35,7 @@ func newWatcher(ctx context.Context, dataID string, group string, cancelListenCo
 
 func (w *Watcher) Next() ([]*config.KeyValue, error) {
 	select {
-	case <-w.Context.Done():
+	case <-w.Done():
 		return nil, nil
 	case content := <-w.content:
 		k := w.dataID

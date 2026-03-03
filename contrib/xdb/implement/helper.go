@@ -99,7 +99,7 @@ func ResolveFirstDataResult(proto string, rows *sql.Rows, result any) (err error
 			}
 			err = scanIntoMap(mapval, values, columns)
 		} else {
-			return xdb.EmptyError
+			return xdb.ErrEmptyError
 		}
 
 	case reflect.Struct:
@@ -116,7 +116,7 @@ func ResolveFirstDataResult(proto string, rows *sql.Rows, result any) (err error
 			}
 			err = scanInToStruct(fields, rv, columns, values)
 		} else {
-			return xdb.EmptyError
+			return xdb.ErrEmptyError
 		}
 	default:
 		return &xdb.InvalidArgTypeError{Type: rv.Type()}
@@ -370,7 +370,7 @@ func scanInToStruct(fields *xreflect.StructFields, rv reflect.Value, cols []stri
 func resolveRows(proto string, rows *sql.Rows, rv reflect.Value) (reflectResults reflect.Value, err error) {
 	itemType := reflect.Indirect(rv).Type().Elem()
 
-	var kind reflect.Kind = itemType.Kind()
+	var kind = itemType.Kind()
 
 	switch {
 	case kind == reflect.Map ||
@@ -458,7 +458,7 @@ func resolveRowsToReader(proto string, rows *sql.Rows, reader xdb.RowDataReader)
 	for {
 		err = ResolveFirstDataResult(proto, rows, rowItem)
 		if err != nil {
-			if errors.Is(err, xdb.EmptyError) {
+			if errors.Is(err, xdb.ErrEmptyError) {
 				return nil
 			}
 			return

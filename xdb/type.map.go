@@ -12,8 +12,8 @@ var typeMap map[string]map[string]reflect.Type
 
 func init() {
 	typeMap = make(map[string]map[string]reflect.Type)
-	RegisterDbType("DECIMAL", reflect.TypeOf((*xtypes.Decimal)(nil)).Elem())
-	RegisterDbType("MONEY", reflect.TypeOf((*xtypes.Decimal)(nil)).Elem())
+	_ = RegisterDbType("DECIMAL", reflect.TypeOf((*xtypes.Decimal)(nil)).Elem())
+	_ = RegisterDbType("MONEY", reflect.TypeOf((*xtypes.Decimal)(nil)).Elem())
 }
 
 func GetDbType(proto, dbtype string) (reflect.Type, bool) {

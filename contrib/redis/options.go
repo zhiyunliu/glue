@@ -1,6 +1,8 @@
 package redis
 
-import "github.com/zhiyunliu/golibs/xtypes"
+import (
+	"github.com/zhiyunliu/golibs/xreflect"
+)
 
 type Options struct {
 	Addrs        []string `json:"addrs,omitempty"  valid:"required" `
@@ -63,13 +65,13 @@ func WithMapConfig(cfg map[string]any) Option {
 		for k, v := range cfg {
 			switch k {
 			case "db":
-				tmp, err := xtypes.GetInt(v)
+				tmp, err := xreflect.GetInt(v)
 				if err != nil {
 					continue
 				}
 				opts.DbIndex = uint(tmp)
 			case "pool_size":
-				tmp, err := xtypes.GetInt(v)
+				tmp, err := xreflect.GetInt(v)
 				if err != nil {
 					continue
 				}

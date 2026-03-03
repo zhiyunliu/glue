@@ -58,9 +58,9 @@ func procHandler(engine AdapterEngine, group *RouterWrapper, middlewares ...midd
 func buildHandler(engine AdapterEngine, group *RouterWrapper, middlewares []middleware.Middleware, v *router.Unit) HandlerFunc {
 	return func(ctx context.Context) {
 		var (
-			kind      string = ctx.ServerType()
-			fullPath  string = ctx.Request().Path().GetURL().Path
-			logMethod string = ctx.Request().GetMethod()
+			kind      = ctx.ServerType()
+			fullPath  = ctx.Request().Path().GetURL().Path
+			logMethod = ctx.Request().GetMethod()
 		)
 		logOpts := getLogOptions(ctx)
 		startTime := time.Now()
@@ -128,7 +128,7 @@ func extractReq(req context.Request, logopts *log.Options, rotps *RouterOptions)
 	if len(req.Query().Values()) > 0 {
 		res = req.Query().String()
 	}
-	if logopts.WithRequest && !(rotps.ExcludeLogReq || logopts.IsExclude(req.Path().FullPath())) {
+	if logopts.WithRequest && !rotps.ExcludeLogReq && !logopts.IsExclude(req.Path().FullPath()) {
 		res += "|"
 		res += extractBody(req)
 	}
@@ -144,7 +144,7 @@ func extractBody(req context.Request) string {
 }
 
 func extractResp(ctx context.Context, logopts *log.Options, ropts *RouterOptions) string {
-	if logopts.WithResponse && !(ropts.ExcludeLogResp || logopts.IsExclude(ctx.Request().Path().FullPath())) {
+	if logopts.WithResponse && !ropts.ExcludeLogResp && !logopts.IsExclude(ctx.Request().Path().FullPath()) {
 		return bytesconv.BytesToString(ctx.Response().ResponseBytes())
 	}
 	return ""
@@ -175,7 +175,7 @@ func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 	if header.IsEmpty() {
 		return
 	}
-	var printSource bool = false
+	var printSource = false
 	//打印服务源
 	if logOpts.WithSource != nil {
 		printSource = *logOpts.WithSource

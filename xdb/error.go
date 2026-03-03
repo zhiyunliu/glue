@@ -15,7 +15,7 @@ const (
 )
 
 var (
-	EmptyError = errors.New("empty")
+	ErrEmptyError = errors.New("empty")
 )
 
 type DbError interface {

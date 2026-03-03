@@ -138,7 +138,7 @@ func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any,
 func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) error {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, val any) error {
 		if ierr := implement.ResolveFirstDataResult(db.proto, r, val); ierr != nil {
-			if errors.Is(ierr, xdb.EmptyError) {
+			if errors.Is(ierr, xdb.ErrEmptyError) {
 				return nil
 			}
 			return ierr
@@ -169,7 +169,7 @@ func (db *xDB) Transaction(ctx context.Context, callback xdb.TransactionCallback
 	}
 	defer func() {
 		if robj := recover(); robj != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			rerr, ok := robj.(error)
 			if !ok {
 				rerr = fmt.Errorf("%+v", robj)
@@ -182,7 +182,7 @@ func (db *xDB) Transaction(ctx context.Context, callback xdb.TransactionCallback
 	}()
 	err = callback(ctx, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return
 	}
 	err = tx.Commit()
@@ -218,7 +218,7 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback impl
 	}
 	defer func() {
 		if rows != nil {
-			rows.Close()
+			_ = rows.Close()
 		}
 	}()
 	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
@@ -250,7 +250,7 @@ func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any,
 	}
 	defer func() {
 		if rows != nil {
-			rows.Close()
+			_ = rows.Close()
 		}
 	}()
 	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)

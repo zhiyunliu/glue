@@ -37,7 +37,10 @@ func NewByOpts(configName string, opts ...Option) (r *Client, err error) {
 // NewByConfig 构建客户端
 func NewByConfig(configName string, setting config.Config, mapCfg map[string]any) (r *Client, err error) {
 	redisOpts := defaultRedisOpts()
-	setting.ScanTo(redisOpts)
+	err = setting.ScanTo(redisOpts)
+	if err != nil {
+		return
+	}
 	if Refactor != nil {
 		redisOpts, err = Refactor(configName, redisOpts)
 		if err != nil {

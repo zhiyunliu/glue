@@ -147,7 +147,7 @@ func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Ope
 
 			switch t := value.(type) {
 			case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
-				val = strings.Trim(strings.Replace(fmt.Sprint(t), " ", ",", -1), "[]")
+				val = strings.Trim(strings.ReplaceAll(fmt.Sprint(t), " ", ","), "[]")
 			case []string:
 				val = sqlInjectionPreventionArray(t)
 			default:

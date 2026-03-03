@@ -7,6 +7,8 @@ import (
 	"context"
 
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/errors/subcode"
 	"github.com/zhiyunliu/glue/xrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -42,6 +44,7 @@ func (c *Client) clientRequest(ctx context.Context, o *xrpc.Options, bodyBytes [
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
+		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("%s grpc://%s%s", o.Method, c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
 		return
 	}
 	span.SetAttributes(

@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/errors/subcode"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"go.opentelemetry.io/otel/attribute"
@@ -83,6 +86,7 @@ func (c *Client) ServerStreamProcessor(ctx context.Context, processor xrpc.Serve
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
+		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("ServerStream grpc://%s%s,ServerStreamProcess", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
 		return err
 	}
 
@@ -94,15 +98,15 @@ func (c *Client) ServerStreamProcessor(ctx context.Context, processor xrpc.Serve
 	}
 
 	err = processor(ctx, serverStreamRequest)
-
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
+		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("ServerStream grpc://%s%s,processor", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
 		return err
 	}
 
 	span.SetAttributes(
 		attribute.Int("rpc.stream.recv", serverStreamRequest.RecvCount),
 	)
-	return err
+	return nil
 }

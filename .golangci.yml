@@ -1,0 +1,86 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - cyclop
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errorlint
+    - exhaustive
+    - fatcontext
+    - funlen
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - gocognit
+    - gocyclo
+    - gosec
+    - govet
+    - ineffassign
+    - loggercheck
+    - maintidx
+    - makezero
+    - musttag
+    - nestif
+    - nilerr
+    - nilnesserr
+    - noctx
+    - perfsprint
+    - prealloc
+    - protogetter
+    - reassign
+    - rowserrcheck
+    - spancheck
+    - sqlclosecheck
+    - staticcheck
+    - testifylint
+    - unparam
+    - unused
+    - zerologlint
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+          - errcheck
+          - gocyclo
+          - gosec
+        path: _test.go
+      - linters:
+          - gosmopolitan
+        path: (.+)_test\.go
+      - linters:
+          - gosec
+        path: .*sqls.*
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - (.+)_test\.go
+
+issues:
+  new-from-rev: HEAD~5
+severity:
+  default: error
+  rules:
+    - linters:
+        - dupl
+      severity: info
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - (.+)_test\.go
+

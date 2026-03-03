@@ -140,7 +140,7 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 // DefaultErrorEncoder encodes the error to the HTTP response.
 func DefaultErrorEncoder(ctx context.Context, err error) {
 	if render, ok := err.(DataEncoder); ok {
-		render.Render(ctx)
+		_ = render.Render(ctx)
 		return
 	}
 	resp := ctx.Response()
@@ -157,10 +157,10 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 		bytes, err := entity.Body()
 		if err != nil {
 			resp.StatusCode(http.StatusInternalServerError)
-			resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
+			_ = resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
 			return
 		}
-		resp.WriteBytes(bytes)
+		_ = resp.WriteBytes(bytes)
 		return
 	}
 
@@ -169,12 +169,12 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 	body, err := codec.Marshal(se)
 	if err != nil {
 		resp.StatusCode(http.StatusInternalServerError)
-		resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
+		_ = resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
 		return
 	}
 	resp.Header(ContentTypeName, codec.ContentType())
 	resp.StatusCode(se.GetCode())
-	resp.WriteBytes(body)
+	_ = resp.WriteBytes(body)
 }
 
 // CodecForRequest get encoding.Codec via http.Request

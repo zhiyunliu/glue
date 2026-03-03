@@ -82,7 +82,7 @@ func (c *container) Close() error {
 
 	for item := range c.cache.IterBuffered() {
 		if closer, ok := item.Val.(ICloser); ok {
-			closer.Close()
+			_ = closer.Close()
 		}
 	}
 	c.cache.Clear()
@@ -97,7 +97,7 @@ func (c *container) Remove(typeName, name string, keys ...string) error {
 			return false
 		}
 		if closer, ok := v.(ICloser); ok {
-			closer.Close()
+			_ = closer.Close()
 		}
 		return true
 	})

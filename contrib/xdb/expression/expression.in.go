@@ -150,7 +150,7 @@ func (m *inExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Operato
 		var val string
 		switch t := value.(type) {
 		case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
-			val = strings.Trim(strings.Replace(fmt.Sprint(t), " ", ",", -1), "[]")
+			val = strings.Trim(strings.ReplaceAll(fmt.Sprint(t), " ", ","), "[]")
 			if len(val) == 0 {
 				return
 			}

@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/errors/subcode"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"go.opentelemetry.io/otel/attribute"
@@ -86,6 +89,7 @@ func (c *Client) BidirectionalStreamProcessor(ctx context.Context, processor xrp
 
 	steamClient, err := c.client.BidirectionalStreamProcess(ctx, grpcOpts...)
 	if err != nil {
+		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("BidrectionStream grpc://%s%s,BidirectionalStreamProcess", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
 		return err
 	}
 
@@ -104,6 +108,7 @@ func (c *Client) BidirectionalStreamProcessor(ctx context.Context, processor xrp
 	//发送服务分发数据信息
 	err = steamClient.Send(req)
 	if err != nil {
+		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("BidrectionStream grpc://%s%s,Send", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
 		return err
 	}
 
@@ -118,6 +123,7 @@ func (c *Client) BidirectionalStreamProcessor(ctx context.Context, processor xrp
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
+		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("BidrectionStream grpc://%s%s,processor", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
 		return err
 	}
 
@@ -125,5 +131,5 @@ func (c *Client) BidirectionalStreamProcessor(ctx context.Context, processor xrp
 		attribute.Int("rpc.stream.send", bidiStreamRequest.SendCount),
 		attribute.Int("rpc.stream.recv", bidiStreamRequest.RecvCount),
 	)
-	return err
+	return nil
 }

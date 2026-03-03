@@ -1,7 +1,6 @@
 package alloter
 
 import (
-	"context"
 	sctx "context"
 	"errors"
 	"fmt"
@@ -196,7 +195,7 @@ func (s *processor) closeMonopolyJobs() {
 
 func (s *processor) getOffset(now time.Time, next time.Time) (pos int, circle int) {
 	// 立即执行的任务放在下一秒执行
-	if now == next {
+	if now.Equal(next) {
 		return s.index + 1, 0
 	}
 	secs := next.Sub(now).Seconds() //剩余时间
@@ -249,7 +248,7 @@ func (s *processor) handle(req *Request) {
 	if err != nil {
 		panic(err)
 	}
-	resp.Flush()
+	_ = resp.Flush()
 }
 
 func (s *processor) execute(idx int) {
@@ -279,15 +278,15 @@ type monopolyJob struct {
 }
 
 func (j *monopolyJob) Acquire() (bool, error) {
-	return j.locker.Acquire(context.Background(), j.expire)
+	return j.locker.Acquire(sctx.Background(), j.expire)
 }
 
 func (j *monopolyJob) Renewal() {
-	j.locker.Renewal(context.Background(), j.expire)
+	j.locker.Renewal(sctx.Background(), j.expire)
 }
 
 func (j *monopolyJob) Close() {
-	j.locker.Release(context.Background())
+	j.locker.Release(sctx.Background())
 }
 
 func (j *monopolyJob) Start(ctx sctx.Context) {
