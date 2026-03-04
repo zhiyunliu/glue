@@ -18,8 +18,8 @@ import (
 
 func RegistryEngineRoute(engine AdapterEngine, router *RouterGroup) {
 	defaultMiddlewares := []middleware.Middleware{
-		recovery.Recovery(),
 		otels.Server(),
+		recovery.Recovery(),
 	}
 	engine.NoMethod()
 	engine.NoRoute()

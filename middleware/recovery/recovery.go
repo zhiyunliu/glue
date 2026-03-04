@@ -48,7 +48,7 @@ func Recovery(opts ...Option) middleware.Middleware {
 		return func(ctx context.Context) (reply interface{}) {
 			defer func() {
 				if rerr := recover(); rerr != nil {
-					stack := xstack.GetStack(9, xstack.WithDepth(8))
+					stack := xstack.GetStack(5, xstack.WithDepth(8))
 					ctx.Log().Panicf("%v: \n%s", rerr, stack)
 					reply = op.handler(ctx, rerr)
 				}

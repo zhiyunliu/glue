@@ -5,26 +5,26 @@ type Logger interface {
 
 	SessionID() string
 
-	Log(level Level, args ...interface{})
-	Logf(level Level, format string, args ...interface{})
+	Log(level Level, args ...any)
+	Logf(level Level, format string, args ...any)
 
-	Info(args ...interface{})
-	Infof(format string, args ...interface{})
+	Info(args ...any)
+	Infof(format string, args ...any)
 
-	Error(args ...interface{})
-	Errorf(format string, args ...interface{})
+	Error(args ...any)
+	Errorf(format string, args ...any)
 
-	Debug(args ...interface{})
-	Debugf(format string, args ...interface{})
+	Debug(args ...any)
+	Debugf(format string, args ...any)
 
-	Panic(args ...interface{})
-	Panicf(format string, args ...interface{})
+	Panic(args ...any)
+	Panicf(format string, args ...any)
 
-	Fatal(args ...interface{})
-	Fatalf(format string, args ...interface{})
+	Fatal(args ...any)
+	Fatalf(format string, args ...any)
 
-	Warn(v ...interface{})
-	Warnf(format string, v ...interface{})
+	Warn(v ...any)
+	Warnf(format string, v ...any)
 
 	Write(p []byte) (n int, err error)
 	Close()
