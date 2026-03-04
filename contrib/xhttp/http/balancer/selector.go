@@ -26,6 +26,8 @@ type httpSelector struct {
 
 	waitGroup      *sync.WaitGroup
 	resolveNowChan chan struct{}
+	firstFunc      *sync.Once
+	firstChan      chan struct{}
 }
 
 var _ SelectorWrapper = (*httpSelector)(nil)
@@ -42,11 +44,14 @@ func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url
 		serviceName:    reqPath.Host,
 		resolveNowChan: make(chan struct{}, 1),
 		waitGroup:      &sync.WaitGroup{},
+		firstFunc:      &sync.Once{},
+		firstChan:      make(chan struct{}),
 	}
 	rr.selector = tmpselector
 	if strings.EqualFold(reqPath.Scheme, "xhttp") {
 		rr.doWatch()
 		rr.ResolveNow()
+		<-rr.firstChan
 	} else {
 		rr.Apply(rr.buildOriginAddress(reqPath))
 	}
@@ -139,6 +144,10 @@ func (r *httpSelector) watchResolver() {
 			continue
 		}
 		r.Apply(addresses)
+
+		r.firstFunc.Do(func() {
+			close(r.firstChan)
+		})
 	}
 }
 
