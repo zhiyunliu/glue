@@ -5,6 +5,7 @@ import (
 
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/errors/subcode"
 	"github.com/zhiyunliu/golibs/xstack"
 
 	"github.com/zhiyunliu/glue/middleware"
@@ -34,6 +35,9 @@ func WithHandler(h HandlerFunc) Option {
 func Recovery(opts ...Option) middleware.Middleware {
 	op := options{
 		handler: func(ctx context.Context, err interface{}) error {
+			if e, ok := err.(error); ok {
+				return errors.InternalServer(ErrUnknownRequest.GetMessage(), errors.WithInnerErr(e), errors.WithSubCode(subcode.IsvUnknowError))
+			}
 			return fmt.Errorf("%w,%+v", ErrUnknownRequest, err)
 		},
 	}
@@ -44,7 +48,7 @@ func Recovery(opts ...Option) middleware.Middleware {
 		return func(ctx context.Context) (reply interface{}) {
 			defer func() {
 				if rerr := recover(); rerr != nil {
-					stack := xstack.GetStack(5, xstack.WithDepth(5))
+					stack := xstack.GetStack(9, xstack.WithDepth(8))
 					ctx.Log().Panicf("%v: \n%s", rerr, stack)
 					reply = op.handler(ctx, rerr)
 				}

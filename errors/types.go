@@ -3,8 +3,11 @@ package errors
 
 import "net/http"
 
-func BadRequest(reason, message string, opts ...Option) Error {
-	return New(http.StatusBadRequest, message)
+func BadRequest(subcode, message string, opts ...Option) Error {
+	tmpOpts := make([]Option, 0, 1+len(opts))
+	tmpOpts = append(tmpOpts, WithSubCode(subcode))
+	tmpOpts = append(tmpOpts, opts...)
+	return New(http.StatusBadRequest, message, tmpOpts...)
 }
 
 func IsBadRequest(err error) bool {
@@ -12,7 +15,7 @@ func IsBadRequest(err error) bool {
 }
 
 func Unauthorized(message string, opts ...Option) Error {
-	return New(http.StatusUnauthorized, message)
+	return New(http.StatusUnauthorized, message, opts...)
 }
 
 func IsUnauthorized(err error) bool {
@@ -20,7 +23,7 @@ func IsUnauthorized(err error) bool {
 }
 
 func Forbidden(message string, opts ...Option) Error {
-	return New(http.StatusForbidden, message)
+	return New(http.StatusForbidden, message, opts...)
 }
 
 func IsForbidden(err error) bool {
@@ -28,7 +31,7 @@ func IsForbidden(err error) bool {
 }
 
 func NotFound(message string, opts ...Option) Error {
-	return New(http.StatusNotFound, message)
+	return New(http.StatusNotFound, message, opts...)
 }
 
 func IsNotFound(err error) bool {
@@ -36,7 +39,7 @@ func IsNotFound(err error) bool {
 }
 
 func InternalServer(message string, opts ...Option) Error {
-	return New(http.StatusInternalServerError, message)
+	return New(http.StatusInternalServerError, message, opts...)
 }
 
 // IsInternalServer determines if err is an error which indicates an Internal error.
