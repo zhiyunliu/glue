@@ -241,6 +241,44 @@ type param struct {
 * 可以通过`RegistStmtDbTypeHandler`自定义参数处理数据类型得实现逻辑
 
  
+## 接收output数据输出
+
+* 如果output参数有传入值，则响应数据可能出现截断的情况(传入值的长度限制了输出值得长度)
+* 支持普通数据类型和指针类型
+```golang
+
+type outputParam struct {
+	Id    int     `json:"id" form:"id"`
+	Name  string  `json:"name" form:"name" xdb:"name,dbtype:output"` //普通数据类型
+	Data *string `json:"data" form:"data" xdb:"data,dbtype:output"`  //指针类型
+}
+
+
+func Query(ctx context.Context) error {}
+
+	dbobj := glue.DB("dev")
+
+	p := &outputParam{
+		Id: 1,
+	}
+
+	const SQL = `select top 1 @{name} = t.b,@{data}=t.c from ljy_test(nolock) t where t.id = @{id} `
+
+	result, err := dbobj.Exec(ctx, SQL, p)
+
+
+	log.Println(p)
+	/***
+	{
+    	"id": 116,
+    	"name": "test",
+    	"data": "{\"x\":\"a\",\"y\":\"b\"}"
+	}
+	*/
+
+```
+### 使用说明
+ 
 
 
 ## 参数化支持

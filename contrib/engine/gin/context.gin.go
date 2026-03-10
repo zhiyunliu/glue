@@ -75,10 +75,10 @@ func (ctx *GinContext) ResetContext(nctx context.Context) {
 func (ctx *GinContext) Bind(obj interface{}) error {
 	val := reflect.TypeOf(obj)
 	if val.Kind() != reflect.Ptr {
-		return fmt.Errorf("Bind只接收Ptr类型的数据,目前是:%s", val.Kind())
+		return fmt.Errorf("Bind只接收Ptr类型的数据,当前类型:%s", val.Kind())
 	}
 
-	err := ctx.Request().Body().Scan(obj)
+	err := ctx.Request().Body().ScanTo(obj)
 	if err != nil {
 		return err
 	}
@@ -368,6 +368,20 @@ func (q *gbody) loadBody() (err error) {
 	}
 	return nil
 }
+
+func (q *gbody) Format(f fmt.State, verb rune) {
+	_ = q.loadBody()
+	_, _ = f.Write(q.bodyBytes)
+}
+
+func (q *gbody) ResetBytes(bodyBytes []byte) error {
+	q.bodyBytes = bodyBytes
+	q.reader = bytes.NewReader(bodyBytes)
+	q.gctx.Request.Body.Close()
+	q.gctx.Request.Body = io.NopCloser(q.reader)
+	return nil
+}
+
 func (q *gbody) Close() {
 	q.bodyBytes = nil
 	q.reader = nil

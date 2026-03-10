@@ -65,7 +65,7 @@ func (c *Client) ClientStreamProcessor(ctx context.Context, processor xrpc.Clien
 		return xrpc.NewEmptyBody(), err
 	}
 
-	err = processor(&grpcClientStreamRequest{
+	err = processor(ctx, &grpcClientStreamRequest{
 		servicePath:  servicePath,
 		header:       opts.Header,
 		method:       opts.Method,

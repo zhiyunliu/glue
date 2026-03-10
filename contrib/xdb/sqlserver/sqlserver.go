@@ -43,8 +43,8 @@ func init() {
 	tplstmpProcessor := xdb.NewStmtDbTypeProcessor(DefaultDbTypeHandler...)
 
 	xdb.Register(&sqlserverResolver{name: Proto})
-	xdb.RegistTemplate(New(Proto, ArgumentPrefix, tplMatcher, tplstmpProcessor))
+	_ = xdb.RegistTemplate(New(Proto, ArgumentPrefix, tplMatcher, tplstmpProcessor))
 
 	xdb.Register(&sqlserverResolver{name: "mssql"})
-	xdb.RegistTemplate(New("mssql", ArgumentPrefix, tplMatcher, tplstmpProcessor))
+	_ = xdb.RegistTemplate(New("mssql", ArgumentPrefix, tplMatcher, tplstmpProcessor))
 }

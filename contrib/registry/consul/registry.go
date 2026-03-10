@@ -61,13 +61,23 @@ func WithHealthCheckInterval(interval int) Option {
 }
 
 // Config is consul registry config
-type Config struct {
-	*api.Config
+type Config api.Config
+
+func (c Config) GetGroup() string {
+	return c.Datacenter
+}
+
+func (c Config) GetCluster() string {
+	return c.Partition
+}
+func (c Config) GetClusters() []string {
+	return []string{c.Partition}
 }
 
 // Registry is consul registry
 type Registry struct {
 	cli               *Client
+	config            *Config
 	enableHealthCheck bool
 	addr              string
 	registry          map[string]*serviceSet
@@ -75,9 +85,11 @@ type Registry struct {
 }
 
 // New creates consul registry
-func New(apiClient *api.Client, opts ...Option) *Registry {
+func New(apiClient *api.Client, config *api.Config, opts ...Option) *Registry {
+	cfg := Config(*config)
 	r := &Registry{
 		cli:               NewClient(apiClient),
+		config:            &cfg,
 		registry:          make(map[string]*serviceSet),
 		enableHealthCheck: true,
 	}
@@ -107,7 +119,7 @@ func (r *Registry) Deregister(ctx context.Context, svc *registry.ServiceInstance
 }
 
 // GetService return service by name
-func (r *Registry) GetService(ctx context.Context, name string) (services []*registry.ServiceInstance, err error) {
+func (r *Registry) GetService(ctx context.Context, name string, opts ...registry.GetServiceOption) (services []*registry.ServiceInstance, err error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	set := r.registry[name]
@@ -225,6 +237,10 @@ func (r *Registry) GetAllServicesInfo(ctx context.Context) (list registry.Servic
 		idx++
 	}
 	return
+}
+
+func (r *Registry) GetOptions() registry.RegistrarOptions {
+	return r.config
 }
 
 func (r *Registry) GetImpl() any {

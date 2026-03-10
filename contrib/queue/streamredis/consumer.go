@@ -35,33 +35,8 @@ type Consumer struct {
 }
 
 type QueueItem struct {
-	QueueName         string
-	Concurrency       int
-	BufferSize        int
-	VisibilityTimeout time.Duration
-	DisableRetry      bool
-	callback          queue.ConsumeCallback
-}
-
-func (q QueueItem) GetQueue() string {
-	return q.QueueName
-}
-
-func (q QueueItem) GetConcurrency() int {
-	return q.Concurrency
-}
-
-func (s QueueItem) GetVisibilityTimeout() time.Duration {
-	return s.VisibilityTimeout
-}
-
-func (s QueueItem) GetBufferSize() int {
-	return s.BufferSize
-}
-
-// 是否支持重试
-func (s QueueItem) GetDisableRetry() bool {
-	return s.DisableRetry
+	queue.TaskInfo
+	callback queue.ConsumeCallback
 }
 
 // NewConsumerByConfig 创建新的Consumer
@@ -170,19 +145,11 @@ func (consumer *Consumer) Consume(task queue.TaskInfo, callback queue.ConsumeCal
 	}
 
 	item := &QueueItem{
-		QueueName:         queueName,
-		Concurrency:       task.GetConcurrency(),
-		BufferSize:        task.GetBufferSize(),
-		VisibilityTimeout: time.Duration(task.GetVisibilityTimeout()) * time.Second,
-		DisableRetry:      task.GetDisableRetry(),
-		callback:          callback,
-	}
-	if item.Concurrency == 0 {
-		item.Concurrency = queue.DefaultMaxQueueLen
+		TaskInfo: task,
+		callback: callback,
 	}
 
 	consumer.queues.SetIfAbsent(queueName, item)
-
 	return
 }
 
@@ -198,7 +165,7 @@ func (consumer *Consumer) Start() error {
 			return func(m *redisqueue.Message) error {
 				if m.RetryCount >= queue.MaxRetrtCount {
 					//todo:写入死信队列
-					consumer.writeToDeadLetter(tqi.QueueName, m.Values)
+					consumer.writeToDeadLetter(tqi.GetQueue(), m.Values)
 					return nil
 				}
 				msg := &redisMessage{message: m.Values, retryCount: m.RetryCount, messageId: m.ID}
@@ -206,7 +173,7 @@ func (consumer *Consumer) Start() error {
 				return msg.Error()
 			}
 		}(tqi)
-		consumer.consumer.Register(tqi, confunc)
+		consumer.consumer.RegisterWithLastID(tqi, tqi.GetMsgLastId(), confunc)
 	}
 
 	go consumer.consumer.Run()

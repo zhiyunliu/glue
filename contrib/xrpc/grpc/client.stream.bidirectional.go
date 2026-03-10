@@ -92,7 +92,7 @@ func (c *Client) BidirectionalStreamProcessor(ctx context.Context, processor xrp
 	if err != nil {
 		return err
 	}
-	err = processor(&grpcBidirectionalClientStreamRequest{
+	err = processor(ctx, &grpcBidirectionalClientStreamRequest{
 		servicePath:  servicePath,
 		header:       opts.Header,
 		method:       opts.Method,

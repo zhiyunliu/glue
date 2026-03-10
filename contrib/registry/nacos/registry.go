@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"strconv"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
-	"github.com/nacos-group/nacos-sdk-go/common/nacos_server"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 
+	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/registry"
 )
 
@@ -19,19 +20,34 @@ var (
 )
 
 type options struct {
-	Prefix        string  `json:"prefix"`
-	Weight        float64 `json:"weight"`
-	Cluster       string  `json:"cluster"`
-	Group         string  `json:"group"`
-	serverConfigs string  `json:"-"`
+	Prefix        string   `json:"prefix"`
+	Weight        float64  `json:"weight"`
+	Cluster       string   `json:"cluster"`
+	Clusters      []string `json:"clusters"`
+	Group         string   `json:"group"`
+	serverConfigs string   `json:"-"`
+}
+
+func (o options) GetGroup() string {
+	return o.Group
+}
+
+func (o options) GetCluster() string {
+	return o.Cluster
+}
+
+func (o options) GetClusters() []string {
+	if len(o.Clusters) == 0 {
+		return []string{o.Cluster}
+	}
+	return o.Clusters
 }
 
 // Registry is nacos registry.
 type Registry struct {
-	opts        *options
-	ncp         *vo.NacosClientParam
-	cli         naming_client.INamingClient
-	nacosServer *nacos_server.NacosServer
+	opts *options
+	ncp  *vo.NacosClientParam
+	cli  naming_client.INamingClient
 }
 
 // New new a nacos registry.
@@ -59,7 +75,18 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 		return fmt.Errorf("nacos: serviceInstance.name can not be empty")
 	}
 
+	regValMap := map[string]*vo.BatchRegisterInstanceParam{}
+
 	for _, item := range si.Endpoints {
+		batchParam, ok := regValMap[item.ServiceName]
+		if !ok {
+			batchParam = &vo.BatchRegisterInstanceParam{
+				ServiceName: item.ServiceName,
+				GroupName:   r.opts.Group,
+			}
+			regValMap[item.ServiceName] = batchParam
+		}
+
 		u, err := url.Parse(item.EndpointURL)
 		if err != nil {
 			return err
@@ -78,9 +105,15 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 				rmd[k] = v
 			}
 		}
+		rmd["cluster"] = r.opts.Cluster
 		rmd["scheme"] = u.Scheme
 		rmd["version"] = si.Version
-		_, e := r.cli.RegisterInstance(vo.RegisterInstanceParam{
+		rmd["hostname"], _ = os.Hostname()
+		rmd["pkgversion"] = global.PkgVersion
+		rmd["commitid"] = global.GitCommit
+		rmd["buildtime"] = global.BuildTime
+
+		batchParam.Instances = append(batchParam.Instances, vo.RegisterInstanceParam{
 			Ip:          host,
 			Port:        uint64(p),
 			ServiceName: item.ServiceName,
@@ -92,11 +125,14 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 			ClusterName: r.opts.Cluster,
 			GroupName:   r.opts.Group,
 		})
-		if e != nil {
-			return fmt.Errorf("RegisterInstance err %v,%v", e, item.EndpointURL)
+
+	}
+	for _, item := range regValMap {
+		succ, e := r.cli.BatchRegisterInstance(*item)
+		if !succ || e != nil {
+			return fmt.Errorf("BatchRegisterInstance err %v,%v", e, item.ServiceName)
 		}
 	}
-
 	return nil
 }
 
@@ -134,39 +170,26 @@ func (r Registry) Deregister(_ context.Context, service *registry.ServiceInstanc
 
 // Watch creates a watcher according to the service name.
 func (r Registry) Watch(ctx context.Context, serviceName string) (registry.Watcher, error) {
-	return newWatcher(ctx, r.cli, serviceName, r.opts.Group, []string{r.opts.Cluster})
+	return newWatcher(ctx, r.cli, serviceName, r.opts.Group, r.opts.GetClusters())
 }
 
 // GetService return the service instances in memory according to the service name.
-func (r Registry) GetService(_ context.Context, serviceName string) ([]*registry.ServiceInstance, error) {
+func (r Registry) GetService(_ context.Context, serviceName string, opts ...registry.GetServiceOption) ([]*registry.ServiceInstance, error) {
+	getOpt := &registry.GetServiceOptions{HealthyOnly: true}
+	for i := range opts {
+		opts[i](getOpt)
+	}
+
 	res, err := r.cli.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: serviceName,
 		GroupName:   r.opts.Group,
-		Clusters:    []string{r.opts.Cluster},
-		HealthyOnly: true,
+		Clusters:    r.opts.GetClusters(),
+		HealthyOnly: getOpt.HealthyOnly,
 	})
 	if err != nil {
 		return nil, err
 	}
-	items := make([]*registry.ServiceInstance, 0, len(res))
-	for _, in := range res {
-		scheme := in.Metadata["scheme"]
-		if scheme == "" {
-			scheme = "http"
-		}
-		items = append(items, &registry.ServiceInstance{
-			ID:       in.InstanceId,
-			Name:     in.ServiceName,
-			Version:  in.Metadata["version"],
-			Metadata: in.Metadata,
-			Endpoints: []registry.ServerItem{
-				{
-					ServiceName: serviceName,
-					EndpointURL: fmt.Sprintf("%s://%s:%d", scheme, in.Ip, in.Port),
-				},
-			},
-		})
-	}
+	items := buildServiceInstanceList(serviceName, res)
 	return items, nil
 }
 
@@ -185,6 +208,10 @@ func (r Registry) GetAllServicesInfo(ctx context.Context) (list registry.Service
 	list.NameList = make([]string, len(tmplist.Doms))
 	copy(list.NameList, tmplist.Doms)
 	return
+}
+
+func (r Registry) GetOptions() registry.RegistrarOptions {
+	return r.opts
 }
 
 func (r Registry) GetImpl() any {

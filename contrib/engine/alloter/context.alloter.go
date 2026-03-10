@@ -78,10 +78,10 @@ func (ctx *AlloterContext) Header(key string) string {
 func (ctx *AlloterContext) Bind(obj interface{}) error {
 	val := reflect.TypeOf(obj)
 	if val.Kind() != reflect.Ptr {
-		return fmt.Errorf("Bind只接收Ptr类型的数据,目前是:%s", val.Kind())
+		return fmt.Errorf("Bind只接收Ptr类型的数据,当前类型:%s", val.Kind())
 	}
 
-	err := ctx.Request().Body().Scan(obj)
+	err := ctx.Request().Body().ScanTo(obj)
 	if err != nil {
 		return err
 	}
@@ -357,6 +357,16 @@ func (q *abody) loadBody() (err error) {
 		q.bodyBytes = q.actx.Request.Body()
 		q.reader = bytes.NewReader(q.bodyBytes)
 	}
+	return nil
+}
+func (q *abody) Format(f fmt.State, verb rune) {
+	_ = q.loadBody()
+	_, _ = f.Write(q.bodyBytes)
+}
+
+func (q *abody) ResetBytes(bodyBytes []byte) error {
+	q.bodyBytes = bodyBytes
+	q.reader = bytes.NewReader(q.bodyBytes)
 	return nil
 }
 

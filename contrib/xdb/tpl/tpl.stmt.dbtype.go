@@ -1,6 +1,7 @@
 package tpl
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/zhiyunliu/glue/xdb"
@@ -28,16 +29,16 @@ func (processor *DefaultStmtDbTypeProcessor) RegistHandler(handlers ...xdb.StmtD
 	}
 }
 
-func (processor *DefaultStmtDbTypeProcessor) Process(param any, tagOpts xdb.TagOptions) any {
+func (processor *DefaultStmtDbTypeProcessor) Process(fieldName string, param any, fv reflect.Value, tagOpts xdb.TagOptions) (any, error) {
 	argsInfo, ok := tagOpts.GetArgsInfo("dbtype")
 	if !ok {
-		return param
+		return param, nil
 	}
 	dbtype := argsInfo[0]
 
 	v, ok := processor.exprCache.Load(dbtype)
 	if !ok || v == nil {
-		return param
+		return param, nil
 	}
-	return v.(xdb.StmtDbTypeHandler).Handle(param, argsInfo)
+	return v.(xdb.StmtDbTypeHandler).Handle(fieldName, param, fv, argsInfo)
 }

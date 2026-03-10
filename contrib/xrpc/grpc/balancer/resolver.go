@@ -116,6 +116,11 @@ func (r *registrarResolver) watchRegistrar() {
 		err     error
 	)
 	for {
+		select {
+		case <-r.ctx.Done():
+			return
+		default:
+		}
 		watcher, err = r.registrar.Watch(r.ctx, r.serviceName)
 		if err != nil {
 			log.Errorf("grpc:watchRegistrar.Watch=%s.error:%+v", r.serviceName, err)
@@ -131,19 +136,19 @@ func (r *registrarResolver) watchRegistrar() {
 		case <-r.ctx.Done():
 			return
 		default:
-			instances, err := watcher.Next()
-			if err != nil {
-				log.Errorf("grpc:watchResolver.Watch.Next=%s,error:%+v", r.serviceName, err)
-				time.Sleep(time.Second * 2)
-				continue
-			}
-			addresses := r.buildAddress(instances)
-			err = r.clientConn.UpdateState(resolver.State{Addresses: addresses})
-			if err != nil {
-				log.Errorf("grpc:watchResolver.Watch.UpdateState=%s,error:%+v", r.serviceName, err)
-			} else {
-				r.updateLastSrvAddrs(addresses)
-			}
+		}
+		instances, err := watcher.Next()
+		if err != nil {
+			log.Errorf("grpc:watchResolver.Next=%s,error:%+v", r.serviceName, err)
+			time.Sleep(time.Second * 2)
+			continue
+		}
+		addresses := r.buildAddress(instances)
+		err = r.clientConn.UpdateState(resolver.State{Addresses: addresses})
+		if err != nil {
+			log.Errorf("grpc:watchResolver.UpdateState=%s,error:%+v", r.serviceName, err)
+		} else {
+			r.updateLastSrvAddrs(addresses)
 		}
 	}
 }

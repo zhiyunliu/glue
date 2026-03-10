@@ -61,7 +61,7 @@ func (t *Tracer) End(ctx context.Context, span trace.Span, m interface{}) {
 	switch val := m.(type) {
 	case error:
 		if e := errors.FromError(val); e != nil {
-			span.SetAttributes(attribute.Key("status_code").Int64(int64(e.Code)))
+			span.SetAttributes(attribute.Key("status_code").Int(e.GetCode()))
 		}
 		span.SetStatus(codes.Error, val.Error())
 	case int32:

@@ -72,7 +72,7 @@ func (c *Client) ServerStreamProcessor(ctx context.Context, processor xrpc.Serve
 		return err
 	}
 
-	err = processor(&grpcServerStreamRequest{
+	err = processor(ctx, &grpcServerStreamRequest{
 		servicePath:  servicePath,
 		header:       opts.Header,
 		method:       opts.Method,

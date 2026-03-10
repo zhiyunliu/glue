@@ -4,6 +4,12 @@ import (
 	"context"
 )
 
+type RegistrarOptions interface {
+	GetGroup() string
+	GetCluster() string
+	GetClusters() []string
+}
+
 // Registrar is service registrar.
 type Registrar interface {
 	Name() string
@@ -15,12 +21,15 @@ type Registrar interface {
 	Deregister(ctx context.Context, service *ServiceInstance) error
 
 	// GetService return the service instances in memory according to the service name.
-	GetService(ctx context.Context, serviceName string) ([]*ServiceInstance, error)
+	GetService(ctx context.Context, serviceName string, opts ...GetServiceOption) ([]*ServiceInstance, error)
 	// Watch creates a watcher according to the service name.
 	Watch(ctx context.Context, serviceName string) (Watcher, error)
 
 	// GetAllServicesInfo return all services in memory.
 	GetAllServicesInfo(ctx context.Context) (ServiceList, error)
+
+	// GetOptions return the options of the registrar.
+	GetOptions() RegistrarOptions
 
 	// GetImpl return the implementation of the registrar.
 	GetImpl() any
@@ -43,8 +52,10 @@ type ServiceInstance struct {
 	Name     string            `json:"name"`
 	Version  string            `json:"version"`
 	Metadata map[string]string `json:"metadata"`
+	Weight   int64             `json:"weight"`
 	//http://localhost:8000
 	Endpoints []ServerItem `json:"endpoints"`
+	Healthy   bool         `json:"healthy"`
 }
 
 type ServerItem struct {
@@ -55,4 +66,16 @@ type ServerItem struct {
 type ServiceList struct {
 	Count    int64    `json:"count"`
 	NameList []string `json:"name_list"`
+}
+
+type GetServiceOptions struct {
+	HealthyOnly bool
+}
+
+type GetServiceOption func(*GetServiceOptions)
+
+func WithHealthyOnly(healthyOnly bool) GetServiceOption {
+	return func(o *GetServiceOptions) {
+		o.HealthyOnly = healthyOnly
+	}
 }

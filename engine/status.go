@@ -1,9 +1,6 @@
 package engine
 
-import "github.com/zhiyunliu/golibs/xtypes"
-
 type Status string
-type Header xtypes.SMap
 
 const (
 	StatusStart = "start"

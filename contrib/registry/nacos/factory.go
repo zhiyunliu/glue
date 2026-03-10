@@ -2,10 +2,12 @@ package nacos
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
-	"github.com/nacos-group/nacos-sdk-go/clients"
-	"github.com/nacos-group/nacos-sdk-go/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients"
+	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/contrib/nacos"
 	"github.com/zhiyunliu/glue/registry"
@@ -37,9 +39,16 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 		Weight:  100,
 	}
 
-	err = cfg.Value("options").Scan(opts)
+	err = cfg.Value("options").ScanTo(opts)
 	if err != nil {
 		return nil, fmt.Errorf("nacos options error:%+v", err)
+	}
+
+	if len(opts.Group) == 0 {
+		opts.Group = os.Getenv("NACOS_DISCOVERY_GROUP")
+	}
+	if len(opts.Cluster) == 0 {
+		opts.Cluster = os.Getenv("NACOS_DISCOVERY_CLUSTER")
 	}
 
 	addrs := make([]string, 0)
@@ -60,4 +69,37 @@ func (f *nacosFactory) Create(cfg config.Config) (registry.Registrar, error) {
 
 func init() {
 	registry.Register(&nacosFactory{})
+}
+
+func buildServiceInstanceList(serviceName string, instances []model.Instance) []*registry.ServiceInstance {
+
+	items := make([]*registry.ServiceInstance, 0, len(instances))
+	for _, in := range instances {
+		scheme := in.Metadata["scheme"]
+		if scheme == "" {
+			scheme = "http"
+		}
+		rmd := make(map[string]string, len(in.Metadata)+2)
+		rmd["scheme"] = scheme
+		rmd["cluster"] = in.ClusterName
+		for k, v := range in.Metadata {
+			rmd[k] = v
+		}
+
+		items = append(items, &registry.ServiceInstance{
+			ID:       in.InstanceId,
+			Name:     in.ServiceName,
+			Healthy:  in.Healthy,
+			Weight:   int64(in.Weight),
+			Version:  in.Metadata["version"],
+			Metadata: rmd,
+			Endpoints: []registry.ServerItem{
+				{
+					ServiceName: serviceName,
+					EndpointURL: fmt.Sprintf("%s://%s:%d", scheme, in.Ip, in.Port),
+				},
+			},
+		})
+	}
+	return items
 }

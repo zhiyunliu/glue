@@ -2,11 +2,10 @@ package nacos
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/nacos-group/nacos-sdk-go/clients/naming_client"
-	"github.com/nacos-group/nacos-sdk-go/model"
-	"github.com/nacos-group/nacos-sdk-go/vo"
+	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
+	"github.com/nacos-group/nacos-sdk-go/v2/model"
+	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/zhiyunliu/glue/registry"
 )
 
@@ -36,7 +35,7 @@ func newWatcher(ctx context.Context, cli naming_client.INamingClient, serviceNam
 		ServiceName: serviceName,
 		Clusters:    clusters,
 		GroupName:   groupName,
-		SubscribeCallback: func(services []model.SubscribeService, err error) {
+		SubscribeCallback: func(services []model.Instance, err error) {
 			select {
 			case w.watchChan <- struct{}{}:
 			default:
@@ -52,33 +51,17 @@ func (w *watcher) Next() ([]*registry.ServiceInstance, error) {
 		return nil, w.ctx.Err()
 	case <-w.watchChan:
 	}
-	res, err := w.cli.GetService(vo.GetServiceParam{
+	res, err := w.cli.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: w.serviceName,
 		GroupName:   w.groupName,
 		Clusters:    w.clusters,
+		HealthyOnly: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	items := make([]*registry.ServiceInstance, 0, len(res.Hosts))
-	for _, in := range res.Hosts {
-		scheme := in.Metadata["scheme"]
-		if scheme == "" {
-			scheme = "http"
-		}
-		items = append(items, &registry.ServiceInstance{
-			ID:       in.InstanceId,
-			Name:     res.Name,
-			Version:  in.Metadata["version"],
-			Metadata: in.Metadata,
-			Endpoints: []registry.ServerItem{
-				{
-					ServiceName: res.Name,
-					EndpointURL: fmt.Sprintf("%s://%s:%d", scheme, in.Ip, in.Port),
-				},
-			},
-		})
-	}
+
+	items := buildServiceInstanceList(w.serviceName, res)
 	return items, nil
 }
 

@@ -9,4 +9,5 @@ type Body interface {
 	Scan(obj interface{}) error
 	ScanTo(obj interface{}) error
 	Bytes() []byte
+	ResetBytes([]byte) error
 }
