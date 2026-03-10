@@ -181,6 +181,9 @@ func (l *Wraper) Warnf(format string, args ...interface{}) {
 func (l *Wraper) Warn(args ...interface{}) {
 	l.Log(LevelWarn, args...)
 }
+func (l *Wraper) Chain(level Level, msg string, opts ...EventOption) {
+	l.Logger.Chain(level, msg, opts...)
+}
 
 func (l *Wraper) Write(p []byte) (n int, err error) {
 	l.Log(LevelWarn, string(p))

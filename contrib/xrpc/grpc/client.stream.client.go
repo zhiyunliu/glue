@@ -9,7 +9,7 @@ import (
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/errors"
-	"github.com/zhiyunliu/glue/errors/subcode"
+	"github.com/zhiyunliu/glue/errors/constants"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"go.opentelemetry.io/otel/attribute"
@@ -56,7 +56,8 @@ func (c *Client) ClientStreamProcessor(ctx context.Context, processor xrpc.Clien
 
 	clientStream, err := c.client.ClientStreamProcess(ctx, grpcOpts...)
 	if err != nil {
-		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("ClientStream grpc://%s%s,ClientStreamProcess", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
+		inerr := fmt.Errorf("ClientStream grpc://%s%s,BidirectionalStreamProcess,ClientStreamProcess:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return xrpc.NewEmptyBody(), err
 	}
 
@@ -74,7 +75,8 @@ func (c *Client) ClientStreamProcessor(ctx context.Context, processor xrpc.Clien
 	//发送服务分发数据信息
 	err = clientStream.Send(req)
 	if err != nil {
-		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("ClientStream grpc://%s%s,Send", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
+		inerr := fmt.Errorf("ClientStream grpc://%s%s,BidirectionalStreamProcess,Send:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return xrpc.NewEmptyBody(), err
 	}
 
@@ -89,7 +91,9 @@ func (c *Client) ClientStreamProcessor(ctx context.Context, processor xrpc.Clien
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("ClientStream grpc://%s%s,processor", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
+
+		inerr := fmt.Errorf("ClientStream grpc://%s%s,BidirectionalStreamProcess,processor:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return nil, err
 	}
 
@@ -97,7 +101,9 @@ func (c *Client) ClientStreamProcessor(ctx context.Context, processor xrpc.Clien
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("ClientStream grpc://%s%s,CloseAndRecv", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
+
+		inerr := fmt.Errorf("ClientStream grpc://%s%s,BidirectionalStreamProcess,CloseAndRecv:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return nil, err
 	}
 

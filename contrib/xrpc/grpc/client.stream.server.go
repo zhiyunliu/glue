@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/errors"
-	"github.com/zhiyunliu/glue/errors/subcode"
+	"github.com/zhiyunliu/glue/errors/constants"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"go.opentelemetry.io/otel/attribute"
@@ -86,7 +85,8 @@ func (c *Client) ServerStreamProcessor(ctx context.Context, processor xrpc.Serve
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("ServerStream grpc://%s%s,ServerStreamProcess", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
+		inerr := fmt.Errorf("ServerStream grpc://%s%s,BidirectionalStreamProcess,ServerStreamProcess:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return err
 	}
 
@@ -101,7 +101,8 @@ func (c *Client) ServerStreamProcessor(ctx context.Context, processor xrpc.Serve
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		err = errors.New(http.StatusInternalServerError, fmt.Sprintf("ServerStream grpc://%s%s,processor", c.reqPath.Host, servicePath), errors.WithInnerErr(err), errors.WithSubCode(subcode.IsvRemoteRequest))
+		inerr := fmt.Errorf("ServerStream grpc://%s%s,BidirectionalStreamProcess,processor:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return err
 	}
 

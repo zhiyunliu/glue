@@ -220,9 +220,21 @@ func (app *ServiceApp) buildInstance() (*registry.ServiceInstance, error) {
 	if app.options.Id == "" {
 		app.options.Id = session.Create()
 	}
+
+	rmd := make(map[string]string)
+	for k, v := range app.options.Metadata {
+		rmd[k] = v
+	}
+	rmd["hostname"], _ = os.Hostname()
+	rmd["pkgversion"] = global.PkgVersion
+	rmd["commitid"] = global.GitCommit
+	rmd["buildtime"] = global.BuildTime
+	rmd["gluever"] = global.GetGlueVersion()
+	rmd["golibsver"] = global.GetGolibsVersion()
+
 	return &registry.ServiceInstance{
 		ID:        app.options.Id,
-		Metadata:  app.options.Metadata,
+		Metadata:  rmd,
 		Name:      global.AppName,
 		Version:   global.Version,
 		Endpoints: endpoints,

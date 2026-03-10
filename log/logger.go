@@ -26,6 +26,8 @@ type Logger interface {
 	Warn(v ...any)
 	Warnf(format string, v ...any)
 
+	Chain(level Level, msg string, opts ...EventOption)
+
 	Write(p []byte) (n int, err error)
 	Close()
 }

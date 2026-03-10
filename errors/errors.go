@@ -76,6 +76,28 @@ func (x xError) Is(err error) bool {
 	return false
 }
 
+// 根据orgErr克隆一个新的Error，并且可以通过opts覆盖原有的字段值。
+func Clone(orgErr Error, opts ...Option) Error {
+	e := &xError{
+		Code:    orgErr.GetCode(),
+		Message: orgErr.GetMessage(),
+		SubCode: orgErr.GetSubCode(),
+	}
+
+	if xerr, ok := orgErr.(*xError); ok {
+		e.ErrData = xerr.ErrData
+		e.Data = xerr.Data
+		e.innerErr = xerr.innerErr
+		e.statusCode = xerr.statusCode
+	}
+
+	for _, opt := range opts {
+		opt(e)
+	}
+	return e
+}
+
+// 创建一个新的Error
 func New(code int, message string, opts ...Option) Error {
 	e := &xError{
 		Code:    code,
