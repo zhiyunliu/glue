@@ -70,21 +70,6 @@ func (r *Request) Request(ctx sctx.Context, service string, input any, opts ...x
 		nopts[i](opt)
 	}
 
-	if client.setting.Trace {
-		ctx, span := client.tracer.Start(ctx, client.reqPath.Path, opt.Header)
-		defer func() {
-			if err != nil {
-				client.tracer.End(ctx, span, err)
-				return
-			}
-			status := int32(http.StatusOK)
-			if res != nil {
-				status = res.GetStatus()
-			}
-			client.tracer.End(ctx, span, status)
-		}()
-	}
-
 	if opt.StreamProcessor == nil {
 		return client.RequestByString(ctx, input, opt)
 	}

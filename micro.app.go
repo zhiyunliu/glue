@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/zhiyunliu/glue/contrib/engine/alloter"
 	_ "github.com/zhiyunliu/glue/contrib/engine/gin"
+	_ "github.com/zhiyunliu/glue/contrib/metrics/prometheus"
 	"github.com/zhiyunliu/glue/global"
 	_ "github.com/zhiyunliu/xbinding/binding"
 )

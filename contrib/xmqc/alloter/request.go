@@ -2,8 +2,7 @@ package alloter
 
 import (
 	"bytes"
-	sctx "context"
-	"encoding/json"
+	"context"
 	"io"
 	"net/url"
 	"strconv"
@@ -20,14 +19,14 @@ var _ engine.Request = (*Request)(nil)
 
 // Request 处理任务请求
 type Request struct {
-	ctx  sctx.Context
+	ctx  context.Context
 	task *xmqc.Task
 	queue.IMQCMessage
 	method string
 	url    *url.URL
 	params map[string]string
 	header engine.Header
-	body   cbody
+	body   *cbody
 }
 
 // NewRequest 构建任务请求
@@ -37,26 +36,32 @@ func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request) {
 		task:        task,
 		method:      string(engine.MethodPost),
 		params:      make(map[string]string),
+		header:      engine.Header{},
 	}
 
 	//将消息原串转换为map
 	message := m.GetMessage()
 
-	r.header = message.Header()
-	r.body = message.Body()
-	r.ctx = sctx.Background()
-	r.header["retry_count"] = strconv.FormatInt(m.RetryCount(), 10)
-	r.header["x-xmqc-msg-id"] = m.MessageId()
-	r.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
+	mheader := message.Header()
+	if len(mheader) > 0 {
+		for k, v := range mheader {
+			r.header.Set(k, v)
+		}
+	}
+	r.body = &cbody{bytes: message.Body()}
+	r.ctx = context.Background()
+	r.header.Set("retry_count", strconv.FormatInt(m.RetryCount(), 10))
+	r.header.Set("x-xmqc-msg-id", m.MessageId())
+	r.header.Set(constants.ContentTypeName, constants.ContentTypeApplicationJSON)
 
 	return r
 }
 
 func (m Request) GetSid() string {
-	if m.header[constants.HeaderRequestId] == "" {
-		m.header[constants.HeaderRequestId] = session.Create()
+	if m.header.Get(constants.HeaderRequestId) == "" {
+		m.header.Set(constants.HeaderRequestId, session.Create())
 	}
-	return m.header[constants.HeaderRequestId]
+	return m.header.Get(constants.HeaderRequestId)
 }
 
 // GetName 获取任务名称
@@ -91,17 +96,17 @@ func (m *Request) GetHeader() engine.Header {
 }
 
 func (m *Request) Body() []byte {
-	return m.body
+	return m.body.bytes
 }
 
 func (m *Request) GetRemoteAddr() string {
-	return m.header[constants.HeaderRemoteHeader]
+	return m.header.Get(constants.HeaderRemoteHeader)
 }
 
-func (m *Request) Context() sctx.Context {
+func (m *Request) Context() context.Context {
 	return m.ctx
 }
-func (m *Request) WithContext(ctx sctx.Context) {
+func (m *Request) WithContext(ctx context.Context) {
 	m.ctx = ctx
 }
 
@@ -110,12 +115,22 @@ type Body interface {
 	Scan(obj interface{}) error
 }
 
-type cbody []byte
+var (
+	_ io.Reader = (*cbody)(nil)
+)
 
-func (b cbody) Read(p []byte) (n int, err error) {
-	return bytes.NewReader(b).Read(p)
+type cbody struct {
+	reader *bytes.Reader
+	bytes  []byte
 }
 
-func (b cbody) Scan(obj interface{}) error {
-	return json.Unmarshal(b, obj)
+func (b *cbody) Bytes() []byte {
+	return b.bytes
+}
+
+func (b *cbody) Read(p []byte) (n int, err error) {
+	if b.reader == nil {
+		b.reader = bytes.NewReader(b.bytes)
+	}
+	return b.reader.Read(p)
 }

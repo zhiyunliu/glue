@@ -3,6 +3,7 @@ package xdb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/zhiyunliu/glue/contrib/xdb/implement"
@@ -75,7 +76,7 @@ func (db *xTrans) Exec(ctx context.Context, sql string, input any, opts ...xdb.T
 
 	start := time.Now()
 	debugPrint(ctx, db.cfg, query, execArgs...)
-	r, err = db.tx.Execute(query, execArgs...)
+	r, err = db.tx.Execute(ctx, query, execArgs...)
 	if err != nil {
 		return nil, implement.GetError(err, query, execArgs...)
 	}
@@ -92,7 +93,13 @@ func (db *xTrans) QueryAs(ctx context.Context, sqls string, input any, results a
 
 func (db *xTrans) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, a any) error {
-		return implement.ResolveFirstDataResult(db.proto, r, result)
+		if ierr := implement.ResolveFirstDataResult(db.proto, r, result); ierr != nil {
+			if errors.Is(ierr, xdb.ErrEmptyError) {
+				return nil
+			}
+			return ierr
+		}
+		return nil
 	}, opts...)
 }
 
@@ -121,7 +128,7 @@ func (db *xTrans) dbQuery(ctx context.Context, sql string, input any, callback i
 	start := time.Now()
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
-	rows, err := db.tx.Query(query, execArgs...)
+	rows, err := db.tx.Query(ctx, query, execArgs...)
 	if err != nil {
 		return nil, implement.GetError(err, query, execArgs...)
 	}
@@ -150,7 +157,7 @@ func (db *xTrans) dbQueryAs(ctx context.Context, sql string, input any, result a
 	start := time.Now()
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
-	rows, err := db.tx.Query(query, execArgs...)
+	rows, err := db.tx.Query(ctx, query, execArgs...)
 	if err != nil {
 		return implement.GetError(err, query, execArgs...)
 	}

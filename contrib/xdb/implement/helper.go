@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -97,6 +98,8 @@ func ResolveFirstDataResult(proto string, rows *sql.Rows, result any) (err error
 				return
 			}
 			err = scanIntoMap(mapval, values, columns)
+		} else {
+			return xdb.ErrEmptyError
 		}
 
 	case reflect.Struct:
@@ -112,6 +115,8 @@ func ResolveFirstDataResult(proto string, rows *sql.Rows, result any) (err error
 				return
 			}
 			err = scanInToStruct(fields, rv, columns, values)
+		} else {
+			return xdb.ErrEmptyError
 		}
 	default:
 		return &xdb.InvalidArgTypeError{Type: rv.Type()}
@@ -123,6 +128,11 @@ func ResolveFirstDataResult(proto string, rows *sql.Rows, result any) (err error
 func ResolveRowsDataResult(proto string, rows *sql.Rows, result any) (err error) {
 
 	rv := reflect.ValueOf(result)
+
+	if reader := xdb.GetRowDataReader(result); reader != nil {
+		return resolveRowsToReader(proto, rows, reader)
+	}
+
 	if rv.Kind() != reflect.Pointer {
 		return &xdb.InvalidArgTypeError{Type: rv.Type()}
 	}
@@ -345,7 +355,11 @@ func scanInToStruct(fields *xreflect.StructFields, rv reflect.Value, cols []stri
 		}
 		err = fields.Dencode(rv, col, vrf.Interface())
 		if err != nil {
-			err = xdb.NewError(fmt.Errorf("field:%s,val:%+v,err:%w", col, vals[i], err), "", nil)
+			targetType := ""
+			if fieldType, ok := fields.GetFieldType(col); ok {
+				targetType = fieldType.Kind().String()
+			}
+			err = xdb.NewError(fmt.Errorf("xdb.Dencode:field:%s,val:%+v,targetType:%s,err:%w", col, vrf.Interface(), targetType, err), "", nil)
 			return
 		}
 
@@ -436,4 +450,21 @@ func resolveRowsToMap(proto string, rows *sql.Rows, itemType reflect.Type) (refl
 		}
 	}
 	return
+}
+
+func resolveRowsToReader(proto string, rows *sql.Rows, reader xdb.RowDataReader) (err error) {
+	rowItem := reader.GetRowItem()
+	defer reader.Close()
+	for {
+		err = ResolveFirstDataResult(proto, rows, rowItem)
+		if err != nil {
+			if errors.Is(err, xdb.ErrEmptyError) {
+				return nil
+			}
+			return
+		}
+		if err = reader.FillRowItem(rowItem); err != nil {
+			return
+		}
+	}
 }

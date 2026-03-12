@@ -57,12 +57,12 @@ func (e *Server) Name() string {
 	return e.name
 }
 
-func (e *Server) Config(cfg config.Config) {
+func (e *Server) Config(cfg config.Config) error {
 	if cfg == nil {
-		return
+		return nil
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(fmt.Sprintf("servers.%s", e.Name())).ScanTo(e.opts.srvCfg)
+	return cfg.Get(fmt.Sprintf("servers.%s", e.Name())).ScanTo(e.opts.srvCfg)
 }
 
 // Start 开始

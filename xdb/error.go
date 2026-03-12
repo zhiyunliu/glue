@@ -1,6 +1,7 @@
 package xdb
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -11,6 +12,10 @@ const (
 	MissTypeOper       = "oper"
 	MissTypeSymbol     = "symbol"
 	MissDataTypeSymbol = "datatype"
+)
+
+var (
+	ErrEmptyError = errors.New("empty")
 )
 
 type DbError interface {
@@ -251,5 +256,23 @@ func NewPanicError(err error, strace string) error {
 	return &xDBError{
 		innerError: err,
 		stackTrace: strace,
+	}
+}
+
+type xOperNormalizeError struct {
+	propName string
+	value    any
+	message  string
+}
+
+func (e xOperNormalizeError) Error() string {
+	return fmt.Sprintf("Operator参数格式化错误:[%s]=[%v],%s", e.propName, e.value, e.message)
+}
+
+func NewOperNormalizeError(propName string, value any, message string) error {
+	return &xOperNormalizeError{
+		propName: propName,
+		value:    value,
+		message:  message,
 	}
 }

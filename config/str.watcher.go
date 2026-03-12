@@ -19,10 +19,8 @@ func newStrWatcher(f *strSource) (Watcher, error) {
 }
 
 func (w *strWatcher) Next() ([]*KeyValue, error) {
-	select {
-	case <-w.ctx.Done():
-		return nil, w.ctx.Err()
-	}
+	<-w.ctx.Done()
+	return nil, w.ctx.Err()
 }
 
 func (w *strWatcher) Stop() error {

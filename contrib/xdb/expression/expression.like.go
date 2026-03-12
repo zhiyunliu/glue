@@ -35,7 +35,7 @@ func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption
 		opts[i](mopts)
 	}
 
-	const pattern = `[&|\|](({(like|not\s*like)\s+(%?\w+(\.\w+)?%?)})|({(\w+(\.\w+)?)\s+(like|not\s*like)\s+(%?\w+%?)}))`
+	pattern := LikePattern
 
 	matcher := &likeExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
@@ -109,24 +109,21 @@ func (m *likeExpressionMatcher) MatchString(expression string) (valuer xdb.Expre
 	propName = strings.Trim(propName, SPEC_CHAR)
 
 	item := &xdb.ExpressionItem{
-		Symbol:    getExpressionSymbol(m.symbolMap, expression),
+		Symbol:    GetExpressionSymbol(m.symbolMap, expression),
 		Matcher:   m,
 		Oper:      oper,
 		FullField: fullkey,
-		PropName:  getExpressionPropertyName(propName),
+		PropName:  GetExpressionPropertyName(propName),
 	}
 	item.ExpressionBuildCallback = m.defaultBuildCallback()
 	if m.buildCallback != nil {
 		item.ExpressionBuildCallback = m.buildCallback
 	}
 	m.expressionCache.Store(expression, item)
-
 	return item, ok
 }
-
 func (m *likeExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
 	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
-
 		propName := item.GetPropName()
 		value, err := param.GetVal(propName)
 		if err != nil {
@@ -141,9 +138,19 @@ func (m *likeExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallba
 			return
 		}
 
-		phName := state.AppendExpr(propName, value)
+		normalizeCall, ok := item.GetOperValueNormalizeCallback()
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		value, err = normalizeCall(item, param, value)
+		if err != nil {
+			return
+		}
 
-		operCallback, ok := item.GetOperatorCallback()
+		phName := state.AppendExpr(item, value)
+
+		operCallback, ok := item.GetOperExprCallback()
 		if !ok {
 			err = xdb.NewMissOperError(item.GetOper())
 			return
@@ -151,41 +158,38 @@ func (m *likeExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallba
 		return operCallback(item, param, phName, value), nil
 	}
 }
-
 func (m *likeExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
-
 	operList := []xdb.Operator{
 		xdb.NewOperator("like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like %s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("%like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like '%%'+%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
-
+		}, nil),
 		xdb.NewOperator("like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like %s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("%like%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like '%%'+%s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("notlike", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s not like %s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("%notlike", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s not like '%%'+%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("notlike%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s not like %s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("%notlike%", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s not like '%%'+%s+'%%'", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 	}
 
 	if optMap != nil {
@@ -195,5 +199,4 @@ func (m *likeExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Opera
 		})
 	}
 	return xdb.NewOperatorMap(operList...)
-
 }

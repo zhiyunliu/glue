@@ -20,6 +20,10 @@ type dbWrap struct {
 }
 
 func (d *dbWrap) Begin() (xdb.ITrans, error) {
+	return d.BeginTx(context.Background())
+}
+
+func (d *dbWrap) BeginTx(ctx context.Context) (xdb.ITrans, error) {
 	txdb := d.gromDB.Begin()
 	return &transWrap{
 		gromDB: txdb,
@@ -115,7 +119,7 @@ func (db *dbWrap) FirstAs(ctx context.Context, sqls string, input any, result an
 }
 
 // Transaction 执行事务
-func (d *dbWrap) Transaction(callback xdb.TransactionCallback) (err error) {
+func (d *dbWrap) Transaction(ctx context.Context, callback xdb.TransactionCallback) (err error) {
 	txdb := d.gromDB.Begin()
 	tt := &transWrap{
 		gromDB: txdb,
@@ -135,12 +139,12 @@ func (d *dbWrap) Transaction(callback xdb.TransactionCallback) (err error) {
 			err = xdb.NewPanicError(rerr, string(buf))
 		}
 	}()
-	err = callback(tt)
+	err = callback(ctx, tt)
 	if err != nil {
 		tt.Rollback()
 		return
 	}
-	tt.Commit()
+	err = tt.Commit()
 	return
 }
 

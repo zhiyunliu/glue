@@ -8,7 +8,7 @@ func initSqlState() {
 
 type DefaultSqlState struct {
 	tplOpts     *xdb.TemplateOptions
-	names       []string
+	names       []xdb.ExprName
 	values      []any
 	placeholder xdb.Placeholder
 	dynamicType xdb.DynamicType
@@ -20,7 +20,7 @@ func NewDefaultSqlState(ph xdb.Placeholder) xdb.SqlState {
 	}
 }
 
-func (s *DefaultSqlState) GetNames() []string {
+func (s *DefaultSqlState) GetNames() []xdb.ExprName {
 	return s.names
 }
 
@@ -40,15 +40,18 @@ func (s *DefaultSqlState) HasDynamic(val xdb.DynamicType) bool {
 	return s.dynamicType&val > 0
 }
 
-func (s *DefaultSqlState) AppendExpr(propName string, value any) (phName string) {
+func (s *DefaultSqlState) AppendExpr(exprValuer xdb.ExprName, value any) (phName string) {
+
+	propName := exprValuer.GetPropName()
 
 	argName, phName := s.placeholder.Get(propName)
 	value = s.placeholder.BuildArgVal(argName, value)
 
-	s.names = append(s.names, propName)
+	s.names = append(s.names, exprValuer)
 	s.values = append(s.values, value)
 	return phName
 }
+
 func (s *DefaultSqlState) CanCache() bool {
 	return !(s.HasDynamic(xdb.DynamicAnd) ||
 		s.HasDynamic(xdb.DynamicOr) ||
@@ -84,16 +87,27 @@ func (s *DefaultSqlState) Reset() {
 
 type defaultSqlTemplateCache struct {
 	sql   string
-	names []string
+	names []xdb.ExprName
 }
 
 func (stc *defaultSqlTemplateCache) Build(state xdb.SqlState, input xdb.DBParam) (sql string, err error) {
-	for _, name := range stc.names {
-		val, err := input.GetVal(name)
+	for _, expr := range stc.names {
+		val, err := input.GetVal(expr.GetPropName())
 		if err != nil {
 			return "", err
 		}
-		state.AppendExpr(name, val)
+
+		operator, ok := expr.GetMatcher().GetOperatorMap().Load(expr.GetOper())
+		if !ok {
+			state.AppendExpr(expr, val)
+
+		} else {
+			newVal, err := operator.NormalizeValue(expr, input, val)
+			if err != nil {
+				return "", err
+			}
+			state.AppendExpr(expr, newVal)
+		}
 	}
 	return stc.sql, nil
 }

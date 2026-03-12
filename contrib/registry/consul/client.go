@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/registry"
 
@@ -114,10 +112,6 @@ func (c *Client) Register(_ context.Context, svc *registry.ServiceInstance, enab
 	}
 
 	rmd["version"] = svc.Version
-	rmd["hostname"], _ = os.Hostname()
-	rmd["pkgversion"] = global.PkgVersion
-	rmd["commitid"] = global.GitCommit
-	rmd["buildtime"] = global.BuildTime
 
 	asr := &api.AgentServiceRegistration{
 		ID:              svc.ID,

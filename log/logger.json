@@ -1,1 +1,1 @@
-{"enable":true,"layout":{"file":{"level":"i","path":"../log/%ndate/%level/%hh.log","content":"[%datetime][%l][%session][%idx][@cip][@uid] %content"}}}
+{"enable":true,"layout":{"file":{"level":"i","path":"../log/%ndate/%level/%hh.log","content":"[%datetime][%l][%session][%idx] %content"}}}

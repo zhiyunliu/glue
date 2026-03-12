@@ -1,9 +1,9 @@
 package errors
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 )
 
 var _ Error = (*xError)(nil)
@@ -12,14 +12,8 @@ const (
 	UnknownCode = 500
 )
 
-type Option func(*xError)
-
 type IgnoreError interface {
 	Ignore() bool
-}
-
-type InnerError interface {
-	GetInner() error
 }
 
 type Response interface {
@@ -31,14 +25,6 @@ type Error interface {
 	error
 	Response
 	GetMessage() string
-}
-
-type ErrorExt interface {
-	Error
-	InnerError
-	GetStatusCode() int
-	GetData() any
-	GetErrData() map[string]any
 }
 
 type xError struct {
@@ -58,6 +44,7 @@ func (x xError) GetCode() int {
 func (x xError) GetSubCode() string {
 	return x.SubCode
 }
+
 func (x xError) GetMessage() string {
 	return x.Message
 }
@@ -66,9 +53,6 @@ func (x xError) GetInner() error {
 	return x.innerErr
 }
 
-func (x xError) Error() string {
-	return fmt.Sprintf("error:code=%d,subcode=%s,message=%s,errdata=%+v,inner=%s", x.Code, x.SubCode, x.Message, x.ErrData, x.innerErr)
-}
 func (x xError) GetStatusCode() int {
 	return x.statusCode
 }
@@ -80,8 +64,11 @@ func (x xError) GetErrData() map[string]any {
 	return x.ErrData
 }
 
-func (x xError) Is(err error) bool {
+func (x xError) Error() string {
+	return fmt.Sprintf("error:code=%d,subcode=%s,message=%s,errdata=%+v,inner=%s", x.Code, x.SubCode, x.Message, x.ErrData, x.innerErr)
+}
 
+func (x xError) Is(err error) bool {
 	var tmp Error
 	if As(err, &tmp) {
 		return tmp.GetCode() == x.Code
@@ -89,47 +76,28 @@ func (x xError) Is(err error) bool {
 	return false
 }
 
-func (e xError) Format(f fmt.State, verb rune) {
-	bytes, err := json.Marshal(e)
-	if err != nil {
-		return
+// 根据orgErr克隆一个新的Error，并且可以通过opts覆盖原有的字段值。
+func Clone(orgErr Error, opts ...Option) Error {
+	e := &xError{
+		Code:    orgErr.GetCode(),
+		Message: orgErr.GetMessage(),
+		SubCode: orgErr.GetSubCode(),
 	}
-	_, _ = f.Write(bytes)
+
+	if xerr, ok := orgErr.(*xError); ok {
+		e.ErrData = xerr.ErrData
+		e.Data = xerr.Data
+		e.innerErr = xerr.innerErr
+		e.statusCode = xerr.statusCode
+	}
+
+	for _, opt := range opts {
+		opt(e)
+	}
+	return e
 }
 
-// StatusCode 获取http状态码
-func (e xError) StatusCode() int {
-	return e.GetStatusCode()
-}
-
-// Header 获取响应头
-func (e xError) Header() map[string]string {
-	return map[string]string{
-		"Content-Type": "application/json; charset=utf-8",
-	}
-}
-
-// Body 获取响应体
-func (e xError) Body() (bytes []byte, err error) {
-	respData := map[string]any{
-		"code":    e.GetCode(),
-		"message": e.GetMessage(),
-	}
-	if e.SubCode != "" {
-		respData["sub_code"] = e.SubCode
-	}
-
-	if data := e.GetData(); data != nil {
-		respData["data"] = data
-	}
-
-	if e.ErrData != nil {
-		respData["errdata"] = e.ErrData
-	}
-
-	return json.Marshal(respData)
-}
-
+// 创建一个新的Error
 func New(code int, message string, opts ...Option) Error {
 	e := &xError{
 		Code:    code,
@@ -149,7 +117,7 @@ func Errorf(code int, format string, a ...interface{}) error {
 // It supports wrapped errors.
 func Code(err error) int {
 	if err == nil {
-		return 200 //nolint:gomnd
+		return http.StatusOK //nolint:gomnd
 	}
 	if xerr, ok := err.(Error); ok {
 		return xerr.GetCode()
@@ -163,7 +131,7 @@ func Code(err error) int {
 	return UnknownCode
 }
 
-// FromError try to convert an error to *Error.
+// FromError try to convert an error to *xError.
 // It supports wrapped errors.
 func FromError(err error) Error {
 	if err == nil {

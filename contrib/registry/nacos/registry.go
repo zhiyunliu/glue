@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-	"os"
 	"strconv"
 
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 
-	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/registry"
 )
 
@@ -108,10 +106,6 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 		rmd["cluster"] = r.opts.Cluster
 		rmd["scheme"] = u.Scheme
 		rmd["version"] = si.Version
-		rmd["hostname"], _ = os.Hostname()
-		rmd["pkgversion"] = global.PkgVersion
-		rmd["commitid"] = global.GitCommit
-		rmd["buildtime"] = global.BuildTime
 
 		batchParam.Instances = append(batchParam.Instances, vo.RegisterInstanceParam{
 			Ip:          host,

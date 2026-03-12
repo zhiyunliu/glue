@@ -7,19 +7,22 @@ import (
 	"sync"
 
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/errors/constants"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 var _ xrpc.ServerStreamClient = (*grpcServerStreamRequest)(nil)
 
 type grpcServerStreamRequest struct {
 	servicePath  string
-	header       xtypes.SMap
+	header       engine.Header
 	method       string
 	streamClient grpcproto.GRPC_ServerStreamProcessClient
 	onceLock     sync.Once
+	RecvCount    int
 }
 
 func (c *grpcServerStreamRequest) Recv(obj any, opts ...xrpc.StreamRevcOption) (closed bool, err error) {
@@ -29,6 +32,7 @@ func (c *grpcServerStreamRequest) Recv(obj any, opts ...xrpc.StreamRevcOption) (
 	for _, o := range opts {
 		o(&opt)
 	}
+	c.RecvCount++
 	resp, err := c.streamClient.Recv()
 	if err != nil {
 		if err.Error() != "EOF" {
@@ -62,13 +66,17 @@ func (c *Client) ServerStreamProcessor(ctx context.Context, processor xrpc.Serve
 		bodyBytes, _ = json.Marshal(t)
 	}
 
-	serverStream, err := c.client.ServerStreamProcess(ctx, &grpcproto.Request{
+	req := &grpcproto.Request{
 		Method:  opts.Method,
 		Service: servicePath,
 		Header:  opts.Header,
 		Body:    bodyBytes,
-	}, grpcOpts...)
+	}
+
+	serverStream, err := c.client.ServerStreamProcess(ctx, req, grpcOpts...)
 	if err != nil {
+		inerr := fmt.Errorf("ServerStream grpc://%s%s,BidirectionalStreamProcess,ServerStreamProcess:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return err
 	}
 
@@ -78,6 +86,9 @@ func (c *Client) ServerStreamProcessor(ctx context.Context, processor xrpc.Serve
 		method:       opts.Method,
 		streamClient: serverStream,
 	})
-
+	if err != nil {
+		inerr := fmt.Errorf("ServerStream grpc://%s%s,BidirectionalStreamProcess,processor:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
+	}
 	return err
 }

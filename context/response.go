@@ -1,7 +1,7 @@
 package context
 
 type Response interface {
-	Status(int)
+	StatusCode(int)
 	GetStatusCode() int
 	GetHeader(key string) string
 	Header(key, val string)
@@ -9,6 +9,7 @@ type Response interface {
 	WriteBytes([]byte) error
 	ContentType() string
 	ResponseBytes() []byte
+	Size() int
 	Redirect(statusCode int, location string)
 	Flush() error
 }

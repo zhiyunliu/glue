@@ -9,6 +9,8 @@ import (
 	"github.com/nacos-group/nacos-sdk-go/v2/common/logger"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/golibs/xenv"
+	"github.com/zhiyunliu/golibs/xtransform"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -65,6 +67,22 @@ func GetClientParam(cfg config.Config) (param *vo.NacosClientParam, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("nacos ServerConfig Scan:%+v", err)
 	}
+
+	clientConfig.Username = xtransform.TranslateCallback(clientConfig.Username, func(param string) string {
+		val := xenv.Get(param)
+		if len(val) > 0 {
+			return val
+		}
+		return ""
+	})
+
+	clientConfig.Password = xtransform.TranslateCallback(clientConfig.Password, func(param string) string {
+		val := xenv.Get(param)
+		if len(val) > 0 {
+			return val
+		}
+		return ""
+	})
 
 	ncc := &constant.ClientConfig{}
 

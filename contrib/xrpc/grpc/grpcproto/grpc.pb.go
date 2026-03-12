@@ -7,11 +7,13 @@
 package grpcproto
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	"github.com/zhiyunliu/glue/engine"
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -26,7 +28,7 @@ type Request struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Service       string                 `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`                                                                         // 服务名称
 	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"`                                                                           // 请求方法, GET
-	Header        map[string]string      `protobuf:"bytes,3,rep,name=header,proto3" json:"header,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 请求头信息 map[string]string
+	Header        engine.Header          `protobuf:"bytes,3,rep,name=header,proto3" json:"header,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 请求头信息 map[string]string
 	Body          []byte                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`                                                                               // 请求参数 json
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -94,7 +96,7 @@ func (x *Request) GetBody() []byte {
 type Response struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        int32                  `protobuf:"varint,1,opt,name=status,proto3" json:"status,omitempty"`                                                                          // 状态码
-	Headers        map[string]string      `protobuf:"bytes,2,rep,name=header,proto3" json:"header,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 返回头信息，map[string]string
+	Headers       map[string]string      `protobuf:"bytes,2,rep,name=header,proto3" json:"header,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 返回头信息，map[string]string
 	Result        []byte                 `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`                                                                           // 返回结果，default=json,according to content-type
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -129,8 +131,6 @@ func (x *Response) ProtoReflect() protoreflect.Message {
 func (*Response) Descriptor() ([]byte, []int) {
 	return file_grpc_proto_rawDescGZIP(), []int{1}
 }
-
- 
 
 var File_grpc_proto protoreflect.FileDescriptor
 

@@ -16,6 +16,8 @@ var (
 )
 
 type TagOptions = xreflect.TagOptions
+
+// type StmtDbTypeWrap = func(param any, opt TagOptions) any
 type StmtDbTypeWrap = func(field string, param any, fv reflect.Value, opt TagOptions) (any, error)
 
 // Template 模板上下文
@@ -34,7 +36,7 @@ type SQLTemplate interface {
 	GetSqlState(*TemplateOptions) SqlState
 	//sql状态释放
 	ReleaseSqlState(SqlState)
-	//sql参数处理
+	//StmtDbTypeWrap(param any, opt TagOptions) any
 	StmtDbTypeWrap(fieldName string, param any, fv reflect.Value, opt TagOptions) (any, error)
 }
 

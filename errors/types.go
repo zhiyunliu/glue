@@ -3,8 +3,11 @@ package errors
 
 import "net/http"
 
-func BadRequest(message string, opts ...Option) Error {
-	return New(http.StatusBadRequest, message, opts...)
+func BadRequest(subcode, message string, opts ...Option) Error {
+	tmpOpts := make([]Option, 0, 1+len(opts))
+	tmpOpts = append(tmpOpts, WithSubCode(subcode))
+	tmpOpts = append(tmpOpts, opts...)
+	return New(http.StatusBadRequest, message, tmpOpts...)
 }
 
 func IsBadRequest(err error) bool {
@@ -23,7 +26,7 @@ func Forbidden(message string, opts ...Option) Error {
 	return New(http.StatusForbidden, message, opts...)
 }
 
-func IsForbidden(err error, opts ...Option) bool {
+func IsForbidden(err error) bool {
 	return Code(err) == http.StatusForbidden
 }
 

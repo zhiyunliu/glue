@@ -13,6 +13,12 @@ import (
 	"github.com/zhiyunliu/glue/selector"
 )
 
+type SelectorWrapper interface {
+	selector.Selector
+	ServiceName() string
+	ResolveNow()
+}
+
 type httpSelector struct {
 	ctx         context.Context
 	serviceName string
@@ -21,11 +27,13 @@ type httpSelector struct {
 
 	waitGroup      *sync.WaitGroup
 	resolveNowChan chan struct{}
+	firstFunc      *sync.Once
+	firstChan      chan struct{}
 }
 
-var _ selector.Selector = (*httpSelector)(nil)
+var _ SelectorWrapper = (*httpSelector)(nil)
 
-func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url.URL, selectorName string) (selector.Selector, error) {
+func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url.URL, selectorName string) (SelectorWrapper, error) {
 	tmpselector, err := selector.GetSelector(selectorName)
 	if err != nil {
 		return nil, err
@@ -37,11 +45,14 @@ func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url
 		serviceName:    reqPath.Host,
 		resolveNowChan: make(chan struct{}, 1),
 		waitGroup:      &sync.WaitGroup{},
+		firstFunc:      &sync.Once{},
+		firstChan:      make(chan struct{}),
 	}
 	rr.selector = tmpselector
 	if strings.EqualFold(reqPath.Scheme, "xhttp") {
 		rr.doWatch()
-		rr.resolveNow()
+		rr.ResolveNow()
+		<-rr.firstChan
 	} else {
 		rr.Apply(rr.buildOriginAddress(reqPath))
 	}
@@ -65,7 +76,7 @@ func (r *httpSelector) Nodes() (nodes []selector.Node) {
 }
 
 // resolveNow resolves immediately
-func (r *httpSelector) resolveNow() {
+func (r *httpSelector) ResolveNow() {
 	r.resolveNowChan <- struct{}{}
 }
 
@@ -117,6 +128,7 @@ func (r *httpSelector) watchResolver() {
 		instances, err := r.registrar.GetService(r.ctx, r.serviceName)
 		if err != nil {
 			log.Errorf("xhttp:watchResolver.GetService=%s,error:%+v", r.serviceName, err)
+			time.Sleep(time.Second)
 			continue
 		}
 		addresses := r.buildAddress(instances)
@@ -125,6 +137,10 @@ func (r *httpSelector) watchResolver() {
 			continue
 		}
 		r.Apply(addresses)
+
+		r.firstFunc.Do(func() {
+			close(r.firstChan)
+		})
 	}
 }
 
@@ -146,7 +162,7 @@ func (r *httpSelector) watchRegistrar() {
 		watcher, err = r.registrar.Watch(r.ctx, r.serviceName)
 		if err != nil {
 			log.Errorf("xhttp:watchRegistrar.Watch=%s.error:%+v", r.serviceName, err)
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Second)
 			continue
 		}
 		break
@@ -161,7 +177,7 @@ func (r *httpSelector) watchRegistrar() {
 		instances, err := watcher.Next()
 		if err != nil {
 			log.Errorf("xhttp:watchRegistrar.Next=%s,error:%+v", r.serviceName, err)
-			time.Sleep(time.Second * 2)
+			time.Sleep(time.Second)
 			continue
 		}
 		addresses := r.buildAddress(instances)

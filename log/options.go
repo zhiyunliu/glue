@@ -15,6 +15,7 @@ var (
 )
 
 type Option = xlog.Option
+type EventOption = xlog.EventOption
 type ServerOption func(opt *Options)
 
 type Options struct {

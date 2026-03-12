@@ -3,6 +3,7 @@ package xdb
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"runtime"
 	"time"
@@ -116,7 +117,7 @@ func (db *xDB) Exec(ctx context.Context, sql string, input any, opts ...xdb.Temp
 
 	start := time.Now()
 	debugPrint(ctx, db.cfg, query, execArgs...)
-	r, err = db.db.Exec(query, execArgs...)
+	r, err = db.db.Exec(ctx, query, execArgs...)
 	if err != nil {
 		return r, implement.GetError(err, query, execArgs...)
 	}
@@ -134,36 +135,35 @@ func (db *xDB) QueryAs(ctx context.Context, sqls string, input any, results any,
 
 func (db *xDB) FirstAs(ctx context.Context, sqls string, input any, result any, opts ...xdb.TemplateOption) (err error) {
 	return db.dbQueryAs(ctx, sqls, input, result, func(r *sql.Rows, val any) error {
-		return implement.ResolveFirstDataResult(db.proto, r, val)
+		if ierr := implement.ResolveFirstDataResult(db.proto, r, val); ierr != nil {
+			if errors.Is(ierr, xdb.ErrEmptyError) {
+				return nil
+			}
+			return ierr
+		}
+		return nil
 	}, opts...)
 }
 
 // Begin 创建事务
 func (db *xDB) Begin() (t xdb.ITrans, err error) {
-	tt := &xTrans{
-		cfg: db.cfg,
-	}
-	tt.tx, err = db.db.Begin()
-	if err != nil {
-		return
-	}
-	tt.tpl = db.tpl
-	return tt, nil
+	return db.BeginTx(context.Background())
+}
+
+func (db *xDB) BeginTx(ctx context.Context) (t xdb.ITrans, err error) {
+	return db.createTrans(ctx)
 }
 
 // Transaction 执行事务
-func (db *xDB) Transaction(callback xdb.TransactionCallback) (err error) {
-	tt := &xTrans{
-		cfg: db.cfg,
-	}
-	tt.tx, err = db.db.Begin()
+func (db *xDB) Transaction(ctx context.Context, callback xdb.TransactionCallback) (err error) {
+
+	tx, err := db.createTrans(ctx)
 	if err != nil {
 		return
 	}
-	tt.tpl = db.tpl
 	defer func() {
 		if robj := recover(); robj != nil {
-			tt.Rollback()
+			_ = tx.Rollback()
 			rerr, ok := robj.(error)
 			if !ok {
 				rerr = fmt.Errorf("%+v", robj)
@@ -174,12 +174,12 @@ func (db *xDB) Transaction(callback xdb.TransactionCallback) (err error) {
 			err = xdb.NewPanicError(rerr, string(buf))
 		}
 	}()
-	err = callback(tt)
+	err = callback(ctx, tx)
 	if err != nil {
-		tt.Rollback()
+		_ = tx.Rollback()
 		return
 	}
-	tt.Commit()
+	err = tx.Commit()
 	return
 }
 
@@ -203,7 +203,7 @@ func (db *xDB) dbQuery(ctx context.Context, sql string, input any, callback impl
 	start := time.Now()
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
-	rows, err := db.db.Query(query, execArgs...)
+	rows, err := db.db.Query(ctx, query, execArgs...)
 	if err != nil {
 		return nil, implement.GetError(err, query, execArgs...)
 	}
@@ -232,7 +232,7 @@ func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any,
 	start := time.Now()
 
 	debugPrint(ctx, db.cfg, query, execArgs...)
-	rows, err := db.db.Query(query, execArgs...)
+	rows, err := db.db.Query(ctx, query, execArgs...)
 	if err != nil {
 		return implement.GetError(err, query, execArgs...)
 	}
@@ -244,4 +244,17 @@ func (db *xDB) dbQueryAs(ctx context.Context, sql string, input any, result any,
 	printSlowQuery(ctx, db.cfg, time.Since(start), query, execArgs...)
 	err = callback(rows, result)
 	return
+}
+
+func (db *xDB) createTrans(ctx context.Context) (t xdb.ITrans, err error) {
+	tt := &xTrans{
+		cfg:   db.cfg,
+		proto: db.proto,
+	}
+	tt.tx, err = db.db.BeginTx(ctx)
+	if err != nil {
+		return
+	}
+	tt.tpl = db.tpl
+	return tt, nil
 }

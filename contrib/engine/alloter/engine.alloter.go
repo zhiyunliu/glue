@@ -18,6 +18,10 @@ type AlloterEngine struct {
 }
 
 func NewAlloterEngine(innerEngine *alloter.Engine, opts ...engine.Option) *AlloterEngine {
+	if global.TrustedPlatform != "" {
+		innerEngine.TrustedPlatform = global.TrustedPlatform
+	}
+
 	g := &AlloterEngine{
 		Engine: innerEngine,
 		pool:   sync.Pool{},
@@ -70,7 +74,7 @@ func (e *AlloterEngine) Handle(method string, path string, callfunc engine.Handl
 		actx.reset(ctx)
 		actx.opts = e.opts
 		callfunc(actx)
-		actx.Actx.Writer.Flush()
+		_ = actx.Actx.Writer.Flush()
 		actx.Close()
 		e.pool.Put(actx)
 	})

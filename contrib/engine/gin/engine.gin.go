@@ -21,6 +21,11 @@ type GinEngine struct {
 }
 
 func NewGinEngine(ginEngine *gin.Engine, opts ...engine.Option) engine.AdapterEngine {
+
+	if global.TrustedPlatform != "" {
+		ginEngine.TrustedPlatform = global.TrustedPlatform
+	}
+
 	g := &GinEngine{
 		Engine: ginEngine,
 		opts:   engine.DefaultOptions(),
@@ -102,6 +107,10 @@ func (e *GinEngine) defaultHandle() {
 	promHandler := promhttp.Handler()
 	e.Engine.Handle(http.MethodGet, "/metrics", func(ctx *gin.Context) {
 		promHandler.ServeHTTP(ctx.Writer, ctx.Request)
+	})
+	//routers
+	e.Engine.Handle(http.MethodGet, "/routers", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, global.ServerRouterPathList)
 	})
 }
 

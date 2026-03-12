@@ -1,6 +1,7 @@
 package implement
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -23,9 +24,11 @@ var nameMap = xtypes.SMap{
 }
 
 type ISysDB interface {
-	Query(string, ...interface{}) (*sql.Rows, error)
-	Exec(string, ...interface{}) (sql.Result, error)
+	Query(context.Context, string, ...interface{}) (*sql.Rows, error)
+	Exec(context.Context, string, ...interface{}) (sql.Result, error)
+	//Deprecated: Use BeginTx instead
 	Begin() (ISysTrans, error)
+	BeginTx(context.Context) (ISysTrans, error)
 	Close() error
 }
 
@@ -88,11 +91,11 @@ func (db *sysDB) GetSqlDB() *sql.DB {
 }
 
 // Query 执行SQL查询语句
-func (db *sysDB) Query(query string, args ...interface{}) (rows *sql.Rows, err error) {
+func (db *sysDB) Query(ctx context.Context, query string, args ...interface{}) (rows *sql.Rows, err error) {
 	rows, err = db.db.Query(query, args...)
 	if err != nil {
 		if rows != nil {
-			rows.Close()
+			_ = rows.Close()
 		}
 		return
 	}
@@ -100,7 +103,7 @@ func (db *sysDB) Query(query string, args ...interface{}) (rows *sql.Rows, err e
 }
 
 // Exec 执行SQL操作语句
-func (db *sysDB) Exec(query string, args ...interface{}) (result sql.Result, err error) {
+func (db *sysDB) Exec(ctx context.Context, query string, args ...interface{}) (result sql.Result, err error) {
 	result, err = db.db.Exec(query, args...)
 	if err != nil {
 		return
@@ -110,8 +113,13 @@ func (db *sysDB) Exec(query string, args ...interface{}) (result sql.Result, err
 
 // Begin 创建一个事务请求
 func (db *sysDB) Begin() (r ISysTrans, err error) {
+	r, err = db.BeginTx(context.Background())
+	return r, err
+}
+
+func (db *sysDB) BeginTx(ctx context.Context) (r ISysTrans, err error) {
 	t := &sysTrans{}
-	t.tx, err = db.db.Begin()
+	t.tx, err = db.db.BeginTx(ctx, nil)
 	return t, err
 }
 

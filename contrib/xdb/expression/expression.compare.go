@@ -25,9 +25,7 @@ func NewCompareExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpt
 	for i := range opts {
 		opts[i](mopts)
 	}
-
-	const pattern = `[&|\|](({((\w+\.)?\w+)\s*(>|>=|<>|=|<|<=)\s*(\w+)})|({(>|>=|<>|=|<|<=)\s*(\w+(\.\w+)?)}))`
-
+	pattern := ComparePattern
 	matcher := &compareExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -76,7 +74,7 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 	//{t.field=property} =3，5,6
 	//{<property} =9,8, get(9)
 	item := &xdb.ExpressionItem{
-		Symbol:  getExpressionSymbol(m.symbolMap, expression),
+		Symbol:  GetExpressionSymbol(m.symbolMap, expression),
 		Matcher: m,
 	}
 
@@ -89,7 +87,7 @@ func (m *compareExpressionMatcher) MatchString(expression string) (valuer xdb.Ex
 	if parties[8] != "" {
 		item.FullField = parties[9]
 		item.Oper = parties[8]
-		item.PropName = getExpressionPropertyName(item.FullField)
+		item.PropName = GetExpressionPropertyName(item.FullField)
 	}
 
 	item.ExpressionBuildCallback = m.defaultBuildCallback()
@@ -115,10 +113,19 @@ func (m *compareExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCal
 		if xdb.CheckIsNil(value) && item.GetSymbol().IsDynamic() {
 			return
 		}
+		normalizeCall, ok := item.GetOperValueNormalizeCallback()
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		value, err = normalizeCall(item, param, value)
+		if err != nil {
+			return
+		}
 
-		phName := state.AppendExpr(propName, value)
+		phName := state.AppendExpr(item, value)
 
-		operCallback, ok := item.GetOperatorCallback()
+		operCallback, ok := item.GetOperExprCallback()
 		if !ok {
 			err = xdb.NewMissOperError(item.GetOper())
 			return
@@ -132,13 +139,15 @@ func (m *compareExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Op
 	operCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 		return fmt.Sprintf("%s %s%s%s", item.GetSymbol().Concat(), item.GetFullfield(), item.GetOper(), phName)
 	}
+
 	operList := []xdb.Operator{
-		xdb.NewOperator(">", operCallback),
-		xdb.NewOperator(">=", operCallback),
-		xdb.NewOperator("<>", operCallback),
-		xdb.NewOperator("=", operCallback),
-		xdb.NewOperator("<", operCallback),
-		xdb.NewOperator("<=", operCallback),
+		xdb.NewOperator(">", operCallback, nil),
+		xdb.NewOperator(">=", operCallback, nil),
+		xdb.NewOperator("<>", operCallback, nil),
+		xdb.NewOperator("!=", operCallback, nil),
+		xdb.NewOperator("=", operCallback, nil),
+		xdb.NewOperator("<", operCallback, nil),
+		xdb.NewOperator("<=", operCallback, nil),
 	}
 
 	if optMap != nil {

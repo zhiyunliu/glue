@@ -2,21 +2,26 @@ package xdb
 
 var (
 	//新建一个符号处理
-	NewOperator func(name string, callback OperatorCallback) Operator
+	NewOperator func(name string, callback ExpressionCallback, normalize NormalizeValueCallback) Operator
 )
 
+// Deprecated: OperatorCallback 类型别名，请使用 ExpressionCallback
+type OperatorCallback = ExpressionCallback
+
 // OperatorCallback 操作符回调函数
-type OperatorCallback func(valuer ExpressionValuer, param DBParam, phName string, value any) string
+type ExpressionCallback func(valuer ExpressionValuer, param DBParam, phName string, value any) string
+type NormalizeValueCallback func(valuer ExprName, param DBParam, value any) (newVal any, err MissError)
 
 // Operator 操作符处理接口
 type Operator interface {
 	Name() string
 	Callback(valuer ExpressionValuer, param DBParam, phName string, value any) string
+	NormalizeValue(exprName ExprName, param DBParam, value any) (newVal any, err MissError)
 }
 
 // OperatorMap 操作符映射接口
 type OperatorMap interface {
-	//Store(name string, callback OperatorCallback)
+	Store(operator ...Operator)
 	Load(name string) (Operator, bool)
 	Clone() OperatorMap
 	Range(func(name string, callback Operator) bool)
@@ -39,7 +44,11 @@ func NewOperatorMap(operators ...Operator) OperatorMap {
 	}
 	return operMap
 }
-
+func (m *operatorMap) Store(operators ...Operator) {
+	for _, operator := range operators {
+		m.syncMap[operator.Name()] = operator
+	}
+}
 func (m *operatorMap) Load(name string) (Operator, bool) {
 	//callback, ok := m.syncMap.Load(name)
 	callback, ok := m.syncMap[name]

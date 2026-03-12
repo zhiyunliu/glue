@@ -36,5 +36,7 @@ var (
 	LogParams           = cli.LogParams
 	StartingHook        = cli.StartingHook
 	StartedHook         = cli.StartedHook
+	StopingHook         = cli.StopingHook
+	StopedHook          = cli.StopedHook
 	Command             = cli.Command
 )

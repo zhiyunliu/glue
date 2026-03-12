@@ -7,15 +7,17 @@ import (
 	"github.com/zhiyunliu/glue/config"
 )
 
-type TransactionCallback func(dbObj Executer) error
+type TransactionCallback func(ctx context.Context, dbObj Executer) error
 
 // IDB 数据库操作接口
 type IDB interface {
 	Executer
+	//Deprecated: Use BeginTx instead
 	Begin() (ITrans, error)
+	BeginTx(context.Context) (ITrans, error)
 	Close() error
 	GetImpl() interface{}
-	Transaction(TransactionCallback) error
+	Transaction(context.Context, TransactionCallback) error
 }
 
 // ITrans 数据库事务接口

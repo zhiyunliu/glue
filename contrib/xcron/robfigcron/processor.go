@@ -2,7 +2,6 @@ package robfigcron
 
 import (
 	"context"
-	sctx "context"
 	"fmt"
 	"sync"
 	"time"
@@ -21,7 +20,7 @@ import (
 
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
-	ctx             sctx.Context
+	ctx             context.Context
 	closeChan       chan struct{}
 	onceLock        sync.Once
 	jobs            cmap.ConcurrentMap[string, any]
@@ -39,7 +38,7 @@ type procJob struct {
 }
 
 // NewProcessor 创建processor
-func newProcessor(ctx sctx.Context, engine *alloter.Engine) (p *processor, err error) {
+func newProcessor(ctx context.Context, engine *alloter.Engine) (p *processor, err error) {
 	p = &processor{
 		ctx:             ctx,
 		closeChan:       make(chan struct{}),
@@ -227,13 +226,13 @@ func (s *processor) handle(req *Request) {
 		logger.Warnf("cron.handle.monopoly:%s,service:%s,meta:%+v,lockKey=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.DlockKey)
 		return
 	}
-	monopolyCtx, cancel := sctx.WithCancel(sctx.Background())
+	monopolyCtx, cancel := context.WithCancel(context.Background())
 	go s.handleMonopolyJobExpire(monopolyCtx, logger, req.job)
 	defer func() {
 		cancel()
 	}()
 
-	req.ctx = sctx.Background()
+	req.ctx = context.Background()
 	resp := newResponse()
 	err = s.routerEngine.HandleRequest(req, resp)
 	if err != nil {
@@ -267,7 +266,7 @@ func (s *processor) handleImmediatelyJob() {
 	}
 }
 
-func (s *processor) handleMonopolyJobExpire(ctx sctx.Context, logger log.Logger, job *xcron.Job) {
+func (s *processor) handleMonopolyJobExpire(ctx context.Context, logger log.Logger, job *xcron.Job) {
 	ticker := time.NewTicker(time.Minute)
 	defer func() {
 		if obj := recover(); obj != nil {

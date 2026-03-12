@@ -70,7 +70,7 @@ func newRedis(configName string, opts *Options, mapCfg map[string]any) (r *Clien
 			return val
 		}
 		return param
-	})
+	}, xtransform.WithBraceMode(), xtransform.WithAtBraceMode())
 
 	opts.Password = xtransform.TranslateCallback(opts.Password, func(param string) string {
 		val := os.Getenv(param)
@@ -78,7 +78,7 @@ func newRedis(configName string, opts *Options, mapCfg map[string]any) (r *Clien
 			return val
 		}
 		return param
-	})
+	}, xtransform.WithBraceMode(), xtransform.WithAtBraceMode())
 	r.opts = opts
 
 	ropts := &redis.UniversalOptions{

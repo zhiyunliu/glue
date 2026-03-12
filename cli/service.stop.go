@@ -18,12 +18,16 @@ func (p *ServiceApp) Stop(s service.Service) (err error) {
 
 func (p *ServiceApp) stopServers() {
 	log.Infof("serviceApp close:%s stop servers", p.cliCtx.App.Name)
+
+	p.options.StopingHooks.Exec(p.svcCtx, log.DefaultLogger)
 	var servers = p.options.Servers
 	for i := range p.options.Servers {
 		_ = servers[i].Stop(p.svcCtx)
 		p.closeWaitGroup.Done()
 	}
+	p.options.StopedHooks.Exec(p.svcCtx, log.DefaultLogger)
 	p.closeWaitGroup.Wait()
+	log.Infof("serviceApp close:%s stop servers completed", p.cliCtx.App.Name)
 }
 
 func (p *ServiceApp) closeLogger() {

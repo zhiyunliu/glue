@@ -63,23 +63,8 @@ func New(opts ...Option) *App {
 
 	app.cliApp = cli.NewApp()
 	app.cliApp.Name = global.AppName
-	app.cliApp.Version = fmt.Sprintf(`
-	GitCommit	 = %s
-	BuildTime    = %s
-	Version      = %s
-	PkgVersion   = %s
-	DisplayName  = %s
-	GoVersion    = %s
-	Usage        = %s
-	`,
-		global.GitCommit,
-		global.BuildTime,
-		global.Version,
-		global.PkgVersion,
-		global.DisplayName,
-		runtime.Version(),
-		global.Usage,
-	)
+	app.cliApp.Version = global.BuildInfo()
+
 	app.cliApp.Usage = global.Usage
 	cli.HelpFlag = &cli.BoolFlag{
 		Name:  "help,h",

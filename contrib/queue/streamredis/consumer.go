@@ -21,6 +21,7 @@ import (
 
 // Consumer Consumer
 type Consumer struct {
+	proto            string
 	configName       string
 	EnableDeadLetter bool //开启死信队列
 	DeadLetterQueue  string
@@ -40,13 +41,19 @@ type QueueItem struct {
 }
 
 // NewConsumerByConfig 创建新的Consumer
-func NewConsumer(configName string, config config.Config) (consumer *Consumer, err error) {
-	consumer = &Consumer{}
+func NewConsumer(proto string, configName string, config config.Config) (consumer *Consumer, err error) {
+	consumer = &Consumer{
+		proto: proto,
+	}
 	consumer.configName = configName
 	consumer.config = config
 	consumer.closeCh = make(chan struct{})
 	consumer.queues = cmap.New[*QueueItem]()
 	return
+}
+
+func (consumer *Consumer) ServerURL() string {
+	return fmt.Sprintf("%s://%s-%s", consumer.proto, global.LocalIp, consumer.configName)
 }
 
 // Connect  连接服务器
@@ -206,15 +213,16 @@ func (consumer *Consumer) writeToDeadLetter(queue string, vals xtypes.XMap) {
 }
 
 type consumeResolver struct {
+	Proto string
 }
 
 func (s *consumeResolver) Name() string {
-	return Proto
+	return s.Proto
 }
 
 func (s *consumeResolver) Resolve(configName string, setting config.Config) (queue.IMQC, error) {
-	return NewConsumer(configName, setting)
+	return NewConsumer(s.Proto, configName, setting)
 }
 func init() {
-	queue.RegisterConsumer(&consumeResolver{})
+	queue.RegisterConsumer(&consumeResolver{Proto: Proto})
 }

@@ -27,7 +27,7 @@ type Request struct {
 	url     *url.URL
 	params  xtypes.SMap
 	header  engine.Header
-	body    cbody //map[string]string
+	body    *cbody //map[string]string
 	session string
 	canProc uint32
 	mu      sync.Mutex
@@ -42,10 +42,12 @@ func newRequest(job *xcron.Job) (r *Request) {
 	}
 
 	r.reset()
-	r.body = make(cbody)
+	r.body = &cbody{
+		data: make(map[string]interface{}),
+	}
 
 	for k, v := range job.Meta {
-		r.body[k] = v
+		r.body.data[k] = v
 	}
 	return r
 }
@@ -88,15 +90,12 @@ func (m *Request) GetHeader() engine.Header {
 }
 
 func (m *Request) Body() []byte {
-	bytes, _ := json.Marshal(m.body)
-	return bytes
+	return m.body.Bytes()
 }
 
 func (m *Request) GetRemoteAddr() string {
-	m.mu.Lock()
-	defer m.mu.Unlock()
 
-	return m.header[constants.HeaderRemoteHeader]
+	return m.header.Get(constants.HeaderRemoteHeader)
 }
 
 func (m *Request) Context() sctx.Context {
@@ -128,10 +127,10 @@ func (m *Request) reset() {
 	atomic.StoreUint32(&m.canProc, 1)
 	m.session = session.Create()
 	m.header = make(map[string]string)
-	m.header[constants.ContentTypeName] = constants.ContentTypeApplicationJSON
-	m.header[constants.HeaderRequestId] = m.session
-	m.header["x-cron-engine"] = Proto
-	m.header["x-cron-job-key"] = m.job.GetKey()
+	m.header.Set(constants.ContentTypeName, constants.ContentTypeApplicationJSON)
+	m.header.Set(constants.HeaderRequestId, m.session)
+	m.header.Set("x-cron-engine", Proto)
+	m.header.Set("x-cron-job-key", m.job.GetKey())
 }
 
 func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap[string, *monopolyJob]) (bool, error) {
@@ -161,20 +160,24 @@ type Body interface {
 	Scan(obj interface{}) error
 }
 
-type cbody map[string]interface{}
+var (
+	_ io.Reader = (*cbody)(nil)
+)
 
-func (b cbody) Read(p []byte) (n int, err error) {
-	bodyBytes, err := json.Marshal(b)
-	if err != nil {
-		return 0, err
-	}
-	return bytes.NewReader(bodyBytes).Read(p)
+type cbody struct {
+	reader *bytes.Reader
+	bytes  []byte
+	data   map[string]interface{}
 }
 
-func (b cbody) Scan(obj interface{}) error {
-	bytes, err := json.Marshal(b)
-	if err != nil {
-		return err
+func (b *cbody) Bytes() []byte {
+	if b.bytes == nil {
+		b.bytes, _ = json.Marshal(b.data)
+		b.reader = bytes.NewReader(b.bytes)
 	}
-	return json.Unmarshal(bytes, obj)
+	return b.bytes
+}
+
+func (b *cbody) Read(p []byte) (n int, err error) {
+	return b.reader.Read(p)
 }

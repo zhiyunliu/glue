@@ -7,19 +7,23 @@ import (
 	"sync"
 
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/errors/constants"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 var _ xrpc.BidirectionalStreamClient = (*grpcBidirectionalClientStreamRequest)(nil)
 
 type grpcBidirectionalClientStreamRequest struct {
 	servicePath  string
-	header       xtypes.SMap
+	header       engine.Header
 	method       string
 	streamClient grpcproto.GRPC_BidirectionalStreamProcessClient
 	onceLock     sync.Once
+	SendCount    int
+	RecvCount    int
 }
 
 func (c *grpcBidirectionalClientStreamRequest) Recv(obj any, opts ...xrpc.StreamRevcOption) (closed bool, err error) {
@@ -29,6 +33,7 @@ func (c *grpcBidirectionalClientStreamRequest) Recv(obj any, opts ...xrpc.Stream
 	for _, o := range opts {
 		o(&opt)
 	}
+	c.RecvCount++
 	resp, err := c.streamClient.Recv()
 	if err != nil {
 		if err.Error() != "EOF" {
@@ -54,7 +59,7 @@ func (c *grpcBidirectionalClientStreamRequest) Send(obj any) error {
 	default:
 		bodyBytes, _ = json.Marshal(t)
 	}
-
+	c.SendCount++
 	return c.streamClient.Send(&grpcproto.Request{
 		Body:    bodyBytes,
 		Header:  c.header,
@@ -81,22 +86,34 @@ func (c *Client) BidirectionalStreamProcessor(ctx context.Context, processor xrp
 
 	steamClient, err := c.client.BidirectionalStreamProcess(ctx, grpcOpts...)
 	if err != nil {
-		return err
+		inerr := fmt.Errorf("BidrectionStream grpc://%s%s,BidirectionalStreamProcess,error:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 	}
-	//发送服务分发数据信息
-	err = steamClient.Send(&grpcproto.Request{
+
+	req := &grpcproto.Request{
 		Method:  opts.Method,
 		Service: servicePath,
 		Header:  opts.Header,
-	})
-	if err != nil {
-		return err
 	}
-	err = processor(ctx, &grpcBidirectionalClientStreamRequest{
+
+	//发送服务分发数据信息
+	err = steamClient.Send(req)
+	if err != nil {
+		inerr := fmt.Errorf("BidrectionStream grpc://%s%s,BidirectionalStreamProcess,Send:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
+
+	}
+
+	bidiStreamRequest := &grpcBidirectionalClientStreamRequest{
 		servicePath:  servicePath,
 		header:       opts.Header,
 		method:       opts.Method,
 		streamClient: steamClient,
-	})
+	}
+	err = processor(ctx, bidiStreamRequest)
+	if err != nil {
+		inerr := fmt.Errorf("BidrectionStream grpc://%s%s,BidirectionalStreamProcess,processor:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
+	}
 	return err
 }

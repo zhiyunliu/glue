@@ -22,14 +22,29 @@ type Options struct {
 	RegistrarTimeout time.Duration
 	StopTimeout      time.Duration
 	Servers          []transport.Server
-	StartingHooks    []func(ctx context.Context) error
-	StartedHooks     []func(ctx context.Context) error
+	StartingHooks    Hooks
+	StartedHooks     Hooks
+	StopingHooks     Hooks
+	StopedHooks      Hooks
+	logOpts          []log.ConfigOption
+	setting          *appSetting
+	configSources    []config.Source
+	cmdConfigFile    string
+	logPath          string
+}
 
-	logOpts       []log.ConfigOption
-	setting       *appSetting
-	configSources []config.Source
-	cmdConfigFile string
-	logPath       string
+type Hook func(ctx context.Context) error
+type Hooks []Hook
+
+func (hs Hooks) Exec(ctx context.Context, logger log.Logger) {
+	if len(hs) <= 0 {
+		return
+	}
+	for _, h := range hs {
+		if err := h(ctx); err != nil {
+			logger.Error(err)
+		}
+	}
 }
 
 // Option 配置选项
@@ -100,16 +115,30 @@ func LogParams(opts ...log.ConfigOption) Option {
 }
 
 // StartingHook
-func StartingHook(hook func(context.Context) error) Option {
+func StartingHook(hook Hook) Option {
 	return func(o *Options) {
 		o.StartingHooks = append(o.StartingHooks, hook)
 	}
 }
 
 // StartedHook
-func StartedHook(hook func(context.Context) error) Option {
+func StartedHook(hook Hook) Option {
 	return func(o *Options) {
 		o.StartedHooks = append(o.StartedHooks, hook)
+	}
+}
+
+// StopingHook
+func StopingHook(hook Hook) Option {
+	return func(o *Options) {
+		o.StopingHooks = append(o.StopingHooks, hook)
+	}
+}
+
+// StopedHook
+func StopedHook(hook Hook) Option {
+	return func(o *Options) {
+		o.StopedHooks = append(o.StopedHooks, hook)
 	}
 }
 

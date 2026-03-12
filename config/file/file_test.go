@@ -238,7 +238,7 @@ func testConfig(t *testing.T, c config.Config) {
 		StringKey   string        `json:"string_key"`
 		DurationKey time.Duration `json:"duration_key"`
 	}
-	if err := c.Value("test.settings").Scan(&settings); err != nil {
+	if err := c.Value("test.settings").ScanTo(&settings); err != nil {
 		t.Error(err)
 	}
 	if v := expected["test.settings.int_key"]; settings.IntKey != v {

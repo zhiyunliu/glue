@@ -21,14 +21,14 @@ func debugPrint(ctx context.Context, setting *Setting, query string, args ...int
 		idx := 1
 		for _, v := range args {
 			if na, ok := v.(sql.NamedArg); ok {
-				builder.WriteString(fmt.Sprintf("@%s = %v\n", na.Name, na.Value))
+				fmt.Fprintf(&builder, "@%s = %v\n", na.Name, na.Value)
 				continue
 			}
 			if na, ok := v.(*sql.NamedArg); ok {
-				builder.WriteString(fmt.Sprintf("@%s = %v\n", na.Name, na.Value))
+				fmt.Fprintf(&builder, "@%s = %v\n", na.Name, na.Value)
 				continue
 			}
-			builder.WriteString(fmt.Sprintf("@p%d = %v\n", idx, v))
+			fmt.Fprintf(&builder, "@p%d = %v\n", idx, v)
 			idx++
 		}
 

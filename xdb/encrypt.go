@@ -2,10 +2,10 @@ package xdb
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/zhiyunliu/glue/global"
+	"github.com/zhiyunliu/golibs/xenv"
 	"github.com/zhiyunliu/golibs/xsecurity/aes"
 )
 
@@ -32,7 +32,7 @@ func defaultDecryptConn(connName, conn string) (newConn string, err error) {
 		err = fmt.Errorf("数据库配置为加密模式,但 app.%s 值为空", BaseSecretEnvName)
 		return
 	}
-	secretKey := os.Getenv(envName.String())
+	secretKey := xenv.Get(envName.String())
 
 	orgKey, err := aes.Decrypt(secretKey, SecretKey, SecretMode)
 	if err != nil {

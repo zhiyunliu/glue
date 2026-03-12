@@ -17,7 +17,8 @@ func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpti
 		opts[i](mopts)
 	}
 
-	const pattern = `[$|@|&|\|]({(\w+(\.\w+)?\s*)})`
+	pattern := NormalPattern
+
 	matcher := &normalExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -65,7 +66,7 @@ func (m *normalExpressionMatcher) MatchString(expression string) (valuer xdb.Exp
 	fullkey := strings.TrimSpace(parties[2])
 
 	item := &xdb.ExpressionItem{
-		Symbol:    getExpressionSymbol(m.symbolMap, expression),
+		Symbol:    GetExpressionSymbol(m.symbolMap, expression),
 		Matcher:   m,
 		FullField: fullkey,
 		PropName:  fullkey,
@@ -105,11 +106,21 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 			return
 		}
 
-		if !strings.EqualFold(item.GetSymbol().Name(), xdb.SymbolReplace) {
-			phName = state.AppendExpr(propName, value)
+		normalizeCall, ok := item.GetOperValueNormalizeCallback()
+		if !ok {
+			err = xdb.NewMissOperError(item.GetOper())
+			return
+		}
+		value, err = normalizeCall(item, param, value)
+		if err != nil {
+			return
 		}
 
-		operCallback, ok := item.GetOperatorCallback()
+		if !strings.EqualFold(item.GetSymbol().Name(), xdb.SymbolReplace) {
+			phName = state.AppendExpr(item, value)
+		}
+
+		operCallback, ok := item.GetOperExprCallback()
 		if !ok {
 			err = xdb.NewMissOperError(item.GetOper())
 			return
@@ -119,25 +130,26 @@ func (m *normalExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCall
 }
 
 func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
+
 	operList := []xdb.Operator{
 
 		xdb.NewOperator("@", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return phName
-		}),
+		}, nil),
 
 		xdb.NewOperator("&", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("|", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s=%s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
-		}),
+		}, nil),
 
 		xdb.NewOperator("$", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) (val string) {
 
 			switch t := value.(type) {
 			case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
-				val = strings.Trim(strings.Replace(fmt.Sprint(t), " ", ",", -1), "[]")
+				val = strings.Trim(strings.ReplaceAll(fmt.Sprint(t), " ", ","), "[]")
 			case []string:
 				val = sqlInjectionPreventionArray(t)
 			default:
@@ -145,7 +157,7 @@ func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Ope
 				val = sqlInjectionPrevention(val)
 			}
 			return val
-		}),
+		}, nil),
 	}
 	if optMap != nil {
 		optMap.Range(func(name string, operator xdb.Operator) bool {
@@ -153,6 +165,5 @@ func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Ope
 			return true
 		})
 	}
-
 	return xdb.NewOperatorMap(operList...)
 }

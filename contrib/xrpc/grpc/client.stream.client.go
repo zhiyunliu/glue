@@ -7,19 +7,22 @@ import (
 	"sync"
 
 	"github.com/zhiyunliu/glue/contrib/xrpc/grpc/grpcproto"
+	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/errors/constants"
 	"github.com/zhiyunliu/glue/xrpc"
 	"github.com/zhiyunliu/golibs/bytesconv"
-	"github.com/zhiyunliu/golibs/xtypes"
 )
 
 var _ xrpc.ClientStreamClient = (*grpcClientStreamRequest)(nil)
 
 type grpcClientStreamRequest struct {
 	servicePath  string
-	header       xtypes.SMap
+	header       engine.Header
 	method       string
 	streamClient grpcproto.GRPC_ClientStreamProcessClient
 	onceLock     sync.Once
+	SendCount    int
 }
 
 func (c *grpcClientStreamRequest) Send(obj any) error {
@@ -34,7 +37,7 @@ func (c *grpcClientStreamRequest) Send(obj any) error {
 	default:
 		bodyBytes, _ = json.Marshal(t)
 	}
-
+	c.SendCount++
 	return c.streamClient.Send(&grpcproto.Request{
 		Body:    bodyBytes,
 		Header:  c.header,
@@ -52,16 +55,23 @@ func (c *Client) ClientStreamProcessor(ctx context.Context, processor xrpc.Clien
 
 	clientStream, err := c.client.ClientStreamProcess(ctx, grpcOpts...)
 	if err != nil {
+		inerr := fmt.Errorf("ClientStream grpc://%s%s,BidirectionalStreamProcess,ClientStreamProcess:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return xrpc.NewEmptyBody(), err
 	}
 
 	//发送服务分发数据信息
-	err = clientStream.Send(&grpcproto.Request{
+	req := &grpcproto.Request{
 		Method:  opts.Method,
 		Service: servicePath,
 		Header:  opts.Header,
-	})
+	}
+
+	//发送服务分发数据信息
+	err = clientStream.Send(req)
 	if err != nil {
+		inerr := fmt.Errorf("ClientStream grpc://%s%s,BidirectionalStreamProcess,Send:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return xrpc.NewEmptyBody(), err
 	}
 
@@ -71,9 +81,16 @@ func (c *Client) ClientStreamProcessor(ctx context.Context, processor xrpc.Clien
 		method:       opts.Method,
 		streamClient: clientStream,
 	})
+	if err != nil {
 
+		inerr := fmt.Errorf("ClientStream grpc://%s%s,BidirectionalStreamProcess,processor:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
+		return nil, err
+	}
 	resp, err := clientStream.CloseAndRecv()
 	if err != nil {
+		inerr := fmt.Errorf("ClientStream grpc://%s%s,BidirectionalStreamProcess,CloseAndRecv:%w", c.reqPath.Host, servicePath, err)
+		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))
 		return nil, err
 	}
 	return resp, err

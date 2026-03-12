@@ -156,7 +156,7 @@ func (ctx *GinContext) GetImpl() interface{} {
 type ginRequest struct {
 	gctx    *gin.Context
 	vctx    *GinContext
-	gheader xtypes.SMap
+	gheader engine.Header
 	gpath   *gpath
 	gquery  *gquery
 	gbody   *gbody
@@ -178,6 +178,9 @@ func (r *ginRequest) GetClientIP() string {
 	return r.gctx.ClientIP()
 }
 
+func (r *ginRequest) GetRemoteAddr() string {
+	return r.gctx.Request.RemoteAddr
+}
 func (r *ginRequest) RequestID() string {
 	return r.vctx.Log().SessionID()
 }
@@ -194,6 +197,9 @@ func (r *ginRequest) Header() vctx.Header {
 	return r.gheader
 }
 
+func (r *ginRequest) GetContentLength() int64 {
+	return r.gctx.Request.ContentLength
+}
 func (r *ginRequest) GetHeader(key string) string {
 	return r.gctx.GetHeader(key)
 }
@@ -405,7 +411,7 @@ func (q *ginResponse) Redirect(statusCode int, location string) {
 	q.gctx.Redirect(statusCode, location)
 }
 
-func (q *ginResponse) Status(statusCode int) {
+func (q *ginResponse) StatusCode(statusCode int) {
 	q.statusCode = statusCode
 	q.gctx.Writer.WriteHeader(statusCode)
 }
@@ -452,6 +458,10 @@ func (q *ginResponse) ContentType() string {
 func (q *ginResponse) ResponseBytes() []byte {
 	return q.writebytes
 }
+func (q *ginResponse) Size() int {
+	return len(q.writebytes)
+}
+
 func (q *ginResponse) Flush() error {
 	q.gctx.Writer.Flush()
 	return nil

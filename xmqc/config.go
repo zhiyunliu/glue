@@ -15,6 +15,7 @@ type Config struct {
 type Task struct {
 	Queue             string            `json:"queue"`
 	Service           string            `json:"service,omitempty"`
+	FullPath          string            `json:"-"`
 	Disable           bool              `json:"disable"`
 	Concurrency       int               `json:"concurrency,omitempty"`
 	BufferSize        int               `json:"buffersize,omitempty"`
@@ -59,6 +60,10 @@ func (t *Task) GetService() string {
 	}
 	t.Service = GetService(t.Queue)
 	return t.Service
+}
+
+func (t Task) GetFullPath() string {
+	return t.FullPath
 }
 
 func (t Task) GetMsgLastId() string {

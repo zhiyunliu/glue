@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
-	"github.com/zhiyunliu/glue/constants"
-	"github.com/zhiyunliu/glue/session"
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
@@ -274,46 +272,6 @@ func TestQueueDelaySendWithEmptyKey(t *testing.T) {
 	err := q.DelaySend(ctx, "", "test-value", 10)
 	if err == nil {
 		t.Error("Expected error for empty key")
-	}
-}
-
-func TestQueueBuildMessage(t *testing.T) {
-	q := &queue{}
-
-	ctx := context.Background()
-	msg, err := q.buildMessage(ctx, "test-value")
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-	if msg == nil {
-		t.Error("Expected message to be created")
-	}
-}
-
-func TestQueueBuildMessageWithNil(t *testing.T) {
-	q := &queue{}
-
-	ctx := context.Background()
-	_, err := q.buildMessage(ctx, nil)
-	if err == nil {
-		t.Error("Expected error for nil value")
-	}
-}
-
-func TestQueueBuildMessageWithContextSession(t *testing.T) {
-	q := &queue{}
-
-	ctx := context.Background()
-	ctx = session.WithContext(ctx, "test-session-id")
-	msg, err := q.buildMessage(ctx, "test-value")
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-	if msg == nil {
-		t.Error("Expected message to be created")
-	}
-	if msg.Header()[constants.HeaderRequestId] != "test-session-id" {
-		t.Error("Expected request ID to be set from context")
 	}
 }
 

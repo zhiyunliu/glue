@@ -181,9 +181,11 @@ func (r *alloterRequest) RequestID() string {
 func (r *alloterRequest) GetClientIP() string {
 	return r.actx.ClientIP()
 }
-
+func (r *alloterRequest) GetRemoteAddr() string {
+	return ""
+}
 func (r *alloterRequest) Header() vctx.Header {
-	return xtypes.SMap(r.actx.Request.GetHeader())
+	return engine.Header(r.actx.Request.GetHeader())
 }
 
 func (r *alloterRequest) GetHeader(key string) string {
@@ -194,6 +196,9 @@ func (r *alloterRequest) SetHeader(key, val string) {
 	r.actx.Header(key, val)
 }
 
+func (r *alloterRequest) GetContentLength() int64 {
+	return int64(len(r.actx.Request.Body()))
+}
 func (r *alloterRequest) Path() vctx.Path {
 	if r.apath.closed {
 		r.apath.closed = false
@@ -389,11 +394,11 @@ type alloterResponse struct {
 }
 
 func (q *alloterResponse) Redirect(statusCode int, location string) {
-	q.Status(statusCode)
+	q.StatusCode(statusCode)
 	q.Header("Location", location)
 }
 
-func (q *alloterResponse) Status(statusCode int) {
+func (q *alloterResponse) StatusCode(statusCode int) {
 	q.statusCode = statusCode
 	q.actx.Writer.WriteHeader(statusCode)
 }
@@ -440,6 +445,9 @@ func (q *alloterResponse) ContentType() string {
 
 func (q *alloterResponse) ResponseBytes() []byte {
 	return q.writebytes
+}
+func (q *alloterResponse) Size() int {
+	return len(q.writebytes)
 }
 func (q *alloterResponse) Flush() error {
 	return q.actx.Writer.Flush()

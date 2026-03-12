@@ -57,12 +57,12 @@ func (e *Server) Type() string {
 	return Type
 }
 
-func (e *Server) Config(cfg config.Config) {
+func (e *Server) Config(cfg config.Config) error {
 	if cfg == nil {
-		return
+		return nil
 	}
 	e.Options(WithConfig(cfg))
-	cfg.Get(e.serverPath()).ScanTo(e.opts.srvCfg)
+	return cfg.Get(e.serverPath()).ScanTo(e.opts.srvCfg)
 }
 
 // Start 开始
@@ -79,6 +79,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 		engine.WithLogOptions(e.opts.logOpts),
 		engine.WithSrvType(e.Type()),
 		engine.WithSrvName(e.Name()),
+		engine.WithSvcName(e.ServiceName()),
 		engine.WithErrorEncoder(e.opts.encErr),
 		engine.WithRequestDecoder(e.opts.decReq),
 		engine.WithResponseEncoder(e.opts.encResp),

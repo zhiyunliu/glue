@@ -1,16 +1,16 @@
 module github.com/zhiyunliu/glue
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/zhiyunliu/alloter v0.2.0
-	github.com/zhiyunliu/golibs v0.3.16
+	github.com/zhiyunliu/golibs v0.4.0
 	github.com/zhiyunliu/redisqueue/v3 v3.1.2
 	github.com/zhiyunliu/stack v1.10.1 // indirect
 	github.com/zhiyunliu/xbinding v0.1.4
 )
 
-//replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
+replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
 
 //replace github.com/zhiyunliu/redisqueue/v3 => ../../../github.com/zhiyunliu/redisqueue
 
@@ -42,7 +42,7 @@ require (
 	github.com/urfave/cli v1.22.16
 	go.opentelemetry.io/otel v1.30.0
 	go.opentelemetry.io/otel/trace v1.30.0
-	golang.org/x/sync v0.14.0
+	golang.org/x/sync v0.16.0
 	google.golang.org/grpc v1.68.1
 	google.golang.org/protobuf v1.36.5
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
@@ -110,6 +110,7 @@ require (
 	github.com/tklauser/numcpus v0.5.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
+	github.com/zhiyunliu/zerolog v1.1.0 // indirect
 	go.opentelemetry.io/otel/metric v1.30.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
@@ -144,8 +145,8 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -161,7 +162,7 @@ require (
 	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/sys v0.35.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )

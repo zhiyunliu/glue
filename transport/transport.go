@@ -13,7 +13,7 @@ type Server interface {
 	Type() string
 	Start(context.Context) error
 	Stop(context.Context) error
-	Config(cfg config.Config)
+	Config(cfg config.Config) error
 }
 
 type RouterList interface {

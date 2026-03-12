@@ -16,7 +16,7 @@ var _ xdb.StmtDbTypeHandler = (*StmtDbTypeOutputHandler)(nil)
 func (h *StmtDbTypeOutputHandler) Name() string {
 	return "output"
 }
-func (h *StmtDbTypeOutputHandler) Handle(fieldName string, param any, fv reflect.Value, _ []string) (any, error) {
+func (h *StmtDbTypeOutputHandler) Handle(fieldName string, _ any, fv reflect.Value, _ []string) (any, error) {
 	if !fv.CanSet() {
 		return nil, fmt.Errorf("字段[%s]作为output参数不能被设置.请使用指针传递SQL参数", fieldName)
 	}

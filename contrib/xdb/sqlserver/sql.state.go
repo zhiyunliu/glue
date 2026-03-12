@@ -21,7 +21,7 @@ func NewSqlState(placeHolder xdb.Placeholder) xdb.SqlState {
 	}
 }
 
-func (s *MssqlSqlState) GetNames() []string {
+func (s *MssqlSqlState) GetNames() []xdb.ExprName {
 	return s.innerState.GetNames()
 }
 func (s *MssqlSqlState) GetValues() []any {
@@ -37,7 +37,8 @@ func (s *MssqlSqlState) HasDynamic(dynamicType xdb.DynamicType) bool {
 	return s.innerState.HasDynamic(dynamicType)
 }
 
-func (s *MssqlSqlState) AppendExpr(propName string, value any) (phName string) {
+func (s *MssqlSqlState) AppendExpr(exprName xdb.ExprName, value any) (phName string) {
+	propName := exprName.GetPropName()
 	phName, ok := s.phNameCache[propName]
 	if ok {
 		return phName
@@ -50,7 +51,7 @@ func (s *MssqlSqlState) AppendExpr(propName string, value any) (phName string) {
 			argPhName = s.placeHolder.NamedArg(tmpv.Name)
 		}
 	}
-	phName = s.innerState.AppendExpr(propName, value)
+	phName = s.innerState.AppendExpr(exprName, value)
 	if argPhName != "" {
 		phName = argPhName
 	}

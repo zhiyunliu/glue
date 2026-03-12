@@ -73,20 +73,6 @@ func (r *Request) Request(ctx sctx.Context, service string, input interface{}, o
 	for i := range nopts {
 		nopts[i](opt)
 	}
-	if client.setting.Trace {
-		ctx, span := client.tracer.Start(ctx, pathVal.Path, opt.Header)
-		defer func() {
-			if err != nil {
-				client.tracer.End(ctx, span, err)
-				return
-			}
-			status := int32(http.StatusOK)
-			if res != nil {
-				status = res.GetStatus()
-			}
-			client.tracer.End(ctx, span, status)
-		}()
-	}
 
 	return client.RequestByString(ctx, pathVal, input, opt)
 }

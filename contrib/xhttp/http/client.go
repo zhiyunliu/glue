@@ -16,7 +16,6 @@ import (
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/contrib/xhttp/http/balancer"
-	"github.com/zhiyunliu/glue/middleware/tracing"
 	"github.com/zhiyunliu/glue/registry"
 	"github.com/zhiyunliu/glue/selector"
 	"github.com/zhiyunliu/glue/xhttp"
@@ -25,14 +24,18 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+type HTTPClient struct {
+	TracerProvider trace.TracerProvider
+	*http.Client
+}
+
 type Client struct {
 	registrar registry.Registrar
 	setting   *setting
-	client    *http.Client
-	selector  selector.Selector
+	client    *HTTPClient
+	selector  balancer.SelectorWrapper
 	ctx       context.Context
 	ctxCancel context.CancelFunc
-	tracer    *tracing.Tracer
 }
 
 // NewClientByConf 创建RPC客户端,地址是远程RPC服务器地址或注册中心地址
@@ -40,16 +43,13 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 	client := &Client{
 		registrar: registrar,
 		setting:   setting,
-		client:    &http.Client{},
 	}
 
 	tlsCfg, err := client.getTlsConfig()
 	if err != nil {
 		return nil, err
 	}
-	if setting.Trace {
-		client.tracer = tracing.NewTracer(trace.SpanKindClient)
-	}
+
 	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
 
 	client.selector, err = balancer.NewSelector(client.ctx, registrar, reqPath, setting.Balancer)
@@ -57,7 +57,7 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 		return nil, err
 	}
 
-	client.client.Transport = &http.Transport{
+	httpTransport := &http.Transport{
 		TLSClientConfig: tlsCfg,
 		Proxy:           client.getProxy(),
 		DialContext: (&net.Dialer{
@@ -69,6 +69,21 @@ func NewClient(registrar registry.Registrar, setting *setting, reqPath *url.URL)
 		IdleConnTimeout:       time.Duration(setting.IdleConnTimeout) * time.Second,
 		TLSHandshakeTimeout:   time.Duration(setting.TLSHandshakeTimeout) * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	client.client = &HTTPClient{
+		Client: &http.Client{
+			Transport: NewTransport(
+				httpTransport,
+			),
+		},
+	}
+
+	client.ctx, client.ctxCancel = context.WithCancel(context.Background())
+
+	client.selector, err = balancer.NewSelector(client.ctx, registrar, reqPath, setting.Balancer)
+	if err != nil {
+		return nil, err
 	}
 	return client, nil
 }
@@ -130,7 +145,7 @@ func (c *Client) clientRequest(ctx context.Context, reqPath *url.URL, o *xhttp.O
 	if reqPath.RawQuery != "" {
 		queryParam = "?" + reqPath.RawQuery
 	}
-	return httputil.Request(o.Method, fmt.Sprintf("%s%s%s", node.Address(), reqPath.Path, queryParam), input, httpOpts...)
+	return httputil.RequestWithContext(ctx, o.Method, fmt.Sprintf("%s%s%s", node.Address(), reqPath.Path, queryParam), input, httpOpts...)
 }
 
 func (c *Client) getServiceNode(ctx context.Context, opts *xhttp.Options) (selector.Node, error) {
@@ -155,6 +170,9 @@ func (c *Client) getServiceNode(ctx context.Context, opts *xhttp.Options) (selec
 		return []selector.Node{}
 	}))
 	if err != nil {
+		if err == selector.ErrNoAvailable {
+			c.selector.ResolveNow()
+		}
 		return nil, fmt.Errorf("Client.Select[%s].%+w", c.selector.ServiceName(), err)
 	}
 	defer func() {

@@ -1,5 +1,5 @@
 package engine
 
-type IChecker interface {
-	Check() error
-}
+import "github.com/zhiyunliu/golibs/engine"
+
+type IChecker = engine.IChecker

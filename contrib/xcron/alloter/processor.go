@@ -2,7 +2,6 @@ package alloter
 
 import (
 	"context"
-	sctx "context"
 	"errors"
 	"fmt"
 	"math"
@@ -21,7 +20,7 @@ import (
 
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
 type processor struct {
-	ctx          sctx.Context
+	ctx          context.Context
 	closeChan    chan struct{}
 	index        int
 	jobs         cmap.ConcurrentMap[string, any]
@@ -34,7 +33,7 @@ type processor struct {
 }
 
 // NewProcessor 创建processor
-func newProcessor(ctx sctx.Context, engine *alloter.Engine) (p *processor, err error) {
+func newProcessor(ctx context.Context, engine *alloter.Engine) (p *processor, err error) {
 	p = &processor{
 		ctx:          ctx,
 		index:        0,
@@ -237,19 +236,19 @@ func (s *processor) handle(req *Request) {
 		logger.Warnf("cron.handle.monopoly:%s,service:%s,meta:%+v,key=%s", req.job.Cron, req.job.Service, req.job.Meta, req.job.GetKey())
 		return
 	}
-	monopolyCtx, cancel := sctx.WithCancel(sctx.Background())
+	monopolyCtx, cancel := context.WithCancel(context.Background())
 	req.monopolyStart(monopolyCtx, mjob)
 	defer func() {
 		cancel()
 	}()
 
-	req.ctx = sctx.Background()
+	req.ctx = context.Background()
 	resp := newResponse()
 	err = s.engine.HandleRequest(req, resp)
 	if err != nil {
 		panic(err)
 	}
-	resp.Flush()
+	_ = resp.Flush()
 }
 
 func (s *processor) execute(idx int) {
@@ -290,7 +289,7 @@ func (j *monopolyJob) Close() {
 	j.locker.Release(context.Background())
 }
 
-func (j *monopolyJob) Start(ctx sctx.Context) {
+func (j *monopolyJob) Start(ctx context.Context) {
 	go func() {
 		//过期时间前一秒执行续约
 		ticker := time.NewTicker(time.Second * time.Duration(j.expire-1))
