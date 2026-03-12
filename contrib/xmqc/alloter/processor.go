@@ -138,7 +138,6 @@ func (s *processor) Close() error {
 
 func (s *processor) handleCallback(task *xmqc.Task) func(queue.IMQCMessage) {
 	return func(m queue.IMQCMessage) {
-
 		defer func() {
 			if obj := recover(); obj != nil {
 				log.Panicf("mqc.handleCallback.Queue:%s,data:%s, error:%+v. stack:%s", task.Queue, m.Original(), obj, xstack.GetStack(1))

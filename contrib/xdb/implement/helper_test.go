@@ -26,6 +26,8 @@ func (p dbparam) ToDbParam() map[string]any {
 	return map[string]any{"a": p.A}
 }
 
+type Datetime time.Time
+
 type jsonStructParam struct {
 	A    string             `json:"a"`
 	B    int                `json:"b"`
@@ -42,6 +44,8 @@ type jsonStructParam struct {
 	Obj2 *dbstructParam     `json:"obj2"`
 	Obj3 dbstructParamStr   `json:"obj3"`
 	Obj4 *dbstructParamStr  `json:"obj4"`
+	Now  Datetime           `json:"now"`
+	Now2 *Datetime          `json:"now2"`
 }
 
 type dbstructJson struct {
@@ -81,6 +85,13 @@ type Binary []uint8
 func Test_analyzeParamFields(t *testing.T) {
 	decVal := xtypes.NewDecimalFromInt(10)
 	mapVal := map[string]string{"m": "m"}
+
+	nowUnix := time.Now().Unix()
+
+	nowDatetime := Datetime(time.Unix(nowUnix, 0))
+
+	var test2time Datetime
+
 	var smap StrMap = mapVal
 	tests := []struct {
 		name       string
@@ -104,9 +115,11 @@ func Test_analyzeParamFields(t *testing.T) {
 			Obj2: &dbstructParam{A: "obj2"},
 			Obj3: dbstructParamStr{A: "obj3"},
 			Obj4: &dbstructParamStr{A: "obj4"},
+			Now:  nowDatetime,
+			Now2: &nowDatetime,
 		}, wantParams: map[string]any{
 			"a":    "1",
-			"b":    int64(2),
+			"b":    2,
 			"c":    []int{1, 2},
 			"d":    []int{1, 2},
 			"e":    []string{"a", "b"},
@@ -120,6 +133,8 @@ func Test_analyzeParamFields(t *testing.T) {
 			"obj2": nil,
 			"obj3": "obj3",
 			"obj4": "obj4",
+			"now":  nowDatetime,
+			"now2": nowDatetime,
 		}, wantErr: false},
 
 		{name: "2.", input: &jsonStructParam{
@@ -140,7 +155,7 @@ func Test_analyzeParamFields(t *testing.T) {
 			Obj4: &dbstructParamStr{A: "obj4"},
 		}, wantParams: map[string]any{
 			"a":    "1",
-			"b":    int64(2),
+			"b":    2,
 			"c":    []int{1, 2},
 			"d":    []int{1, 2},
 			"e":    []string{"a", "b"},
@@ -154,15 +169,17 @@ func Test_analyzeParamFields(t *testing.T) {
 			"obj2": nil,
 			"obj3": "obj3",
 			"obj4": "obj4",
+			"now":  test2time,
+			"now2": nil,
 		}, wantErr: false},
 		{name: "3.", input: &anonymousB{
 			IAPtr:          ptrInt,
 			anonymousInner: &anonymousInner{Str: "str", Int: 1},
 		},
 			wantParams: map[string]any{
-				"iaptr": int64(3),
+				"iaptr": 3,
 				"str":   "str",
-				"int":   int64(0),
+				"int":   0,
 			},
 			wantErr: false,
 		},
@@ -171,8 +188,8 @@ func Test_analyzeParamFields(t *testing.T) {
 			Int:   2,
 		},
 			wantParams: map[string]any{
-				"iaptr": int64(3),
-				"int":   int64(2),
+				"iaptr": 3,
+				"int":   2,
 			},
 			wantErr: false,
 		},
@@ -182,8 +199,8 @@ func Test_analyzeParamFields(t *testing.T) {
 			anonymousInner: &anonymousInner{Str: "str", Int: 1},
 		},
 			wantParams: map[string]any{
-				"iaptr": int64(3),
-				"int":   int64(2),
+				"iaptr": 3,
+				"int":   2,
 				"str":   "str",
 			},
 			wantErr: false,
@@ -212,6 +229,8 @@ func Test_analyzeParamFields(t *testing.T) {
 
 func TestResolveParams(t *testing.T) {
 
+	var ptrInt int = 3
+
 	tests := []struct {
 		name       string
 		input      any
@@ -227,7 +246,11 @@ func TestResolveParams(t *testing.T) {
 		{name: "7.", input: dbstructParam{A: "1"}, wantParams: map[string]any{"a": "1"}, wantErr: false},
 		{name: "8.", input: &dbstructParam{A: "1"}, wantParams: map[string]any{"a": "1"}, wantErr: false},
 		{name: "9.", input: dbstructJson{A: "1"}, wantParams: map[string]any{"a": "1"}, wantErr: false},
-		{name: "10.", input: &dbstructJson{A: "1"}, wantParams: map[string]any{"a": "1"}, wantErr: false}}
+		{name: "10.", input: &dbstructJson{A: "1"}, wantParams: map[string]any{"a": "1"}, wantErr: false},
+		{name: "11.", input: &anonymousA{AInt: 1, AStr: "astr", anonymousInner: anonymousInner{Str: "str", Int: 2}}, wantParams: map[string]any{"aint": 1, "astr": "astr", "str": "str", "int": 2}, wantErr: false},
+		{name: "12.", input: &anonymousB{IAPtr: &ptrInt, Int: 4, anonymousInner: &anonymousInner{Str: "str", Int: 5}}, wantParams: map[string]any{"iaptr": 3, "int": 4, "str": "str"}, wantErr: false},
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotParams, err := ResolveParams(tt.input, nil)
@@ -589,5 +612,51 @@ func Benchmark_fillRowToStruct(b *testing.B) {
 		if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
 			b.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
 		}
+	}
+}
+
+func Test_fillRowToStruct_decodeError(t *testing.T) {
+	var (
+		testVal1 *anonymousInner = &anonymousInner{}
+		ptrInt   *int            = new(int)
+	)
+	*ptrInt = 3
+
+	tests := []struct {
+		name       string
+		fields     *xreflect.StructFields
+		reflectVal reflect.Value
+		result     any
+		vals       map[string]any
+		wantErr    bool
+		wantVal    *anonymousInner
+	}{
+		{name: "1.", result: testVal1,
+			vals: map[string]any{
+				"str": "strval",
+				"int": 2.0,
+			},
+			wantVal: &anonymousInner{Str: "strval", Int: 0},
+			wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.reflectVal = reflect.ValueOf(tt.result)
+			tt.fields = xreflect.CachedTypeFields(tt.reflectVal.Type())
+
+			vals := make([]any, len(tt.fields.List))
+			cols := make([]string, len(tt.fields.List))
+			i := 0
+			for _, k := range tt.fields.ExactName {
+				cols[i] = k.Name
+				vals[i] = tt.vals[k.Name]
+				i++
+			}
+
+			if err := scanInToStruct(tt.fields, tt.reflectVal, cols, vals); (err != nil) != tt.wantErr {
+				t.Errorf("fillRowToStruct() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+		})
 	}
 }

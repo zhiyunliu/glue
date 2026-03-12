@@ -78,7 +78,7 @@ func (ctx *AlloterContext) Header(key string) string {
 func (ctx *AlloterContext) Bind(obj interface{}) error {
 	val := reflect.TypeOf(obj)
 	if val.Kind() != reflect.Ptr {
-		return fmt.Errorf("Bind只接收Ptr类型的数据,当前类型:%s", val.Kind())
+		return fmt.Errorf("Bind只接收Ptr类型的数据,目前是:%s", val.Kind())
 	}
 
 	err := ctx.Request().Body().ScanTo(obj)
@@ -184,6 +184,7 @@ func (r *alloterRequest) GetClientIP() string {
 func (r *alloterRequest) GetRemoteAddr() string {
 	return ""
 }
+
 func (r *alloterRequest) Header() vctx.Header {
 	return engine.Header(r.actx.Request.GetHeader())
 }
@@ -199,6 +200,7 @@ func (r *alloterRequest) SetHeader(key, val string) {
 func (r *alloterRequest) GetContentLength() int64 {
 	return int64(len(r.actx.Request.Body()))
 }
+
 func (r *alloterRequest) Path() vctx.Path {
 	if r.apath.closed {
 		r.apath.closed = false
@@ -328,10 +330,6 @@ func (q *abody) ScanTo(obj interface{}) error {
 	return q.vctx.opts.RequestDecoder(q.vctx, obj)
 }
 
-// Deprecated: Use ScanTo() instead.
-func (q *abody) Scan(obj interface{}) error {
-	return q.ScanTo(obj)
-}
 func (q *abody) Read(p []byte) (n int, err error) {
 	err = q.loadBody()
 	if err != nil {
@@ -374,7 +372,6 @@ func (q *abody) ResetBytes(bodyBytes []byte) error {
 	q.reader = bytes.NewReader(q.bodyBytes)
 	return nil
 }
-
 func (q *abody) Close() {
 	q.bodyBytes = nil
 	q.reader = nil
@@ -446,6 +443,7 @@ func (q *alloterResponse) ContentType() string {
 func (q *alloterResponse) ResponseBytes() []byte {
 	return q.writebytes
 }
+
 func (q *alloterResponse) Size() int {
 	return len(q.writebytes)
 }

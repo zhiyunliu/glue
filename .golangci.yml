@@ -83,4 +83,4 @@ formatters:
       - builtin$
       - examples$
       - (.+)_test\.go
-      
+

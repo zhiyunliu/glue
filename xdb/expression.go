@@ -34,10 +34,10 @@ type ExpressionValuer interface {
 	Build(state SqlState, input DBParam) (string, MissError)
 }
 
-var _ ExpressionValuer = (*ExpressionItem)(nil)
-
 // 表达式回调
 type ExpressionBuildCallback func(item ExpressionValuer, state SqlState, param DBParam) (expression string, err MissError)
+
+var _ ExpressionValuer = (*ExpressionItem)(nil)
 
 type ExpressionItem struct {
 	Matcher                 ExpressionMatcher

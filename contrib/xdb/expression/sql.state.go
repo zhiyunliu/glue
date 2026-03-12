@@ -51,7 +51,6 @@ func (s *DefaultSqlState) AppendExpr(exprValuer xdb.ExprName, value any) (phName
 	s.values = append(s.values, value)
 	return phName
 }
-
 func (s *DefaultSqlState) CanCache() bool {
 	return !(s.HasDynamic(xdb.DynamicAnd) ||
 		s.HasDynamic(xdb.DynamicOr) ||

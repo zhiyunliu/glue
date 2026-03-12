@@ -1,6 +1,8 @@
 package redis
 
-import "github.com/zhiyunliu/golibs/xreflect"
+import (
+	"github.com/zhiyunliu/golibs/xreflect"
+)
 
 type Options struct {
 	Addrs        []string `json:"addrs,omitempty"  valid:"required" `

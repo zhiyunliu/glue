@@ -50,7 +50,6 @@ func NewSeq(name, prefix string, matcher xdb.TemplateMatcher, stmtProcessor xdb.
 		matcher:       matcher,
 		stmtProcessor: stmtProcessor,
 	}
-
 	template.StatePool = NewStatePool(func() interface{} {
 		return xdb.NewSqlState(template.Placeholder())
 	})
@@ -80,7 +79,7 @@ func (template *SeqTemplate) HandleExpr(item xdb.SqlState, sqlTpl string, input 
 }
 
 func (template *SeqTemplate) GetSqlState(tplOpts *xdb.TemplateOptions) xdb.SqlState {
-	sqlState := template.StatePool.Get().(xdb.SqlState)
+	sqlState := template.StatePool.Get()
 	sqlState.WithPlaceholder(template.Placeholder())
 	sqlState.WithTemplateOptions(tplOpts)
 	return sqlState

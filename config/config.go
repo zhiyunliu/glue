@@ -26,8 +26,6 @@ type Observer func(string, Value)
 type Config interface {
 	Load() error
 	Source(sources ...Source) error
-	// Deprecated: As of Go v0.5.3, this function simply calls [ScanTo].
-	Scan(v interface{}) error
 	ScanTo(v interface{}) error
 	Value(key string) Value
 	Watch(key string, o Observer) error

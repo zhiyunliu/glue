@@ -22,9 +22,7 @@ func NewInExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption) 
 	for i := range opts {
 		opts[i](mopts)
 	}
-
 	pattern := InPattern
-
 	matcher := &inExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -139,7 +137,6 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 		return operCallback(item, param, "", value), nil
 	}
 }
-
 func (m *inExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
 
 	inCallback := func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
@@ -196,4 +193,5 @@ func (m *inExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Operato
 		})
 	}
 	return xdb.NewOperatorMap(operList...)
+
 }

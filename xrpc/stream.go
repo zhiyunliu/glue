@@ -1,10 +1,9 @@
 package xrpc
 
 import (
+	"context"
 	"fmt"
 	"reflect"
-
-	"context"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -115,7 +114,6 @@ func buildClientChanProcess(channel ClientStreamChan) (processor ClientStreamPro
 }
 
 func buildClientSliceProcess(refval reflect.Value) (processor ClientStreamProcessor, err error) {
-
 	return func(ctx context.Context, client ClientStreamClient) error {
 		errGroup := errgroup.Group{}
 		//调用grpc服务

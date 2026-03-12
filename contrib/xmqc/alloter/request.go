@@ -110,11 +110,6 @@ func (m *Request) WithContext(ctx context.Context) {
 	m.ctx = ctx
 }
 
-type Body interface {
-	io.Reader
-	Scan(obj interface{}) error
-}
-
 var (
 	_ io.Reader = (*cbody)(nil)
 )

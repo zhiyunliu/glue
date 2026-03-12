@@ -18,7 +18,6 @@ type SelectorWrapper interface {
 	ServiceName() string
 	ResolveNow()
 }
-
 type httpSelector struct {
 	ctx         context.Context
 	serviceName string
@@ -56,6 +55,7 @@ func NewSelector(ctx context.Context, registrar registry.Registrar, reqPath *url
 	} else {
 		rr.Apply(rr.buildOriginAddress(reqPath))
 	}
+
 	return rr, nil
 }
 
@@ -75,9 +75,17 @@ func (r *httpSelector) Nodes() (nodes []selector.Node) {
 	return r.selector.Nodes()
 }
 
-// resolveNow resolves immediately
+// ResolveNow resolves immediately
 func (r *httpSelector) ResolveNow() {
-	r.resolveNowChan <- struct{}{}
+	if r.registrar == nil {
+		return
+	}
+
+	select {
+	case r.resolveNowChan <- struct{}{}:
+		return
+	default:
+	}
 }
 
 func (r *httpSelector) buildOriginAddress(reqPath *url.URL) []selector.Node {
@@ -90,7 +98,6 @@ func (r *httpSelector) buildOriginAddress(reqPath *url.URL) []selector.Node {
 }
 
 func (r *httpSelector) buildAddress(instances []*registry.ServiceInstance) []selector.Node {
-
 	var addresses = make([]selector.Node, 0, len(instances))
 	for _, v := range instances {
 		if scheme, ok := v.Metadata["scheme"]; ok && !strings.EqualFold(scheme, "http") {
@@ -124,11 +131,11 @@ func (r *httpSelector) watchResolver() {
 		case <-r.ctx.Done():
 			return
 		case <-r.resolveNowChan:
+
 		}
 		instances, err := r.registrar.GetService(r.ctx, r.serviceName)
 		if err != nil {
 			log.Errorf("xhttp:watchResolver.GetService=%s,error:%+v", r.serviceName, err)
-			time.Sleep(time.Second)
 			continue
 		}
 		addresses := r.buildAddress(instances)
@@ -145,6 +152,7 @@ func (r *httpSelector) watchResolver() {
 }
 
 func (r *httpSelector) watchRegistrar() {
+
 	if r.registrar == nil {
 		return
 	}

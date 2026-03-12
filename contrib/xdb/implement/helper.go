@@ -278,7 +278,7 @@ func analyzeParamFields(input any, callback xdb.StmtDbTypeWrap) (params xtypes.X
 	fields := xreflect.CachedTypeFields(refval.Type())
 
 	for fieldName, f := range fields.ExactName {
-		if val, fv, ok := f.EncoderV2(refval); ok {
+		if val, fv, ok := f.EncoderV2WithOption(refval, xreflect.StructOptions{MaxDepth: 1}); ok {
 			if callback != nil {
 				if val, err = callback(fieldName, val, fv, f.TagOpts); err != nil {
 					return params, err

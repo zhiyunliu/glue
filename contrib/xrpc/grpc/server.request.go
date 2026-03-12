@@ -98,7 +98,7 @@ func (m *serverRequest) WithContext(ctx sctx.Context) {
 
 type Body interface {
 	io.Reader
-	ScanTo(obj interface{}) error
+	ScanTo(obj any) error
 }
 
 type cbody []byte
@@ -107,6 +107,6 @@ func (b cbody) Read(p []byte) (n int, err error) {
 	return bytes.NewReader(b).Read(p)
 }
 
-func (b cbody) ScanTo(obj interface{}) error {
+func (b cbody) ScanTo(obj any) error {
 	return json.Unmarshal(b, obj)
 }

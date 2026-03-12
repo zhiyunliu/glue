@@ -75,12 +75,14 @@ func (c *Client) ClientStreamProcessor(ctx context.Context, processor xrpc.Clien
 		return xrpc.NewEmptyBody(), err
 	}
 
-	err = processor(ctx, &grpcClientStreamRequest{
+	clientStreamRequest := &grpcClientStreamRequest{
 		servicePath:  servicePath,
 		header:       opts.Header,
 		method:       opts.Method,
 		streamClient: clientStream,
-	})
+	}
+
+	err = processor(ctx, clientStreamRequest)
 	if err != nil {
 
 		inerr := fmt.Errorf("ClientStream grpc://%s%s,BidirectionalStreamProcess,processor:%w", c.reqPath.Host, servicePath, err)

@@ -34,7 +34,6 @@ func NewLikeExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOption
 	for i := range opts {
 		opts[i](mopts)
 	}
-
 	pattern := LikePattern
 
 	matcher := &likeExpressionMatcher{
@@ -120,10 +119,13 @@ func (m *likeExpressionMatcher) MatchString(expression string) (valuer xdb.Expre
 		item.ExpressionBuildCallback = m.buildCallback
 	}
 	m.expressionCache.Store(expression, item)
+
 	return item, ok
 }
+
 func (m *likeExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback {
 	return func(item xdb.ExpressionValuer, state xdb.SqlState, param xdb.DBParam) (expression string, err xdb.MissError) {
+
 		propName := item.GetPropName()
 		value, err := param.GetVal(propName)
 		if err != nil {
@@ -158,7 +160,9 @@ func (m *likeExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallba
 		return operCallback(item, param, phName, value), nil
 	}
 }
+
 func (m *likeExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.OperatorMap {
+
 	operList := []xdb.Operator{
 		xdb.NewOperator("like", func(item xdb.ExpressionValuer, param xdb.DBParam, phName string, value any) string {
 			return fmt.Sprintf("%s %s like %s", item.GetSymbol().Concat(), item.GetFullfield(), phName)
@@ -199,4 +203,5 @@ func (m *likeExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Opera
 		})
 	}
 	return xdb.NewOperatorMap(operList...)
+
 }

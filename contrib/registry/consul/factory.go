@@ -45,6 +45,7 @@ func (f *consulFactory) Create(cfg config.Config) (registry.Registrar, error) {
 	}
 	f.opts = opts
 	return New(client, config, cliOpts...), nil
+
 }
 
 func init() {

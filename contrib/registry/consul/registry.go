@@ -70,6 +70,7 @@ func (c Config) GetGroup() string {
 func (c Config) GetCluster() string {
 	return c.Partition
 }
+
 func (c Config) GetClusters() []string {
 	return []string{c.Partition}
 }

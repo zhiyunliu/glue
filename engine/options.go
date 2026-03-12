@@ -42,6 +42,7 @@ func WithSrvType(srvType string) Option {
 	}
 }
 
+// WithSrvName is the server name, 配置文件 servers下的各个服务名称
 func WithSrvName(name string) Option {
 	return func(o *Options) {
 		o.SrvName = name
@@ -54,6 +55,7 @@ func WithSvcName(name string) Option {
 		o.SrvName = name
 	}
 }
+
 func WithRequestDecoder(requestDecoder DecodeRequestFunc) Option {
 	return func(o *Options) {
 		o.RequestDecoder = requestDecoder

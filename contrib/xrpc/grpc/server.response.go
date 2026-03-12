@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/zhiyunliu/alloter"
-	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/golibs/engine"
 )
 
 var _ alloter.ResponseWriter = (*serverResponse)(nil)

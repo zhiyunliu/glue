@@ -88,6 +88,7 @@ func (r *registrarResolver) watchResolver() {
 			log.Errorf("grpc:watchResolver.GetService=%s,error:%+v", r.serviceName, err)
 			continue
 		}
+
 		addresses := r.buildAddress(instances)
 
 		if !r.checkChange(addresses) {
@@ -100,6 +101,7 @@ func (r *registrarResolver) watchResolver() {
 		} else {
 			r.updateLastSrvAddrs(addresses)
 		}
+
 	}
 }
 
@@ -108,13 +110,13 @@ func (r *registrarResolver) watchRegistrar() {
 	defer func() {
 		r.waitGroup.Done()
 		log.Infof("grpc.watchRegistrar.exit.%s", r.serviceName)
-
 	}()
 
 	var (
 		watcher registry.Watcher
 		err     error
 	)
+
 	for {
 		select {
 		case <-r.ctx.Done():
@@ -136,25 +138,25 @@ func (r *registrarResolver) watchRegistrar() {
 		case <-r.ctx.Done():
 			return
 		default:
-		}
-		instances, err := watcher.Next()
-		if err != nil {
-			log.Errorf("grpc:watchResolver.Next=%s,error:%+v", r.serviceName, err)
-			time.Sleep(time.Second)
-			continue
-		}
-		addresses := r.buildAddress(instances)
-		err = r.clientConn.UpdateState(resolver.State{Addresses: addresses})
-		if err != nil {
-			log.Errorf("grpc:watchResolver.UpdateState=%s,error:%+v", r.serviceName, err)
-		} else {
-			r.updateLastSrvAddrs(addresses)
+			instances, err := watcher.Next()
+			if err != nil {
+				log.Errorf("grpc:watchRegistrar.Next=%s,error:%+v", r.serviceName, err)
+				time.Sleep(time.Second * 2)
+				continue
+			}
+			addresses := r.buildAddress(instances)
+			err = r.clientConn.UpdateState(resolver.State{Addresses: addresses})
+			if err != nil {
+				log.Errorf("grpc:watchRegistrar.UpdateState=%s,error:%+v", r.serviceName, err)
+			} else {
+				r.updateLastSrvAddrs(addresses)
+			}
 		}
 	}
 }
 
 // 定时刷新
-func (r registrarResolver) tickRefresh() {
+func (r *registrarResolver) tickRefresh() {
 	ticker := time.NewTicker(time.Second * 30) //30s刷新一次
 
 	r.waitGroup.Add(1)

@@ -36,6 +36,7 @@ type SQLTemplate interface {
 	GetSqlState(*TemplateOptions) SqlState
 	//sql状态释放
 	ReleaseSqlState(SqlState)
+	//sql参数处理
 	//StmtDbTypeWrap(param any, opt TagOptions) any
 	StmtDbTypeWrap(fieldName string, param any, fv reflect.Value, opt TagOptions) (any, error)
 }

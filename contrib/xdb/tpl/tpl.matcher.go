@@ -50,8 +50,9 @@ func (conn *DefaultTemplateMatcher) GenerateSQL(state xdb.SqlState, sqlTpl strin
 	matcherMap := conn.matcherMap
 	word := matcherMap.GetMatcherRegexp()
 
-	var outerrs []xdb.MissError
-
+	var (
+		outerrs []xdb.MissError
+	)
 	//@变量, 将数据放入params中
 	sql = word.ReplaceAllStringFunc(sqlTpl, func(expr string) (resultExpr string) {
 		var (

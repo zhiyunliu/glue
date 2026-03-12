@@ -39,16 +39,18 @@ func NewOperatorMap(operators ...Operator) OperatorMap {
 		syncMap: make(map[string]Operator),
 	}
 	for _, oper := range operators {
-		//operMap.syncMap.Store(oper.Name(), oper)
+
 		operMap.syncMap[oper.Name()] = oper
 	}
 	return operMap
 }
+
 func (m *operatorMap) Store(operators ...Operator) {
 	for _, operator := range operators {
 		m.syncMap[operator.Name()] = operator
 	}
 }
+
 func (m *operatorMap) Load(name string) (Operator, bool) {
 	//callback, ok := m.syncMap.Load(name)
 	callback, ok := m.syncMap[name]

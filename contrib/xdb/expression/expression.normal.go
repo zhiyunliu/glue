@@ -16,9 +16,7 @@ func NewNormalExpressionMatcher(symbolMap xdb.SymbolMap, opts ...xdb.MatcherOpti
 	for i := range opts {
 		opts[i](mopts)
 	}
-
 	pattern := NormalPattern
-
 	matcher := &normalExpressionMatcher{
 		regexp:          regexp.MustCompile(pattern),
 		expressionCache: &sync.Map{},
@@ -165,5 +163,6 @@ func (m *normalExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Ope
 			return true
 		})
 	}
+
 	return xdb.NewOperatorMap(operList...)
 }

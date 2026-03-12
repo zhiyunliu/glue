@@ -35,7 +35,7 @@ func (o options) GetCluster() string {
 }
 
 func (o options) GetClusters() []string {
-	if len(o.Clusters) == 0 {
+	if len(o.Clusters) <= 0 {
 		return []string{o.Cluster}
 	}
 	return o.Clusters
@@ -76,6 +76,7 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 	regValMap := map[string]*vo.BatchRegisterInstanceParam{}
 
 	for _, item := range si.Endpoints {
+
 		batchParam, ok := regValMap[item.ServiceName]
 		if !ok {
 			batchParam = &vo.BatchRegisterInstanceParam{
@@ -103,7 +104,6 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 				rmd[k] = v
 			}
 		}
-		rmd["cluster"] = r.opts.Cluster
 		rmd["scheme"] = u.Scheme
 		rmd["version"] = si.Version
 
@@ -119,14 +119,15 @@ func (r Registry) Register(_ context.Context, si *registry.ServiceInstance) erro
 			ClusterName: r.opts.Cluster,
 			GroupName:   r.opts.Group,
 		})
-
 	}
+
 	for _, item := range regValMap {
 		succ, e := r.cli.BatchRegisterInstance(*item)
 		if !succ || e != nil {
 			return fmt.Errorf("BatchRegisterInstance err %v,%v", e, item.ServiceName)
 		}
 	}
+
 	return nil
 }
 
@@ -203,7 +204,6 @@ func (r Registry) GetAllServicesInfo(ctx context.Context) (list registry.Service
 	copy(list.NameList, tmplist.Doms)
 	return
 }
-
 func (r Registry) GetOptions() registry.RegistrarOptions {
 	return r.opts
 }

@@ -80,12 +80,14 @@ func (c *Client) ServerStreamProcessor(ctx context.Context, processor xrpc.Serve
 		return err
 	}
 
-	err = processor(ctx, &grpcServerStreamRequest{
+	serverStreamRequest := &grpcServerStreamRequest{
 		servicePath:  servicePath,
 		header:       opts.Header,
 		method:       opts.Method,
 		streamClient: serverStream,
-	})
+	}
+
+	err = processor(ctx, serverStreamRequest)
 	if err != nil {
 		inerr := fmt.Errorf("ServerStream grpc://%s%s,BidirectionalStreamProcess,processor:%w", c.reqPath.Host, servicePath, err)
 		err = errors.Clone(constants.ErrRemoteRequest, errors.WithInnerErr(inerr))

@@ -23,7 +23,6 @@ type Request struct {
 
 // NewRequest 构建请求
 func NewRequest(clientCfg *clientConfig) *Request {
-
 	req := &Request{
 		clientConfig: clientCfg,
 		requests:     cmap.New[any](),

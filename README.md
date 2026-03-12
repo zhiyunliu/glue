@@ -277,7 +277,12 @@ func Query(ctx context.Context) error {}
 	*/
 
 ```
-### 使用说明
+
+
+* dbtype:varchar 指定生成数据库参数得数据类型为varchar
+* dbtype:tvp=ut_db_item 指定生成数据库参数得数据类型值类型，数据是数据库自定义ut_db_item （具体tvp类型数据使用参考官方文档https://learn.microsoft.com/zh-cn/sql/relational-databases/tables/use-table-valued-parameters-database-engine?view=sql-server-ver16
+* 可以通过`RegistStmtDbTypeHandler`自定义参数处理数据类型得实现逻辑
+
  
 
 
@@ -357,7 +362,7 @@ select * from table t where t.id in ('1','2','3')--id:["1","2","3"]
 &{like field} ，&{like %field}， &{like field%} ，&{like %field%}
 &{notlike field} ，&{notlike %field}， &{notlike field%} ，&{notlike %field%}
 &{t.field like property} ，&{t.field like %property}， &{t.field like property%} ，&{t.field like %property%}
-&{t.field notlike property} ，&{t.field notlike %property}， &{t.field notlike property%} ，&{t.field notlike %property%}
+&{t.field notlike property} ，&{t.field notlike %property}， &{t.field notlike property%} ，&{t.field notlike %property%}，&{t.field not like %property%}
 ----(|符号类似)
 
 样例： 
@@ -367,6 +372,7 @@ select * from table t where t.id = @{id} &{like name%}
 select * from table t where t.id = @{id} &{like %name%}
 
 select * from table t where t.id = @{id} &{t.field like %newname%}
+select * from table t where t.id = @{id} &{t.field not like %newname%}
 
 解析结果：
 select * from table t where t.id = @p_id and name like @p_name
@@ -375,10 +381,10 @@ select * from table t where t.id = @p_id and name like @p_name+'%'
 select * from table t where t.id = @p_id and name like '%'+@p_name+'%'
 
 select * from table t where t.id = @p_id and t.field like '%'+@p_newname+'%'
-
+select * from table t where t.id = @p_id and t.field not like '%'+@p_newname+'%'
 ```
 
-## 运算符支持（>,>=,=,<>,<,<=）,支持符号&,|
+## 运算符支持（>,>=,=,<>,!=,<,<=）,支持符号&,|
 
 ```sql
 &{> field} ,&{>= t.field}
@@ -404,6 +410,7 @@ select * from table t where t.id = @p_id and t.name = @p_myinputname
 &{notin field} ,&{notin t.field}
 &{t.field in property}
 &{t.field notin property}
+&{t.field not in property}
 ----(|符号类似)
 
 

@@ -26,8 +26,6 @@ type Value interface {
 	Duration() (time.Duration, error)
 	Slice() ([]Value, error)
 	Map() (map[string]Value, error)
-	//Deprecated: use ScanTo instead.
-	Scan(interface{}) error
 	ScanTo(interface{}) error
 	Load() interface{}
 	Store(interface{})
@@ -134,11 +132,6 @@ func (v *atomicValue) Duration() (time.Duration, error) {
 	return time.Duration(val), nil
 }
 
-// Deprecated: use ScanTo instead.
-func (v *atomicValue) Scan(obj interface{}) error {
-	return v.ScanTo(obj)
-}
-
 func (v *atomicValue) ScanTo(obj interface{}) error {
 	data, err := json.Marshal(v.Load())
 	if err != nil {
@@ -159,7 +152,6 @@ func (v emptyValue) Int() (int64, error)              { return 0, v.err }
 func (v emptyValue) Float() (float64, error)          { return 0.0, v.err }
 func (v emptyValue) Duration() (time.Duration, error) { return 0, v.err }
 func (v emptyValue) String() string                   { return "" }
-func (v emptyValue) Scan(obj interface{}) error       { return v.ScanTo(obj) }
 func (v emptyValue) ScanTo(interface{}) error         { return v.err }
 func (v emptyValue) Load() interface{}                { return nil }
 func (v emptyValue) Store(interface{})                {}

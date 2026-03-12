@@ -23,7 +23,6 @@ const (
 const SupportPackageIsVersion1 = true
 
 type IoWriterWrapper = engine.IoWriterWrapper
-
 type DataEncoder interface {
 	Render(ctx context.Context) error
 }
@@ -148,7 +147,6 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 
 	//判定对象是否实现了响应体接口
 	if entity, ok := err.(ResponseEntity); ok {
-
 		resp.StatusCode(entity.StatusCode())
 		header := entity.Header()
 		if len(header) > 0 {

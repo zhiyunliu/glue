@@ -32,14 +32,14 @@ func init() {
 	})
 
 	xlog.RegistryFormater("@cip", func(e *xlog.Event, _ bool) string {
-		// if e.Tags == nil {
-		// 	return ""
-		// }
-		// cip := e.Tags["cip"]
-		// if cip == "" {
-		// 	return ""
-		// }
-		// return "[" + cip + "]"
+		//if e.Tags == nil {
+		//	return ""
+		//}
+		//cip := e.Tags["cip"]
+		//if cip == "" {
+		//	return ""
+		//}
+		//return "[" + cip + "]"
 		return ""
 
 	})
@@ -181,7 +181,6 @@ func (l *Wraper) Warnf(format string, args ...interface{}) {
 func (l *Wraper) Warn(args ...interface{}) {
 	l.Log(LevelWarn, args...)
 }
-
 func (l *Wraper) Chain(level Level, msg string, opts ...EventOption) {
 	l.Logger.Chain(level, msg, opts...)
 }

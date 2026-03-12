@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/zhiyunliu/alloter"
-	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/glue/xmqc"
+	"github.com/zhiyunliu/golibs/engine"
 )
 
 var _ alloter.ResponseWriter = (*Response)(nil)
@@ -67,7 +67,7 @@ func (r *Response) Write(data []byte) (n int, err error) {
 
 // Writes the string into the response body.
 func (r *Response) WriteString(s string) (n int, err error) {
-	r.size += n
+	r.size += len(s)
 	return
 }
 

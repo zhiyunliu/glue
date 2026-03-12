@@ -76,15 +76,11 @@ func (m *Request) GetMethod() string {
 }
 
 func (m *Request) Params() map[string]string {
-	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	return m.params
 }
 
 func (m *Request) GetHeader() engine.Header {
-	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	return m.header
 }
@@ -101,6 +97,7 @@ func (m *Request) GetRemoteAddr() string {
 func (m *Request) Context() sctx.Context {
 	return m.ctx
 }
+
 func (m *Request) WithContext(ctx sctx.Context) {
 	m.ctx = ctx
 }
@@ -153,11 +150,6 @@ func (m *Request) Monopoly(monopolyJobs cmap.ConcurrentMap[string, *monopolyJob]
 		return false, nil
 	}
 	return true, nil
-}
-
-type Body interface {
-	io.Reader
-	Scan(obj interface{}) error
 }
 
 var (

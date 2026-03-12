@@ -18,10 +18,10 @@ type AlloterEngine struct {
 }
 
 func NewAlloterEngine(innerEngine *alloter.Engine, opts ...engine.Option) *AlloterEngine {
+
 	if global.TrustedPlatform != "" {
 		innerEngine.TrustedPlatform = global.TrustedPlatform
 	}
-
 	g := &AlloterEngine{
 		Engine: innerEngine,
 		pool:   sync.Pool{},
@@ -44,6 +44,7 @@ func (e *AlloterEngine) NoMethod() {
 		actx.reset(ctx)
 		actx.opts = e.opts
 		actx.Log().Errorf("No Method for %s,%s,clientip:%s", actx.Request().Path().FullPath(), actx.Request().GetMethod(), actx.Request().GetClientIP())
+
 		if global.EnableNoRouteDetail {
 			actx.Log().Errorf("header:%v", actx.Request().Header())
 			actx.Log().Errorf("body:%v", actx.Request().Body())

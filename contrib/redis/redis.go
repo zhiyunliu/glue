@@ -2,11 +2,11 @@ package redis
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/golibs/xenv"
 	"github.com/zhiyunliu/golibs/xtransform"
 )
 
@@ -37,7 +37,10 @@ func NewByOpts(configName string, opts ...Option) (r *Client, err error) {
 // NewByConfig 构建客户端
 func NewByConfig(configName string, setting config.Config, mapCfg map[string]any) (r *Client, err error) {
 	redisOpts := defaultRedisOpts()
-	setting.ScanTo(redisOpts)
+	err = setting.ScanTo(redisOpts)
+	if err != nil {
+		return
+	}
 	if Refactor != nil {
 		redisOpts, err = Refactor(configName, redisOpts)
 		if err != nil {
@@ -65,20 +68,21 @@ func newRedis(configName string, opts *Options, mapCfg map[string]any) (r *Clien
 		configName: configName,
 	}
 	opts.Username = xtransform.TranslateCallback(opts.Username, func(param string) string {
-		val := os.Getenv(param)
+		val := xenv.Get(param)
 		if len(val) > 0 {
 			return val
 		}
-		return param
+		return ""
 	}, xtransform.WithBraceMode(), xtransform.WithAtBraceMode())
 
 	opts.Password = xtransform.TranslateCallback(opts.Password, func(param string) string {
-		val := os.Getenv(param)
+		val := xenv.Get(param)
 		if len(val) > 0 {
 			return val
 		}
-		return param
+		return ""
 	}, xtransform.WithBraceMode(), xtransform.WithAtBraceMode())
+
 	r.opts = opts
 
 	ropts := &redis.UniversalOptions{

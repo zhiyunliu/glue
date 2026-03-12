@@ -60,7 +60,6 @@ func (w *watcher) Next() ([]*registry.ServiceInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	items := buildServiceInstanceList(w.serviceName, res)
 	return items, nil
 }

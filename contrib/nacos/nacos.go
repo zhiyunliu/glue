@@ -16,7 +16,8 @@ import (
 
 func init() {
 	logger.InitLogger(logger.Config{
-		Level: "error",
+		Level:          "error",
+		AppendToStdout: false,
 		LogRollingConfig: &lumberjack.Logger{
 			Filename:   "nacos.log",
 			MaxAge:     7 * 24,

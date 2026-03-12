@@ -35,7 +35,7 @@ func GetExpressionPropertyName(fullkey string) string {
 	return fullkey[idx+1:]
 }
 
-// getExpressionSymbol 可能存在崩溃，在开发阶段即可暴露，无需关注
+// GetExpressionSymbol 可能存在崩溃，在开发阶段即可暴露，无需关注
 func GetExpressionSymbol(symbolMap xdb.SymbolMap, expression string) xdb.Symbol {
 	idx := strings.Index(expression, "{")
 	if idx < 0 {
