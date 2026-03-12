@@ -1,6 +1,8 @@
 package xdb
 
-import "reflect"
+import (
+	"reflect"
+)
 
 type StmtDbTypeHandler interface {
 	Name() string

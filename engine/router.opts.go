@@ -7,21 +7,20 @@ type RouterOption interface {
 }
 
 type RouterOptions struct {
-	Methods        []string
-	ExcludeLogReq  bool
+	Methods []string
+	// 排除请求日志
+	ExcludeLogReq bool
+	// 排除响应日志
 	ExcludeLogResp bool
-	WithHeaders    []constants.HeaderGetter //打印请求头
-	WithSource     *bool                    //打印请求源
+	// 强制打印请求日志
+	MandatoryLogReq bool
+	// 强制打印响应日志
+	MandatoryLogResp bool
+	// 打印请求头
+	WithHeaders []constants.HeaderGetter //打印请求头
+	// 打印请求源
+	WithSource *bool //打印请求源
 }
-
-// func (opts *RouterOptions) Merge(nopts *RouterOptions) *RouterOptions {
-// 	ropts := &RouterOptions{}
-// 	if nopts == nil {
-
-// 	}
-
-// 	return ropts
-// }
 
 type NormalRouterOption struct {
 	callback func(*RouterOptions)
@@ -31,6 +30,7 @@ func (o *NormalRouterOption) Apply(opts *RouterOptions) {
 	o.callback(opts)
 }
 
+// WithMethod 设置方法
 func WithMethod(method ...string) RouterOption {
 	return &NormalRouterOption{
 		callback: func(opts *RouterOptions) {
@@ -39,6 +39,7 @@ func WithMethod(method ...string) RouterOption {
 	}
 }
 
+// WithExcludeLogReq 排除打印请求日志
 func WithExcludeLogReq() RouterOption {
 	return &NormalRouterOption{
 		callback: func(opts *RouterOptions) {
@@ -46,6 +47,8 @@ func WithExcludeLogReq() RouterOption {
 		},
 	}
 }
+
+// WithExcludeLogResp 排除打印响应日志
 func WithExcludeLogResp() RouterOption {
 	return &NormalRouterOption{
 		callback: func(opts *RouterOptions) {
@@ -54,6 +57,25 @@ func WithExcludeLogResp() RouterOption {
 	}
 }
 
+// WithMandatoryLogReq 强制打印请求日志
+func WithMandatoryLogReq() RouterOption {
+	return &NormalRouterOption{
+		callback: func(opts *RouterOptions) {
+			opts.MandatoryLogReq = true
+		},
+	}
+}
+
+// WithMandatoryLogResp 强制打印响应日志
+func WithMandatoryLogResp() RouterOption {
+	return &NormalRouterOption{
+		callback: func(opts *RouterOptions) {
+			opts.MandatoryLogResp = true
+		},
+	}
+}
+
+// WithPrintHeaders 指定打印的请求头
 func WithPrintHeaders(keys ...constants.HeaderGetter) RouterOption {
 	return &NormalRouterOption{
 		callback: func(opts *RouterOptions) {
@@ -62,6 +84,7 @@ func WithPrintHeaders(keys ...constants.HeaderGetter) RouterOption {
 	}
 }
 
+// WithPrintRequestBody 启用打印请求源
 func WithPrintSource(include bool) RouterOption {
 	return &NormalRouterOption{
 		callback: func(opts *RouterOptions) {

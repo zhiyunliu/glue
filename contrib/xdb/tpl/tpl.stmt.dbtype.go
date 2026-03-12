@@ -30,7 +30,6 @@ func (processor *DefaultStmtDbTypeProcessor) RegistHandler(handlers ...xdb.StmtD
 }
 
 func (processor *DefaultStmtDbTypeProcessor) Process(fieldName string, param any, fv reflect.Value, tagOpts xdb.TagOptions) (any, error) {
-	//func (processor *DefaultStmtDbTypeProcessor) Process(param any, tagOpts xdb.TagOptions) any {
 	argsInfo, ok := tagOpts.GetArgsInfo("dbtype")
 	if !ok {
 		return param, nil

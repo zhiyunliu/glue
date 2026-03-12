@@ -24,7 +24,7 @@ type serverRequest struct {
 	url    *url.URL
 	method string
 	params map[string]string
-	header map[string]string
+	header engine.Header
 	body   cbody
 }
 

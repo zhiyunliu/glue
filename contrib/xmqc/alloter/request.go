@@ -2,7 +2,7 @@ package alloter
 
 import (
 	"bytes"
-	sctx "context"
+	"context"
 	"io"
 	"net/url"
 	"strconv"
@@ -19,7 +19,7 @@ var _ engine.Request = (*Request)(nil)
 
 // Request 处理任务请求
 type Request struct {
-	ctx  sctx.Context
+	ctx  context.Context
 	task *xmqc.Task
 	queue.IMQCMessage
 	method string
@@ -41,6 +41,7 @@ func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request) {
 
 	//将消息原串转换为map
 	message := m.GetMessage()
+
 	mheader := message.Header()
 	if len(mheader) > 0 {
 		for k, v := range mheader {
@@ -48,7 +49,7 @@ func newRequest(task *xmqc.Task, m queue.IMQCMessage) (r *Request) {
 		}
 	}
 	r.body = &cbody{bytes: message.Body()}
-	r.ctx = sctx.Background()
+	r.ctx = context.Background()
 	r.header.Set("retry_count", strconv.FormatInt(m.RetryCount(), 10))
 	r.header.Set("x-xmqc-msg-id", m.MessageId())
 	r.header.Set(constants.ContentTypeName, constants.ContentTypeApplicationJSON)
@@ -102,10 +103,10 @@ func (m *Request) GetRemoteAddr() string {
 	return m.header.Get(constants.HeaderRemoteHeader)
 }
 
-func (m *Request) Context() sctx.Context {
+func (m *Request) Context() context.Context {
 	return m.ctx
 }
-func (m *Request) WithContext(ctx sctx.Context) {
+func (m *Request) WithContext(ctx context.Context) {
 	m.ctx = ctx
 }
 
