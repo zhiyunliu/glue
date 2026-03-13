@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/zhiyunliu/alloter v0.2.0
-	github.com/zhiyunliu/golibs v0.4.1
+	github.com/zhiyunliu/golibs v0.4.2
 	github.com/zhiyunliu/stack v1.10.1
 	github.com/zhiyunliu/xbinding v0.1.4
 )
