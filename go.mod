@@ -4,13 +4,14 @@ go 1.24.0
 
 require (
 	github.com/zhiyunliu/alloter v0.2.0
-	github.com/zhiyunliu/golibs v0.4.0
+	github.com/zhiyunliu/golibs v0.4.2
 	github.com/zhiyunliu/redisqueue/v3 v3.1.2
 	github.com/zhiyunliu/stack v1.10.1 // indirect
 	github.com/zhiyunliu/xbinding v0.1.4
+	github.com/zhiyunliu/zerolog v1.1.0 // indirect
 )
 
-replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
+//replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
 
 //replace github.com/zhiyunliu/redisqueue/v3 => ../../../github.com/zhiyunliu/redisqueue
 
@@ -110,7 +111,6 @@ require (
 	github.com/tklauser/numcpus v0.5.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	github.com/zhiyunliu/zerolog v1.1.0 // indirect
 	go.opentelemetry.io/otel/metric v1.30.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
