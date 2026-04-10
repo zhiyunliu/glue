@@ -3,7 +3,7 @@ module github.com/zhiyunliu/glue
 go 1.24.0
 
 require (
-	github.com/zhiyunliu/alloter v0.2.0
+	github.com/zhiyunliu/alloter v0.2.1
 	github.com/zhiyunliu/golibs v0.4.2
 	github.com/zhiyunliu/redisqueue/v3 v3.1.2
 	github.com/zhiyunliu/stack v1.10.1 // indirect
