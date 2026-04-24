@@ -171,7 +171,7 @@ func getLogOptions(ctx context.Context) *log.Options {
 }
 
 var (
-	_SrcHeaders = []string{constants.HeaderSourceIp, constants.HeaderSourceName}
+	SrcHeaders = []string{constants.HeaderSourceIp, constants.HeaderSourceName}
 )
 
 func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper, header context.Header) {
@@ -189,7 +189,7 @@ func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 
 	if printSource {
 		builder := bytes.Buffer{}
-		for _, key := range _SrcHeaders {
+		for _, key := range SrcHeaders {
 			v := header.Get(key)
 			if len(v) <= 0 {
 				continue
