@@ -2,8 +2,6 @@ package engine
 
 type Status string
 
-//type Header xtypes.SMap
-
 const (
 	StatusStart = "start"
 	StatusStop  = "stop"

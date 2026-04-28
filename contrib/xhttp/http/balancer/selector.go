@@ -181,15 +181,15 @@ func (r *httpSelector) watchRegistrar() {
 		case <-r.ctx.Done():
 			return
 		default:
-			instances, err := watcher.Next()
-			if err != nil {
-				log.Errorf("http:watchRegistrar.Next=%s,error:%+v", r.serviceName, err)
-				time.Sleep(time.Second * 2)
-				continue
-			}
-			addresses := r.buildAddress(instances)
-			r.Apply(addresses)
 		}
+		instances, err := watcher.Next()
+		if err != nil {
+			log.Errorf("xhttp:watchRegistrar.Next=%s,error:%+v", r.serviceName, err)
+			time.Sleep(time.Second)
+			continue
+		}
+		addresses := r.buildAddress(instances)
+		r.Apply(addresses)
 	}
 }
 

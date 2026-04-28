@@ -6,6 +6,12 @@ import (
 	"github.com/zhiyunliu/golibs/xtypes"
 )
 
+var ProviderNameMap = xtypes.SMap{
+	"ora":    "oci8",
+	"oracle": "oci8",
+	"sqlite": "sqlite3",
+}
+
 type Config struct {
 	Proto         string      `json:"proto" valid:"required"`
 	Conn          string      `json:"conn" valid:"required" label:"连接字符串"`

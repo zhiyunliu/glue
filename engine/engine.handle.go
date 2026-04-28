@@ -123,12 +123,13 @@ func engineHandler(group *RouterWrapper, unit *router.Unit) middleware.Handler {
 }
 
 // extractArgs returns the string of the req
-func extractReq(req context.Request, logopts *log.Options, rotps *RouterOptions) string {
+func extractReq(req context.Request, logopts *log.Options, ropts *RouterOptions) string {
 	res := ""
 	if len(req.Query().Values()) > 0 {
 		res = req.Query().String()
 	}
-	if logopts.WithRequest && !rotps.ExcludeLogReq && !logopts.IsExclude(req.Path().FullPath()) {
+	if ropts.MandatoryLogReq ||
+		(logopts.WithRequest && !(ropts.ExcludeLogReq || logopts.IsExclude(req.Path().FullPath()))) {
 		res += "|"
 		res += extractBody(req)
 	}
@@ -144,7 +145,9 @@ func extractBody(req context.Request) string {
 }
 
 func extractResp(ctx context.Context, logopts *log.Options, ropts *RouterOptions) string {
-	if logopts.WithResponse && !ropts.ExcludeLogResp && !logopts.IsExclude(ctx.Request().Path().FullPath()) {
+
+	if ropts.MandatoryLogResp ||
+		(logopts.WithResponse && !(ropts.ExcludeLogResp || logopts.IsExclude(ctx.Request().Path().FullPath()))) {
 		return bytesconv.BytesToString(ctx.Response().ResponseBytes())
 	}
 	return ""
@@ -168,7 +171,7 @@ func getLogOptions(ctx context.Context) *log.Options {
 }
 
 var (
-	_SrcHeaders = []string{constants.HeaderSourceIp, constants.HeaderSourceName}
+	SrcHeaders = []string{constants.HeaderSourceIp, constants.HeaderSourceName}
 )
 
 func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper, header context.Header) {
@@ -186,7 +189,7 @@ func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 
 	if printSource {
 		builder := bytes.Buffer{}
-		for _, key := range _SrcHeaders {
+		for _, key := range SrcHeaders {
 			v := header.Get(key)
 			if len(v) <= 0 {
 				continue

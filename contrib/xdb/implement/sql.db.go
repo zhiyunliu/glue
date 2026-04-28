@@ -10,18 +10,13 @@ import (
 	"time"
 
 	"github.com/zhiyunliu/glue/xdb"
-	"github.com/zhiyunliu/golibs/xtypes"
-)
+ )
 
 var (
 	_ xdb.DbConn = &sysDB{}
 )
 
-var nameMap = xtypes.SMap{
-	"ora":    "oci8",
-	"oracle": "oci8",
-	"sqlite": "sqlite3",
-}
+
 
 type ISysDB interface {
 	Query(context.Context, string, ...interface{}) (*sql.Rows, error)
@@ -71,7 +66,7 @@ func NewSysDB(proto string, conn string, opts ...Option) (ISysDB, error) {
 	}
 
 	proto = strings.ToLower(proto)
-	proto = nameMap.GetWithDefault(proto, proto)
+	proto = xdb.ProviderNameMap.GetWithDefault(proto, proto)
 	obj.db, err = sql.Open(proto, conn)
 	if err != nil {
 		return nil, fmt.Errorf("NewSysDB.Open.proto:%s,connName:%s,error:%w", proto, obj.connName, err)
