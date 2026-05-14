@@ -7,6 +7,8 @@ import (
 
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/engine"
+	"github.com/zhiyunliu/golibs/xenv"
+	"github.com/zhiyunliu/golibs/xtransform"
 )
 
 type Server interface {
@@ -55,6 +57,11 @@ func NewServer(proto string,
 }
 
 func GetService(queue string) string {
+	queue = xtransform.TranslateCallback(queue, func(param string) string {
+		return xenv.GetOrDefault(param, "")
+
+	}, xtransform.WithBraceMode(), xtransform.WithAtBraceMode())
+
 	if strings.HasPrefix(queue, "/") {
 		return queue
 	}

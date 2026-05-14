@@ -11,6 +11,8 @@ import (
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/global"
 	"github.com/zhiyunliu/glue/session"
+	"github.com/zhiyunliu/golibs/xenv"
+	"github.com/zhiyunliu/golibs/xtransform"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 )
@@ -34,6 +36,7 @@ func (q *queue) Send(ctx context.Context, key string, value interface{}) error {
 	if len(strings.TrimSpace(key)) == 0 {
 		return fmt.Errorf("[%s] queue.Send,queue name can't be empty", q.q.Name())
 	}
+	key = q.formatQueueName(key)
 	msg, err := q.buildMessage(ctx, key, value)
 	if err != nil {
 		return err
@@ -53,6 +56,7 @@ func (q *queue) BatchSend(ctx context.Context, key string, values ...interface{}
 	if len(strings.TrimSpace(key)) == 0 {
 		return fmt.Errorf("[%s] queue.BatchSend,queue name can't be empty", q.q.Name())
 	}
+	key = q.formatQueueName(key)
 	msgList := make([]Message, 0, len(values))
 	for i := range values {
 		msg, err := q.buildMessage(ctx, key, values[i])
@@ -72,6 +76,7 @@ func (q *queue) DelaySend(ctx context.Context, key string, value interface{}, de
 	if len(strings.TrimSpace(key)) == 0 {
 		return fmt.Errorf("[%s] queue.DelaySend,queue name can't be empty", q.q.Name())
 	}
+	key = q.formatQueueName(key)
 	msg, err := q.buildMessage(ctx, key, value)
 	if err != nil {
 		return err
@@ -107,10 +112,13 @@ func (q *queue) buildMessage(ctx context.Context, key string, value any) (msg Me
 	return msg, nil
 }
 
-// // Count 队列中消息个数
-// func (q *queue) Count(key string) (int64, error) {
-// 	return q.q.Count(key)
-// }
+// formatQueueName 对输入KEY进行封装处理，支持环境变量替换
+func (q *queue) formatQueueName(key string) string {
+	return xtransform.TranslateCallback(key, func(param string) string {
+		return xenv.GetOrDefault(param, "")
+
+	}, xtransform.WithBraceMode(), xtransform.WithAtBraceMode())
+}
 
 func (q *queue) Close() error {
 	return q.q.Close()
