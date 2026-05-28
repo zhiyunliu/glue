@@ -12,7 +12,9 @@ import (
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/queue"
 	"github.com/zhiyunliu/glue/xmqc"
+	"github.com/zhiyunliu/golibs/xenv"
 	"github.com/zhiyunliu/golibs/xstack"
+	"github.com/zhiyunliu/golibs/xtransform"
 )
 
 // processor cron管理程序，用于管理多个任务的执行，暂停，恢复，动态添加，移除
@@ -123,6 +125,10 @@ func (s *processor) Resume() (bool, error) {
 }
 func (s *processor) consume(task *xmqc.Task) error {
 	task.FullPath = fmt.Sprint(s.consumer.ServerURL(), task.GetService())
+	task.Queue = xtransform.TranslateCallback(task.Queue, func(param string) string {
+		return xenv.GetOrDefault(param, "")
+	}, xtransform.WithBraceMode())
+
 	return s.consumer.Consume(task, s.handleCallback(task))
 }
 
