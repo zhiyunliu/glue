@@ -34,3 +34,9 @@ examples/conf/*
 
 .vscode
 go.sum
+.trae/
+.copilot/
+.idea/
+.codex/
+.cloude/
+

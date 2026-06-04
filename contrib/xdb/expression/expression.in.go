@@ -130,7 +130,12 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 		}
 
 		if xdb.CheckIsNil(value) {
-			return
+			if item.GetSymbol().IsDynamic() {
+				return
+			} else {
+				err = xdb.NewMissParamError(item.GetPropName(), nil)
+				return
+			}
 		}
 
 		operCallback, ok := item.GetOperExprCallback()
