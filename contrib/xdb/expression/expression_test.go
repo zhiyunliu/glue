@@ -164,6 +164,7 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "j-a.", matcher: inMatcher, fullKey: "&{tt.infield  in    bytesfield}", wantFullfield: "tt.infield", wantPropName: "bytesfield", wantOper: "in", wantSymbol: "&", wantExpr: "", wantErr: true},
 		{name: "k-a.", matcher: inMatcher, fullKey: "&{tt.infield  in    objfield}", wantFullfield: "tt.infield", wantPropName: "objfield", wantOper: "in", wantSymbol: "&", wantExpr: "", wantErr: true},
 		{name: "l-a.", matcher: inMatcher, fullKey: "&{tt.infield  in    objarray}", wantFullfield: "tt.infield", wantPropName: "objarray", wantOper: "in", wantSymbol: "&", wantExpr: "and tt.infield in ('p1','p2')", wantErr: false},
+		{name: "m-a.", matcher: inMatcher, fullKey: "&{tt.infield  in    intemptyarray}", wantFullfield: "tt.infield", wantPropName: "intemptyarray", wantOper: "in", wantSymbol: "&", wantExpr: "", wantErr: false},
 
 		{name: "$-array-1.", matcher: normalMatcher, fullKey: "${tbl.inproperty}", wantFullfield: "tbl.inproperty", wantPropName: "inproperty", wantOper: "$", wantSymbol: "$", wantExpr: "'p1','p2'"},
 		{name: "$-array-2.", matcher: normalMatcher, fullKey: "${tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "$", wantSymbol: "$", wantExpr: "1,2"},
@@ -174,14 +175,15 @@ func TestDefaultGetPropName(t *testing.T) {
 	}
 
 	dbParam := map[string]any{
-		"property":   "p",
-		"field":      "f",
-		"inproperty": []string{"p1", "p2"},
-		"infield":    []int{1, 2},
-		"emptyfield": "",
-		"bytesfield": []byte("bytes"),
-		"objfield":   struct{}{},
-		"objarray":   []any{"p1", "p2"},
+		"property":      "p",
+		"field":         "f",
+		"inproperty":    []string{"p1", "p2"},
+		"infield":       []int{1, 2},
+		"emptyfield":    "",
+		"bytesfield":    []byte("bytes"),
+		"objfield":      struct{}{},
+		"objarray":      []any{"p1", "p2"},
+		"intemptyarray": []int{},
 	}
 
 	for _, tt := range tests {

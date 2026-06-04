@@ -129,6 +129,10 @@ func (m *inExpressionMatcher) defaultBuildCallback() xdb.ExpressionBuildCallback
 			return
 		}
 
+		if xdb.CheckIsNil(value) {
+			return
+		}
+
 		operCallback, ok := item.GetOperExprCallback()
 		if !ok {
 			err = xdb.NewMissOperError(item.GetOper())
@@ -146,30 +150,30 @@ func (m *inExpressionMatcher) getOperatorMap(optMap xdb.OperatorMap) xdb.Operato
 		return fmt.Sprintf("%s %s not in (%s)", item.GetSymbol().Concat(), item.GetFullfield(), value)
 	}
 
-	emptyNormalize := func(exprName xdb.ExprName, param xdb.DBParam, value any) (newVal any, err xdb.MissError) {
+	var emptyNormalize xdb.NormalizeValueCallback = func(exprName xdb.ExprName, param xdb.DBParam, value any) (any, xdb.MissError) {
 		var val string
 		switch t := value.(type) {
 		case []int8, []int, []int16, []int32, []int64, []uint, []uint16, []uint32, []uint64:
 			val = strings.Trim(strings.ReplaceAll(fmt.Sprint(t), " ", ","), "[]")
 			if len(val) == 0 {
-				return
+				return nil, nil
 			}
 		case []string:
 			if len(t) <= 0 {
-				return
+				return nil, nil
 			}
 			val = sqlInjectionPreventionArray(t)
 		case []byte:
-			return "", xdb.NewMissDataTypeError(exprName.GetPropName())
+			return nil, xdb.NewMissDataTypeError(exprName.GetPropName())
 		default:
 			refVal := reflect.ValueOf(value)
 			if !(refVal.Kind() == reflect.Array ||
 				refVal.Kind() == reflect.Slice) {
-				return "", xdb.NewMissDataTypeError(exprName.GetPropName())
+				return nil, xdb.NewMissDataTypeError(exprName.GetPropName())
 			}
 			arrayLen := refVal.Len()
 			if arrayLen <= 0 {
-				return
+				return nil, nil
 			}
 			tmpStrArray := make([]string, arrayLen)
 			for i := 0; i < arrayLen; i++ {
