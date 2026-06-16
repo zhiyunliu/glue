@@ -88,7 +88,7 @@ func Server() middleware.Middleware {
 				subcode = resp.GetSubCode()
 			} else if respEntity, ok := reply.(engine.ResponseEntity); ok {
 				statusCode = respEntity.StatusCode()
-				subcode = "entity.unknown"
+				subcode = ""
 			} else if rerr, ok := reply.(error); ok {
 				err = rerr
 				statusCode = http.StatusInternalServerError
