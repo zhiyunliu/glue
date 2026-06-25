@@ -50,7 +50,7 @@ func (p *xProvider) StartPush(config *prometheusConfig, gatherer prometheus.Gath
 		return
 	}
 
-	if config.Gateway.Addr == "" {
+	if config.Gateway.GetAddr() == "" {
 		log.Warnf("Pushgateway Addr is not set, Prometheus push is disabled")
 		return
 	}
@@ -59,10 +59,10 @@ func (p *xProvider) StartPush(config *prometheusConfig, gatherer prometheus.Gath
 	group.Go(func() error {
 		cfg := config.Gateway
 
-		ticker := time.NewTicker(time.Duration(cfg.Interval) * time.Second)
+		ticker := time.NewTicker(time.Duration(cfg.GetInterval()) * time.Second)
 		defer ticker.Stop()
 
-		pusher := push.New(cfg.Addr, config.Job).
+		pusher := push.New(cfg.GetAddr(), config.Job).
 			Grouping("instance", global.LocalIp).
 			Grouping("srv", global.AppName)
 
