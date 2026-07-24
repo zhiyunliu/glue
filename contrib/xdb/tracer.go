@@ -10,11 +10,18 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func GetSpanFromContext(ctx context.Context, sting *Setting, sql, operation string, stackSkip int) (nctx context.Context, span trace.Span) {
+type WrapSpan interface {
+	End(options ...trace.SpanEndOption)
+}
+
+func GetSpanFromContext(ctx context.Context, sting *Setting, sql, operation string, stackSkip int) (nctx context.Context, span WrapSpan) {
+	meter := GetMetrics(sting.Cfg.Proto)
+	meter.Incr(sting.ConnName, operation)
+
 	tracer := otel.Tracer("XDB")
 	caller := stack.Caller(stackSkip)
 	// 创建span
-	ctx, span = tracer.Start(ctx, fmt.Sprintf("XDB:%s", operation),
+	ctx, traceSpan := tracer.Start(ctx, fmt.Sprintf("XDB:%s", operation),
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(
 			attribute.String("db.system", sting.Cfg.Proto),
@@ -23,5 +30,20 @@ func GetSpanFromContext(ctx context.Context, sting *Setting, sql, operation stri
 			attribute.String("code.info", fmt.Sprintf("%x", caller)),
 		),
 	)
-	return ctx, span
+	return ctx, &WrapSpanImpl{span: traceSpan, connName: sting.ConnName, operation: operation, meter: meter}
+}
+
+type WrapSpanImpl struct {
+	span      trace.Span
+	meter     *Metrics
+	connName  string
+	operation string
+}
+
+func (w *WrapSpanImpl) End(options ...trace.SpanEndOption) {
+	if w.span == nil {
+		return
+	}
+	w.span.End(options...)
+	w.meter.Decr(w.connName, w.operation)
 }
