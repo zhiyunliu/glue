@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/stack"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -15,7 +16,7 @@ type WrapSpan interface {
 }
 
 func GetSpanFromContext(ctx context.Context, sting *Setting, sql, operation string, stackSkip int) (nctx context.Context, span WrapSpan) {
-	meter := GetMetrics(sting.Cfg.Proto)
+	meter := xdb.GetMetrics(sting.Cfg.Proto)
 	meter.Incr(sting.ConnName, operation)
 
 	tracer := otel.Tracer("XDB")
@@ -35,7 +36,7 @@ func GetSpanFromContext(ctx context.Context, sting *Setting, sql, operation stri
 
 type WrapSpanImpl struct {
 	span      trace.Span
-	meter     *Metrics
+	meter     *xdb.Metrics
 	connName  string
 	operation string
 }

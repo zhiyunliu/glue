@@ -17,7 +17,7 @@ var (
 )
 
 type Metrics struct {
-	Proto          string
+	proto          string
 	RequestCounter metrics.Int64UpDownCounter `metric:"db_cur_proc"  `
 }
 
@@ -35,7 +35,7 @@ func GetMetrics(proto string) (meter *Metrics) {
 	}
 
 	meter = &Metrics{
-		Proto: proto,
+		proto: proto,
 	}
 
 	factory := metrics.NewFactory(otel.GetMeterProvider(), ScopeName)
@@ -48,12 +48,12 @@ func (m *Metrics) Incr(connName, spanName string) {
 	if m.RequestCounter == nil {
 		return
 	}
-	m.RequestCounter.Add(context.Background(), 1, metric.WithAttributes(attribute.String("dbtype", m.Proto), attribute.String("conn", connName), attribute.String("span", spanName)))
+	m.RequestCounter.Add(context.Background(), 1, metric.WithAttributes(attribute.String("dbtype", m.proto), attribute.String("conn", connName), attribute.String("span", spanName)))
 }
 
 func (m *Metrics) Decr(connName, spanName string) {
 	if m.RequestCounter == nil {
 		return
 	}
-	m.RequestCounter.Add(context.Background(), -1, metric.WithAttributes(attribute.String("dbtype", m.Proto), attribute.String("conn", connName), attribute.String("span", spanName)))
+	m.RequestCounter.Add(context.Background(), -1, metric.WithAttributes(attribute.String("dbtype", m.proto), attribute.String("conn", connName), attribute.String("span", spanName)))
 }
