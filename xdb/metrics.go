@@ -2,10 +2,10 @@ package xdb
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/zhiyunliu/glue/metrics"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -22,25 +22,8 @@ type Metrics struct {
 }
 
 func GetMetrics(proto string) (meter *Metrics) {
-	tmp, ok := initSyncMap.Load(proto)
-	if ok {
-		return tmp.(*Metrics)
-	}
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	tmp, ok = initSyncMap.Load(proto)
-	if ok {
-		return tmp.(*Metrics)
-	}
-
-	meter = &Metrics{
-		proto: proto,
-	}
-
-	factory := metrics.NewFactory(otel.GetMeterProvider(), ScopeName)
-	metrics.Init(meter, factory)
-	initSyncMap.Store(proto, meter)
+	mutexKey := fmt.Sprintf("%s-%s", ScopeName, proto)
+	meter = metrics.GetMetrics[Metrics](mutexKey, ScopeName)
 	return meter
 }
 
