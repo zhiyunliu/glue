@@ -24,6 +24,7 @@ type Metrics struct {
 func GetMetrics(proto string) (meter *Metrics) {
 	mutexKey := fmt.Sprintf("%s-%s", ScopeName, proto)
 	meter = metrics.GetMetrics[Metrics](mutexKey, ScopeName)
+	meter.proto = proto
 	return meter
 }
 
