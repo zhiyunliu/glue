@@ -101,6 +101,8 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 			}
 			resp.Flush()
 		}
+		resp.WriteBytes([]byte{})
+		resp.Flush()
 		return nil
 	}
 
