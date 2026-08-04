@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/golibs/xenv"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -48,6 +50,25 @@ func setTracerProvider(cfg *Config, res *resource.Resource, telemetryConfig conf
 
 }
 
+func parpareConfig(cfg *Config) {
+	if cfg.TraceEndpoint == "" {
+		cfg.TraceEndpoint = xenv.Get("OTEL_TRACE_ENDPOINT")
+	}
+	if cfg.TraceSampleRate == 0 {
+		tmpv := xenv.GetOrDefault("OTEL_TRACE_SAMPLE_RATE", "0")
+		cfg.TraceSampleRate, _ = strconv.ParseInt(tmpv, 10, 64)
+	}
+	if cfg.MetricsProvider == "" {
+		cfg.MetricsProvider = xenv.GetOrDefault("OTEL_METRICS_PROVIDER", defaultMetricsProto)
+	}
+
+	if cfg.Insecure == nil {
+		insecure := xenv.GetOrDefault("OTEL_INSECURE", "true")
+		insecureBool, _ := strconv.ParseBool(insecure)
+		cfg.Insecure = &insecureBool
+	}
+}
+
 func buildTraceExporter(cfg *Config) (exporter sdktrace.SpanExporter, err error) {
 	if cfg.TraceEndpoint == "" {
 		err = fmt.Errorf("buildTraceExporter: endpoint is empty")
@@ -79,7 +100,7 @@ func init() {
 		var opts = []otlptracehttp.Option{
 			otlptracehttp.WithEndpoint(urlObj.Host),
 		}
-		if cfg.Insecure {
+		if *cfg.Insecure {
 			opts = append(opts, otlptracehttp.WithInsecure())
 		}
 		if urlObj.Path != "" {
@@ -97,7 +118,7 @@ func init() {
 		var opts = []otlptracegrpc.Option{
 			otlptracegrpc.WithEndpoint(urlObj.Host),
 		}
-		if cfg.Insecure {
+		if *cfg.Insecure {
 			opts = append(opts, otlptracegrpc.WithInsecure())
 		}
 

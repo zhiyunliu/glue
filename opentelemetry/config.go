@@ -3,7 +3,7 @@ package opentelemetry
 type Config struct {
 	//Insecure indicates whether to use insecure connection
 	// for the OpenTelemetry collector.
-	Insecure bool `json:"insecure"`
+	Insecure *bool `json:"insecure"`
 	// TraceEndpoint is the endpoint for the OpenTelemetry collector.
 	TraceEndpoint string `json:"trace_endpoint"`
 	// TraceSampleRate is the sample rate for traces.
