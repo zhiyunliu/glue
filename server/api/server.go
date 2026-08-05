@@ -82,6 +82,10 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
+	handler, err := buildProtocolHandler(e.opts.handler, e.opts.srvCfg.Config)
+	if err != nil {
+		return err
+	}
 
 	lsr, err := net.Listen("tcp", e.opts.srvCfg.Config.Addr)
 	if err != nil {
@@ -89,11 +93,15 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	}
 
 	e.srv = &http.Server{
-		Handler:           e.opts.handler,
+		Handler:           handler,
 		ReadTimeout:       time.Duration(e.opts.srvCfg.Config.ReadTimeout) * time.Second,
 		ReadHeaderTimeout: time.Duration(e.opts.srvCfg.Config.ReadHeaderTimeout) * time.Second,
 		WriteTimeout:      time.Duration(e.opts.srvCfg.Config.WriteTimeout) * time.Second,
 		MaxHeaderBytes:    int(e.opts.srvCfg.Config.MaxHeaderBytes),
+	}
+	err = configureProtocolServer(e.srv, e.opts.srvCfg.Config)
+	if err != nil {
+		return err
 	}
 	if len(e.opts.endHooks) > 0 {
 		endHook := func() {
@@ -114,7 +122,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	errChan := make(chan error, 1)
 	done := make(chan struct{})
 	go func() {
-		serveErr := e.srv.Serve(lsr) //存在1s内，服务没有启动的可能性
+		serveErr := serveProtocol(e.srv, lsr, e.opts.srvCfg.Config) //存在1s内，服务没有启动的可能性
 		if serveErr != nil && serveErr != http.ErrServerClosed {
 			log.Errorf("API Server [%s] Serve error: %s", e.name, serveErr.Error())
 		}

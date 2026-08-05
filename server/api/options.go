@@ -34,6 +34,7 @@ func setDefaultOption() *options {
 			Config: Config{
 				Addr:              ":8080",
 				Engine:            "gin",
+				HttpProtocol:      ProtocolHTTP1,
 				Status:            engine.StatusStart,
 				ReadTimeout:       15,
 				WriteTimeout:      15,
@@ -66,6 +67,24 @@ func WithAddr(addr string) Option {
 func WithEngine(engine string) Option {
 	return func(o *options) {
 		o.srvCfg.Config.Engine = engine
+	}
+}
+
+func WithProtocol(protocol string) Option {
+	return func(o *options) {
+		o.srvCfg.Config.HttpProtocol = protocol
+	}
+}
+
+func WithH2CConfig(cfg H2cConfig) Option {
+	return func(o *options) {
+		o.srvCfg.Config.H2C = cfg
+	}
+}
+
+func WithH2Config(cfg H2Config) Option {
+	return func(o *options) {
+		o.srvCfg.Config.H2 = cfg
 	}
 }
 
