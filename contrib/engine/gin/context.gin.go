@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
@@ -468,6 +469,9 @@ func (q *ginResponse) Size() int {
 func (q *ginResponse) Flush() error {
 	q.gctx.Writer.Flush()
 	return nil
+}
+func (q *ginResponse) SetWriteDeadline(deadline time.Time) error {
+	return http.NewResponseController(q.gctx.Writer).SetWriteDeadline(deadline)
 }
 func (q *ginResponse) Close() {
 	q.vctx = nil

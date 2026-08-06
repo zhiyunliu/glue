@@ -1,5 +1,7 @@
 package context
 
+import "time"
+
 type Response interface {
 	StatusCode(int)
 	GetStatusCode() int
@@ -12,4 +14,8 @@ type Response interface {
 	Size() int
 	Redirect(statusCode int, location string)
 	Flush() error
+}
+
+type WriteDeadlineSetter interface {
+	SetWriteDeadline(time.Time) error
 }

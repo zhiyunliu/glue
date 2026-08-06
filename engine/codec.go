@@ -5,6 +5,7 @@ import (
 	"mime"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
@@ -85,12 +86,25 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 	resp := ctx.Response()
 
 	if sseEntity, ok := v.(ServerSentEvents); ok {
+		if deadlineSetter, ok := resp.(context.WriteDeadlineSetter); ok {
+			_ = deadlineSetter.SetWriteDeadline(time.Time{})
+		}
 		resp.Header(constants.ContentTypeName, xsse.ContentType)
 		resp.Header(http.CanonicalHeaderKey("Connection"), "keep-alive")
 		if cacheVal := resp.GetHeader(constants.ContentTypeCacheControl); cacheVal == "" {
 			resp.Header(constants.ContentTypeCacheControl, constants.ContentTypeNoCache)
 		}
+
+		sctx := ctx.Context()
+
 		for {
+
+			select {
+			case <-sctx.Done():
+				return sctx.Err()
+			default:
+			}
+
 			evt, ok := sseEntity.GetEvent()
 			if !ok {
 				break
@@ -101,7 +115,7 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 			}
 			resp.Flush()
 		}
-		resp.WriteBytes([]byte{})
+		_ = resp.WriteBytes([]byte{})
 		resp.Flush()
 		return nil
 	}

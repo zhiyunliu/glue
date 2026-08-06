@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"time"
 
 	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/constants"
@@ -449,6 +450,12 @@ func (q *alloterResponse) Size() int {
 }
 func (q *alloterResponse) Flush() error {
 	return q.actx.Writer.Flush()
+}
+func (q *alloterResponse) SetWriteDeadline(deadline time.Time) error {
+	// if writer, ok := q.actx.Writer.(interface{ Unwrap() http.ResponseWriter }); ok {
+	// 	return http.NewResponseController(writer.Unwrap()).SetWriteDeadline(deadline)
+	// }
+	return http.ErrNotSupported
 }
 func (q *alloterResponse) Close() {
 	q.vctx = nil
