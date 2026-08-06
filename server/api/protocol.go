@@ -29,7 +29,7 @@ func buildProtocolHandler(handler http.Handler, cfg Config) (http.Handler, error
 	case "", "http", "http1", "h1", ProtocolH2:
 		return handler, nil
 	case ProtocolH2C:
-		return h2c.NewHandler(handler, buildHTTP2Server(cfg.H2C.Http2Config)), nil
+		return h2c.NewHandler(handler, newHTTP2Server(cfg.H2C.Http2Config)), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrUnsupportedProtocol, cfg.HttpProtocol)
 	}
@@ -44,7 +44,7 @@ func configureProtocolServer(server *http.Server, cfg Config) error {
 			return fmt.Errorf("%w: h2 requires cert_file and key_file", ErrInvalidProtocolConfig)
 		}
 		server.TLSConfig = buildH2TLSConfig(server.TLSConfig)
-		return http2.ConfigureServer(server, buildHTTP2Server(cfg.H2.Http2Config))
+		return http2.ConfigureServer(server, newHTTP2Server(cfg.H2.Http2Config))
 	default:
 		return nil
 	}
@@ -67,20 +67,43 @@ func buildH2TLSConfig(cfg *tls.Config) *tls.Config {
 	return cfg
 }
 
-func buildHTTP2Server(cfg Http2Config) *http2.Server {
-	return &http2.Server{
-		MaxHandlers:                  0,
-		MaxConcurrentStreams:         cfg.MaxConcurrentStreams,
-		MaxDecoderHeaderTableSize:    cfg.MaxDecoderHeaderTableSize,
-		MaxEncoderHeaderTableSize:    cfg.MaxEncoderHeaderTableSize,
-		MaxReadFrameSize:             cfg.MaxReadFrameSize,
-		MaxUploadBufferPerConnection: cfg.MaxUploadBufferPerConnection,
-		MaxUploadBufferPerStream:     cfg.MaxUploadBufferPerStream,
-		IdleTimeout:                  secondsDuration(cfg.IdleTimeout),
-		ReadIdleTimeout:              secondsDuration(cfg.ReadIdleTimeout),
-		PingTimeout:                  secondsDuration(cfg.PingTimeout),
-		WriteByteTimeout:             secondsDuration(cfg.WriteByteTimeout),
+//nolint:cyclop // 按配置逐项映射 http2.Server 字段，保持显式判断。
+func newHTTP2Server(cfg Http2Config) *http2.Server {
+	server := &http2.Server{}
+
+	if cfg.MaxConcurrentStreams > 0 {
+		server.MaxConcurrentStreams = cfg.MaxConcurrentStreams
 	}
+
+	if cfg.MaxDecoderHeaderTableSize > 0 {
+		server.MaxDecoderHeaderTableSize = cfg.MaxDecoderHeaderTableSize
+	}
+	if cfg.MaxEncoderHeaderTableSize > 0 {
+		server.MaxEncoderHeaderTableSize = cfg.MaxEncoderHeaderTableSize
+	}
+	if cfg.MaxReadFrameSize > 0 {
+		server.MaxReadFrameSize = cfg.MaxReadFrameSize
+	}
+	if cfg.MaxUploadBufferPerConnection > 0 {
+		server.MaxUploadBufferPerConnection = cfg.MaxUploadBufferPerConnection
+	}
+	if cfg.MaxUploadBufferPerStream > 0 {
+		server.MaxUploadBufferPerStream = cfg.MaxUploadBufferPerStream
+	}
+	if cfg.IdleTimeout > 0 {
+		server.IdleTimeout = secondsDuration(cfg.IdleTimeout)
+	}
+	if cfg.ReadIdleTimeout > 0 {
+		server.ReadIdleTimeout = secondsDuration(cfg.ReadIdleTimeout)
+	}
+	if cfg.PingTimeout > 0 {
+		server.PingTimeout = secondsDuration(cfg.PingTimeout)
+	}
+	if cfg.WriteByteTimeout > 0 {
+		server.WriteByteTimeout = secondsDuration(cfg.WriteByteTimeout)
+	}
+
+	return server
 }
 
 func secondsDuration(seconds uint) time.Duration {
