@@ -5,14 +5,12 @@ import (
 	"mime"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/golibs/bytesconv"
 	"github.com/zhiyunliu/golibs/engine"
-	"github.com/zhiyunliu/golibs/xsse"
 	"github.com/zhiyunliu/xbinding"
 )
 
@@ -83,74 +81,16 @@ func DefaultResponseEncoder(ctx context.Context, v interface{}) (err error) {
 	if render, ok := v.(DataEncoder); ok {
 		return render.Render(ctx)
 	}
-	resp := ctx.Response()
-
-	if sseEntity, ok := v.(ServerSentEvents); ok {
-		if deadlineSetter, ok := resp.(context.WriteDeadlineSetter); ok {
-			_ = deadlineSetter.SetWriteDeadline(time.Time{})
-		}
-		resp.Header(constants.ContentTypeName, xsse.ContentType)
-		resp.Header(http.CanonicalHeaderKey("Connection"), "keep-alive")
-		if cacheVal := resp.GetHeader(constants.ContentTypeCacheControl); cacheVal == "" {
-			resp.Header(constants.ContentTypeCacheControl, constants.ContentTypeNoCache)
-		}
-
-		sctx := ctx.Context()
-
-		for {
-
-			select {
-			case <-sctx.Done():
-				return sctx.Err()
-			default:
-			}
-
-			evt, ok := sseEntity.GetEvent()
-			if !ok {
-				break
-			}
-			err := xsse.Encode(IoWriterWrapper(resp.WriteBytes), evt)
-			if err != nil {
-				return err
-			}
-			resp.Flush()
-		}
-		_ = resp.WriteBytes([]byte{})
-		resp.Flush()
-		return nil
-	}
-
-	//判定对象是否实现了响应体接口
-	if entity, ok := v.(ResponseEntity); ok {
-		resp.StatusCode(entity.StatusCode())
-		header := entity.Header()
-		if len(header) > 0 {
-			for k, v := range header {
-				resp.Header(k, v)
-			}
-		}
-		bytes, err := entity.Body()
-		if err != nil {
-			return err
-		}
-		err = resp.WriteBytes(bytes)
+	ok, err := processSSEStream(ctx, v)
+	if ok {
 		return err
 	}
 
-	var codec xbinding.Codec
-	if _, ok := v.(string); ok {
-		codec, _ = xbinding.GetCodec(xbinding.WithContentType("text"))
-	} else {
-		codec, _ = CodecForRequest(ctx, "Accept")
-	}
-
-	data, err := codec.Marshal(v)
-	if err != nil {
+	ok, err = processEntity(ctx, v)
+	if ok {
 		return err
 	}
-	resp.Header(ContentTypeName, codec.ContentType())
-	err = resp.WriteBytes(data)
-	return err
+	return processDefault(ctx, v)
 }
 
 // DefaultErrorEncoder encodes the error to the HTTP response.
