@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"net/url"
+	"time"
 
 	"github.com/zhiyunliu/glue/config"
 )
@@ -13,6 +14,7 @@ type Server interface {
 	Type() string
 	Start(context.Context) error
 	Stop(context.Context) error
+	StopMaximumTimeout() time.Duration
 	Config(cfg config.Config) error
 }
 

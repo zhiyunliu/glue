@@ -97,8 +97,18 @@ func (e *Server) Serve(ctx context.Context) (err error) {
 }
 
 func (e *Server) Stop(ctx context.Context) error {
-	if e.srv != nil {
+	done := make(chan struct{})
+	go func() {
 		e.srv.GracefulStop()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// 所有 RPC 正常结束，优雅停机完成
+	case <-ctx.Done():
+		// 超时后强制关闭连接，未完成的 RPC 会被中断
+		e.srv.Stop()
 	}
 	return nil
 }

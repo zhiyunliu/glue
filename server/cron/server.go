@@ -149,6 +149,10 @@ func (e *Server) Attempt() bool {
 	return !e.started
 }
 
+func (e *Server) StopMaximumTimeout() time.Duration {
+	return 0
+}
+
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) (err error) {
 	if e.server == nil {
@@ -156,7 +160,6 @@ func (e *Server) Stop(ctx context.Context) (err error) {
 	}
 	err = e.server.Stop(ctx)
 	if err != nil {
-		log.Errorf("CRON Server [%s] stop error: %s", e.name, err.Error())
 		return err
 	}
 
@@ -164,13 +167,11 @@ func (e *Server) Stop(ctx context.Context) (err error) {
 		for _, fn := range e.opts.endHooks {
 			err := fn(ctx)
 			if err != nil {
-				log.Errorf("CRON Server [%s] EndHook:", e.name, err)
+				err = fmt.Errorf("CRON Server [%s] EndHook:%+v", e.name, err)
 				return err
 			}
 		}
 	}
-	log.Infof("CRON Server [%s] stop completed", e.name)
-
 	return nil
 }
 

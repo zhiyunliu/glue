@@ -57,12 +57,16 @@ func (e *Server) Name() string {
 	return e.name
 }
 
+func (e *Server) serverPath() string {
+	return fmt.Sprintf("servers.%s", e.Name())
+}
+
 func (e *Server) Config(cfg config.Config) error {
 	if cfg == nil {
 		return nil
 	}
 	e.Options(WithConfig(cfg))
-	return cfg.Get(fmt.Sprintf("servers.%s", e.Name())).ScanTo(e.opts.srvCfg)
+	return cfg.Get(e.serverPath()).ScanTo(e.opts.srvCfg)
 }
 
 // Start 开始
@@ -109,7 +113,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 				err := fn(ctx)
 				if err != nil {
 					log.Errorf("API Server [%s] EndHook:%+v", e.name, err)
-					return
+					continue
 				}
 			}
 		}
@@ -159,14 +163,12 @@ func (e *Server) Stop(ctx context.Context) error {
 	if e.opts.srvCfg.Config.Status == engine.StatusStop {
 		return nil
 	}
+	shutdownTimeout := e.StopMaximumTimeout()
+	timeoutCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
+	defer cancel()
+
 	e.started = false
-	err := e.srv.Shutdown(ctx)
-	if err != nil {
-		log.Errorf("API Server [%s] stop error: %s", e.name, err.Error())
-		return err
-	}
-	log.Infof("API Server [%s] stop completed", e.name)
-	return err
+	return e.srv.Shutdown(timeoutCtx)
 }
 
 // ServiceName 服务名称
@@ -193,6 +195,13 @@ func (s *Server) RouterPathList() transport.RouterList {
 // Attempt 判断是否可以启动
 func (e *Server) Attempt() bool {
 	return !e.started
+}
+
+func (e *Server) StopMaximumTimeout() time.Duration {
+	if e.opts.srvCfg.Config.StopMaximumTimeout <= e.opts.srvCfg.Config.WriteTimeout {
+		e.opts.srvCfg.Config.StopMaximumTimeout = e.opts.srvCfg.Config.WriteTimeout + 1
+	}
+	return time.Duration(e.opts.srvCfg.Config.StopMaximumTimeout) * time.Second
 }
 
 func (e *Server) buildEndpoint() *url.URL {

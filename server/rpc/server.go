@@ -140,26 +140,34 @@ func (e *Server) Attempt() bool {
 	return !e.started
 }
 
+func (e *Server) StopMaximumTimeout() time.Duration {
+	if e.opts.srvCfg.Config.StopMaximumTimeout <= 0 {
+		e.opts.srvCfg.Config.StopMaximumTimeout = 10
+	}
+	return time.Duration(e.opts.srvCfg.Config.StopMaximumTimeout) * time.Second
+}
+
 // Shutdown 停止
 func (e *Server) Stop(ctx context.Context) error {
 	if e.server == nil {
 		return nil
 	}
-	err := e.server.Stop(ctx)
+	shutdownTimeout := e.StopMaximumTimeout()
+	timeoutCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
+	defer cancel()
+	err := e.server.Stop(timeoutCtx)
 	if err != nil {
-		log.Errorf("RPC Server [%s] stop error: %s", e.name, err.Error())
 		return err
 	}
 	if len(e.opts.endHooks) > 0 {
 		for _, fn := range e.opts.endHooks {
 			err := fn(ctx)
 			if err != nil {
-				log.Errorf("RPC Server [%s] EndHook:", e.name, err)
+				err = fmt.Errorf("RPC Server [%s] EndHook:%+v", e.name, err)
 				return err
 			}
 		}
 	}
-	log.Infof("RPC Server [%s] stop completed", e.name)
 	return nil
 }
 

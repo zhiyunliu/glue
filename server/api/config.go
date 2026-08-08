@@ -30,16 +30,17 @@ type serverConfig struct {
 }
 
 type Config struct {
-	Addr              string        `json:"addr"`
-	Engine            string        `json:"engine"`
-	HttpProtocol      string        `json:"http_protocol" yaml:"http_protocol"`
-	H2C               H2cConfig     `json:"h2c" yaml:"h2c"`
-	H2                H2Config      `json:"h2" yaml:"h2"`
-	Status            engine.Status `json:"status"`
-	ReadTimeout       uint          `json:"read_timeout"`
-	WriteTimeout      uint          `json:"write_timeout"`
-	ReadHeaderTimeout uint          `json:"read_header_timeout"`
-	MaxHeaderBytes    uint          `json:"max_header_bytes"`
+	Addr               string        `json:"addr"`
+	Engine             string        `json:"engine"`
+	HttpProtocol       string        `json:"http_protocol" yaml:"http_protocol"`
+	H2C                H2cConfig     `json:"h2c" yaml:"h2c"`
+	H2                 H2Config      `json:"h2" yaml:"h2"`
+	Status             engine.Status `json:"status"`
+	ReadTimeout        uint          `json:"read_timeout"`
+	WriteTimeout       uint          `json:"write_timeout"`
+	StopMaximumTimeout uint          `json:"stop_maximum_timeout"`
+	ReadHeaderTimeout  uint          `json:"read_header_timeout"`
+	MaxHeaderBytes     uint          `json:"max_header_bytes"`
 }
 
 type H2cConfig struct {
