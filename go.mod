@@ -9,7 +9,7 @@ require (
 	github.com/zhiyunliu/xbinding v0.1.4
 )
 
-//replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
+replace github.com/zhiyunliu/golibs => ../../../github.com/zhiyunliu/golibs
 
 //replace github.com/zhiyunliu/alloter => ../../../github.com/zhiyunliu/alloter
 

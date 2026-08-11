@@ -11,16 +11,16 @@ import (
 
 // Deprecated: use xsse.ServerSentEvents in the future.
 type ServerSentEvents = xsse.ServerSentEvents
-type ServerSentEventv2 = xsse.ServerSentEvent2
+type ServerSentEventv2 = xsse.ServerSentEventv2
 
-type nextSSEEvent func() (*xsse.Event, bool, error)
+type nextSSEEvent func() (xsse.SSEEvent, bool, error)
 
 func processSSEStream(ctx context.Context, v any) (ok bool, err error) {
-	ok, err = processSSEv1(ctx, v)
+	ok, err = processSSEv2(ctx, v)
 	if ok {
 		return
 	}
-	return processSSEv2(ctx, v)
+	return processSSEv1(ctx, v)
 }
 
 func processSSEv1(ctx context.Context, v any) (ok bool, err error) {
@@ -28,7 +28,7 @@ func processSSEv1(ctx context.Context, v any) (ok bool, err error) {
 	if !ok {
 		return
 	}
-	err = processSSEEvents(ctx.Response(), func() (*xsse.Event, bool, error) {
+	err = processSSEEvents(ctx.Response(), func() (xsse.SSEEvent, bool, error) {
 		evt, evtok := sseEntity.GetEvent()
 		return evt, evtok, nil
 	})
@@ -40,7 +40,7 @@ func processSSEv2(ctx context.Context, v any) (ok bool, err error) {
 	if !ok {
 		return
 	}
-	err = processSSEEvents(ctx.Response(), func() (evt *xsse.Event, ok bool, err error) {
+	err = processSSEEvents(ctx.Response(), func() (evt xsse.SSEEvent, ok bool, err error) {
 		evt, err = sseEntity.GetEventV2()
 		if err != nil {
 			return
