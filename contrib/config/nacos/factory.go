@@ -40,6 +40,9 @@ func (f *nacosFactory) Create(cfg config.Config) (config.Source, error) {
 	if opts.Group == "" {
 		opts.Group = constant.DEFAULT_GROUP
 	}
+	if opts.Cluster == "" {
+		opts.Cluster = "DEFAULT"
+	}
 	return NewConfigSource(configClient, opts), nil
 
 }

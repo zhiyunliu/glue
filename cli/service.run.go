@@ -153,7 +153,7 @@ func (p *ServiceApp) deregister(ctx context.Context) error {
 	if p.options.Registrar == nil {
 		return nil
 	}
-	log.Infof("serviceApp close:%s unload registrar-%s", p.cliCtx.App.Name, p.options.Registrar.Name())
+	log.Infof("serviceApp close:%s unload registrar-%s", p.appName, p.options.Registrar.Name())
 	if err := p.options.Registrar.Deregister(ctx, p.instance); err != nil {
 		return err
 	}

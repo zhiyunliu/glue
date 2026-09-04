@@ -23,6 +23,7 @@ func (s *clientResolver) Resolve(name string, cfg config.Config) (xrpc.Client, e
 		Name:        name,
 		Balancer:    roundrobin.Name,
 		ConnTimeout: 10,
+		Snappy:      true,
 	}
 	err := cfg.ScanTo(setval)
 	if err != nil {

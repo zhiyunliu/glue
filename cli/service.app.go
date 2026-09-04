@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
@@ -82,7 +83,7 @@ func GetSrvConfig(app *ServiceApp, args ...string) *service.Config {
 func GetSrvApp(c *cli.Context) *ServiceApp {
 	opts := c.App.Metadata[options_key].(*Options)
 	app := &ServiceApp{
-		cliCtx:         c,
+		appName:        c.App.Name,
 		options:        opts,
 		closeWaitGroup: &sync.WaitGroup{},
 	}
@@ -91,7 +92,7 @@ func GetSrvApp(c *cli.Context) *ServiceApp {
 
 // ServiceApp ServiceApp
 type ServiceApp struct {
-	cliCtx         *cli.Context
+	appName        string
 	options        *Options
 	instance       *registry.ServiceInstance
 	svcCtx         context.Context
@@ -133,6 +134,8 @@ func (app *ServiceApp) initApp() error {
 	log.Info("config-file:", absCmdFile)
 	configSources = append(configSources, file.NewSource(app.options.cmdConfigFile))
 
+	configSources = app.deduplicateConfigSource(configSources)
+
 	app.options.Config = config.New(config.WithSource(configSources...))
 	err = app.options.Config.Load()
 	if err != nil {
@@ -144,6 +147,28 @@ func (app *ServiceApp) initApp() error {
 	}
 	global.Config = app.options.Config
 	return nil
+}
+
+// 去除重复的配置源，避免重复加载
+func (app *ServiceApp) deduplicateConfigSource(cfgsource []config.Source) []config.Source {
+	// 去除重复的配置源
+	uniqueSources := make(map[string]struct{})
+	for _, source := range cfgsource {
+		uniqueSources[source.Path()] = struct{}{}
+	}
+
+	revSource := make([]config.Source, 0, len(uniqueSources))
+
+	for i := len(cfgsource) - 1; i >= 0; i-- {
+		source := cfgsource[i]
+		if _, exists := uniqueSources[source.Path()]; exists {
+			revSource = append(revSource, source)
+			delete(uniqueSources, source.Path())
+		}
+	}
+
+	slices.Reverse(revSource)
+	return revSource
 }
 
 func (app *ServiceApp) loadAppSetting() error {

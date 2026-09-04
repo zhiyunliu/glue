@@ -17,7 +17,7 @@ func (p *ServiceApp) Stop(s service.Service) (err error) {
 }
 
 func (p *ServiceApp) stopServers() {
-	log.Infof("serviceApp close:%s stop servers", p.cliCtx.App.Name)
+	log.Infof("serviceApp close:%s stop servers", p.appName)
 
 	p.options.StopingHooks.Exec(p.svcCtx, log.DefaultLogger)
 	var servers = p.options.Servers
@@ -32,10 +32,10 @@ func (p *ServiceApp) stopServers() {
 	}
 	p.options.StopedHooks.Exec(p.svcCtx, log.DefaultLogger)
 	p.closeWaitGroup.Wait()
-	log.Infof("serviceApp close:%s stop servers completed", p.cliCtx.App.Name)
+	log.Infof("serviceApp close:%s stop servers completed", p.appName)
 }
 
 func (p *ServiceApp) closeLogger() {
-	log.Infof("serviceApp close:%s stop logger", p.cliCtx.App.Name)
+	log.Infof("serviceApp close:%s stop logger", p.appName)
 	log.Close()
 }

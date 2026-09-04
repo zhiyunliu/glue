@@ -7,7 +7,7 @@ import (
 
 // Start Start
 func (p *ServiceApp) Start(s service.Service) (err error) {
-	log.Infof("serviceApp start:%s", p.cliCtx.App.Name)
+	log.Infof("serviceApp start:%s", p.appName)
 
 	if err = p.loadRegistry(); err != nil {
 		return err
@@ -21,6 +21,6 @@ func (p *ServiceApp) Start(s service.Service) (err error) {
 		return err
 	}
 
-	log.Infof("serviceApp start:%s completed", p.cliCtx.App.Name)
+	log.Infof("serviceApp start:%s completed", p.appName)
 	return err
 }

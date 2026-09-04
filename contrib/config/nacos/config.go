@@ -12,8 +12,9 @@ import (
 )
 
 type options struct {
-	Group  string `json:"group,omitempty"`
-	DataID string `json:"data_id,omitempty"`
+	Group   string `json:"group,omitempty"`
+	Cluster string `json:"cluster,omitempty"`
+	DataID  string `json:"data_id,omitempty"`
 }
 
 type Config struct {
@@ -29,7 +30,7 @@ func (c *Config) Name() string {
 }
 
 func (f *Config) Path() string {
-	return fmt.Sprintf("Group=%s&DataID=%s", f.opts.Group, f.opts.DataID)
+	return fmt.Sprintf("Group=%s&Cluster=%s&DataID=%s", f.opts.Group, f.opts.Cluster, f.opts.DataID)
 }
 
 func (c *Config) Load() ([]*config.KeyValue, error) {

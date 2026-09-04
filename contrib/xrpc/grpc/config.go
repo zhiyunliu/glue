@@ -10,6 +10,7 @@ import (
 
 type clientConfig struct {
 	Name         string          `json:"-"`
+	Snappy       bool            `json:"snappy"`
 	ConnTimeout  int             `json:"conn_timeout"`
 	Balancer     string          `json:"balancer"`      //负载类型 round_robin:论寻负载
 	ServerConfig json.RawMessage `json:"server_config"` //

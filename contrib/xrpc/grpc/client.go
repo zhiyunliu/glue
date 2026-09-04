@@ -86,15 +86,22 @@ func (c *Client) Close() {
 func (c *Client) connect() (err error) {
 	c.balancerBuilder = balancer.NewRegistrarBuilder(c.ctx, c.registrar, c.reqPath)
 
-	c.conn, err = grpc.NewClient(
-		c.reqPath.String(),
+	dialOptions := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultServiceConfig(string(c.setting.ServerConfig)),
 		grpc.WithResolvers(c.balancerBuilder),
-		grpc.WithDefaultCallOptions(grpc.UseCompressor(Snappy)),
 		grpc.WithConnectParams(grpc.ConnectParams{
 			MinConnectTimeout: time.Duration(c.setting.ConnTimeout) * time.Second,
 		}),
+	}
+
+	if c.setting.Snappy {
+		dialOptions = append(dialOptions, grpc.WithDefaultCallOptions(grpc.UseCompressor(Snappy)))
+	}
+
+	c.conn, err = grpc.NewClient(
+		c.reqPath.String(),
+		dialOptions...,
 	)
 
 	if err != nil {

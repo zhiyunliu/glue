@@ -3,7 +3,6 @@ package xdb
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/zhiyunliu/glue/metrics"
 	"go.opentelemetry.io/otel/attribute"
@@ -11,9 +10,7 @@ import (
 )
 
 var (
-	initSyncMap sync.Map
-	mutex       sync.Mutex
-	ScopeName   = "glue-xdb"
+	ScopeName = "glue-xdb"
 )
 
 type Metrics struct {
