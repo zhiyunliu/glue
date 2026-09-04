@@ -1,7 +1,8 @@
 package circuitbreaker
 
-import (
-	"github.com/go-kratos/aegis/circuitbreaker"
-)
-
-type CircuitBreaker = circuitbreaker.CircuitBreaker
+//type CircuitBreaker = circuitbreaker.CircuitBreaker
+type CircuitBreaker interface {
+	Allow() error
+	MarkSuccess()
+	MarkFailed()
+}

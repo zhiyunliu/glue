@@ -5,7 +5,6 @@ import (
 	"github.com/zhiyunliu/glue/standard"
 
 	"github.com/zhiyunliu/glue/ratelimit"
-	"github.com/zhiyunliu/glue/ratelimit/bbr"
 
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/middleware"
@@ -31,9 +30,7 @@ type options struct {
 
 // Server ratelimiter middleware
 func Server(opts ...Option) middleware.Middleware {
-	options := &options{
-		limiter: bbr.NewLimiter(),
-	}
+	options := &options{}
 	for _, o := range opts {
 		o(options)
 	}

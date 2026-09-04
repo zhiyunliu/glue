@@ -3,7 +3,6 @@ package circuitbreaker
 import (
 	"fmt"
 
-	_ "github.com/zhiyunliu/glue/circuitbreaker/sre"
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/container"
 )
@@ -12,22 +11,22 @@ const (
 	TypeNode = "circuitbreaker"
 )
 
-//Standard
+// Standard
 type Standard interface {
 	GetProvider(name string) (q Provider)
 }
 
-//Standard
+// Standard
 type xStandrad struct {
 	c container.Container
 }
 
-//NewStandard
+// NewStandard
 func NewStandard(c container.Container) Standard {
 	return &xStandrad{c: c}
 }
 
-//GetProvider GetProvider
+// GetProvider GetProvider
 func (s *xStandrad) GetProvider(name string) (q Provider) {
 	if name == "" {
 		panic(fmt.Errorf("circuitbreaker provider 配置错误,未设置"))

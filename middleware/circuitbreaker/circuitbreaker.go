@@ -4,9 +4,9 @@ package circuitbreaker
 
 import (
 	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/standard"
 
 	"github.com/zhiyunliu/glue/circuitbreaker"
-	"github.com/zhiyunliu/glue/circuitbreaker/sre"
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/golibs/group"
@@ -27,20 +27,42 @@ func WithGroup(g *group.Group) Option {
 }
 
 type options struct {
-	group *group.Group
+	group          *group.Group
+	circuitBreaker string
+}
+
+func ClientByConfig(cfg *Config) middleware.Middleware {
+	opt := &options{circuitBreaker: cfg.CircuitBreaker}
+	return clientRunOptions(opt)
 }
 
 // Client circuitbreaker middleware will return errBreakerTriggered when the circuit
 // breaker is triggered and the request is rejected directly.
-func Client(opts ...Option) middleware.Middleware {
-	opt := &options{
-		group: group.NewGroup(func() interface{} {
-			return sre.NewBreaker()
-		}),
-	}
+func ClientByOptions(opts ...Option) middleware.Middleware {
+	opt := &options{}
+
 	for _, o := range opts {
 		o(opt)
 	}
+	return clientRunOptions(opt)
+}
+
+func clientRunOptions(opt *options) middleware.Middleware {
+
+	if opt.group == nil && opt.circuitBreaker == "" {
+		return func(handler middleware.Handler) middleware.Handler {
+			return handler
+		}
+	}
+
+	if opt.group == nil {
+		std := standard.GetInstance(circuitbreaker.TypeNode).(circuitbreaker.Standard)
+		provider := std.GetProvider(opt.circuitBreaker)
+		opt.group = group.NewGroup(func() interface{} {
+			return provider.CircuitBreaker()
+		})
+	}
+
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context) (reply interface{}) {
 

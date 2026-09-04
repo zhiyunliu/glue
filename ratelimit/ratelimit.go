@@ -1,9 +1,19 @@
 package ratelimit
 
-import (
-	"github.com/go-kratos/aegis/ratelimit"
-)
+import "errors"
 
-type Limiter = ratelimit.Limiter
-type DoneFunc = ratelimit.DoneFunc
-type DoneInfo = ratelimit.DoneInfo
+type Limiter interface {
+	Allow() (DoneFunc, error)
+}
+
+// DoneFunc is done function.
+type DoneFunc func(DoneInfo)
+
+// DoneInfo is done info.
+type DoneInfo struct {
+	Err error
+}
+
+var (
+	ErrNotAllow = errors.New("ratelimit not allow")
+)

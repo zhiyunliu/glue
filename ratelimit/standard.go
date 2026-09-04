@@ -5,29 +5,28 @@ import (
 
 	"github.com/zhiyunliu/glue/config"
 	"github.com/zhiyunliu/glue/container"
-	_ "github.com/zhiyunliu/glue/ratelimit/bbr"
 )
 
 const (
 	TypeNode = "ratelimit"
 )
 
-//Standard
+// Standard
 type Standard interface {
 	GetProvider(name string) (q Provider)
 }
 
-//Standard
+// Standard
 type xStandrad struct {
 	c container.Container
 }
 
-//NewStandar
+// NewStandar
 func NewStandard(c container.Container) Standard {
 	return &xStandrad{c: c}
 }
 
-//GetProvider GetProvider
+// GetProvider GetProvider
 func (s *xStandrad) GetProvider(name string) (q Provider) {
 	if name == "" {
 		panic(fmt.Errorf("ratelimit provider 配置错误,未设置"))
