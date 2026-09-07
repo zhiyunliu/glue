@@ -7,7 +7,7 @@ import (
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/golibs/xpath"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 
 	gluejwt "github.com/zhiyunliu/glue/auth/jwt"
 

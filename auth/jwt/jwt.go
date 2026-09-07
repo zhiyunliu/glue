@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
@@ -44,20 +44,17 @@ func WithSNo(serialNo string) Option {
 	}
 }
 
-func Verify(tokenVal string, secret interface{}) (map[string]interface{}, error) {
-	tokenInfo, err := jwt.Parse(tokenVal, func(token *jwt.Token) (interface{}, error) {
+// Verify verify jwt token
+func Verify(tokenVal string, secret any, validMethods ...string) (map[string]any, error) {
+
+	if len(validMethods) == 0 {
+		validMethods = []string{"HS256"}
+	}
+
+	tokenInfo, err := jwt.Parse(tokenVal, func(token *jwt.Token) (any, error) {
 		return getSecret(secret, token.Claims)
-	})
+	}, jwt.WithValidMethods(validMethods))
 	if err != nil {
-		if ve, ok := err.(*jwt.ValidationError); ok {
-			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-				return nil, ErrTokenInvalid
-			} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-				return nil, ErrTokenExpired
-			} else {
-				return nil, ErrTokenParseFail
-			}
-		}
 		return nil, errors.Unauthorized(err.Error())
 	}
 	if !tokenInfo.Valid {
