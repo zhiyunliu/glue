@@ -49,6 +49,12 @@ func DLocker(key string, opts ...dlocker.Option) dlocker.DLocker {
 	return obj.(dlocker.StandardLocker).GetDLocker().Build(key, opts...)
 }
 
+// Circuitbreaker 获取Circuitbreaker 处理对象
+func Circuitbreaker(proto string, cachekey string, opts ...circuitbreaker.Option) circuitbreaker.CircuitBreaker {
+	obj := standard.GetInstance(dlocker.TypeNode)
+	return obj.(circuitbreaker.Standard).GetProvider(proto).Build(cachekey, opts...)
+}
+
 // 暂时没考虑用泛型
 func Custom(name string) interface{} {
 	obj := standard.GetInstance(name)

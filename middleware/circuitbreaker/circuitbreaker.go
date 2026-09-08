@@ -59,7 +59,7 @@ func clientRunOptions(opt *options) middleware.Middleware {
 		std := standard.GetInstance(circuitbreaker.TypeNode).(circuitbreaker.Standard)
 		provider := std.GetProvider(opt.circuitBreaker)
 		opt.group = group.NewGroup(func() interface{} {
-			return provider.CircuitBreaker()
+			return provider.Build(opt.circuitBreaker)
 		})
 	}
 
@@ -67,6 +67,7 @@ func clientRunOptions(opt *options) middleware.Middleware {
 		return func(ctx context.Context) (reply interface{}) {
 
 			path := ctx.Request().Path().GetURL().Path
+
 			breaker := opt.group.Get(path).(circuitbreaker.CircuitBreaker)
 			if err := breaker.Allow(); err != nil {
 				// rejected

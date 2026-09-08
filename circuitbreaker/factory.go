@@ -8,11 +8,10 @@ import (
 
 type Provider interface {
 	Name() string
-	CircuitBreaker() CircuitBreaker
-	GetImpl() interface{}
+	Build(string, ...Option) CircuitBreaker
 }
 
-//resover 定义配置文件转换方法
+// resover 定义配置文件转换方法
 type Resover interface {
 	Name() string
 	Resolve(name string, config config.Config) (Provider, error)
@@ -20,7 +19,7 @@ type Resover interface {
 
 var resolvers = make(map[string]Resover)
 
-//Register 注册配置文件适配器
+// Register 注册配置文件适配器
 func Register(resolver Resover) {
 	proto := resolver.Name()
 	if _, ok := resolvers[proto]; ok {
@@ -29,12 +28,12 @@ func Register(resolver Resover) {
 	resolvers[proto] = resolver
 }
 
-//Deregister 清理配置适配器
+// Deregister 清理配置适配器
 func Deregister(name string) {
 	delete(resolvers, name)
 }
 
-//newProvider 根据适配器名称及参数返回配置处理器
+// newProvider 根据适配器名称及参数返回配置处理器
 func newProvider(proto string, setting config.Config) (Provider, error) {
 	resolver, ok := resolvers[proto]
 	if !ok {

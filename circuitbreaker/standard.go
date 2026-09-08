@@ -11,9 +11,13 @@ const (
 	TypeNode = "circuitbreaker"
 )
 
+var (
+	_ Standard = (*xStandrad)(nil)
+)
+
 // Standard
 type Standard interface {
-	GetProvider(name string) (q Provider)
+	GetProvider(proto string) (q Provider)
 }
 
 // Standard
@@ -27,13 +31,13 @@ func NewStandard(c container.Container) Standard {
 }
 
 // GetProvider GetProvider
-func (s *xStandrad) GetProvider(name string) (q Provider) {
-	if name == "" {
+func (s *xStandrad) GetProvider(proto string) (q Provider) {
+	if proto == "" {
 		panic(fmt.Errorf("circuitbreaker provider 配置错误,未设置"))
 	}
-	obj, err := s.c.GetOrCreate(TypeNode, name, func(cfg config.Config) (interface{}, error) {
-		cfgVal := cfg.Get(name)
-		return newProvider(name, cfgVal)
+	obj, err := s.c.GetOrCreate(TypeNode, proto, func(cfg config.Config) (interface{}, error) {
+		cfgVal := cfg.Get(proto)
+		return newProvider(proto, cfgVal)
 	})
 	if err != nil {
 		panic(err)
@@ -51,6 +55,6 @@ func (xBuilder) Name() string {
 	return TypeNode
 }
 
-func (xBuilder) Build(c container.Container) interface{} {
+func (xBuilder) Build(c container.Container) any {
 	return NewStandard(c)
 }
