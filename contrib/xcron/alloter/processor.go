@@ -159,7 +159,9 @@ func (s *processor) reset(req *Request) (err error) {
 		return
 	}
 	req.reset()
-	s.resetMonopolyJob(req.job)
+	if err = s.resetMonopolyJob(req.job); err != nil {
+		return err
+	}
 	now := time.Now()
 	nextTime := req.job.NextTime(now)
 	if nextTime.Sub(now) < 0 {
@@ -173,17 +175,17 @@ func (s *processor) reset(req *Request) (err error) {
 	return
 }
 
-func (s *processor) resetMonopolyJob(job *xcron.Job) {
+func (s *processor) resetMonopolyJob(job *xcron.Job) error {
 	//根据执行后，重置下一次的独占时间
 	if !job.IsMonopoly() {
-		return
+		return nil
 	}
 	mjob, ok := s.monopolyJobs.Get(job.GetKey())
 	if !ok {
-		return
+		return nil
 	}
 	mjob.expire = job.CalcExpireSeconds()
-	mjob.Renewal()
+	return mjob.Renewal()
 }
 
 func (s *processor) closeMonopolyJobs() {
@@ -281,8 +283,8 @@ func (j *monopolyJob) Acquire() (bool, error) {
 	return j.locker.Acquire(sctx.Background(), j.expire)
 }
 
-func (j *monopolyJob) Renewal() {
-	j.locker.Renewal(sctx.Background(), j.expire)
+func (j *monopolyJob) Renewal() error {
+	return j.locker.Renewal(sctx.Background(), j.expire)
 }
 
 func (j *monopolyJob) Close() {
@@ -292,12 +294,18 @@ func (j *monopolyJob) Close() {
 func (j *monopolyJob) Start(ctx sctx.Context) {
 	go func() {
 		//过期时间前一秒执行续约
-		ticker := time.NewTicker(time.Second * time.Duration(j.expire-1))
+		renewalSeconds := j.expire - 1
+		if renewalSeconds < 1 {
+			renewalSeconds = 1
+		}
+		ticker := time.NewTicker(time.Second * time.Duration(renewalSeconds))
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				j.Renewal()
+				if err := j.locker.Renewal(sctx.Background(), j.expire); err != nil {
+					return
+				}
 			case <-ctx.Done():
 				ticker.Stop()
 				return

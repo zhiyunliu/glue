@@ -2,10 +2,14 @@ package dlocker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/zhiyunliu/glue/config"
 )
+
+// ErrLockLost 表示锁已过期、被删除或已由其他持有者获取。
+var ErrLockLost = errors.New("dlocker: lock ownership lost")
 
 type DLocker interface {
 	//expire 秒
@@ -13,6 +17,19 @@ type DLocker interface {
 	Release(ctx context.Context) (bool, error)
 	//expire 秒
 	Renewal(ctx context.Context, expire int) error
+}
+
+// FencedLocker 提供当前锁生命周期对应的 fencing token。
+// 下游资源必须拒绝小于已处理 token 的写入，才能防止旧持有者继续写入。
+type FencedLocker interface {
+	DLocker
+	FencingToken() uint64
+}
+
+// LossAwareLocker 提供自动续约期间的失锁通知，每次失锁最多写入一个错误。
+type LossAwareLocker interface {
+	DLocker
+	Lost() <-chan error
 }
 
 type DLockerBuilder interface {

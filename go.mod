@@ -19,6 +19,7 @@ require (
 //replace github.com/zhiyunliu/xbinding => ../../../github.com/zhiyunliu/xbinding
 
 require (
+	github.com/alicebob/miniredis/v2 v2.39.0
 	github.com/emirpasic/gods/v2 v2.0.0-alpha
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gin-contrib/pprof v1.4.0
@@ -106,6 +107,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
