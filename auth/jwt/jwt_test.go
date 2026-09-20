@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	jwt "github.com/golang-jwt/jwt/v5"
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 func Test_getSecret(t *testing.T) {

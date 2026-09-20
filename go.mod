@@ -25,7 +25,7 @@ require (
 	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-kratos/aegis v0.1.3
-	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/hashicorp/consul/api v1.14.0
 	github.com/imdario/mergo v0.3.13
 	github.com/kardianos/service v1.2.1

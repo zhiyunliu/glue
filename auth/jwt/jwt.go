@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
@@ -55,6 +55,16 @@ func Verify(tokenVal string, secret any, validMethods ...string) (map[string]any
 		return getSecret(secret, token.Claims)
 	}, jwt.WithValidMethods(validMethods))
 	if err != nil {
+		ve := &jwt.ValidationError{}
+		if ok := errors.As(err, ve); ok {
+			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+				return nil, ErrTokenInvalid
+			} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+				return nil, ErrTokenExpired
+			} else {
+				return nil, ErrTokenParseFail
+			}
+		}
 		return nil, errors.Unauthorized(err.Error())
 	}
 	if !tokenInfo.Valid {
