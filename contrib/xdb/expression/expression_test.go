@@ -2,6 +2,7 @@ package expression
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/zhiyunliu/glue/xdb"
@@ -142,6 +143,19 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "not-10b.", matcher: likeMatcher, fullKey: "&{tbl.field notlike %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?+'%'"},
 		{name: "not-11b.", matcher: likeMatcher, fullKey: "&{tbl.field not   like %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?+'%'"},
 
+		{name: "i-not-like-1.", matcher: likeMatcher, fullKey: "&{tbl.field NOT   like %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?+'%'"},
+		{name: "i-not-like-2.", matcher: likeMatcher, fullKey: "&{tbl.field not   LIKE %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?+'%'"},
+		{name: "i-not-like-3.", matcher: likeMatcher, fullKey: "&{tbl.field NOT   LIKE %property%}", wantFullfield: "tbl.field", wantPropName: "property", wantOper: "%notlike%", wantSymbol: "&", wantExpr: "and tbl.field not like '%'+?+'%'"},
+		{name: "i-not-like-4.", matcher: likeMatcher, fullKey: "&{not     LIKE   field}", wantFullfield: "field", wantPropName: "field", wantOper: "notlike", wantSymbol: "&", wantExpr: "and field not like ?"},
+		{name: "i-not-like-5.", matcher: likeMatcher, fullKey: "&{NOT     LIKE   field}", wantFullfield: "field", wantPropName: "field", wantOper: "notlike", wantSymbol: "&", wantExpr: "and field not like ?"},
+		{name: "1-like-1.", matcher: likeMatcher, fullKey: "&{LIKE   field}", wantFullfield: "field", wantPropName: "field", wantOper: "like", wantSymbol: "&", wantExpr: "and field like ?"},
+
+		{name: "i-like-1", matcher: likeMatcher, fullKey: "&{LIKE tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like", wantSymbol: "&", wantExpr: "and tbl.field like ?"},
+		{name: "i-like-2", matcher: likeMatcher, fullKey: "&{LIKE    tbl.field}", wantFullfield: "tbl.field", wantPropName: "field", wantOper: "like", wantSymbol: "&", wantExpr: "and tbl.field like ?"},
+		{name: "i-like-3", matcher: likeMatcher, fullKey: "&{LIKE   %field}", wantFullfield: "field", wantPropName: "field", wantOper: "%like", wantSymbol: "&", wantExpr: "and field like '%'+?"},
+		{name: "i-like-4", matcher: likeMatcher, fullKey: "&{LIKE   field%}", wantFullfield: "field", wantPropName: "field", wantOper: "like%", wantSymbol: "&", wantExpr: "and field like ?+'%'"},
+		{name: "i-like-5", matcher: likeMatcher, fullKey: "&{LIKE   %field%}", wantFullfield: "field", wantPropName: "field", wantOper: "%like%", wantSymbol: "&", wantExpr: "and field like '%'+?+'%'"},
+
 		{name: "notin-8.", matcher: inMatcher, fullKey: "&{notin tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "notin", wantSymbol: "&", wantExpr: "and tbl.infield not in (1,2)"},
 		{name: "8.", matcher: inMatcher, fullKey: "&{in tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and tbl.infield in (1,2)"},
 		{name: "9.", matcher: inMatcher, fullKey: "&{in infield}", wantFullfield: "infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in (1,2)"},
@@ -154,6 +168,10 @@ func TestDefaultGetPropName(t *testing.T) {
 		{name: "notin-3.", matcher: inMatcher, fullKey: "&{tt.infield  not     in    inproperty}", wantFullfield: "tt.infield", wantPropName: "inproperty", wantOper: "notin", wantSymbol: "&", wantExpr: "and tt.infield not in ('p1','p2')"},
 		{name: "notin-8.", matcher: inMatcher, fullKey: "&{notin tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "notin", wantSymbol: "&", wantExpr: "and tbl.infield not in (1,2)"},
 		{name: "notin-9.", matcher: inMatcher, fullKey: "&{not     in tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "notin", wantSymbol: "&", wantExpr: "and tbl.infield not in (1,2)"},
+		{name: "i-notin-8.", matcher: inMatcher, fullKey: "&{NOTIN tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "notin", wantSymbol: "&", wantExpr: "and tbl.infield not in (1,2)"},
+		{name: "i-notin-8.", matcher: inMatcher, fullKey: "&{NOT IN tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "notin", wantSymbol: "&", wantExpr: "and tbl.infield not in (1,2)"},
+		{name: "i-1.", matcher: inMatcher, fullKey: "&{IN    infield}", wantFullfield: "infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in (1,2)"},
+		{name: "i-2.", matcher: inMatcher, fullKey: "&{tt.infield  IN    inproperty}", wantFullfield: "tt.infield", wantPropName: "inproperty", wantOper: "in", wantSymbol: "&", wantExpr: "and tt.infield in ('p1','p2')"},
 
 		{name: "8-a.", matcher: inMatcher, fullKey: "&{in tbl.infield}", wantFullfield: "tbl.infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and tbl.infield in (1,2)"},
 		{name: "9-a.", matcher: inMatcher, fullKey: "&{in infield}", wantFullfield: "infield", wantPropName: "infield", wantOper: "in", wantSymbol: "&", wantExpr: "and infield in (1,2)"},
@@ -203,7 +221,7 @@ func TestDefaultGetPropName(t *testing.T) {
 			if gotPropName != tt.wantPropName {
 				t.Errorf("GetPropName() :%v, want %v", gotPropName, tt.wantPropName)
 			}
-			if propValuer.GetOper() != tt.wantOper {
+			if !strings.EqualFold(propValuer.GetOper(), tt.wantOper) {
 				t.Errorf("GetOper() :%v, want %v", propValuer.GetOper(), tt.wantOper)
 			}
 			if propValuer.GetSymbol().Name() != tt.wantSymbol {

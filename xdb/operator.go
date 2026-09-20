@@ -1,5 +1,7 @@
 package xdb
 
+import "strings"
+
 var (
 	//新建一个符号处理
 	NewOperator func(name string, callback ExpressionCallback, normalize NormalizeValueCallback) Operator
@@ -52,7 +54,7 @@ func (m *operatorMap) Store(operators ...Operator) {
 }
 
 func (m *operatorMap) Load(name string) (Operator, bool) {
-	//callback, ok := m.syncMap.Load(name)
+	name = strings.ToLower(name)
 	callback, ok := m.syncMap[name]
 	if !ok {
 		return nil, ok
