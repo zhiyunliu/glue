@@ -178,10 +178,10 @@ func TestLocksWithSameHashTagRemainIndependent(t *testing.T) {
 	require.True(t, acquired)
 }
 
-func TestStateKeysKeepOwnerKeyAndShareRedisSlot(t *testing.T) {
+func TestStateKeysUseDLockerKeyPrefixAndShareRedisSlot(t *testing.T) {
 	for _, key := range []string{"plain-key", "{shared}:first"} {
 		keys := lockStateKeys(key)
-		require.Equal(t, key, keys[0])
+		require.Equal(t, "dlocker:"+key, keys[0])
 		require.True(t, strings.HasPrefix(keys[1], "dlocker:"))
 		require.True(t, strings.HasPrefix(keys[2], "dlocker:"))
 		require.Equal(t, redisSlot(keys[0]), redisSlot(keys[1]))

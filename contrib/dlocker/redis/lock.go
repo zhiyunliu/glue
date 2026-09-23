@@ -18,6 +18,8 @@ import (
 )
 
 const (
+	lockKeyPrefix = "dlocker:"
+
 	lockCommand = `
 
 local owner = redis.call("GET", KEYS[1])
@@ -112,19 +114,20 @@ func newLock(client *Redis, key string, opts *dlocker.Options) *Lock {
 }
 
 func lockStateKeys(key string) []string {
+	lockKey := lockKeyPrefix + key
 	digest := sha256.Sum256([]byte(key))
 	keyID := hex.EncodeToString(digest[:8])
 	tag := ""
-	if start := strings.IndexByte(key, '{'); start >= 0 {
-		if end := strings.IndexByte(key[start+1:], '}'); end > 0 {
-			tag = key[start+1 : start+1+end]
+	if start := strings.IndexByte(lockKey, '{'); start >= 0 {
+		if end := strings.IndexByte(lockKey[start+1:], '}'); end > 0 {
+			tag = lockKey[start+1 : start+1+end]
 		}
 	}
 	if tag == "" {
-		tag = findHashTag(redisSlot(key), keyID)
+		tag = findHashTag(redisSlot(lockKey), keyID)
 	}
-	prefix := "dlocker:{" + tag + "}:" + keyID + ":"
-	return []string{key, prefix + "count", prefix + "fencing"}
+	prefix := lockKeyPrefix + "{" + tag + "}:" + keyID + ":"
+	return []string{lockKey, prefix + "count", prefix + "fencing"}
 }
 
 func (rl *Lock) stateKeys() []string {
