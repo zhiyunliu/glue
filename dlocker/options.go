@@ -4,6 +4,7 @@ type Options struct {
 	Data        string
 	AutoRenewal bool
 	Reentrant   bool
+	Fencing     bool
 }
 
 type Option func(opts *Options)
@@ -19,6 +20,13 @@ func WithData(data string) Option {
 func WithAutoRenewal() Option {
 	return func(opts *Options) {
 		opts.AutoRenewal = true
+	}
+}
+
+// WithFencing 启用 fencing token，默认关闭
+func WithFencing() Option {
+	return func(opts *Options) {
+		opts.Fencing = true
 	}
 }
 

@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -27,6 +28,9 @@ if owner == ARGV[1] then
 	local count = tonumber(redis.call("GET", KEYS[2])) or 1
 	redis.call("SET", KEYS[2], count + 1, "PX", ARGV[2])
 	redis.call("PEXPIRE", KEYS[1], ARGV[2])
+	if ARGV[4] == "false" then
+		return {1, 0}
+	end
 	local token = redis.call("GET", KEYS[3])
 	if not token then
 		token = redis.call("INCR", KEYS[3])
@@ -40,6 +44,9 @@ if not acquired then
 end
 
 redis.call("SET", KEYS[2], 1, "PX", ARGV[2])
+if ARGV[4] == "false" then
+	return {1, 0}
+end
 return {1, redis.call("INCR", KEYS[3])}`
 	delCommand = `
 if redis.call("GET", KEYS[1]) ~= ARGV[1] then
@@ -106,7 +113,7 @@ func newLock(client *Redis, key string, opts *dlocker.Options) *Lock {
 
 func lockStateKeys(key string) []string {
 	digest := sha256.Sum256([]byte(key))
-	keyID := fmt.Sprintf("%x", digest[:8])
+	keyID := hex.EncodeToString(digest[:8])
 	tag := ""
 	if start := strings.IndexByte(key, '{'); start >= 0 {
 		if end := strings.IndexByte(key[start+1:], '}'); end > 0 {
@@ -116,7 +123,7 @@ func lockStateKeys(key string) []string {
 	if tag == "" {
 		tag = findHashTag(redisSlot(key), keyID)
 	}
-	prefix := "{" + tag + "}:dlocker:" + keyID + ":"
+	prefix := "dlocker:{" + tag + "}:" + keyID + ":"
 	return []string{key, prefix + "count", prefix + "fencing"}
 }
 
@@ -167,6 +174,7 @@ func (rl *Lock) Acquire(ctx context.Context, expire int) (bool, error) {
 			rl.rndVal,
 			strconv.Itoa(expire * 1000),
 			strconv.FormatBool(rl.opts.Reentrant),
+			strconv.FormatBool(rl.opts.Fencing),
 		},
 	)
 	if err == goredis.Nil {

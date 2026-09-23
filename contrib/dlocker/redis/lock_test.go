@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -94,8 +95,8 @@ func TestAutoRenewalStopsAfterLockIsLost(t *testing.T) {
 
 func TestFencingTokenIncreasesForEachOwnership(t *testing.T) {
 	client, _ := newTestRedis(t)
-	first := client.Build("fencing", dlocker.WithData("first")).(*Lock)
-	second := client.Build("fencing", dlocker.WithData("second")).(*Lock)
+	first := client.Build("fencing", dlocker.WithData("first"), dlocker.WithFencing()).(*Lock)
+	second := client.Build("fencing", dlocker.WithData("second"), dlocker.WithFencing()).(*Lock)
 
 	acquired, err := first.Acquire(context.Background(), 10)
 	require.NoError(t, err)
@@ -119,6 +120,17 @@ func TestFencingTokenIncreasesForEachOwnership(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, acquired)
 	require.Greater(t, second.FencingToken(), firstToken)
+}
+
+func TestFencingIsDisabledByDefault(t *testing.T) {
+	client, server := newTestRedis(t)
+	lock := client.Build("fencing-disabled", dlocker.WithData("owner")).(*Lock)
+
+	acquired, err := lock.Acquire(context.Background(), 10)
+	require.NoError(t, err)
+	require.True(t, acquired)
+	require.Zero(t, lock.FencingToken())
+	require.False(t, server.Exists(lock.stateKeys()[2]))
 }
 
 func TestAcquireRejectsReentryWhenDisabled(t *testing.T) {
@@ -170,6 +182,8 @@ func TestStateKeysKeepOwnerKeyAndShareRedisSlot(t *testing.T) {
 	for _, key := range []string{"plain-key", "{shared}:first"} {
 		keys := lockStateKeys(key)
 		require.Equal(t, key, keys[0])
+		require.True(t, strings.HasPrefix(keys[1], "dlocker:"))
+		require.True(t, strings.HasPrefix(keys[2], "dlocker:"))
 		require.Equal(t, redisSlot(keys[0]), redisSlot(keys[1]))
 		require.Equal(t, redisSlot(keys[0]), redisSlot(keys[2]))
 	}
