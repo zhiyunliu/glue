@@ -239,7 +239,7 @@ func (rl *Lock) Release(ctx context.Context) (bool, error) {
 // 续约
 func (rl *Lock) Renewal(ctx context.Context, expire int) error {
 	if expire <= 0 {
-		return fmt.Errorf("expire 参数必须大于0")
+		return errors.New("dlocker[redis]Renewal.expire 参数必须大于0")
 	}
 	keys := rl.stateKeys()
 	resp, err := rl.client.Eval(ctx, leaseCommand, keys[:2], []string{
