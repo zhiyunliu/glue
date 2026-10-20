@@ -185,10 +185,10 @@ func (s *Server) Endpoint() *url.URL {
 }
 
 // 获取树形的路径列表
-func (s *Server) RouterPathList() transport.RouterList {
+func (s *Server) RouterPathResult() transport.RouterResult {
 	return engine.RouterList{
 		ServerType: s.Type(),
-		PathList:   s.opts.router.GetTreePathList(),
+		PathResult: s.opts.router.GetPathResult(),
 	}
 }
 

@@ -125,7 +125,7 @@ func (e *GinEngine) defaultHandle() {
 
 	//healthcheck
 	e.Engine.Handle(http.MethodGet, "/routers", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, global.ServerRouterPathList)
+		ctx.JSON(http.StatusOK, global.ServerRouterPathResult)
 	})
 }
 

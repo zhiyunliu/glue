@@ -4,41 +4,39 @@ import "encoding/json"
 
 type RouterList interface {
 	GetType() string
-	GetPathList() []string
+	GetPathResult() any
 }
 
 var (
 	//服务路由
-	ServerRouterPathList *RouterPathList = NewRouterPathList()
+	ServerRouterPathResult *RouterPathResult = NewRouterPathResult()
 )
 
-type RouterPathList struct {
+type RouterPathResult struct {
 	serverRouterMap map[string][]RouterList
 }
 
-func NewRouterPathList() *RouterPathList {
-	return &RouterPathList{
+func NewRouterPathResult() *RouterPathResult {
+	return &RouterPathResult{
 		serverRouterMap: map[string][]RouterList{},
 	}
 }
 
 // 存储服务的路由信息
-func (r *RouterPathList) Store(servername string, routerList RouterList) {
+func (r *RouterPathResult) Store(servername string, routerList RouterList) {
 	r.serverRouterMap[servername] = append(r.serverRouterMap[servername], routerList)
 }
 
 // 迭代获取服务的路由信息
-func (r *RouterPathList) Range(callback func(k string, v []RouterList) bool) {
+func (r *RouterPathResult) Range(callback func(k string, v []RouterList) bool) {
 	for k, v := range r.serverRouterMap {
-
 		tmpv := make([]RouterList, len(v))
-		copy(tmpv, v)
 		if !callback(k, tmpv) {
 			break
 		}
 	}
 }
 
-func (r *RouterPathList) MarshalJSON() (bytes []byte, err error) {
+func (r *RouterPathResult) MarshalJSON() (bytes []byte, err error) {
 	return json.Marshal(r.serverRouterMap)
 }

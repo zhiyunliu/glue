@@ -36,19 +36,21 @@ func NewAtomicValue[T any](val T) *AtomicValue[T] {
 }
 
 type RouterOptions struct {
-	Methods []string
+	Methods []string `json:"-"`
 	// 排除请求日志
-	ExcludeLogReq bool
+	ExcludeLogReq bool `json:"exclude_log_req"`
 	// 排除响应日志
-	ExcludeLogResp bool
+	ExcludeLogResp bool `json:"exclude_log_resp"`
+	// 排除请求头
+	ExcludeHeader bool `json:"exclude_header"`
 	// 强制打印请求日志
-	MandatoryLogReq bool
+	MandatoryLogReq bool `json:"mandatory_log_req"`
 	// 强制打印响应日志
-	MandatoryLogResp bool
-	// 打印请求头
-	WithHeaders []constants.HeaderGetter //打印请求头
+	MandatoryLogResp bool `json:"mandatory_log_resp"`
 	// 打印请求源
-	WithSource *bool //打印请求源
+	WithSource *bool `json:"with_source"`
+	// 打印请求头
+	WithHeaders []constants.HeaderGetter `json:"with_headers"`
 }
 
 type NormalRouterOption struct {

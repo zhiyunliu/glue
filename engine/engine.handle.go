@@ -191,22 +191,25 @@ func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 		printSource = *opts.WithSource
 	}
 
-	if printSource {
-		builder := bytes.Buffer{}
-		for _, key := range SrcHeaders {
-			v := header.Get(key)
-			if len(v) <= 0 {
-				continue
-			}
-			builder.WriteString("<")
-			builder.WriteString(key)
-			builder.WriteString("=")
-			builder.WriteString(v)
-			builder.WriteString(">")
+	//不打印，退出
+	if !printSource {
+		return
+	}
+
+	builder := bytes.Buffer{}
+	for _, key := range SrcHeaders {
+		v := header.Get(key)
+		if len(v) <= 0 {
+			continue
 		}
-		if builder.Len() > 0 {
-			logger.Infof("<reqsrcinfo>:%s", builder.String())
-		}
+		builder.WriteString("<")
+		builder.WriteString(key)
+		builder.WriteString("=")
+		builder.WriteString(v)
+		builder.WriteString(">")
+	}
+	if builder.Len() > 0 {
+		logger.Infof("<reqsrcinfo>:%s", builder.String())
 	}
 }
 
@@ -215,6 +218,10 @@ func printHeader(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 		return
 	}
 	opts := group.opts.Load()
+
+	if opts.ExcludeHeader {
+		return
+	}
 	//打印请求头
 	var headers = append(make([]constants.HeaderGetter, 0, len(logOpts.WithHeaders)), logOpts.WithHeaders...)
 	if len(opts.WithHeaders) > 0 {
