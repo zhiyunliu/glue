@@ -86,14 +86,16 @@ func newRedis(configName string, opts *Options, mapCfg map[string]any) (r *Clien
 	r.opts = opts
 
 	ropts := &redis.UniversalOptions{
-		Addrs:        r.opts.Addrs,
-		Username:     r.opts.Username,
-		Password:     r.opts.Password,
-		DB:           int(r.opts.DbIndex),
-		DialTimeout:  time.Duration(r.opts.DialTimeout) * time.Second,
-		ReadTimeout:  time.Duration(r.opts.ReadTimeout) * time.Second,
-		WriteTimeout: time.Duration(r.opts.WriteTimeout) * time.Second,
-		PoolSize:     int(r.opts.PoolSize),
+		Addrs:                 r.opts.Addrs,
+		Username:              r.opts.Username,
+		Password:              r.opts.Password,
+		DB:                    int(r.opts.DbIndex),
+		DialTimeout:           time.Duration(r.opts.DialTimeout) * time.Second,
+		ReadTimeout:           time.Duration(r.opts.ReadTimeout) * time.Second,
+		WriteTimeout:          time.Duration(r.opts.WriteTimeout) * time.Second,
+		PoolSize:              int(r.opts.PoolSize),
+		ContextTimeoutEnabled: r.opts.ContextTimeoutEnabled,
+		MaxRetries:            r.opts.MaxRetries,
 	}
 	r.UniversalClient = redis.NewUniversalClient(ropts)
 	_, err = r.UniversalClient.Ping(context.Background()).Result()

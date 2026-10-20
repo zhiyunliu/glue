@@ -170,6 +170,49 @@ func (rl *Lock) Acquire(ctx context.Context, expire int) (bool, error) {
 	if expire <= 0 {
 		return false, fmt.Errorf("expire 参数必须大于0")
 	}
+	if rl.opts.Timeout < 0 || int64(rl.opts.Timeout) > int64((1<<63-1)/time.Second) {
+		return false, errors.New("timeout 参数必须为非负秒数且不能超出时间间隔范围")
+	}
+	if rl.opts.Timeout == 0 {
+		if err := ctx.Err(); err != nil {
+			return false, err
+		}
+		return rl.acquireOnce(ctx, expire)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(rl.opts.Timeout)*time.Second)
+	defer cancel()
+
+	for {
+		if err := ctx.Err(); err != nil {
+			return false, err
+		}
+		acquired, err := rl.acquireOnce(ctx, expire)
+		if acquired {
+			return true, nil
+		}
+		if ctx.Err() != nil {
+			return false, ctx.Err()
+		}
+		if err != nil {
+			// 套接字截止时间可能先于 context 定时器触发，统一返回等待超时。
+			if deadline, ok := ctx.Deadline(); ok && !time.Now().Before(deadline) {
+				return false, context.DeadlineExceeded
+			}
+			return false, err
+		}
+
+		timer := time.NewTimer(rl.opts.TimeoutCheckInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return false, ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+func (rl *Lock) acquireOnce(ctx context.Context, expire int) (bool, error) {
 	resp, err := rl.client.Eval(ctx,
 		lockCommand,
 		rl.stateKeys(),
@@ -183,7 +226,7 @@ func (rl *Lock) Acquire(ctx context.Context, expire int) (bool, error) {
 	if err == goredis.Nil {
 		return false, nil
 	} else if err != nil {
-		return false, fmt.Errorf("error on acquiring lock for %s, %s", rl.key, err.Error())
+		return false, fmt.Errorf("获取锁 %s 失败: %w", rl.key, err)
 	} else if resp == nil {
 		return false, nil
 	}
