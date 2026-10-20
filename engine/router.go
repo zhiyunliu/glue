@@ -61,7 +61,8 @@ func isValidMethod(orgMethod string) (method Method, ok bool) {
 
 type RouterWrapper struct {
 	*router.Group
-	opts *RouterOptions
+	opts *AtomicValue[*RouterOptions]
+	//*RouterOptions
 }
 
 type RouterGroup struct {
@@ -123,6 +124,8 @@ func (group *RouterGroup) BasePath() string {
 // communication with a proxy).
 func (group *RouterGroup) Handle(relativePath string, handler interface{}, opts ...RouterOption) {
 	ropts := &RouterOptions{}
+	atomicOpts := &AtomicValue[*RouterOptions]{}
+	atomicOpts.Store(ropts)
 	for _, opt := range opts {
 		opt.Apply(ropts)
 	}
@@ -142,7 +145,7 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, opts 
 	}
 	group.ServiceGroups[relativePath] = &RouterWrapper{
 		Group: svcGroup,
-		opts:  ropts,
+		opts:  atomicOpts,
 	}
 }
 

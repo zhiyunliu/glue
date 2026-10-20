@@ -123,7 +123,8 @@ func engineHandler(group *RouterWrapper, unit *router.Unit) middleware.Handler {
 }
 
 // extractArgs returns the string of the req
-func extractReq(req context.Request, logopts *log.Options, ropts *RouterOptions) string {
+func extractReq(req context.Request, logopts *log.Options, atomicOpts *AtomicValue[*RouterOptions]) string {
+	ropts := atomicOpts.Load()
 	res := ""
 	if len(req.Query().Values()) > 0 {
 		res = req.Query().String()
@@ -144,7 +145,8 @@ func extractBody(req context.Request) string {
 	return ""
 }
 
-func extractResp(ctx context.Context, logopts *log.Options, ropts *RouterOptions) string {
+func extractResp(ctx context.Context, logopts *log.Options, atomicOpts *AtomicValue[*RouterOptions]) string {
+	ropts := atomicOpts.Load()
 
 	if ropts.MandatoryLogResp ||
 		(logopts.WithResponse && !(ropts.ExcludeLogResp || logopts.IsExclude(ctx.Request().Path().FullPath()))) {
@@ -183,8 +185,10 @@ func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 	if logOpts.WithSource != nil {
 		printSource = *logOpts.WithSource
 	}
-	if group.opts.WithSource != nil {
-		printSource = *group.opts.WithSource
+	opts := group.opts.Load()
+
+	if opts.WithSource != nil {
+		printSource = *opts.WithSource
 	}
 
 	if printSource {
@@ -210,10 +214,11 @@ func printHeader(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 	if header.IsEmpty() {
 		return
 	}
+	opts := group.opts.Load()
 	//打印请求头
 	var headers = append(make([]constants.HeaderGetter, 0, len(logOpts.WithHeaders)), logOpts.WithHeaders...)
-	if len(group.opts.WithHeaders) > 0 {
-		headers = append(headers, group.opts.WithHeaders...)
+	if len(opts.WithHeaders) > 0 {
+		headers = append(headers, opts.WithHeaders...)
 	}
 
 	if len(headers) > 0 {

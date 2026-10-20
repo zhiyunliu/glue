@@ -1,9 +1,38 @@
 package engine
 
-import "github.com/zhiyunliu/glue/constants"
+import (
+	"sync/atomic"
+
+	"github.com/zhiyunliu/glue/constants"
+)
 
 type RouterOption interface {
 	Apply(*RouterOptions)
+}
+
+type AtomicValue[T any] struct {
+	value atomic.Value
+}
+
+func (v *AtomicValue[T]) CompareAndSwap(old T, new T) (swapped bool) {
+	return v.value.CompareAndSwap(old, new)
+}
+func (v *AtomicValue[T]) Load() (val T) {
+	return v.value.Load().(T)
+}
+func (v *AtomicValue[T]) Store(val T) {
+	v.value.Store(val)
+}
+func (v *AtomicValue[T]) Swap(new T) (old T) {
+	return v.value.Swap(new).((T))
+}
+
+func NewAtomicValue[T any](val T) *AtomicValue[T] {
+	opts := &AtomicValue[T]{
+		value: atomic.Value{},
+	}
+	opts.Store(val)
+	return opts
 }
 
 type RouterOptions struct {
