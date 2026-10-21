@@ -20,15 +20,13 @@ func (m *mockLogger) Infof(format string, args ...interface{}) {
 
 func TestPrintSource_HappyPath(t *testing.T) {
 	logOpts := &log.Options{WithSource: &[]bool{true}[0]}
-	atomicOpts := &AtomicValue[*RouterOptions]{}
-	atomicOpts.Store(&RouterOptions{WithSource: &[]bool{true}[0]})
-	group := &RouterWrapper{opts: atomicOpts}
+	atomicOpts := &RouterOptions{WithSource: &[]bool{true}[0]}
 	header := xtypes.SMap{
 		constants.HeaderSourceIp:   "127.0.0.1",
 		constants.HeaderSourceName: "testApp",
 	}
 	logger := &mockLogger{}
-	printSource(logger, logOpts, group, header)
+	printSource(logger, logOpts, atomicOpts, header)
 
 	assert.Contains(t, logger.output, "X-Src-Ip=127.0.0.1")
 	assert.Contains(t, logger.output, "X-Src-Name=testApp")
@@ -37,13 +35,11 @@ func TestPrintSource_HappyPath(t *testing.T) {
 
 func TestPrintSource_EmptyHeader(t *testing.T) {
 	logOpts := &log.Options{WithSource: &[]bool{true}[0]}
-	atomicOpts := &AtomicValue[*RouterOptions]{}
-	atomicOpts.Store(&RouterOptions{WithSource: &[]bool{true}[0]})
+	atomicOpts := &RouterOptions{WithSource: &[]bool{true}[0]}
 
-	group := &RouterWrapper{opts: atomicOpts}
 	header := xtypes.SMap{}
 	logger := &mockLogger{}
-	printSource(logger, logOpts, group, header)
+	printSource(logger, logOpts, atomicOpts, header)
 
 	assert.Empty(t, logger.output)
 }
@@ -51,28 +47,26 @@ func TestPrintSource_EmptyHeader(t *testing.T) {
 func TestPrintSource_NoPrintSource(t *testing.T) {
 	logOpts := &log.Options{WithSource: &[]bool{false}[0]}
 
-	opts := NewAtomicValue(&RouterOptions{WithSource: &[]bool{false}[0]})
-	group := &RouterWrapper{opts: opts}
+	opts := &RouterOptions{WithSource: &[]bool{false}[0]}
 	header := xtypes.SMap{
 		constants.HeaderSourceIp:   "127.0.0.1",
 		constants.HeaderSourceName: "testApp",
 	}
 	logger := &mockLogger{}
-	printSource(logger, logOpts, group, header)
+	printSource(logger, logOpts, opts, header)
 
 	assert.Empty(t, logger.output)
 }
 
 func TestPrintSource_NoPrintSourceNotSet(t *testing.T) {
 	logOpts := &log.Options{WithSource: &[]bool{true}[0]}
-	opts := NewAtomicValue(&RouterOptions{WithSource: nil})
-	group := &RouterWrapper{opts: opts}
+	opts := &RouterOptions{WithSource: nil}
 	header := xtypes.SMap{
 		constants.HeaderSourceIp:   "127.0.0.1",
 		constants.HeaderSourceName: "testApp",
 	}
 	logger := &mockLogger{}
-	printSource(logger, logOpts, group, header)
+	printSource(logger, logOpts, opts, header)
 
 	assert.Contains(t, logger.output, "X-Src-Ip=127.0.0.1")
 	assert.Contains(t, logger.output, "X-Src-Name=testApp")
@@ -80,14 +74,13 @@ func TestPrintSource_NoPrintSourceNotSet(t *testing.T) {
 
 func TestPrintSource_NoPrintSourcePath(t *testing.T) {
 	logOpts := &log.Options{WithSource: &[]bool{true}[0]}
-	opts := NewAtomicValue(&RouterOptions{WithSource: &[]bool{false}[0]})
-	group := &RouterWrapper{opts: opts}
+	opts := &RouterOptions{WithSource: &[]bool{false}[0]}
 	header := xtypes.SMap{
 		constants.HeaderSourceIp:   "127.0.0.1",
 		constants.HeaderSourceName: "testApp",
 	}
 	logger := &mockLogger{}
-	printSource(logger, logOpts, group, header)
+	printSource(logger, logOpts, opts, header)
 
 	assert.Empty(t, logger.output)
 }
@@ -95,12 +88,11 @@ func TestPrintSource_NoPrintSourcePath(t *testing.T) {
 func TestPrintSource_NilWithSource(t *testing.T) {
 	logOpts := &log.Options{WithSource: nil}
 
-	opts := NewAtomicValue(&RouterOptions{WithSource: nil})
-	group := &RouterWrapper{opts: opts}
+	opts := &RouterOptions{WithSource: nil}
 	header := xtypes.SMap{
 		constants.HeaderSourceIp:   "127.0.0.1",
 		constants.HeaderSourceName: "testApp",
 	}
 	logger := &mockLogger{}
-	printSource(logger, logOpts, group, header)
+	printSource(logger, logOpts, opts, header)
 }

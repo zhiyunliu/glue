@@ -66,13 +66,19 @@ func buildHandler(engine AdapterEngine, group *RouterWrapper, middlewares []midd
 		startTime := time.Now()
 		header := ctx.Request().Header()
 
-		ctx.Log().Infof("%s.req %s %s from:%s %s", kind, logMethod, fullPath, ctx.Request().GetClientIP(), extractReq(ctx.Request(), logOpts, group.opts))
-
-		printSource(ctx.Log(), logOpts, group, header)
-		printHeader(ctx.Log(), logOpts, group, header)
+		atomicOpts := group.opts.Load()
+		if !atomicOpts.GetSkipLog() {
+			ctx.Log().Infof("%s.req %s %s from:%s %s", kind, logMethod, fullPath, ctx.Request().GetClientIP(), extractReq(ctx.Request(), logOpts, atomicOpts))
+		}
+		printSource(ctx.Log(), logOpts, atomicOpts, header)
+		printHeader(ctx.Log(), logOpts, atomicOpts, header)
 
 		resp := middleware.Chain(middlewares...)(engineHandler(group, v))(ctx)
 		engine.Write(ctx, resp)
+
+		if atomicOpts.GetSkipLog() {
+			return
+		}
 		var err error
 		if rerr, ok := resp.(error); ok {
 			err = rerr
@@ -81,9 +87,9 @@ func buildHandler(engine AdapterEngine, group *RouterWrapper, middlewares []midd
 
 		level, errInfo := extractError(err)
 		if level == log.LevelError {
-			ctx.Log().Logf(level, "%s.resp %s %s %d %s %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, group.opts), errInfo)
+			ctx.Log().Logf(level, "%s.resp %s %s %d %s %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, atomicOpts), errInfo)
 		} else {
-			ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, group.opts))
+			ctx.Log().Logf(level, "%s.resp %s %s %d %s %s", kind, logMethod, fullPath, code, time.Since(startTime).String(), extractResp(ctx, logOpts, atomicOpts))
 		}
 	}
 }
@@ -123,14 +129,13 @@ func engineHandler(group *RouterWrapper, unit *router.Unit) middleware.Handler {
 }
 
 // extractArgs returns the string of the req
-func extractReq(req context.Request, logopts *log.Options, atomicOpts *AtomicValue[*RouterOptions]) string {
-	ropts := atomicOpts.Load()
+func extractReq(req context.Request, logopts *log.Options, ropts *RouterOptions) string {
 	res := ""
 	if len(req.Query().Values()) > 0 {
 		res = req.Query().String()
 	}
-	if ropts.MandatoryLogReq ||
-		(logopts.WithRequest && !(ropts.ExcludeLogReq || logopts.IsExclude(req.Path().FullPath()))) {
+	if ropts.GetMandatoryLogReq() ||
+		(logopts.WithRequest && !(ropts.GetExcludeLogReq() || logopts.IsExclude(req.Path().FullPath()))) {
 		res += "|"
 		res += extractBody(req)
 	}
@@ -145,11 +150,10 @@ func extractBody(req context.Request) string {
 	return ""
 }
 
-func extractResp(ctx context.Context, logopts *log.Options, atomicOpts *AtomicValue[*RouterOptions]) string {
-	ropts := atomicOpts.Load()
+func extractResp(ctx context.Context, logopts *log.Options, ropts *RouterOptions) string {
 
-	if ropts.MandatoryLogResp ||
-		(logopts.WithResponse && !(ropts.ExcludeLogResp || logopts.IsExclude(ctx.Request().Path().FullPath()))) {
+	if ropts.GetMandatoryLogResp() ||
+		(logopts.WithResponse && !(ropts.GetExcludeLogResp() || logopts.IsExclude(ctx.Request().Path().FullPath()))) {
 		return bytesconv.BytesToString(ctx.Response().ResponseBytes())
 	}
 	return ""
@@ -176,7 +180,7 @@ var (
 	SrcHeaders = []string{constants.HeaderSourceIp, constants.HeaderSourceName}
 )
 
-func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper, header context.Header) {
+func printSource(logger innerLogger, logOpts *log.Options, opts *RouterOptions, header context.Header) {
 	if header.IsEmpty() {
 		return
 	}
@@ -185,7 +189,6 @@ func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 	if logOpts.WithSource != nil {
 		printSource = *logOpts.WithSource
 	}
-	opts := group.opts.Load()
 
 	if opts.WithSource != nil {
 		printSource = *opts.WithSource
@@ -213,13 +216,12 @@ func printSource(logger innerLogger, logOpts *log.Options, group *RouterWrapper,
 	}
 }
 
-func printHeader(logger innerLogger, logOpts *log.Options, group *RouterWrapper, header context.Header) {
+func printHeader(logger innerLogger, logOpts *log.Options, opts *RouterOptions, header context.Header) {
 	if header.IsEmpty() {
 		return
 	}
-	opts := group.opts.Load()
 
-	if opts.ExcludeHeader {
+	if opts.GetExcludeHeader() {
 		return
 	}
 	//打印请求头

@@ -13,25 +13,24 @@ var (
 )
 
 type RouterPathResult struct {
-	serverRouterMap map[string][]RouterList
+	serverRouterMap map[string]RouterList
 }
 
 func NewRouterPathResult() *RouterPathResult {
 	return &RouterPathResult{
-		serverRouterMap: map[string][]RouterList{},
+		serverRouterMap: map[string]RouterList{},
 	}
 }
 
 // 存储服务的路由信息
 func (r *RouterPathResult) Store(servername string, routerList RouterList) {
-	r.serverRouterMap[servername] = append(r.serverRouterMap[servername], routerList)
+	r.serverRouterMap[servername] = routerList
 }
 
 // 迭代获取服务的路由信息
-func (r *RouterPathResult) Range(callback func(k string, v []RouterList) bool) {
+func (r *RouterPathResult) Range(callback func(k string, v RouterList) bool) {
 	for k, v := range r.serverRouterMap {
-		tmpv := make([]RouterList, len(v))
-		if !callback(k, tmpv) {
+		if !callback(k, v) {
 			break
 		}
 	}
