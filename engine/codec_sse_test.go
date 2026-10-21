@@ -12,6 +12,12 @@ import (
 	"github.com/zhiyunliu/golibs/xsse"
 )
 
+var (
+	_ xsse.ServerSentEvents  = (*testSSE)(nil)
+	_ xsse.ServerSentEventv2 = (*testSSEv2)(nil)
+	_ xsse.ServerSentEventv2 = (*flushProbeSSE)(nil)
+)
+
 func TestDefaultResponseEncoder_ClearWriteDeadlineForSSE(t *testing.T) {
 	resp := &writeDeadlineResponse{}
 	ctx := &encoderContext{resp: resp}
@@ -56,7 +62,7 @@ type flushProbeSSE struct {
 	flushCountOnFirstEvent int
 }
 
-func (s *flushProbeSSE) GetEventV2() (evt *xsse.Event, err error) {
+func (s *flushProbeSSE) GetEventV2() (evt xsse.SSEEvent, err error) {
 	if !s.called {
 		s.called = true
 		s.flushCountOnFirstEvent = s.resp.flushCount
@@ -68,7 +74,7 @@ type testSSE struct {
 	events []*xsse.Event
 }
 
-func (s *testSSE) GetEvent() (evt *xsse.Event, ok bool) {
+func (s *testSSE) GetEvent() (evt xsse.SSEEvent, ok bool) {
 	if len(s.events) == 0 {
 		return nil, false
 	}
@@ -81,7 +87,7 @@ type testSSEv2 struct {
 	events []*xsse.Event
 }
 
-func (s *testSSEv2) GetEventV2() (evt *xsse.Event, err error) {
+func (s *testSSEv2) GetEventV2() (evt xsse.SSEEvent, err error) {
 	if len(s.events) == 0 {
 		return nil, xsse.ErrChanIsEmpty
 	}
