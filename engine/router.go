@@ -11,6 +11,7 @@ import (
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/router"
+	"github.com/zhiyunliu/golibs/xreflect"
 )
 
 type Method string
@@ -263,7 +264,7 @@ func (p *PathResult) Reset(path string) {
 	opts.MandatoryLogReq = org.MandatoryLogReq
 	opts.MandatoryLogResp = org.MandatoryLogResp
 	opts.WithSource = org.WithSource
-	opts.WithHeaders = deepCopy(org.WithHeaders)
+	opts.WithHeaders = xreflect.DeepCopy(org.WithHeaders)
 }
 
 func (group *RouterGroup) GetPathResult() *PathResult {

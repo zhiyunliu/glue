@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/zhiyunliu/glue/constants"
+	"github.com/zhiyunliu/golibs/xreflect"
 )
 
 type RouterOption interface {
@@ -32,7 +33,7 @@ func (v *AtomicValue[T]) Swap(new T) (old T) {
 func NewAtomicValue[T any](val T) *AtomicValue[T] {
 	opts := &AtomicValue[T]{
 		value:    atomic.Value{},
-		original: deepCopy(val),
+		original: xreflect.DeepCopy(val),
 	}
 	opts.Store(val)
 	return opts
