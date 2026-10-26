@@ -128,10 +128,10 @@ func (e *Server) Start(ctx context.Context) (err error) {
 }
 
 // 获取树形的路径列表
-func (s *Server) RouterPathList() transport.RouterList {
+func (s *Server) RouterPathResult() transport.RouterResult {
 	return engine.RouterList{
 		ServerType: s.Type(),
-		PathList:   s.opts.router.GetTreePathList(),
+		PathResult: s.opts.router.GetPathResult(),
 	}
 }
 

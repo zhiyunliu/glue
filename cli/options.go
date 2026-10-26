@@ -66,9 +66,9 @@ func Server(srv ...transport.Server) Option {
 }
 
 // WithAppMode
-func WithConfigSource(fileList ...config.Source) Option {
+func WithConfigSource(cfgsources ...config.Source) Option {
 	return func(o *Options) {
-		o.configSources = fileList
+		o.configSources = cfgsources
 	}
 }
 

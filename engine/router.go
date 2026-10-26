@@ -1,14 +1,17 @@
 package engine
 
 import (
+	"encoding/json"
 	"fmt"
+	"iter"
+	"maps"
 	"path"
-	"sort"
 	"strings"
 
 	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/router"
+	"github.com/zhiyunliu/golibs/xreflect"
 )
 
 type Method string
@@ -61,7 +64,8 @@ func isValidMethod(orgMethod string) (method Method, ok bool) {
 
 type RouterWrapper struct {
 	*router.Group
-	opts *RouterOptions
+	opts *AtomicValue[*RouterOptions]
+	//*RouterOptions
 }
 
 type RouterGroup struct {
@@ -140,9 +144,11 @@ func (group *RouterGroup) Handle(relativePath string, handler interface{}, opts 
 		log.Error(fmt.Errorf("存在相同路径注册:%s", absolutePath))
 		return
 	}
+
+	atomicOpts := NewAtomicValue(ropts)
 	group.ServiceGroups[relativePath] = &RouterWrapper{
 		Group: svcGroup,
-		opts:  ropts,
+		opts:  atomicOpts,
 	}
 }
 
@@ -164,23 +170,115 @@ func (group *RouterGroup) calculateAbsolutePath(relativePath string) string {
 	return path.Join(group.basePath, relativePath)
 }
 
-type treePathResult struct {
-	list []string
+type PatchPathResult struct {
 }
 
-func (group *RouterGroup) GetTreePathList() []string {
-	rst := &treePathResult{}
+type PathResult struct {
+	list map[string]*AtomicValue[*RouterOptions]
+}
+
+func (p PathResult) MarshalJSON() ([]byte, error) {
+	tmp := make(map[string]any)
+	for k, v := range p.list {
+		tmp[k] = v.Load()
+	}
+	return json.Marshal(tmp)
+}
+
+func (p *PathResult) UnmarshalJSON(data []byte) (err error) {
+	tmp := make(map[string]*RouterOptions)
+	err = json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+	p.list = make(map[string]*AtomicValue[*RouterOptions])
+	for k, v := range tmp {
+		p.list[k] = NewAtomicValue(v)
+	}
+	return nil
+}
+
+func (p PathResult) Get(path string) (opts *RouterOptions, ok bool) {
+	if tmp, ok := p.list[path]; ok {
+		return tmp.Load(), true
+	}
+	return nil, false
+}
+
+func (p PathResult) PathList() iter.Seq[string] {
+	return maps.Keys(p.list)
+}
+
+func (p PathResult) Range(callback func(path string, opts *RouterOptions) bool) {
+	for k, v := range p.list {
+		if !callback(k, v.Load()) {
+			break
+		}
+	}
+}
+func (p *PathResult) Pathch(path string, opts *RouterOptions) {
+	cur, ok := p.Get(path)
+	if !ok {
+		return
+	}
+
+	if opts.ExcludeHeader != nil {
+		cur.ExcludeHeader = opts.ExcludeHeader
+	}
+	if opts.ExcludeLogReq != nil {
+		cur.ExcludeLogReq = opts.ExcludeLogReq
+	}
+	if opts.ExcludeLogResp != nil {
+		cur.ExcludeLogResp = opts.ExcludeLogResp
+	}
+	if opts.MandatoryLogReq != nil {
+		cur.MandatoryLogReq = opts.MandatoryLogReq
+	}
+	if opts.MandatoryLogResp != nil {
+		cur.MandatoryLogResp = opts.MandatoryLogResp
+	}
+
+	if opts.SkipLog != nil {
+		cur.SkipLog = opts.SkipLog
+	}
+	if opts.WithHeaders != nil {
+		cur.WithHeaders = opts.WithHeaders
+	}
+	if opts.WithSource != nil {
+		cur.WithSource = opts.WithSource
+	}
+}
+
+func (p *PathResult) Reset(path string) {
+	cur, ok := p.list[path]
+	if !ok {
+		return
+	}
+	opts := cur.Load()
+	org := cur.original
+
+	opts.SkipLog = org.SkipLog
+	opts.ExcludeLogReq = org.ExcludeLogReq
+	opts.ExcludeLogResp = org.ExcludeLogResp
+	opts.ExcludeHeader = org.ExcludeHeader
+	opts.MandatoryLogReq = org.MandatoryLogReq
+	opts.MandatoryLogResp = org.MandatoryLogResp
+	opts.WithSource = org.WithSource
+	opts.WithHeaders = xreflect.DeepCopy(org.WithHeaders)
+}
+
+func (group *RouterGroup) GetPathResult() *PathResult {
+	rst := &PathResult{
+		list: make(map[string]*AtomicValue[*RouterOptions], 0),
+	}
 	collect(group, rst)
-
-	sort.Strings(rst.list)
-
-	return rst.list
+	return rst
 }
 
-func collect(group *RouterGroup, rst *treePathResult) {
+func collect(group *RouterGroup, rst *PathResult) {
 
 	for _, v := range group.ServiceGroups {
-		rst.list = append(rst.list, v.GetReallyPath())
+		rst.list[v.GetReallyPath()] = v.opts
 	}
 
 	for i := range group.Children {

@@ -75,12 +75,6 @@ func (e *GinEngine) NoRoute() {
 
 func (e *GinEngine) Handle(method string, path string, callfunc engine.HandlerFunc) {
 
-	// provider := otel.GetTracerProvider()
-	// otelhttpHandler := otelhttp.NewHandler(
-	// 	otelhttp.WithRouteTag(path, traceResponseHandler(callfunc)),
-	// 	path,
-	// 	otelhttp.WithTracerProvider(provider))
-
 	e.Engine.Handle(method, path, func(gctx *gin.Context) {
 		actx := e.pool.Get().(*GinContext)
 		actx.reset(gctx)
@@ -123,9 +117,73 @@ func (e *GinEngine) defaultHandle() {
 		promHandler.ServeHTTP(ctx.Writer, ctx.Request)
 	})
 
-	//healthcheck
+	//GET /routers
 	e.Engine.Handle(http.MethodGet, "/routers", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, global.ServerRouterPathList)
+		ctx.JSON(http.StatusOK, global.ServerRouterPathResult)
+	})
+
+	//PATCH /routers
+	e.Engine.Handle(http.MethodPatch, "/routers", func(ctx *gin.Context) {
+
+		data := map[string]engine.RouterList{}
+
+		if err := ctx.ShouldBind(&data); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+
+		global.ServerRouterPathResult.Range(func(servername string, v global.RouterList) bool {
+			serverpath, ok := data[servername]
+			if !ok {
+				return true
+			}
+			tmpResult := v.GetPathResult()
+			result, ok := tmpResult.(*engine.PathResult)
+			if !ok {
+				return true
+			}
+
+			serverpath.PathResult.Range(func(path string, opts *engine.RouterOptions) bool {
+				if opts.Reset != nil && *opts.Reset {
+					result.Reset(path)
+					return true
+				}
+				result.Pathch(path, opts)
+				return true
+			})
+			return true
+		})
+
+		// 	{
+		//   "apiserver": [
+		//     {
+		//       "server_type": "api",
+		//       "path_result": {
+		//         "/api/debugbasic/:servername/:innerip/:verify": {
+		//           "skip_log": false,
+		//           "exclude_log_req": false,
+		//           "exclude_log_resp": true,
+		//           "exclude_header": false,
+		//           "mandatory_log_req": false,
+		//           "mandatory_log_resp": false,
+		//           "with_source": null,
+		//           "with_headers": null
+		//         },
+		//         "/api/debugbasic/analyze/clientrequests": {
+		//           "skip_log": false,
+		//           "exclude_log_req": false,
+		//           "exclude_log_resp": true,
+		//           "exclude_header": false,
+		//           "mandatory_log_req": false,
+		//           "mandatory_log_resp": false,
+		//           "with_source": null,
+		//           "with_headers": null
+		// 		}
+
+		// 	}
+		// }]
+		// }
+
+		ctx.JSON(http.StatusOK, global.ServerRouterPathResult)
 	})
 }
 

@@ -5,14 +5,16 @@ import (
 )
 
 type Options struct {
-	Addrs        []string `json:"addrs,omitempty"  valid:"required" `
-	Username     string   `json:"username,omitempty" `
-	Password     string   `json:"password,omitempty" `
-	DbIndex      uint     `json:"db,omitempty"`
-	DialTimeout  uint     `json:"dial_timeout,omitempty"`
-	ReadTimeout  uint     `json:"read_timeout,omitempty"`
-	WriteTimeout uint     `json:"write_timeout,omitempty" `
-	PoolSize     uint     `json:"pool_size,omitempty"`
+	Addrs                 []string `json:"addrs,omitempty"  valid:"required" `
+	Username              string   `json:"username,omitempty" `
+	Password              string   `json:"password,omitempty" `
+	DbIndex               uint     `json:"db,omitempty"`
+	DialTimeout           uint     `json:"dial_timeout,omitempty"`
+	ReadTimeout           uint     `json:"read_timeout,omitempty"`
+	WriteTimeout          uint     `json:"write_timeout,omitempty" `
+	PoolSize              uint     `json:"pool_size,omitempty"`
+	ContextTimeoutEnabled bool     `json:"context_timeout_enabled,omitempty"`
+	MaxRetries            int      `json:"max_retries,omitempty"`
 }
 
 type Option func(opts *Options)
@@ -70,6 +72,14 @@ func WithMapConfig(cfg map[string]any) Option {
 					continue
 				}
 				opts.DbIndex = uint(tmp)
+			case "context_timeout_enabled":
+				if enabled, ok := v.(bool); ok {
+					opts.ContextTimeoutEnabled = enabled
+				}
+			case "max_retries":
+				if retries, err := xreflect.GetInt(v); err == nil {
+					opts.MaxRetries = int(retries)
+				}
 			case "pool_size":
 				tmp, err := xreflect.GetInt(v)
 				if err != nil {

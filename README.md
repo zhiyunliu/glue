@@ -722,10 +722,12 @@ func (d *Fulldemo) NotRunHandle(ctx context.Context) interface{} {
 		queObj.Send(ctx.Context(), "queuekey", queue.MsgItem{})
 
 		//分布式锁的使用
-		dlock := glue.DLocker().Build("")
-		succ, err := dlock.Acquire(3) //锁定，超时时间3秒
-		dlock.Release()               //释放
-		dlock.Renewal(5)              //续期 5秒
+		dlock := glue.DLocker().Build("business-key", dlocker.WithTimeout(3))
+		succ, err := dlock.Acquire(ctx.Context(), 10) //最多等待3秒，成功后的租约为10秒
+		if err == nil && succ {
+			// 执行业务后释放锁；需要时可调用 Renewal(ctx.Context(), 5) 续期5秒。
+			dlock.Release(ctx.Context())
+		}
 
 		//http对象使用
 		httpObj := glue.Http("httpname") //httpname 对应config.json 文件中节点：xhttp/httpname
@@ -736,6 +738,8 @@ func (d *Fulldemo) NotRunHandle(ctx context.Context) interface{} {
 		rpcResp, err := rpcObj.Request(ctx.Context(), "grpc://servername/apipath", map[string]string{})  
 
 ```
+
+分布式锁选项需导入 `github.com/zhiyunliu/glue/dlocker`。`WithTimeout` 的参数为整数秒：未设置或为 `0` 时只尝试一次；正数时每隔约 50ms 重试，超时返回 `context.DeadlineExceeded`，父 context 提前到期或取消时以父 context 为准。负数及超出时间间隔范围的值会返回参数错误。等待时间与锁租约独立，不影响成功后的自动续约；轮询不保证公平排队。Redis 网络错误立即返回，响应丢失时锁可能已经在服务端获取，不能假定错误一定代表未持锁。锁专用 Redis 客户端启用 context 截止时间并禁用命令自动重试，避免重入计数重复增加。
 
 # 日志使用
 

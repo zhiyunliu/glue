@@ -18,16 +18,16 @@ type Server interface {
 	Config(cfg config.Config) error
 }
 
-type RouterList interface {
+type RouterResult interface {
 	GetType() string
-	GetPathList() []string
+	GetPathResult() any
 }
 
 // Endpointer is registry endpoint.
 type Endpointer interface {
 	ServiceName() string
 	Endpoint() *url.URL
-	RouterPathList() RouterList
+	RouterPathResult() RouterResult
 }
 
 // Header is the storage medium used by a Header.
