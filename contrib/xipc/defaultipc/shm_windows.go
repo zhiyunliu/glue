@@ -1,6 +1,6 @@
 //go:build windows
 
-package ipc
+package defaultipc
 
 import (
 	"errors"
@@ -42,7 +42,7 @@ func openShared(name string, size int, create bool) (SharedRegion, error) {
 			uint32(size64),
 			namePtr,
 		)
-		if err == windows.ERROR_ALREADY_EXISTS {
+		if errors.Is(err, windows.ERROR_ALREADY_EXISTS) {
 			err = nil
 		}
 	} else {
@@ -77,8 +77,11 @@ func openShared(name string, size int, create bool) (SharedRegion, error) {
 
 // mappedBytes 将 Windows 映射 API 返回的地址包装为字节切片。
 //
+// nolint
+//
 //go:nocheckptr
 func mappedBytes(addr uintptr, size int) []byte {
+	//nolint
 	return unsafe.Slice((*byte)(unsafe.Pointer(addr)), size)
 }
 

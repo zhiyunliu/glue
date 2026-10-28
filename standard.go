@@ -10,6 +10,7 @@ import (
 	"github.com/zhiyunliu/glue/standard"
 	"github.com/zhiyunliu/glue/xdb"
 	"github.com/zhiyunliu/glue/xhttp"
+	"github.com/zhiyunliu/glue/xipc"
 	"github.com/zhiyunliu/glue/xrpc"
 )
 
@@ -29,6 +30,12 @@ func Cache(name string, opts ...cache.Option) cache.ICache {
 func Queue(name string, opts ...queue.Option) queue.IQueue {
 	obj := standard.GetInstance(queue.TypeNode)
 	return obj.(queue.StandardQueue).GetQueue(name, opts...)
+}
+
+// IPC 获取本地进程通信客户端。
+func IPC(name string) xipc.Client {
+	obj := standard.GetInstance(xipc.TypeNode)
+	return obj.(xipc.StandardIPC).GetIPC(name)
 }
 
 // RPC 获取RPC 处理对象
@@ -66,6 +73,7 @@ func init() {
 	standard.Registry(xdb.NewBuilder())
 	standard.Registry(cache.NewBuilder())
 	standard.Registry(queue.NewBuilder())
+	standard.Registry(xipc.NewBuilder())
 	standard.Registry(xrpc.NewBuilder())
 	standard.Registry(xhttp.NewBuilder())
 	standard.Registry(dlocker.NewBuilder())

@@ -2,67 +2,115 @@ package ipc
 
 import (
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/log"
-	"github.com/zhiyunliu/glue/middleware"
+	"github.com/zhiyunliu/glue/xipc"
 )
 
-// Option 设置服务参数。
+// Option 参数设置类型
 type Option func(*options)
 
 type options struct {
-	middlewares  []middleware.Middleware
-	srvCfg       *serverConfig
-	config       config.Config
 	serviceName  string
-	router       *engine.RouterGroup
+	srvCfg       *serverConfig
 	logOpts      *log.Options
+	router       *engine.RouterGroup
+	config       config.Config
 	decReq       engine.DecodeRequestFunc
+	encResp      engine.EncodeResponseFunc
+	encErr       engine.EncodeErrorFunc
 	startedHooks []engine.Hook
 	endHooks     []engine.Hook
 }
 
 func setDefaultOption() *options {
-	return &options{srvCfg: &serverConfig{Config: Config{Engine: "gin", Status: engine.StatusStart, StopMaximumTimeout: 15}}, router: engine.NewRouterGroup(""), logOpts: &log.Options{}, decReq: engine.DefaultRequestDecoder}
+	return &options{
+		srvCfg: &serverConfig{
+			Config: xipc.Config{
+				Proto:  "default",
+				Status: engine.StatusStart,
+			},
+		},
+		logOpts: &log.Options{
+			WithSource:  &[]bool{true}[0],
+			WithHeaders: constants.DefaultHeaders,
+		},
+		decReq:  engine.DefaultRequestDecoder,
+		encResp: engine.DefaultResponseEncoder,
+		encErr:  engine.DefaultErrorEncoder,
+		router:  engine.NewRouterGroup(""),
+	}
+
 }
 
-// WithAddr 设置本地端点，不包含命名管道前缀。
-func WithAddr(addr string) Option { return func(o *options) { o.srvCfg.Config.Addr = addr } }
-
-// WithEngine 设置框架路由引擎。
-func WithEngine(name string) Option { return func(o *options) { o.srvCfg.Config.Engine = name } }
-
-// WithConfig 设置框架配置对象。
-func WithConfig(cfg config.Config) Option { return func(o *options) { o.config = cfg } }
-
-// WithServiceName 设置注册服务名称。
-func WithServiceName(name string) Option { return func(o *options) { o.serviceName = name } }
-
-// WithStopMaximumTimeout 设置停止等待上限，单位为秒。
-func WithStopMaximumTimeout(seconds uint) Option {
-	return func(o *options) { o.srvCfg.Config.StopMaximumTimeout = seconds }
+// WithAddr 设置服务地址
+func WithAddr(addr string) Option {
+	return func(o *options) {
+		o.srvCfg.Config.Addr = addr
+	}
 }
 
-// WithStartedHook 设置启动成功后的回调。
-func WithStartedHook(hook engine.Hook) Option {
-	return func(o *options) { o.startedHooks = append(o.startedHooks, hook) }
+// WithEngine 设置服务引擎（gin)
+func WithEngine(engine string) Option {
+	return func(o *options) {
+		o.srvCfg.Config.Proto = engine
+	}
 }
 
-// WithEndHook 设置停止完成后的回调。
-func WithEndHook(hook engine.Hook) Option {
-	return func(o *options) { o.endHooks = append(o.endHooks, hook) }
+func WithEndHook(f engine.Hook) Option {
+	return func(o *options) {
+		o.endHooks = append(o.endHooks, f)
+	}
 }
 
-// WithDecodeRequestFunc 设置框架请求解码器。
-func WithDecodeRequestFunc(fn engine.DecodeRequestFunc) Option {
-	return func(o *options) { o.decReq = fn }
+// WithStartedHook 设置启动回调函数
+func WithStartedHook(f engine.Hook) Option {
+	return func(o *options) {
+		o.startedHooks = append(o.startedHooks, f)
+	}
 }
 
-// Log 设置框架请求日志参数。
+// WithStartedHook 设置启动回调函数
+func WithConfig(config config.Config) Option {
+	return func(o *options) {
+		o.config = config
+	}
+}
+
+// WithServiceName 设置服务名称
+func WithServiceName(serviceName string) Option {
+	return func(o *options) {
+		o.serviceName = serviceName
+	}
+}
+
+// Log 设置日志配置
 func Log(opts ...log.ServerOption) Option {
 	return func(o *options) {
-		for _, opt := range opts {
-			opt(o.logOpts)
+		for i := range opts {
+			opts[i](o.logOpts)
 		}
+	}
+}
+
+// WithDecodeRequestFunc 解析入参
+func WithDecodeRequestFunc(decReq engine.DecodeRequestFunc) Option {
+	return func(o *options) {
+		o.decReq = decReq
+	}
+}
+
+// WithEncodeResponseFunc 编码响应
+func WithEncodeResponseFunc(encResp engine.EncodeResponseFunc) Option {
+	return func(o *options) {
+		o.encResp = encResp
+	}
+}
+
+// WithEncodeErrorFunc 编码错误
+func WithEncodeErrorFunc(encErr engine.EncodeErrorFunc) Option {
+	return func(o *options) {
+		o.encErr = encErr
 	}
 }

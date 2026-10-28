@@ -818,3 +818,21 @@ func main() {
 
 ```
 
+
+
+## IPC 本地进程通信
+
+客户端与服务端分离：根 `ipc` 提供客户端、公共响应、共享内存和进程锁，`server/ipc` 仅提供服务端。
+标准入口 `glue.IPC(name, opts...) ipc.Client` 读取 `ipcs.<name>.addr`，空名称为 `default`，
+按名称与选项通过标准容器缓存连接。客户端使用 `ipc.WithAddr` 或 `ipc.WithOption` 覆盖配置；
+独立连接使用 `ipc.NewClient("default", ipc.Config{Addr: endpoint})`，不再提供旧连接函数。
+
+详见 [IPC 客户端](ipc/README.md) 与 [IPC 服务端及示例](server/ipc/README.md)。
+
+### IPC 实现分层
+
+根 `ipc` 仅定义公共契约、注册工厂和 standard；默认实现位于 `contrib/ipc/default`（包名 `defaultipc`）。
+仅使用根客户端的程序须空导入 `github.com/zhiyunliu/glue/contrib/ipc/default`；`server/ipc` 内置此空导入。
+外部实现使用 `ipc.Register` / `ipc.RegisterServer` 注册，通过 `proto` 选择，默认值为 `default`。
+`server/ipc` 经原生 alloter 执行路由，不再使用 Gin 或 HTTP 模拟请求。
+共享内存、锁与原始 framing API 已迁至 defaultipc；客户端构造签名变更见 [IPC 文档](ipc/README.md)。

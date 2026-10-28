@@ -1,4 +1,4 @@
-package ipc
+package defaultipc
 
 import (
 	"encoding/binary"
@@ -63,3 +63,9 @@ func readFrame(r io.Reader) ([]byte, error) {
 	}
 	return payload, nil
 }
+
+// WriteFrame 写入一个长度前缀帧。
+func WriteFrame(w io.Writer, payload []byte) error { return writeFrame(w, payload) }
+
+// ReadFrame 读取一个长度前缀帧。
+func ReadFrame(r io.Reader) ([]byte, error) { return readFrame(r) }

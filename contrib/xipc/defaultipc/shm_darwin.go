@@ -1,6 +1,6 @@
 //go:build darwin
 
-package ipc
+package defaultipc
 
 import (
 	"fmt"

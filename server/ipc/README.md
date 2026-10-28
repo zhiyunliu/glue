@@ -1,32 +1,17 @@
 # IPC 本地跨进程通信
 
-`server/ipc` 包与 `server/api`、`server/cron` 等服务包并列，通过本地流式传输提供命令请求/响应，并提供命名共享内存和跨进程互斥锁。平台实现分别使用 Unix Domain Socket、Windows 命名管道、POSIX 共享内存、Windows 文件映射、`flock` 和 Windows 命名 Mutex。
+`server/ipc` 与其他服务包并列，仅实现服务端；根 `ipc` 提供接口、工厂和公共响应，`contrib/ipc/default` 提供具体实现。平台实现分别使用 Unix Domain Socket、Windows 命名管道、POSIX 共享内存、Windows 文件映射、`flock` 和 Windows 命名 Mutex。
 
-## 文件结构
+## 包边界
 
-```text
-server/ipc/
-├── ipc.go
-├── contract.go
-├── protocol.go
-├── config.go
-├── options.go
-├── engine.go
-├── command_server.go
-├── server.go
-├── client.go
-├── transport_unix.go
-├── transport_windows.go
-├── shm_unix.go
-├── shm_linux.go
-├── shm_darwin.go
-├── shm_windows.go
-├── lock_unix.go
-├── lock_windows.go
-└── example/
-    ├── server/main.go
-    └── client/main.go
-```
+- 根 `ipc` 包：客户端/服务端接口、注册工厂、`Config`/`Options`、standard 和公共响应。
+- `contrib/ipc/default`（`defaultipc`）：默认客户端/服务端、帧协议、本地传输、共享内存与进程锁。
+- `server/ipc` 包：服务配置、原生 alloter 路由与服务生命周期；保留 `Response`、状态码与响应构造函数的服务端别名。
+- 根 `glue.IPC(name, opts...)`：标准 builder/container 缓存入口，空名称对应 `default`，配置节点为 `ipcs`。
+- 客户端不依赖服务端包。旧客户端连接入口已删除，调用方必须迁移，不提供兼容入口。
+
+客户端导入 `github.com/zhiyunliu/glue/ipc`，服务端导入 `github.com/zhiyunliu/glue/server/ipc`。
+同文件同时使用时建议分别命名为 `ipc` 与 `ipcserver`；共享内存与锁由 `contrib/ipc/default` 包提供。
 
 ## 通信约定
 
@@ -35,7 +20,7 @@ server/ipc/
 - `Client.Call` 的 Go error 表示传输、帧或 JSON 协议错误。
 - 远端业务失败仍通过 `*Response` 返回；检查 `Response.IsOK()` 和状态码。
 - 同一个 `Client` 会串行处理调用，以保证请求与响应顺序。
-- 服务端会把 Handler panic 转换为 `CodeHandlerPanic` 响应。
+- 服务端通过统一引擎恢复业务 panic，并返回 `CodeHandlerError` 响应。
 
 ## 框架接入
 
@@ -65,7 +50,8 @@ if err := app.Start(); err != nil {
     "ipc": {
       "config": {
         "addr": "glue-ipc-example",
-        "engine": "gin",
+        "proto": "default",
+        "engine": "alloter",
         "status": "start",
         "stop_maximum_timeout": 15
       },
@@ -77,27 +63,28 @@ if err := app.Start(); err != nil {
 ```
 
 Linux/macOS 的 `addr` 应使用本地 socket 路径。`status: stop` 禁止启动。
-默认使用真实 Gin 适配引擎和 `engine.RegistryEngineRoute`，不额外监听 HTTP 端口。
+固定使用原生 alloter 请求/响应契约和 `engine.RegistryEngineRoute`；不使用 Gin、HTTP 或 httptest 模拟转发。
+`WithEngine` 仅接受 `alloter`，其他值启动时返回错误。
 `Use`、`Group`、`Handle` 支持统一上下文、中间件、对象反射路由及默认追踪和恢复链。
-命令按 POST 请求映射到路径，例如 `client.Call("/v1/echo", args)`；建议显式使用以 `/` 开头的命令路径。
+命令按 POST 请求映射到路径，例如 `client.Call("/v1/echo", args)`；`Handle` 和分组路由均强制 POST，建议显式使用以 `/` 开头的命令路径。
 框架返回值封装为 `ipc.OK(value)`；返回 `*ipc.Response` 则原样保留；错误转换为失败响应。
-`RegisterCommand` 和 `RegisterFunc` 保持低层协议，优先精确匹配，不经过统一中间件链。
+业务仅通过 `Handle` 注册，分组路由同样强制 POST；请在启动前完成注册。所有请求经过统一中间件链。
 
-`Endpoint()` 返回注册用 `*url.URL`，其 `Path` 保存本地原始地址；客户端使用 `Address()` 获取原始地址，不应把 URL 字符串传给 `Dial`。
+`Endpoint()` 返回注册用 `*url.URL`，其 `Path` 保存本地原始地址；客户端使用 `Address()` 获取原始地址，不应把 URL 字符串传给客户端构造函数。
 `transport.Transporter.Endpoint() string` 与该接口签名冲突，因此服务与 API 一样不实现 `Transporter`；当前无需独立适配对象，也不修改全局接口。
 
-## 独立生命周期及兼容接口
+## 独立生命周期
 
 ```go
 server := ipc.New("ipc", ipc.WithAddr(endpoint))
-server.RegisterFunc("Get", func(req ipc.Request) *ipc.Response {
+server.Handle("Get", func(ctx context.Context) interface{} {
     return ipc.OK(map[string]int{"value": 42})
 })
 if err := server.Start(ctx); err != nil {
     return err
 }
 defer server.Close()
-client, err := ipc.Dial(server.Address())
+client, err := ipcclient.NewClient("default", ipcclient.Config{Addr: server.Address()})
 if err != nil {
     return err
 }
@@ -105,10 +92,10 @@ defer client.Close()
 response, err := client.Call("Get", nil)
 ```
 
-`ctx` 是标准库上下文。`Start` 绑定成功后返回，重复启动返回 `ErrServerAlreadyServing`。
+此段 `ipc` 为服务端包，`ipcclient` 为根客户端包；`ctx` 是标准库上下文。`Start` 绑定成功后返回，重复启动返回 `ErrServerAlreadyServing`。
 `Stop` 关闭监听器及活动连接，取消框架请求上下文，再等待处理器退出，等待受调用上下文与最大超时共同限制。
 无法强制终止任意业务函数；超时返回后清理继续，完成之前禁止重新启动。
-未启动时可以安全停止；停止完成可再次 `Start`，命令和路由保持不变。
+未启动时可以安全停止；停止完成可再次 `Start`，路由保持不变。
 `Close` 是兼容终止入口，之后 `Start` 返回 `net.ErrClosed`，`Serve` 安全返回；低层 `NewServer(endpoint)` 仍立即监听，配合阻塞的 `Serve()` 使用。
 监听错误由 `Start` 返回，接收循环错误由 `Serve` 或后续 `Stop` 返回；启动回调失败会清理监听器和连接。
 
@@ -123,11 +110,11 @@ go run ./server/ipc/example/server
 go run ./server/ipc/example/client
 ```
 
-服务端示例注册 `UpdateValue`、`Reset` 和 `Get` 命令；客户端演示强类型绑定响应和未知命令处理。
+服务端示例通过 `Handle` 注册 `UpdateValue`、`Reset` 和 `Get` 路由；客户端演示强类型绑定响应和未知命令处理。
 
 ## 共享内存和锁
 
-`OpenShared(name, size, create)` 返回一段由调用方管理的共享字节区域。`create=true` 在区域不存在时创建；若名称已存在，则打开已有区域且要求其大小不小于 `size`，不会截断已有数据。调用 `SharedRegion.Close()` 会解除当前进程的映射，但不会删除命名共享内存对象。
+`contrib/ipc/default` 包的 `OpenShared(name, size, create)` 返回一段由调用方管理的共享字节区域。`create=true` 在区域不存在时创建；若名称已存在，则打开已有区域且要求其大小不小于 `size`，不会截断已有数据。调用 `SharedRegion.Close()` 会解除当前进程的映射，但不会删除命名共享内存对象。
 
 - Linux 共享区域位于 POSIX 共享内存命名空间（通常由 `/dev/shm` 承载）；macOS 使用 POSIX `shm_open`。
 - POSIX 共享内存对象会在所有映射关闭后继续存在。使用完成后需由应用显式清理；Linux 可删除对应 `/dev/shm/<name>`，macOS 可使用 `shm_unlink`。
@@ -152,10 +139,20 @@ Windows 端点参数只传管道名，不包含 `\\.\pipe\` 前缀。跨用户�
 ## 验证
 
 ```powershell
-go test ./server/ipc/... -count=1
-go test -race -vet=off ./server/ipc/... -count=1
-go vet ./server/ipc/...
-go vet -unsafeptr=false ./server/ipc/...
+go test . ./ipc/... ./server/ipc/... -count=1
+go test -race -vet=off . ./ipc/... ./server/ipc/... -count=1
+go vet ./ipc/... ./server/ipc/...
+go vet -unsafeptr=false ./ipc/... ./server/ipc/...
 ```
 
 Windows 的完整 vet 检查仍报告既有 `shm_windows.go:82` 的 `unsafe.Pointer` 告警；关闭该单项检查后可验证其余静态检查。
+
+## 外部传输与迁移
+
+`server/ipc` 只依赖根 `ipc.Server`，通过 `proto` 配置或 `WithProto` 选择实现。
+外部包在初始化时调用 `ipc.RegisterServer`；注册的传输接收 `SetHandler`，不得自建重复业务注册入口。
+框架保留中间件、Bind、统一 Response、unknown command、panic 和编码错误处理。
+`Start/Stop` 支持重启，`Close` 为终态；启动 hook 失败回滚，停止受上下文与最大时限约束。
+默认传输由本包空导入注册；仅导入根客户端工厂的程序须自行空导入 default。
+旧根包的 Listen/Connect、ReadFrame/WriteFrame、OpenShared/OpenLock 已迁至 defaultipc。
+旧 `ipc.NewClient(endpoint)` 改为 `ipc.NewClient("default", ipc.Config{Addr: endpoint})`。

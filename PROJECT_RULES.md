@@ -21,7 +21,7 @@
 | 传输契约 | `transport/` | `Server`、`Endpointer`、endpoint 与注册发现之间的统一契约。 |
 | 内建服务 | `server/api`、`server/rpc`、`server/cron`、`server/mqc` | 四类内建 server 的配置、启动、路由挂载与停止。 |
 | 路由执行链 | `engine/`、`router/`、`middleware/`、`context/` | 引擎适配、反射注册、统一 handler 签名、中间件链和上下文模型。 |
-| 配置与组件 | `config/`、`standard/`、`container/`、`cache/`、`xdb/`、`xhttp/`、`xrpc/`、`queue/`、`dlocker/` | 配置加载、多源合并、标准组件构建与缓存。 |
+| 配置与组件 | `config/`、`standard/`、`container/`、`cache/`、`xdb/`、`xhttp/`、`xrpc/`、`queue/`、`ipc/`、`dlocker/` | 配置加载、多源合并、标准组件构建与缓存。 |
 | 观测与治理 | `log/`、`errors/`、`metrics/`、`opentelemetry/`、`registry/`、`selector/` | 日志、错误、指标、追踪、服务注册与选路。 |
 | 外部适配 | `contrib/` | 各类协议、注册中心、配置中心、引擎和客户端实现。 |
 
@@ -207,6 +207,7 @@ type Endpointer interface {
 | `glue.DB(name, opts...)` | 获取数据库抽象实例。 |
 | `glue.Cache(name, opts...)` | 获取缓存抽象实例。 |
 | `glue.Queue(name, opts...)` | 获取队列抽象实例。 |
+| `glue.IPC(name, opts...)` | 获取本地进程通信客户端，读取 `ipcs`，空名称为 `default`。 |
 | `glue.RPC(name)` | 获取 RPC 客户端实例。 |
 | `glue.Http(name)` | 获取 HTTP 客户端实例。 |
 | `glue.DLocker(key, opts...)` | 获取分布式锁实例。 |
@@ -341,3 +342,10 @@ type Endpointer interface {
 |---|---|---|
 | 3.0 | 2026-04-27 | 基于仓库真实实现重写为框架级能力与使用约束，移除失真的业务模板化规范。 |
 | 2.0 | 2026-04-27 | 旧版模板化规则，已废弃。 |
+## IPC 分层约束
+
+- 根 `ipc` 仅承载接口、注册/工厂、Config/Options、standard、公共 Response；不得导入 contrib 或 OS 实现。
+- `contrib/ipc/default`（包名 `defaultipc`）承载默认客户端/服务端、wire framing、OS 传输、共享内存及进程锁。
+- `server/ipc` 依赖 `ipc.Server`，按 proto 选择传输，仅负责生命周期与原生 alloter 路由适配。
+- 禁止 IPC 使用 Gin、net/http、httptest 模拟转发；不得恢复 RegisterCommand/RegisterFunc 重复业务入口。
+- 根 NewClient 使用 `(proto, Config, ...Option)`；用方须空导入实现，根包不得反向导入 default。

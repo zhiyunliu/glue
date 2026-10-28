@@ -1,3 +1,5 @@
+> 迁移说明：客户端、公共响应、传输、共享内存与锁现位于根 `ipc` 包；`server/ipc` 仅保留服务端。标准客户端入口为 `glue.IPC(name, opts...)`，客户端配置节点为 `ipcs`。以下为原始实现记录，涉及目录以现有包边界为准。
+
 # IPC Package Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
@@ -75,7 +77,7 @@
   - `(*Server).Serve() error`
   - `(*Server).Close() error`
   - `(*Server).Endpoint() string`
-  - `Dial(endpoint string) (*Client, error)`
+  - `NewClient(endpoint string) (Client, error)`
   - `(*Client).Call(command string, data any) (*Response, error)`
   - `(*Client).Close() error`
   - `ErrClosed`
