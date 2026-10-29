@@ -1,6 +1,17 @@
 package xipc
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/zhiyunliu/golibs/xenv"
+	"github.com/zhiyunliu/golibs/xtransform"
+)
+
+var (
+	ScopeName = "glue-ipc"
+)
 
 var (
 	// ErrEndpointInUse 表示本地端点已被服务占用。
@@ -22,4 +33,17 @@ type ProcessLock interface {
 	Lock() error
 	Unlock() error
 	Close() error
+}
+
+func GetIpcName(srvName string) string {
+	srvName = xtransform.TranslateCallback(srvName, func(param string) string {
+		return xenv.GetOrDefault(param, "")
+
+	}, xtransform.WithBraceMode(), xtransform.WithAtBraceMode())
+
+	tmp := srvName
+	tmp = strings.ReplaceAll(tmp, ":", "_")
+	tmp = strings.ReplaceAll(tmp, "/", "_")
+	tmp = strings.ReplaceAll(tmp, "\\", "_")
+	return fmt.Sprintf("%s-%s", ServerPrefix, tmp)
 }

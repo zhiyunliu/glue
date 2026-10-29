@@ -7,12 +7,14 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"sync"
 
 	"context"
 
 	ants "github.com/panjf2000/ants/v2"
 	"github.com/zhiyunliu/alloter"
 	"github.com/zhiyunliu/glue/log"
+	"github.com/zhiyunliu/glue/metrics"
 	"github.com/zhiyunliu/glue/xipc"
 	"github.com/zhiyunliu/golibs/bytesconv"
 )
@@ -24,7 +26,9 @@ type processor struct {
 	listener   net.Listener
 	capactiy   int
 	runnerPool *ants.PoolWithFunc
+	onceLock   sync.Once
 	closed     chan struct{}
+	Metrics    *Metrics
 }
 
 // NewProcessor 创建processor
@@ -43,10 +47,11 @@ func newProcessor(engine *alloter.Engine, capactiy int, endpoint string) (s *pro
 	if err != nil {
 		return nil, err
 	}
-
+	s.Metrics = metrics.GetMetrics[Metrics](xipc.ScopeName+"-default", xipc.ScopeName)
 	s.runnerPool, err = ants.NewPoolWithFunc(capactiy, func(data any) {
+		s.Metrics.IpcProcessing.Add(context.Background(), 1)
 		s.serveConn(data.(net.Conn))
-		//做业务处理
+		s.Metrics.IpcProcessing.Add(context.Background(), -1)
 	}, ants.WithLogger(&loggerWrap{logger: log.DefaultLogger}))
 
 	return s, err
@@ -154,4 +159,13 @@ func (s *processor) writeResponse(conn net.Conn, response *xipc.Response) error 
 
 func (s *processor) recordCloseError(err error) {
 	log.Error(err)
+}
+
+func (s *processor) Stop() error {
+	var err error
+	s.onceLock.Do(func() {
+		close(s.closed)
+		err = s.listener.Close()
+	})
+	return err
 }

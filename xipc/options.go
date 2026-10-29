@@ -18,6 +18,22 @@ type Options struct {
 	StreamProcessor    any           // 是否使用流传输
 }
 
+// WithQuery 设置请求参数
+func WithQuery(query string) RequestOption {
+	return func(o *Options) {
+		o.Query = query
+	}
+}
+
+// WithMethod 设置请求方法
+func WithMethod(method string) RequestOption {
+	return func(o *Options) {
+		if method != "" {
+			o.Method = method
+		}
+	}
+}
+
 // WithHeaders 设置请求头
 func WithHeaders(header map[string]string) RequestOption {
 	return func(o *Options) {

@@ -6,18 +6,23 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
+	"net/url"
 	"sync"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/zhiyunliu/glue/config"
+	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/xipc"
+	"github.com/zhiyunliu/golibs/bytesconv"
 )
 
 // Client 在单条连接上执行同步命令调用。
 type endpointer struct {
-	conn net.Conn
-	mu   sync.Mutex
-
+	srvName  string
+	conn     net.Conn
+	mu       sync.Mutex
+	client   *xipcClient
 	closed   bool
 	closeErr error
 }
@@ -25,6 +30,7 @@ type endpointer struct {
 type xipcClient struct {
 	requests     cmap.ConcurrentMap[string, *endpointer]
 	clientConfig config.Config
+	mutex        sync.Mutex
 }
 
 // NewClient 连接到指定 IPC 端点。
@@ -38,32 +44,78 @@ func NewClient(clientCfg config.Config) (Client, error) {
 }
 
 func (p *xipcClient) Request(ctx context.Context, path string, data any, opts ...RequestOption) (res Body, err error) {
-	return
+	urlVal, err := url.Parse(path)
+	if err != nil {
+		return nil, fmt.Errorf("ipc.request path[%s]格式不符", path)
+	}
+	srvName := urlVal.Hostname()
+	return p.Call(ctx, srvName, urlVal.Path, data, opts...)
 }
 
 func (p *xipcClient) Call(ctx context.Context, srvName string, command string, data any, opts ...RequestOption) (res Body, err error) {
-	return
+	srvName = xipc.GetIpcName(srvName)
+
+	endpointer, err := p.getEndpointer(srvName)
+	if err != nil {
+		return
+	}
+	//处理可选参数
+	ipcOpt := &xipc.Options{
+		Method: http.MethodPost,
+		Header: make(map[string]string),
+	}
+	for i := range opts {
+		opts[i](ipcOpt)
+	}
+	ipcResp, err := endpointer.Call(ctx, command, data, ipcOpt)
+	return ipcResp, err
 }
 
-func (p *xipcClient) getClient(endpoint string) (*endpointer, error) {
-	conn, err := dialTransport(endpoint)
+func (p *xipcClient) getEndpointer(srvName string) (*endpointer, error) {
+	ep, ok := p.requests.Get(srvName)
+	if ok {
+		return ep, nil
+	}
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	conn, err := dialTransport(srvName)
 	if err != nil {
 		return nil, err
 	}
-	return &endpointer{conn: conn}, nil
+	return &endpointer{
+		srvName: srvName,
+		conn:    conn,
+		client:  p,
+	}, nil
 }
 
 // Call 发送命令并等待响应。同一 Client 上的调用会串行执行。
-func (c *endpointer) Call(command string, data any) (*xipc.Response, error) {
-	var rawData json.RawMessage
+func (c *endpointer) Call(ctx context.Context, command string, data any, ipcOpt *xipc.Options) (*xipc.Response, error) {
+
+	var rawData []byte
 	if data != nil {
-		encoded, err := json.Marshal(data)
-		if err != nil {
-			return nil, fmt.Errorf("ipc: encode request data: %w", err)
+		switch t := data.(type) {
+		case []byte:
+			rawData = t
+		case string:
+			rawData = bytesconv.StringToBytes(t)
+		case *string:
+			rawData = bytesconv.StringToBytes(*t)
+		default:
+			rawData, _ = json.Marshal(data)
+			xipc.WithContentType(constants.ContentTypeApplicationJSON)(ipcOpt)
 		}
-		rawData = encoded
 	}
-	payload, err := json.Marshal(wireRequest{Cmd: command, Data: rawData})
+	if len(ipcOpt.Query) > 0 {
+		command = fmt.Sprintf("%s?%s", command, ipcOpt.Query)
+	}
+
+	payload, err := json.Marshal(xipc.Request{
+		Service: command,
+		Method:  ipcOpt.Method,
+		Header:  ipcOpt.Header,
+		Body:    rawData,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("ipc: encode request: %w", err)
 	}
@@ -89,7 +141,7 @@ func (c *endpointer) Call(command string, data any) (*xipc.Response, error) {
 
 func (c *endpointer) closeAfterCallError(callErr error) error {
 	c.closed = true
-	if err := c.conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+	if err := c.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
 		return errors.Join(callErr, fmt.Errorf("ipc: close broken connection: %w", err))
 	}
 	return callErr
@@ -102,6 +154,7 @@ func (c *endpointer) Close() error {
 	if c.closed {
 		return c.closeErr
 	}
+	c.client.requests.Remove(c.srvName)
 	c.closed = true
 	c.closeErr = c.conn.Close()
 	if errors.Is(c.closeErr, net.ErrClosed) {
@@ -119,8 +172,3 @@ type Client = xipc.Client
 type RequestOption = xipc.RequestOption
 type Body = xipc.Body
 type ResponseEntity = xipc.ResponseEntity
-
-type wireRequest struct {
-	Cmd  string          `json:"cmd"`
-	Data json.RawMessage `json:"data,omitempty"`
-}

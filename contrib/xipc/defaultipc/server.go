@@ -5,16 +5,13 @@ import (
 
 	"github.com/zhiyunliu/alloter"
 	enginealloter "github.com/zhiyunliu/glue/contrib/engine/alloter"
-	"github.com/zhiyunliu/glue/contrib/xrpc/grpc"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
-	"github.com/zhiyunliu/glue/log"
 	"github.com/zhiyunliu/glue/middleware"
 	"github.com/zhiyunliu/glue/xipc"
 
 	"errors"
 	"fmt"
-	"net"
 	"sync"
 )
 
@@ -22,13 +19,9 @@ type Server = xipc.Server
 
 // Server 接收连接并分发已注册的命令。
 type ipcServer struct {
-	srvcfg   *serverConfig
-	listener net.Listener
+	srvcfg *serverConfig
 
-	connMu    sync.Mutex
-	conns     map[net.Conn]struct{}
 	closeErrs []error
-	connWG    sync.WaitGroup
 
 	serveMu sync.Mutex
 	serving bool
@@ -37,7 +30,6 @@ type ipcServer struct {
 	closeOnce sync.Once
 	closeErr  error
 
-	srv       *grpc.Server
 	engine    *alloter.Engine
 	processor *processor
 }
@@ -48,14 +40,14 @@ func newServer(srvcfg *serverConfig,
 	opts ...engine.Option) (server *ipcServer, err error) {
 
 	if srvcfg.Config.Addr == "" {
-		srvcfg.Config.Addr = fmt.Sprintf("%s-%s", xipc.ServerPrefix, global.AppName)
-		log.Infof("ipc server addr: %s", srvcfg.Config.Addr)
+		srvcfg.Config.Addr = global.AppName
 	}
+	srvcfg.Config.Addr = xipc.GetIpcName(srvcfg.Config.Addr)
 
 	server = &ipcServer{
 		srvcfg: srvcfg,
-		conns:  make(map[net.Conn]struct{}),
 		closed: make(chan struct{}),
+		engine: alloter.New(),
 	}
 	server.processor, err = newProcessor(server.engine, srvcfg.Config.Capactiy, srvcfg.Config.Addr)
 	if err != nil {
@@ -90,25 +82,7 @@ func (s *ipcServer) Serve(context.Context) error {
 // Close 关闭监听器和活动连接，并等待连接处理协程退出。
 func (s *ipcServer) Close() error {
 	s.closeOnce.Do(func() {
-		close(s.closed)
-		if err := s.listener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
-			s.closeErr = errors.Join(s.closeErr, fmt.Errorf("ipc: close listener: %w", err))
-		}
-
-		s.connMu.Lock()
-		for conn := range s.conns {
-			if err := conn.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
-				s.closeErrs = append(s.closeErrs, fmt.Errorf("ipc: close client connection: %w", err))
-			}
-		}
-		s.connMu.Unlock()
-		s.connWG.Wait()
-
-		s.connMu.Lock()
-		for _, err := range s.closeErrs {
-			s.closeErr = errors.Join(s.closeErr, err)
-		}
-		s.connMu.Unlock()
+		s.closeErr = s.processor.Stop()
 	})
 	return s.closeErr
 }

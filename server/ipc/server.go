@@ -90,14 +90,14 @@ func (e *Server) Start(ctx context.Context) (err error) {
 	}
 
 	errChan := make(chan error, 1)
-	log.Infof("RPC Server [%s] listening on %s", e.name, e.server.GetAddr())
+	log.Infof("IPC Server [%s] listening on %s", e.name, e.server.GetAddr())
 
 	done := make(chan struct{})
 	go func() {
 		e.started = true
 		serveErr := e.server.Serve(e.ctx)
 		if serveErr != nil {
-			log.Errorf("RPC Server [%s] Serve error: %s", e.name, serveErr.Error())
+			log.Errorf("IPC Server [%s] Serve error: %s", e.name, serveErr.Error())
 		}
 		errChan <- serveErr
 		close(done)
@@ -111,7 +111,7 @@ func (e *Server) Start(ctx context.Context) (err error) {
 
 	err = <-errChan
 	if err != nil {
-		log.Errorf("RPC Server [%s] start error: %s", e.name, err.Error())
+		log.Errorf("IPC Server [%s] start error: %s", e.name, err.Error())
 		return err
 	}
 
@@ -119,12 +119,12 @@ func (e *Server) Start(ctx context.Context) (err error) {
 		for _, fn := range e.opts.startedHooks {
 			err := fn(ctx)
 			if err != nil {
-				log.Errorf("RPC Server [%s] StartedHooks:%+v", e.name, err)
+				log.Errorf("IPC Server [%s] StartedHooks:%+v", e.name, err)
 				return err
 			}
 		}
 	}
-	log.Infof("RPC Server [%s] start completed", e.name)
+	log.Infof("IPC Server [%s] start completed", e.name)
 	return nil
 }
 
@@ -164,7 +164,7 @@ func (e *Server) Stop(ctx context.Context) error {
 		for _, fn := range e.opts.endHooks {
 			err := fn(ctx)
 			if err != nil {
-				err = fmt.Errorf("RPC Server [%s] EndHook:%+v", e.name, err)
+				err = fmt.Errorf("IPC Server [%s] EndHook:%+v", e.name, err)
 				return err
 			}
 		}
@@ -192,7 +192,7 @@ func (e *Server) serverPath() string {
 func (e *Server) buildEndpoint() *url.URL {
 	host, port, err := xnet.ExtractHostPort(e.server.GetAddr())
 	if err != nil {
-		panic(fmt.Errorf("RPC Server Addr:%s 配置错误", e.server.GetAddr()))
+		panic(fmt.Errorf("IPC Server Addr:%s 配置错误", e.server.GetAddr()))
 	}
 	if host == "" {
 		host = global.LocalIp

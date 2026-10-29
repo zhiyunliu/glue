@@ -28,8 +28,9 @@ func setDefaultOption() *options {
 	return &options{
 		srvCfg: &serverConfig{
 			Config: xipc.Config{
-				Proto:  "default",
-				Status: engine.StatusStart,
+				Proto:    "default",
+				Status:   engine.StatusStart,
+				Capactiy: 100,
 			},
 		},
 		logOpts: &log.Options{
