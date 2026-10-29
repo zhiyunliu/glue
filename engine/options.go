@@ -52,7 +52,7 @@ func WithSrvName(name string) Option {
 // WithSvcName is the service name, 注册到注册中心的名称
 func WithSvcName(name string) Option {
 	return func(o *Options) {
-		o.SrvName = name
+		o.SvcName = name
 	}
 }
 
