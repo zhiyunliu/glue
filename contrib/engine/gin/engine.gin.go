@@ -4,9 +4,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/zhiyunliu/glue/context"
 	"github.com/zhiyunliu/glue/engine"
 	"github.com/zhiyunliu/glue/global"
@@ -100,91 +98,6 @@ func (e *GinEngine) HandleRequest(req engine.Request, resp engine.ResponseWriter
 
 func (e *GinEngine) GetImpl() any {
 	return &httpEngine{engine: e.Engine}
-}
-
-func (e *GinEngine) defaultHandle() {
-	//healthcheck
-	e.Engine.Handle(http.MethodGet, "/healthcheck", func(ctx *gin.Context) {
-		ctx.AbortWithStatus(http.StatusOK)
-	})
-
-	//pprof
-	pprof.Register(e.Engine)
-
-	//metrics
-	promHandler := promhttp.Handler()
-	e.Engine.Handle(http.MethodGet, "/metrics", func(ctx *gin.Context) {
-		promHandler.ServeHTTP(ctx.Writer, ctx.Request)
-	})
-
-	//GET /routers
-	e.Engine.Handle(http.MethodGet, "/routers", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, global.ServerRouterPathResult)
-	})
-
-	//PATCH /routers
-	e.Engine.Handle(http.MethodPatch, "/routers", func(ctx *gin.Context) {
-
-		data := map[string]engine.RouterList{}
-
-		if err := ctx.ShouldBind(&data); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		}
-
-		global.ServerRouterPathResult.Range(func(servername string, v global.RouterList) bool {
-			serverpath, ok := data[servername]
-			if !ok {
-				return true
-			}
-			tmpResult := v.GetPathResult()
-			result, ok := tmpResult.(*engine.PathResult)
-			if !ok {
-				return true
-			}
-
-			serverpath.PathResult.Range(func(path string, opts *engine.RouterOptions) bool {
-				if opts.Reset != nil && *opts.Reset {
-					result.Reset(path)
-					return true
-				}
-				result.Pathch(path, opts)
-				return true
-			})
-			return true
-		})
-
-		// 	{
-		//   "apiserver": [
-		//     {
-		//       "server_type": "api",
-		//       "path_result": {
-		//         "/api/debugbasic/:servername/:innerip/:verify": {
-		//           "skip_log": false,
-		//           "exclude_log_req": false,
-		//           "exclude_log_resp": true,
-		//           "exclude_header": false,
-		//           "mandatory_log_req": false,
-		//           "mandatory_log_resp": false,
-		//           "with_source": null,
-		//           "with_headers": null
-		//         },
-		//         "/api/debugbasic/analyze/clientrequests": {
-		//           "skip_log": false,
-		//           "exclude_log_req": false,
-		//           "exclude_log_resp": true,
-		//           "exclude_header": false,
-		//           "mandatory_log_req": false,
-		//           "mandatory_log_resp": false,
-		//           "with_source": null,
-		//           "with_headers": null
-		// 		}
-
-		// 	}
-		// }]
-		// }
-
-		ctx.JSON(http.StatusOK, global.ServerRouterPathResult)
-	})
 }
 
 type httpEngine struct {
