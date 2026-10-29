@@ -122,14 +122,25 @@ func DefaultErrorEncoder(ctx context.Context, err error) {
 
 	se := errors.FromError(err)
 	codec, _ := CodecForRequest(ctx, "Accept")
-	body, err := codec.Marshal(se)
-	if err != nil {
+	body, merr := codec.Marshal(se)
+	if merr != nil {
 		resp.StatusCode(http.StatusInternalServerError)
 		_ = resp.WriteBytes(bytesconv.StringToBytes(err.Error()))
 		return
 	}
 	resp.Header(ContentTypeName, codec.ContentType())
-	resp.StatusCode(se.GetCode())
+
+	statusCode := http.StatusOK
+	if scode, ok := err.(errors.StatusCodeError); ok {
+		statusCode = scode.GetStatusCode()
+		if statusCode == 0 {
+			statusCode = se.GetCode()
+		}
+	} else {
+		statusCode = se.GetCode()
+	}
+
+	resp.StatusCode(statusCode)
 	_ = resp.WriteBytes(body)
 }
 

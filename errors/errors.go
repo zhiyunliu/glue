@@ -15,6 +15,9 @@ const (
 type IgnoreError interface {
 	Ignore() bool
 }
+type StatusCodeError interface {
+	GetStatusCode() int
+}
 
 type Response interface {
 	GetCode() int

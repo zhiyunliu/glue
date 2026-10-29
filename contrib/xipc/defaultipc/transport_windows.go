@@ -7,10 +7,15 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"runtime"
 	"sync"
 	"time"
 	"unsafe"
+
+	glueerrs "github.com/zhiyunliu/glue/errors"
+	"github.com/zhiyunliu/glue/errors/respcode"
+	"github.com/zhiyunliu/glue/errors/subcode"
 
 	"golang.org/x/sys/windows"
 )
@@ -236,7 +241,12 @@ func dialTransport(endpoint string) (net.Conn, error) {
 	name := pipePrefix + endpoint
 	namePtr, err := windows.UTF16PtrFromString(name)
 	if err != nil {
-		return nil, fmt.Errorf("ipc: invalid named pipe endpoint: %w", err)
+		return nil, glueerrs.New(respcode.ErrorUnknown,
+			"ipc: invalid named pipe endpoint",
+			glueerrs.WithStatusCode(http.StatusInternalServerError),
+			glueerrs.WithSubCode(subcode.IpcNamedpipeName),
+			glueerrs.WithInnerErr(err),
+		)
 	}
 	deadline := time.Now().Add(5 * time.Second)
 	waitNamedPipe := windows.NewLazySystemDLL("kernel32.dll").NewProc("WaitNamedPipeW")
@@ -254,10 +264,30 @@ func dialTransport(endpoint string) (net.Conn, error) {
 			return &pipeConn{handle: handle, name: name}, nil
 		}
 		if err != windows.ERROR_FILE_NOT_FOUND && err != windows.ERROR_PIPE_BUSY {
-			return nil, fmt.Errorf("ipc: dial named pipe: %w", err)
+			return nil, glueerrs.New(respcode.ErrorUnknown,
+				"ipc: named pipe dial error",
+				glueerrs.WithStatusCode(http.StatusInternalServerError),
+				glueerrs.WithSubCode(subcode.IpcNamedpipeDial),
+				glueerrs.WithInnerErr(err),
+			)
 		}
+
+		if err == windows.ERROR_FILE_NOT_FOUND {
+			return nil, glueerrs.New(respcode.ErrorNotFound,
+				"ipc: named pipe not found",
+				glueerrs.WithStatusCode(http.StatusNotFound),
+				glueerrs.WithSubCode(subcode.IpcNamedpipeNotfound),
+				glueerrs.WithInnerErr(err),
+			)
+		}
+
 		if time.Now().After(deadline) {
-			return nil, fmt.Errorf("ipc: dial named pipe %q: %w", name, err)
+			return nil, glueerrs.New(respcode.ErrorRequestTimeout,
+				"ipc: named pipe timed out",
+				glueerrs.WithStatusCode(http.StatusRequestTimeout),
+				glueerrs.WithSubCode(subcode.IpcNamedpipeTimeout),
+				glueerrs.WithInnerErr(err),
+			)
 		}
 
 		if err == windows.ERROR_PIPE_BUSY {
@@ -267,10 +297,15 @@ func dialTransport(endpoint string) (net.Conn, error) {
 			)
 			runtime.KeepAlive(namePtr)
 			if result == 0 && waitErr != windows.ERROR_SEM_TIMEOUT && waitErr != windows.ERROR_FILE_NOT_FOUND {
-				return nil, fmt.Errorf("ipc: wait for named pipe: %w", waitErr)
+				return nil, glueerrs.New(respcode.ErrorSystem,
+					"ipc: wait for named pipe",
+					glueerrs.WithStatusCode(http.StatusInternalServerError),
+					glueerrs.WithSubCode(subcode.IpcNamedpipeWait),
+					glueerrs.WithInnerErr(waitErr),
+				)
 			}
 		} else {
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
