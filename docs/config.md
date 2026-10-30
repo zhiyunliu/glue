@@ -90,3 +90,19 @@
 }
 
 ```
+
+## IPC 的 Unix socket 共享目录
+
+Linux/macOS 使用 `global.IPCSocketDir` 将 IPC 名称映射到统一绝对路径，默认目录为 `/tmp/glue-ipc`。例如服务 `debugbasic` 使用 `/tmp/glue-ipc/glue-debugbasic`，客户端和服务端不再依赖相同的工作目录。Windows 仍使用原来的命名管道，不读取此变量。
+
+可以在编译时设置目录：
+
+```bash
+go build -ldflags "-X github.com/zhiyunliu/glue/global.IPCSocketDir=/tmp/glue-ipcsocket" .
+```
+
+也可以在应用启动前设置 `global.IPCSocketDir`，启动后不要修改。客户端与服务端必须使用相同目录，且该目录必须为绝对路径。
+
+服务端自动创建目录，创建权限为 `0700`；已有目录必须为当前用户所有的真实目录，且不能允许组或其他用户写入。客户端只连接，不创建目录。默认仅支持同一操作系统用户运行的服务互通；使用其他用户首次创建的默认目录会启动失败，应为不同用户注入不同目录。使用 `/run` 时应由部署流程预先创建目录并设置所有者。
+
+升级时需要同步升级并重启相关 Unix 服务端与客户端：旧版本使用工作目录下的 socket，新版本使用共享目录，两者不会自动兼容。不要删除运行中的 socket。应用层 `servers.ipcserver.config.addr` 仍填写服务名称，不填写目录；目录通过上述全局变量配置。

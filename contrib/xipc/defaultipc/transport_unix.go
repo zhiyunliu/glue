@@ -12,12 +12,17 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/zhiyunliu/glue/global"
 	"golang.org/x/sys/unix"
 )
 
 func listen(endpoint string) (net.Listener, error) {
-	if endpoint == "" {
-		return nil, errors.New("ipc: empty endpoint")
+	endpoint, err := resolveUnixEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
+	if err := prepareSocketDir(filepath.Dir(endpoint)); err != nil {
+		return nil, err
 	}
 
 	lockFD, err := lockEndpoint(endpoint)
@@ -117,7 +122,51 @@ func unlockEndpoint(fd int) error {
 	return errors.Join(unlockErr, closeErr)
 }
 
+func resolveUnixEndpoint(endpoint string) (string, error) {
+	if endpoint == "" {
+		return "", errors.New("ipc: empty endpoint")
+	}
+	if filepath.IsAbs(endpoint) {
+		return filepath.Clean(endpoint), nil
+	}
+	if !filepath.IsAbs(global.IPCSocketDir) {
+		return "", fmt.Errorf("ipc: socket directory must be absolute: %q", global.IPCSocketDir)
+	}
+	if filepath.Base(endpoint) != endpoint || endpoint == "." || endpoint == ".." {
+		return "", fmt.Errorf("ipc: endpoint must be a socket name or absolute path: %q", endpoint)
+	}
+	return filepath.Join(global.IPCSocketDir, endpoint), nil
+}
+
+func prepareSocketDir(dir string) error {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return fmt.Errorf("ipc: create socket directory %q: %w", dir, err)
+	}
+	info, err := os.Lstat(dir)
+	if err != nil {
+		return fmt.Errorf("ipc: inspect socket directory %q: %w", dir, err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("ipc: socket directory %q is not a directory", dir)
+	}
+	var stat unix.Stat_t
+	if err := unix.Lstat(dir, &stat); err != nil {
+		return fmt.Errorf("ipc: inspect socket directory owner %q: %w", dir, err)
+	}
+	if stat.Uid != uint32(os.Geteuid()) {
+		return fmt.Errorf("ipc: socket directory %q is not owned by this user", dir)
+	}
+	if info.Mode().Perm()&0o022 != 0 {
+		return fmt.Errorf("ipc: socket directory %q must not be writable by group or others", dir)
+	}
+	return nil
+}
+
 func dialTransport(endpoint string) (net.Conn, error) {
+	endpoint, err := resolveUnixEndpoint(endpoint)
+	if err != nil {
+		return nil, err
+	}
 	conn, err := net.Dial("unix", endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("ipc: dial unix socket %q: %w", endpoint, err)
