@@ -98,7 +98,7 @@ Linux/macOS 使用 `global.IPCSocketDir` 将 IPC 名称映射到统一绝对路�
 可以在编译时设置目录：
 
 ```bash
-go build -ldflags "-X github.com/zhiyunliu/glue/global.IPCSocketDir=/tmp/glue-ipcsocket" .
+go build -ldflags "-X github.com/zhiyunliu/glue/global.IPCSocketDir=/run/glue-ipcsocket" .
 ```
 
 也可以在应用启动前设置 `global.IPCSocketDir`，启动后不要修改。客户端与服务端必须使用相同目录，且该目录必须为绝对路径。
