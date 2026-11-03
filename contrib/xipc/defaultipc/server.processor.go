@@ -41,6 +41,7 @@ func newProcessor(engine *alloter.Engine, capactiy int, endpoint string) (s *pro
 		engine:   engine,
 		capactiy: capactiy,
 		endpoint: endpoint,
+		closed:   make(chan struct{}),
 	}
 
 	s.listener, err = Listen(endpoint)
