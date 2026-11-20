@@ -453,9 +453,9 @@ func resolveRowsToMap(proto string, rows *sql.Rows, itemType reflect.Type) (refl
 }
 
 func resolveRowsToReader(proto string, rows *sql.Rows, reader xdb.RowDataReader) (err error) {
-	rowItem := reader.GetRowItem()
 	defer reader.Close()
 	for {
+		rowItem := reader.GetRowItem()
 		err = ResolveFirstDataResult(proto, rows, rowItem)
 		if err != nil {
 			if errors.Is(err, xdb.ErrEmptyError) {

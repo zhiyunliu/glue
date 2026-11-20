@@ -6,6 +6,7 @@ import (
 
 	"github.com/zhiyunliu/glue/constants"
 	"github.com/zhiyunliu/glue/context"
+	"github.com/zhiyunliu/glue/errors"
 	"github.com/zhiyunliu/golibs/xsse"
 )
 
@@ -43,6 +44,9 @@ func processSSEv2(ctx context.Context, v any) (ok bool, err error) {
 	err = processSSEEvents(ctx.Response(), func() (evt xsse.SSEEvent, ok bool, err error) {
 		evt, err = sseEntity.GetEventV2()
 		if err != nil {
+			if errors.Is(err, xsse.ErrChanIsEmpty) {
+				return evt, false, nil
+			}
 			return
 		}
 		return evt, true, nil
