@@ -1,10 +1,10 @@
 package xdb
 
-func GetRowDataReader(obj any) RowDataReader {
+func GetDataRowReader(obj any) DataRowReader {
 	if obj == nil {
 		return nil
 	}
-	reader, ok := obj.(RowDataReader)
+	reader, ok := obj.(DataRowReader)
 	if ok {
 		return reader
 	}

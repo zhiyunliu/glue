@@ -15,7 +15,8 @@ const (
 )
 
 var (
-	ErrEmptyError = errors.New("empty")
+	ErrEmptyError       = errors.New("empty")
+	ErrStreamChanClosed = errors.New("stream chan closed")
 )
 
 type DbError interface {

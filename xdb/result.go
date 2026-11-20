@@ -55,8 +55,8 @@ func (m *RawMessage) UnmarshalJSON(data []byte) error {
 var _ json.Marshaler = (*RawMessage)(nil)
 var _ json.Unmarshaler = (*RawMessage)(nil)
 
-type RowDataReader interface {
-	GetRowItem() any
-	FillRowItem(data any) error
+type DataRowReader interface {
+	GetNewRow() any
+	PresentRow(data any) error
 	Close() error
 }

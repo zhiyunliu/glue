@@ -129,7 +129,7 @@ func ResolveRowsDataResult(proto string, rows *sql.Rows, result any) (err error)
 
 	rv := reflect.ValueOf(result)
 
-	if reader := xdb.GetRowDataReader(result); reader != nil {
+	if reader := xdb.GetDataRowReader(result); reader != nil {
 		return resolveRowsToReader(proto, rows, reader)
 	}
 
@@ -452,10 +452,10 @@ func resolveRowsToMap(proto string, rows *sql.Rows, itemType reflect.Type) (refl
 	return
 }
 
-func resolveRowsToReader(proto string, rows *sql.Rows, reader xdb.RowDataReader) (err error) {
+func resolveRowsToReader(proto string, rows *sql.Rows, reader xdb.DataRowReader) (err error) {
 	defer reader.Close()
 	for {
-		rowItem := reader.GetRowItem()
+		rowItem := reader.GetNewRow()
 		err = ResolveFirstDataResult(proto, rows, rowItem)
 		if err != nil {
 			if errors.Is(err, xdb.ErrEmptyError) {
@@ -463,7 +463,7 @@ func resolveRowsToReader(proto string, rows *sql.Rows, reader xdb.RowDataReader)
 			}
 			return
 		}
-		if err = reader.FillRowItem(rowItem); err != nil {
+		if err = reader.PresentRow(rowItem); err != nil {
 			return
 		}
 	}
