@@ -55,8 +55,14 @@ func (m *RawMessage) UnmarshalJSON(data []byte) error {
 var _ json.Marshaler = (*RawMessage)(nil)
 var _ json.Unmarshaler = (*RawMessage)(nil)
 
+// DataRowReader 数据行读取接口
 type DataRowReader interface {
+	// GetNewRow 获取一个数据行对象
 	GetNewRow() any
+	// PresentRow 填充数据行对象
 	PresentRow(data any) error
+	// GetNext 获取下一个数据行对象
+	GetNext() (any, bool)
+	// Close 关闭数据行读取器
 	Close() error
 }
